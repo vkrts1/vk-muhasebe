@@ -1,0 +1,103 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Döviz Çevirici</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Çevirme İşlemi</MudText>
+            
+            <MudNumericField @bind-Value="tutar" Label="Tutar" Variant="Variant.Outlined" Class="mb-3" />
+            
+            <MudSelect T="string" @bind-Value="kaynakDoviz" Label="Kaynak Döviz" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem Value="@("TL")">Türk Lirası (TL)</MudSelectItem>
+                <MudSelectItem Value="@("USD")">Amerikan Doları (USD)</MudSelectItem>
+                <MudSelectItem Value="@("EUR")">Euro (EUR)</MudSelectItem>
+                <MudSelectItem Value="@("GBP")">İngiliz Sterlini (GBP)</MudSelectItem>
+            </MudSelect>
+            
+            <MudSelect T="string" @bind-Value="hedefDoviz" Label="Hedef Döviz" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem Value="@("TL")">Türk Lirası (TL)</MudSelectItem>
+                <MudSelectItem Value="@("USD")">Amerikan Doları (USD)</MudSelectItem>
+                <MudSelectItem Value="@("EUR")">Euro (EUR)</MudSelectItem>
+                <MudSelectItem Value="@("GBP")">İngiliz Sterlini (GBP)</MudSelectItem>
+            </MudSelect>
+            
+            <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="Cevir" FullWidth="true">
+                Çevir
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Sonuç</MudText>
+            
+            @if(sonuc > 0)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-3">
+                    <MudText Typo="Typo.h5">@tutar @kaynakDoviz</MudText>
+                    <MudText Typo="Typo.h6" Class="mt-2">=</MudText>
+                    <MudText Typo="Typo.h4" Color="MudBlazor.Color.Success">@sonuc.ToString("N2") @hedefDoviz</MudText>
+                </MudAlert>
+                
+                <MudText Typo="Typo.caption">
+                    Kur: 1 @kaynakDoviz = @kullanılanKur.ToString("N4") @hedefDoviz
+                </MudText>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    Çevirmek için tutar girin ve "Çevir" butonuna tıklayın.
+                </MudAlert>
+            }
+            
+            <MudDivider Class="my-4" />
+            
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Güncel Kurlar (Örnek)</MudText>
+            <MudSimpleTable Dense="true">
+                <tbody>
+                    <tr><td>USD/TL</td><td>32.50</td></tr>
+                    <tr><td>EUR/TL</td><td>35.20</td></tr>
+                    <tr><td>GBP/TL</td><td>41.10</td></tr>
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private decimal tutar = 100;
+    private string kaynakDoviz = "USD";
+    private string hedefDoviz = "TL";
+    private decimal sonuc = 0;
+    private decimal kullanılanKur = 0;
+
+    // Örnek kurlar (gerçek uygulamada API'den çekilmeli)
+    private Dictionary<string, decimal> kurlar = new()
+    {
+        { "USD", 32.50m },
+        { "EUR", 35.20m },
+        { "GBP", 41.10m },
+        { "TL", 1m }
+    };
+
+    private void Cevir()
+    {
+        if (kaynakDoviz == hedefDoviz)
+        {
+            sonuc = tutar;
+            kullanılanKur = 1;
+            return;
+        }
+
+        // Kaynak dövizi TL'ye çevir
+        decimal tlTutar = tutar * kurlar[kaynakDoviz];
+        
+        // TL'den hedef dövize çevir
+        sonuc = tlTutar / kurlar[hedefDoviz];
+        kullanılanKur = kurlar[kaynakDoviz] / kurlar[hedefDoviz];
+    }
+}

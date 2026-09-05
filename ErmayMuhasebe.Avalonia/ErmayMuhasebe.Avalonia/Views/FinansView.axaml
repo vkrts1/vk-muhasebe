@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Shared.ViewModels;assembly=ErmayMuhasebe.Shared"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             x:Class="ErmayMuhasebe.Avalonia.Views.FinansView"
+             x:DataType="vm:FinansViewModel">
+
+  <Grid RowDefinitions="Auto, *">
+    <!-- Sub Navigation Tabs -->
+    <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" Margin="20,20,20,0" Padding="5" CornerRadius="12">
+        <StackPanel Orientation="Horizontal" Spacing="5">
+            <RadioButton Classes="TabButton" 
+                         IsChecked="True"
+                         Command="{Binding SetPageCommand}" 
+                         CommandParameter="Dashboard">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ic:SymbolIcon Symbol="Grid" FontSize="18"/> 
+                    <TextBlock Text="Dashboard" FontWeight="Bold"/>
+                </StackPanel>
+            </RadioButton>
+
+            <RadioButton Classes="TabButton" 
+                         Command="{Binding SetPageCommand}" 
+                         CommandParameter="Nakit">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ic:SymbolIcon Symbol="Money" FontSize="18"/> 
+                    <TextBlock Text="Nakit" FontWeight="Bold"/>
+                </StackPanel>
+            </RadioButton>
+            
+            <RadioButton Classes="TabButton" 
+                         Command="{Binding SetPageCommand}" 
+                         CommandParameter="Cek">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ic:SymbolIcon Symbol="MoneyHand" FontSize="18"/> 
+                    <TextBlock Text="Çek" FontWeight="Bold"/>
+                </StackPanel>
+            </RadioButton>
+
+            <RadioButton Classes="TabButton" 
+                         Command="{Binding SetPageCommand}" 
+                         CommandParameter="KrediKarti">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ic:SymbolIcon Symbol="Payment" FontSize="18"/> 
+                    <TextBlock Text="Kredi Kartı" FontWeight="Bold"/>
+                </StackPanel>
+            </RadioButton>
+
+
+            <RadioButton Classes="TabButton" 
+                         Command="{Binding SetPageCommand}" 
+                         CommandParameter="EFT">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ic:SymbolIcon Symbol="BuildingBank" FontSize="18"/> 
+                    <TextBlock Text="Havale / EFT" FontWeight="Bold"/>
+                </StackPanel>
+            </RadioButton>
+        </StackPanel>
+    </Border>
+
+    <!-- Page Content -->
+    <TransitioningContentControl Grid.Row="1" Content="{Binding CurrentFinansPage}">
+    </TransitioningContentControl>
+    
+    <Grid.Styles>
+        <Style Selector="RadioButton.TabButton">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Root" 
+                            Background="Transparent" 
+                            Padding="20,10" 
+                            CornerRadius="8" 
+                            Cursor="Hand">
+                        <ContentPresenter Content="{TemplateBinding Content}" 
+                                          VerticalAlignment="Center" 
+                                          HorizontalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.TabButton:checked /template/ Border#Root">
+            <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+        </Style>
+        <Style Selector="RadioButton.TabButton:checked TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="RadioButton.TabButton:checked ic|SymbolIcon">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="RadioButton.TabButton:pointerover /template/ Border#Root">
+            <Setter Property="Background" Value="#11FFFFFF"/>
+        </Style>
+    </Grid.Styles>
+  </Grid>
+</UserControl>

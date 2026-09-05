@@ -1,0 +1,166 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             x:Class="ErmayMuhasebe.Avalonia.Views.TopluFiyatView"
+             x:DataType="vm:TopluFiyatViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="25">
+    <!-- Header -->
+    <StackPanel Spacing="8" Margin="0,0,0,20">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Border Width="45" Height="45" CornerRadius="12" Background="#2610B981">
+          <ic:SymbolIcon Symbol="Tag" Foreground="#10B981" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Toplu Fiyat Güncelleme" FontSize="24" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Ürün fiyatlarını filtreleyerek toplu halde güncelleyin." FontSize="13" Foreground="#9CA3AF" Margin="57,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="300, *">
+      <!-- Controls Panel -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="15" Padding="20" BorderBrush="#22FFFFFF" BorderThickness="1" Margin="0,0,15,0" VerticalAlignment="Stretch">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="Filtreleme ve Değişim" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,20"/>
+          
+          <!-- Action Buttons / Status at the Bottom -->
+          <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,15,0,0">
+            <Border Background="#1510B981" CornerRadius="10" Padding="12,10">
+              <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                <ic:SymbolIcon Symbol="CheckmarkCircle" Foreground="#10B981" FontSize="16"/>
+                <TextBlock Text="{Binding SelectedCount, StringFormat={}{0} ürün seçildi}" 
+                           FontWeight="SemiBold" Foreground="#10B981" FontSize="12" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Border>
+
+            <Button Command="{Binding UygulaCommand}" Classes="SideButton Success" Height="40" HorizontalAlignment="Stretch">
+              <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ic:SymbolIcon Symbol="CheckmarkCircle" FontSize="18" VerticalAlignment="Center"/> 
+                <TextBlock Text="DEĞİŞİKLİKLERİ UYGULA" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+          <!-- Scrollable Filter Content -->
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="18" Margin="0,0,8,0">
+              <StackPanel Spacing="6">
+                <TextBlock Text="Stok Grubu / Kategori" Foreground="#9CA3AF" FontSize="12" FontWeight="Medium"/>
+                <ComboBox ItemsSource="{Binding Kategoriler}" SelectedItem="{Binding SeciliKategori}" HorizontalAlignment="Stretch" Height="38"/>
+              </StackPanel>
+
+              <Separator Background="#15FFFFFF" Margin="0,5"/>
+
+              <StackPanel Spacing="10">
+                <TextBlock Text="İşlem Türü" Foreground="#9CA3AF" FontSize="12" FontWeight="Medium"/>
+                <StackPanel Orientation="Horizontal" Spacing="15" x:CompileBindings="False">
+                   <RadioButton IsChecked="{Binding IslemTuru, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Zam}" Content="Zam" Foreground="White" FontSize="12"/>
+                   <RadioButton IsChecked="{Binding IslemTuru, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Indirim}" Content="İndirim" Foreground="White" FontSize="12"/>
+                </StackPanel>
+              </StackPanel>
+
+              <StackPanel Spacing="10">
+                <TextBlock Text="Değişim Tipi" Foreground="#9CA3AF" FontSize="12" FontWeight="Medium"/>
+                <StackPanel Orientation="Horizontal" Spacing="15">
+                   <RadioButton IsChecked="{Binding IsPercentage}" Content="Yüzde (%)" Foreground="White" FontSize="12"/>
+                   <RadioButton IsChecked="{Binding !IsPercentage}" Content="Sabit Tutar" Foreground="White" FontSize="12"/>
+                </StackPanel>
+              </StackPanel>
+
+              <StackPanel Spacing="6">
+                <TextBlock Text="Değişim Miktarı" Foreground="#9CA3AF" FontSize="12" FontWeight="Medium"/>
+                <NumericUpDown Value="{Binding Oran}"  Increment="0.5" ShowButtonSpinner="True" Height="38" FontSize="13"/>
+              </StackPanel>
+
+              <Border Background="#1010B981" CornerRadius="10" Padding="15" BorderBrush="#2010B981" BorderThickness="1">
+                 <StackPanel Spacing="6">
+                   <StackPanel Orientation="Horizontal" Spacing="6">
+                     <ic:SymbolIcon Symbol="Info" Foreground="#10B981" FontSize="14"/>
+                     <TextBlock Text="BİLGİ" FontWeight="Bold" Foreground="#10B981" FontSize="11"/>
+                   </StackPanel>
+                   <TextBlock Text="Değişiklikler anlık olarak önizlenebilir. Uygula butonuna basana kadar kaydedilmez." 
+                              FontSize="11" Foreground="#9CA3AF" TextWrapping="Wrap" LineHeight="16"/>
+                 </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+
+      <!-- Preview List -->
+      <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="15" Padding="10" BorderBrush="#22FFFFFF" BorderThickness="1">
+        <DataGrid ItemsSource="{Binding Items}" 
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True" 
+                  GridLinesVisibility="Horizontal"
+                  BorderThickness="0"
+                  Background="Transparent"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto">
+            <DataGrid.Resources>
+                <SolidColorBrush x:Key="DataGridColumnHeaderBackgroundBrush" Color="Transparent" />
+                <StaticResource x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" ResourceKey="PanelBrush" />
+            </DataGrid.Resources>
+            <DataGrid.Styles>
+                <Style Selector="DataGridColumnHeader">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="#9CA3AF"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Setter Property="FontSize" Value="12"/>
+                    <Setter Property="Height" Value="38"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                    <Setter Property="BorderBrush" Value="#15FFFFFF"/>
+                </Style>
+                <Style Selector="DataGridRow">
+                    <Setter Property="Height" Value="42"/>
+                </Style>
+            </DataGrid.Styles>
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Width="45">
+                    <DataGridTemplateColumn.Header>
+                        <CheckBox IsChecked="{Binding IsAllSelected}" HorizontalAlignment="Center" Margin="0"/>
+                    </DataGridTemplateColumn.Header>
+                    <DataTemplate>
+                        <CheckBox IsChecked="{Binding IsSelected}" HorizontalAlignment="Center"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Stok Kodu" Binding="{Binding Stok.StokKodu}" Width="100"/>
+                <DataGridTextColumn Header="Stok Adı" Binding="{Binding Stok.StokAdi}" Width="*"/>
+                <DataGridTextColumn Header="Kategori" Binding="{Binding Stok.Kategori}" Width="130"/>
+                
+                <DataGridTemplateColumn Width="120">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Text="Eski Fiyat" HorizontalAlignment="Right" Margin="0,0,15,0"/>
+                    </DataGridTemplateColumn.Header>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding EskiFiyat, StringFormat={}{0:N2} ₺}" 
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Center" 
+                                 Margin="0,0,15,0" 
+                                 Opacity="0.5"
+                                 FontSize="12"
+                                 FontFamily="Netflix Sans, Inter, Roboto, Segoe UI"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn>
+                
+                <DataGridTemplateColumn Width="120">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Text="Yeni Fiyat" HorizontalAlignment="Right" Margin="0,0,15,0"/>
+                    </DataGridTemplateColumn.Header>
+                    <DataTemplate>
+                        <Border Background="#1010B981" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding YeniFiyat, StringFormat={}{0:N2} ₺}" 
+                                       Foreground="#10B981" 
+                                       FontWeight="Bold" 
+                                       FontSize="12"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Netflix Sans, Inter, Roboto, Segoe UI"/>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

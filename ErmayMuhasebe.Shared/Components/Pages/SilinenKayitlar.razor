@@ -1,0 +1,181 @@
+@page "/silinen-kayitlar"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Error" Class="mb-4">Geri Dönüşüm Kutusu (Silinen Kayıtlar)</MudText>
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+    <MudTabPanel Text="Stok Kartları">
+        <MudTable Items="@silinenStoklar" Hover="true" Dense="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Stok Kodu</MudTh>
+                <MudTh>Stok Adı</MudTh>
+                <MudTh>İşlemler</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Kod">@context.StokKodu</MudTd>
+                <MudTd DataLabel="Ad">@context.StokAdi</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Success" Size="Size.Small" 
+                               OnClick="@(() => RestoreStok(context))" StartIcon="@Icons.Material.Filled.Restore">Geri Yükle</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Cari Kartlar">
+        <MudTable Items="@silinenCariler" Hover="true" Dense="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Cari Kod</MudTh>
+                <MudTh>Ünvan</MudTh>
+                <MudTh>İşlemler</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Kod">@context.CariKod</MudTd>
+                <MudTd DataLabel="Ünvan">@context.Unvan</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Success" Size="Size.Small" 
+                               OnClick="@(() => RestoreCari(context))" StartIcon="@Icons.Material.Filled.Restore">Geri Yükle</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Faturalar">
+        <MudTable Items="@silinenFaturalar" Hover="true" Dense="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Fatura No</MudTh>
+                <MudTh>Cari</MudTh>
+                <MudTh>Tarih</MudTh>
+                <MudTh>Tutar</MudTh>
+                <MudTh>İşlemler</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="No">@context.FaturaNo</MudTd>
+                <MudTd DataLabel="Cari">@context.CariUnvan</MudTd>
+                <MudTd DataLabel="Tarih">@context.Tarih.ToShortDateString()</MudTd>
+                <MudTd DataLabel="Tutar">@context.GenelToplam.ToString("C2")</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Success" Size="Size.Small" 
+                               OnClick="@(() => RestoreFatura(context))" StartIcon="@Icons.Material.Filled.Restore">Geri Yükle</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </MudTabPanel>
+    
+    <MudTabPanel Text="Log Kayıtları">
+         <MudTable Items="@silinenler" Hover="true" Dense="true" Filter="new Func<SilinenKayit,bool>(FilterFunc)">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Silinenler Listesi (Log)</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="searchString" Placeholder="Ara..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Tablo</MudTh>
+                <MudTh>Açıklama</MudTh>
+                <MudTh>Silinme Tarihi</MudTh>
+                <MudTh>İşlemler</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Tablo">@context.TabloAdi</MudTd>
+                <MudTd DataLabel="Açıklama">@context.Aciklama</MudTd>
+                <MudTd DataLabel="Tarih">@context.SilinmeTarihi.ToString("g")</MudTd>
+                <MudTd>
+                     <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="MudBlazor.Color.Info" OnClick="@(() => ShowDetails(context))">Detay</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </MudTabPanel>
+</MudTabs>
+
+
+<MudDialog @bind-Visible="isDetailVisible">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Kayıt Detayı</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField Value="@selectedRecordJson" Label="JSON Verisi" Lines="10" ReadOnly="true" Variant="Variant.Outlined" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => isDetailVisible = false)">Kapat</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<SilinenKayit> silinenler = new();
+    private List<StokKart> silinenStoklar = new();
+    private List<CariKart> silinenCariler = new();
+    private List<Fatura> silinenFaturalar = new();
+
+    private string searchString = "";
+    private bool isDetailVisible;
+    private string selectedRecordJson = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        await LoadSoftDeletedData();
+    }
+
+    private async Task LoadData()
+    {
+        silinenler = await DbService.GetSilinenKayitlarAsync();
+    }
+
+    private async Task LoadSoftDeletedData()
+    {
+        silinenStoklar = await DbService.GetDeletedStokKartsAsync();
+        silinenCariler = await DbService.GetDeletedCariKartsAsync();
+        silinenFaturalar = await DbService.GetDeletedFaturalarAsync();
+    }
+
+    private async Task RestoreStok(StokKart item)
+    {
+        await DbService.RestoreStokKartAsync(item);
+        Snackbar.Add("Stok kartı geri yüklendi.", Severity.Success);
+        await LoadSoftDeletedData();
+    }
+
+    private async Task RestoreCari(CariKart item)
+    {
+        await DbService.RestoreCariKartAsync(item);
+        Snackbar.Add("Cari kart geri yüklendi.", Severity.Success);
+        await LoadSoftDeletedData();
+    }
+
+    private async Task RestoreFatura(Fatura item)
+    {
+        await DbService.RestoreFaturaAsync(item);
+        Snackbar.Add("Fatura geri yüklendi.", Severity.Success);
+        await LoadSoftDeletedData();
+    }
+
+    private bool FilterFunc(SilinenKayit element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.TabloAdi?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.Aciklama?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        return false;
+    }
+    
+    private void ShowDetails(SilinenKayit kayit)
+    {
+        selectedRecordJson = kayit.KayitIcerik ?? "";
+        isDetailVisible = true;
+    }
+}

@@ -1,0 +1,200 @@
+@page "/toplu-fiyat-guncelle"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MiniExcelLibs
+@using System.IO
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IFileService FileService
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Toplu Fiyat Güncelleme Sihirbazı</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudText Typo="Typo.h6" Class="mb-3">Oransal Güncelleme</MudText>
+    <MudGrid>
+        <MudItem xs="12">
+            <MudAlert Severity="Severity.Info">Bu araç ile tüm ürünlerin fiyatlarını yüzde bazlı olarak güncelleyebilirsiniz.</MudAlert>
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudNumericField @bind-Value="yuzde" Label="Değişim Yüzdesi (%)" Variant="Variant.Outlined" 
+                             HelperText="Pozitif değer zam, negatif değer indirim yapar" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string" @bind-Value="fiyatTuru" Label="Fiyat Türü" Variant="Variant.Outlined">
+                <MudSelectItem Value="@("Satis")">Satış Fiyatı</MudSelectItem>
+                <MudSelectItem Value="@("Alis")">Alış Fiyatı</MudSelectItem>
+                <MudSelectItem Value="@("Her ikisi")">Her İkisi</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" 
+                       OnClick="OnayIste" FullWidth="true" Size="Size.Large">
+                Fiyatları Güncelle
+            </MudButton>
+        </MudItem>
+
+        @if(onayBekleniyor)
+        {
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Warning">
+                    <b>DİKKAT!</b> @etkilenenUrunSayisi adet ürünün fiyatı %@yuzde oranında değişecek. Emin misiniz?
+                    <div class="mt-2">
+                        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Success" OnClick="Uygula" Class="mr-2">Evet, Uygula</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="MudBlazor.Color.Default" OnClick="Iptal">İptal</MudButton>
+                    </div>
+                </MudAlert>
+            </MudItem>
+        }
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6" Class="mb-3">Excel ile Güncelleme</MudText>
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Mevcut stok listesini Excel olarak indirip fiyatları düzenledikten sonra geri yükleyerek güncelleyebilirsiniz.
+    </MudAlert>
+    
+    <div class="d-flex gap-4">
+        <MudButton Variant="Variant.Filled" 
+                   Color="MudBlazor.Color.Secondary" 
+                   StartIcon="@Icons.Material.Filled.FileDownload"
+                   OnClick="ExcelDisaAktar">
+            Mevcut Stoğu Excel Olarak İndir
+        </MudButton>
+
+        <MudFileUpload T="IBrowserFile" OnFilesChanged="ExcelIceAktar" Accept=".xlsx">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Filled"
+                           Color="MudBlazor.Color.Info"
+                           StartIcon="@Icons.Material.Filled.FileUpload">
+                    Excel'den Fiyatları Güncelle
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+    </div>
+</MudPaper>
+
+@code {
+    private decimal yuzde = 10;
+    private string fiyatTuru = "Satis";
+    private bool onayBekleniyor = false;
+    private int etkilenenUrunSayisi = 0;
+
+    private async Task OnayIste()
+    {
+        var stoklar = await DbService.GetStoklarAsync();
+        etkilenenUrunSayisi = stoklar.Count;
+        onayBekleniyor = true;
+    }
+
+    private async Task ExcelDisaAktar()
+    {
+        try
+        {
+            var stoklar = await DbService.GetStoklarAsync();
+            var exportList = stoklar.Select(s => new
+            {
+                StokKodu = s.StokKodu,
+                StokAdi = s.StokAdi,
+                AlisFiyati = s.AlisFiyati,
+                SatisFiyati = s.SatisFiyati
+            }).ToList();
+
+            using var memoryStream = new MemoryStream();
+            MiniExcel.SaveAs(memoryStream, exportList);
+            var content = memoryStream.ToArray();
+
+            await FileService.SaveAndOpenFileAsync("Fiyat_Guncelleme_Listesi.xlsx", content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ExcelIceAktar(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            using var stream = file.OpenReadStream(10 * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            var rows = MiniExcel.Query(memoryStream, useHeaderRow: true).ToList();
+            var stoklar = await DbService.GetStoklarAsync();
+            int guncellenenCount = 0;
+
+            foreach (var row in rows)
+            {
+                var r = (IDictionary<string, object>)row;
+                var stokKodu = GetValue(r, "StokKodu");
+                
+                if (string.IsNullOrEmpty(stokKodu)) continue;
+
+                var existing = stoklar.FirstOrDefault(s => s.StokKodu == stokKodu);
+                if (existing != null)
+                {
+                    existing.AlisFiyati = GetDecimal(r, "AlisFiyati");
+                    existing.SatisFiyati = GetDecimal(r, "SatisFiyati");
+                    await DbService.SaveStokAsync(existing);
+                    guncellenenCount++;
+                }
+            }
+
+            Snackbar.Add($"{guncellenenCount} ürünün fiyatı Excel üzerinden güncellendi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string? GetValue(IDictionary<string, object> row, string key)
+    {
+        foreach (var k in row.Keys)
+        {
+            if (string.Equals(k, key, StringComparison.OrdinalIgnoreCase))
+                return row[k]?.ToString();
+        }
+        return null;
+    }
+
+    private decimal GetDecimal(IDictionary<string, object> row, string key)
+    {
+        var val = GetValue(row, key);
+        if (decimal.TryParse(val, out decimal d)) return d;
+        return 0;
+    }
+
+    private async Task Uygula()
+    {
+        var stoklar = await DbService.GetStoklarAsync();
+        decimal carpan = 1 + (yuzde / 100);
+
+        foreach(var stok in stoklar)
+        {
+            if (fiyatTuru == "Satis" || fiyatTuru == "Her ikisi")
+            {
+                stok.SatisFiyati = Math.Round(stok.SatisFiyati * carpan, 2);
+            }
+            if (fiyatTuru == "Alis" || fiyatTuru == "Her ikisi")
+            {
+                stok.AlisFiyati = Math.Round(stok.AlisFiyati * carpan, 2);
+            }
+            await DbService.SaveStokAsync(stok);
+        }
+
+        Snackbar.Add($"{etkilenenUrunSayisi} ürünün fiyatı güncellendi!", Severity.Success);
+        onayBekleniyor = false;
+    }
+
+    private void Iptal()
+    {
+        onayBekleniyor = false;
+    }
+}

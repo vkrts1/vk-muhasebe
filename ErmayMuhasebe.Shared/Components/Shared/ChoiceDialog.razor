@@ -1,0 +1,41 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudText Class="mb-4">@Message</MudText>
+        
+        <MudRadioGroup @bind-Value="selectedOption">
+            @foreach (var option in Options)
+            {
+                <MudRadio Value="@option" Color="Color.Primary">
+                    <MudText Typo="Typo.body1">@option</MudText>
+                </MudRadio>
+            }
+        </MudRadioGroup>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default">İptal</MudButton>
+        <MudButton OnClick="Submit" Color="Color.Primary" Variant="Variant.Filled" Disabled="@(string.IsNullOrEmpty(selectedOption))">Onayla</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public List<string> Options { get; set; } = new();
+
+    private string selectedOption = "";
+
+    protected override void OnInitialized()
+    {
+        // İlk seçeneği varsayılan olarak seç
+        if (Options.Count > 0)
+        {
+            selectedOption = Options[0];
+        }
+    }
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(selectedOption));
+    void Cancel() => MudDialog.Cancel();
+}

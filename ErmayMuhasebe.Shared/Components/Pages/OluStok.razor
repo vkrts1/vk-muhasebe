@@ -1,0 +1,99 @@
+@page "/olu-stok"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<div>
+
+    <div class="d-flex align-center justify-space-between mb-4">
+        <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary">Ölü Stok Raporu</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+            @if(oluStoklar.Any())
+            {
+                 <MudButton Variant="Variant.Outlined" Color="MudBlazor.Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                    Yazdır / PDF
+                </MudButton>
+            }
+        </MudStack>
+    </div>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudNumericField @bind-Value="gunSayisi" Label="Hareketsizlik Süresi (Gün)" Variant="Variant.Outlined" Min="30" Max="365" />
+    <div class="d-flex gap-2 mt-2">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="LoadData">
+            Raporu Oluştur
+        </MudButton>
+    </div>
+</MudPaper>
+
+@if(oluStoklar.Any())
+{
+    <MudTable Items="@oluStoklar" Hover="true">
+        <HeaderContent>
+            <MudTh>Stok Kodu</MudTh>
+            <MudTh>Stok Adı</MudTh>
+            <MudTh>Kategori</MudTh>
+            <MudTh>Miktar</MudTh>
+            <MudTh>Değer</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.StokKodu</MudTd>
+            <MudTd>@context.StokAdi</MudTd>
+            <MudTd>@context.Kategori</MudTd>
+            <MudTd>@context.Miktar</MudTd>
+            <MudTd>@((context.Miktar * (double)context.AlisFiyati).ToString("C2"))</MudTd>
+        </RowTemplate>
+    </MudTable>
+    
+    <MudAlert Severity="Severity.Warning" Class="mt-4">
+        Toplam @oluStoklar.Count adet ölü stok bulundu. 
+        Toplam Değer: @toplamDeger.ToString("C2")
+    </MudAlert>
+}
+
+@code {
+    private int gunSayisi = 180;
+    private List<StokKart> oluStoklar = new();
+    private decimal toplamDeger = 0;
+
+    private async Task LoadData()
+    {
+        // DB servisi üzerinden hareketsiz stokları getir
+        oluStoklar = await DbService.GetOluStoklarAsync(gunSayisi);
+            
+        toplamDeger = oluStoklar.Sum(s => (decimal)s.Miktar * s.AlisFiyati);
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Stok Kodu", "Stok Adı", "Kategori", "Miktar", "Değer" };
+            var rows = oluStoklar.Select(s => new[] 
+            { 
+                s.StokKodu ?? "",
+                s.StokAdi ?? "",
+                s.Kategori ?? "",
+                s.Miktar.ToString(),
+                (s.Miktar * (double)s.AlisFiyati).ToString("C2")
+            }).ToList();
+            
+            rows.Add(new[] { "", "TOPLAM DEĞER", "", "", toplamDeger.ToString("C2") });
+
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Ölü Stok Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("OluStokRaporu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+    
+}
+</div>

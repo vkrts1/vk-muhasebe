@@ -1,0 +1,179 @@
+@page "/yil-secimi"
+@using ErmayMuhasebe.Shared.ViewModels
+@inject YearSelectionViewModel ViewModel
+@inject NavigationManager NavigationManager
+
+<div class="year-selection-page fade-in">
+
+    <div class="selection-container">
+        <!-- Header Section -->
+        <div class="header-box mb-10">
+            <div class="icon-circle mb-6">
+                <MudIcon Icon="@Icons.Material.Filled.History" Style="font-size: 64px; color: #3B82F6;" />
+            </div>
+            <h1 class="display-title">Çalışma Yılı Seçimi</h1>
+            <p class="subtitle">Devam etmek için aşağıdaki listeden bir mali yıl seçiniz.</p>
+        </div>
+
+        <!-- Year List Card -->
+        <div class="glass-card mb-10">
+            <div class="year-list">
+                @foreach (var year in ViewModel.Years)
+                {
+                    <div class="year-item @(ViewModel.SelectedYear == year ? "selected" : "")" @onclick="() => ViewModel.SelectedYear = year">
+                        <div class="d-flex align-center gap-6">
+                            <div class="calendar-icon-box">
+                                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" />
+                            </div>
+                            <span class="year-text">@year</span>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="chevron" />
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Action Section -->
+        <div class="action-box">
+            <MudButton Variant="Variant.Filled" 
+                       Class="start-btn" 
+                       OnClick="HandleSelectYear"
+                       Disabled="@(ViewModel.SelectedYear == null || ViewModel.IsBusy)">
+                @if (ViewModel.IsBusy)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-3" />
+                }
+                UYGULAMAYI BAŞLAT
+            </MudButton>
+            <p class="note-text mt-4">Yeni yıl devir işlemleri Ayarlar menüsü altından yönetilebilir.</p>
+        </div>
+    </div>
+</div>
+
+@if (ViewModel.IsBusy)
+{
+    <div class="loading-overlay">
+        <div class="loader-content">
+            <MudProgressLinear Color="Color.Info" Indeterminate="true" Class="mb-4" />
+            <span class="status-msg">@ViewModel.StatusMessage</span>
+        </div>
+    </div>
+}
+
+@code {
+    private async Task HandleSelectYear()
+    {
+        await ViewModel.SelectYearAsync();
+        NavigationManager.NavigateTo("/");
+    }
+
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+    }
+}
+
+<style>
+    .year-selection-page {
+        min-height: 100vh;
+        background: #0B0F1A;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
+    }
+
+
+
+    .selection-container {
+        width: 100%;
+        max-width: 550px;
+        position: relative;
+        z-index: 1;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .icon-circle {
+        width: 120px;
+        height: 120px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .display-title { font-size: 38px; font-weight: 950; color: white; letter-spacing: -1px; margin-bottom: 8px; }
+    .subtitle { color: rgba(255,255,255,0.5); font-size: 16px; font-weight: 500; }
+
+    .glass-card {
+        background: rgba(23, 28, 41, 0.7);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 30px;
+        padding: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .year-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .year-item {
+        padding: 20px 25px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+    }
+
+    .year-item:hover { background: rgba(59, 130, 246, 0.08); }
+    
+    .year-item.selected {
+        background: #3B82F6;
+        border-color: #60A5FA;
+        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+    }
+
+    .calendar-icon-box {
+        color: #3B82F6;
+        transition: color 0.3s;
+    }
+    .selected .calendar-icon-box { color: white; }
+
+    .year-text { font-size: 26px; font-weight: 900; color: white; }
+    .chevron { opacity: 0.2; color: white; }
+    .selected .chevron { opacity: 0.8; }
+
+    .start-btn {
+        height: 65px;
+        background: #2563EB !important;
+        border-radius: 20px !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        letter-spacing: 1px !important;
+        transition: transform 0.2s !important;
+    }
+    .start-btn:hover { transform: scale(1.02); background: #3B82F6 !important; }
+
+    .note-text { color: rgba(255,255,255,0.3); font-size: 12px; }
+
+    .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(11, 15, 26, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+    }
+
+    .loader-content { width: 300px; text-align: center; }
+    .status-msg { color: white; font-weight: 700; font-size: 14px; }
+</style>

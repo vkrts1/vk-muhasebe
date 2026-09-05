@@ -1,0 +1,73 @@
+@page "/portfoy-detay/{Id:int}"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4 mt-4">
+    <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Class="mb-4">Portföy Listesine Geri Dön</MudButton>
+
+    @if (portfoy != null)
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="3">
+            <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-1">@portfoy.FirmaIsmi</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">Sektör: @(string.IsNullOrEmpty(portfoy.Sektor) ? "-" : portfoy.Sektor)</MudText>
+            
+            <MudDivider Class="my-3"/>
+            
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                     <MudText Typo="Typo.body1"><strong>İl:</strong> @(string.IsNullOrEmpty(portfoy.Il) ? "-" : portfoy.Il)</MudText>
+                </MudItem>
+                 <MudItem xs="12" sm="6" Class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-align: right;">
+                        Kayıt Tarihi: @portfoy.KayitTarihi.ToString("d MMMM yyyy, HH:mm") <br/>
+                        Son Güncelleme: @portfoy.SonGuncelleme.ToString("d MMMM yyyy, HH:mm")
+                    </MudText>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Elevation="3">
+            <MudText Typo="Typo.h6" Class="mb-2">Notlar</MudText>
+            <MudText Typo="Typo.caption" Class="mb-4 d-block">Bu portföy kaydıyla ilgili özel notlarınızı buraya ekleyebilirsiniz.</MudText>
+            
+            <MudTextField @bind-Value="portfoy.Notlar" Label="Notlarınız" Variant="Variant.Outlined" Lines="5" Class="mb-3" Placeholder="Bu firma veya kişi hakkında notlar..." />
+            
+            <div class="d-flex justify-end">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveNotes">Notları Kaydet</MudButton>
+            </div>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private PortfoyKart portfoy = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await DbService.GetPortfoyAsync(Id);
+        if (result == null)
+        {
+            Snackbar.Add("Kayıt bulunamadı", Severity.Error);
+            NavManager.NavigateTo("/portfoy");
+        }
+        else
+        {
+            portfoy = result;
+        }
+    }
+
+    private async Task SaveNotes()
+    {
+        await DbService.SavePortfoyAsync(portfoy);
+        Snackbar.Add("Notlar kaydedildi", Severity.Success);
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/portfoy");
+    }
+}

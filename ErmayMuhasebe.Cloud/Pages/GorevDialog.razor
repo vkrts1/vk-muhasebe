@@ -1,0 +1,95 @@
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+            @(_model.Id == 0 ? "Yeni Görev" : "Görevi Düzenle")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_model.Baslik" Label="Başlık" Variant="Variant.Outlined" Required="true" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_model.Aciklama" Label="Açıklama" Variant="Variant.Outlined" Lines="3" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudDatePicker @bind-Date="_modelSonTarih" Label="Son Tarih" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudSelect @bind-Value="_model.Oncelik" Label="Öncelik" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
+                    <MudSelectItem Value="@("Düşük")">Düşük</MudSelectItem>
+                    <MudSelectItem Value="@("Orta")">Orta</MudSelectItem>
+                    <MudSelectItem Value="@("Yüksek")">Yüksek</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                 <MudSelect @bind-Value="_model.Durum" Label="Durum" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
+                    <MudSelectItem Value="@("Bekliyor")">Bekliyor</MudSelectItem>
+                    <MudSelectItem Value="@("Devam Ediyor")">Devam Ediyor</MudSelectItem>
+                    <MudSelectItem Value="@("Tamamlandı")">Tamamlandı</MudSelectItem>
+                    <MudSelectItem Value="@("Ertelendi")">Ertelendi</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Vazgeç</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Gorev Model { get; set; } = new();
+
+    private Gorev _model = new();
+    private DateTime? _modelSonTarih;
+
+    protected override void OnInitialized()
+    {
+        if (Model.Id != 0)
+        {
+            _model = new Gorev
+            {
+                Id = Model.Id,
+                Baslik = Model.Baslik,
+                Aciklama = Model.Aciklama,
+                Oncelik = Model.Oncelik,
+                Durum = Model.Durum,
+                SonTarih = Model.SonTarih,
+                OlusturmaTarihi = Model.OlusturmaTarihi,
+                AtananPersonelId = Model.AtananPersonelId
+            };
+            _modelSonTarih = _model.SonTarih;
+        }
+        else
+        {
+            _model.Oncelik = "Orta";
+            _model.Durum = "Bekliyor";
+            _modelSonTarih = DateTime.Now.AddDays(1);
+        }
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Baslik))
+        {
+            Snackbar.Add("Başlık alanı zorunludur.", Severity.Warning);
+            return;
+        }
+
+        _model.SonTarih = _modelSonTarih ?? DateTime.Now;
+        await DbService.SaveGorevAsync(_model);
+        Snackbar.Add("Görev kaydedildi.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -1,0 +1,96 @@
+@page "/satis-fatura-dokumu"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+    <div class="d-flex align-center justify-space-between mb-4">
+        <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary">Satış Faturası Dökümü</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+            @if(faturalar != null && faturalar.Any())
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                    Yazdır / PDF
+                </MudButton>
+            }
+        </MudStack>
+    </div>
+
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudDatePicker Label="Başlangıç" @bind-Date="baslangic" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudDatePicker Label="Bitiş" @bind-Date="bitis" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex align-center">
+                <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="LoadData">Listele</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if(faturalar != null)
+    {
+        <MudTable Items="@faturalar" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Tarih</MudTh>
+                <MudTh>Fatura No</MudTh>
+                <MudTh>Müşteri</MudTh>
+                <MudTh Style="text-align:right">Tutar</MudTh>
+                <MudTh>Açıklama</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Tarih.ToShortDateString()</MudTd>
+                <MudTd>@context.FaturaNo</MudTd>
+                <MudTd>@context.CariUnvan</MudTd>
+                <MudTd Style="text-align:right">@context.GenelToplam.ToString("C2")</MudTd>
+                <MudTd>@context.Aciklama</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+
+    @code {
+        private DateTime? baslangic = DateTime.Now.AddDays(-30);
+        private DateTime? bitis = DateTime.Now;
+        private List<Fatura>? faturalar;
+
+        private async Task LoadData()
+        {
+            var hepsi = await DbService.GetFaturalarAsync();
+            faturalar = hepsi.Where(f => (f.Tur == "Satis" || f.Tur == "Satış") && 
+                                       f.Tarih.Date >= (baslangic?.Date ?? DateTime.MinValue) && 
+                                       f.Tarih.Date <= (bitis?.Date ?? DateTime.MaxValue))
+                            .OrderByDescending(f => f.Tarih)
+                            .ToList();
+        }
+
+        private async Task PrintReport()
+        {
+            if (faturalar == null || !faturalar.Any()) return;
+            try
+            {
+                var headers = new[] { "Tarih", "Fatura No", "Müşteri", "Tutar", "Açıklama" };
+                var rows = faturalar.Select(f => new string[] 
+                { 
+                    f.Tarih.ToShortDateString(), 
+                    f.FaturaNo ?? "", 
+                    f.CariUnvan ?? "", 
+                    f.GenelToplam.ToString("C2"), 
+                    f.Aciklama ?? ""
+                }).ToList();
+                
+                var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Satış Faturası Dökümü", headers, rows);
+                await FileService.SaveAndOpenFileAsync("SatisFaturaDokumu.pdf", pdf, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+            }
+        }
+    }

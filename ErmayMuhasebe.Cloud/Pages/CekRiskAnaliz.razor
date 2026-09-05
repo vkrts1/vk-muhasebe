@@ -1,0 +1,191 @@
+@page "/cek-risk-analiz"
+@using MudBlazor
+@using ErmayMuhasebe.Shared.ViewModels
+@inject CekRiskAnalizViewModel ViewModel
+@inject ISnackbar Snackbar
+
+<div class="risk-analiz-page">
+    <div class="premium-header">
+        <div class="header-left">
+            <div class="icon-box red">
+                <MudIcon Icon="@Icons.Material.Filled.Security" Style="font-size: 28px; color: #EF4444;" />
+            </div>
+            <div class="header-text">
+                <h1 class="main-title">Çek & Cari Risk Analizi</h1>
+                <p class="subtitle">Yatırım ve tahsilat güvenliği için akıllı analiz motoru</p>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button class="action-btn-outline" @onclick="ViewModel.LoadDataAsync">
+                <MudIcon Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Class="mr-2" />
+                Analizi Yenile
+            </button>
+            <button class="action-btn-filled success" @onclick="ViewModel.DownloadRaporAsync">
+                <MudIcon Icon="@Icons.Material.Filled.Download" Size="Size.Small" Class="mr-2" />
+                Raporu İndir
+            </button>
+        </div>
+    </div>
+
+    <div class="risk-summary-row row g-4 mb-6">
+        <div class="col-lg-4">
+            <div class="summary-card">
+                <div class="card-content">
+                    <span class="label">GENEL RİSK PUANI</span>
+                    <div class="value-row">
+                        <span class="value">@ViewModel.GenelRiskPuani.ToString("N1")</span>
+                        <div class="puan-indicator" style="background: @(ViewModel.GenelRiskPuani > 70 ? "#10B981" : ViewModel.GenelRiskPuani > 40 ? "#F59E0B" : "#EF4444")"></div>
+                    </div>
+                    <p class="description">Portföyünüzün toplam güven endeksi</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="summary-card info">
+                <div class="card-content">
+                    <span class="label">SİSTEM ANALİZ SONUCU</span>
+                    <div class="analysis-txt">@ViewModel.AnalizOzeti</div>
+                </div>
+                <div class="glow-effect"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="risk-table-card">
+        <div class="card-header">
+            <h3 class="card-title">Cari Bazlı Risk Detayları</h3>
+        </div>
+        <div class="table-container">
+            <table class="risk-table">
+                <thead>
+                    <tr>
+                        <th>CARİ ÜNVAN</th>
+                        <th>RİSK SKORU</th>
+                        <th>DURUM</th>
+                        <th>PUAN GÖSTERGESİ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in ViewModel.RiskListesi)
+                    {
+                        <tr>
+                            <td class="td-unvan">@item.CariUnvan</td>
+                            <td class="td-puan">@item.Puan.ToString("N1")</td>
+                            <td>
+                                <span class="status-badge" style="background: @(item.Renk + "15"); color: @item.Renk; border: 1px solid @(item.Renk + "30");">
+                                    @item.Durum
+                                </span>
+                            </td>
+                            <td>
+                                <div class="progress-container">
+                                    <div class="progress-bar" style="width: @item.Puan%; background: @item.Renk"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .risk-analiz-page {
+        padding: 30px;
+        background: #080A0C;
+        min-height: 100vh;
+        color: white;
+    }
+
+    .premium-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    
+    .icon-box {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .icon-box.red { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+    .main-title { font-size: 26px; font-weight: 800; margin: 0; }
+    .subtitle { font-size: 14px; color: #94A3B8; margin: 4px 0 0 0; }
+
+    .header-right { display: flex; gap: 12px; }
+
+    .action-btn-outline {
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .action-btn-outline:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
+
+    .action-btn-filled {
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+    }
+    .action-btn-filled.success { background: #10B981; color: white; }
+
+    /* Summary Cards */
+    .summary-card {
+        background: #111418;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 20px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+    .summary-card.info { background: linear-gradient(135deg, #111418 0%, #161B22 100%); }
+
+    .summary-card .label { font-size: 11px; font-weight: 700; color: #64748B; letter-spacing: 1px; }
+    .value-row { display: flex; align-items: center; gap: 15px; margin-top: 8px; }
+    .value { font-size: 32px; font-weight: 900; }
+    .puan-indicator { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 15px currentColor; }
+    .analysis-txt { font-size: 18px; font-weight: 600; margin-top: 10px; color: #E2E8F0; }
+
+    /* Table */
+    .risk-table-card {
+        background: #111418;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    .card-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .card-title { font-size: 16px; font-weight: 700; margin: 0; }
+
+    .risk-table { width: 100%; border-collapse: collapse; }
+    .risk-table th {
+        background: #0F1216; padding: 16px 24px; text-align: left;
+        font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;
+    }
+    .risk-table td { padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+    
+    .td-unvan { font-weight: 700; color: white; }
+    .td-puan { font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+
+    .status-badge {
+        padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 800;
+    }
+
+    .progress-container { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 3px; }
+</style>

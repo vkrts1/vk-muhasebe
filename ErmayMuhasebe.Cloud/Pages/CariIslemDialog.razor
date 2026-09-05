@@ -1,0 +1,236 @@
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudDialog ActionsClass="dialog-actions-custom" ContentClass="dialog-content-custom">
+    <TitleContent>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 20px 24px; background: #1a1a1a; margin: -24px -24px 0 -24px;">
+            <MudText Typo="Typo.h6" Style="color: white; font-weight: 600;">
+                @(InitialType == "Tahsilat" ? "Tahsilat İşlemi" : "Ödeme İşlemi") - @CariUnvan
+            </MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="Cancel" Style="color: rgba(255,255,255,0.7);" />
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid Spacing="3" Style="margin-top: 12px;">
+            <MudItem xs="12">
+                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5); margin-bottom: 8px; display: block;">İşlem Yöntemi</MudText>
+                <MudSelect T="string" 
+                           @bind-Value="_islemYontemi" 
+                           Variant="Variant.Filled" 
+                           Style="background: #2a2a2a; border-radius: 8px;"
+                           AnchorOrigin="Origin.BottomCenter"
+                           TransformOrigin="Origin.TopCenter"
+                           Class="custom-select">
+                    <MudSelectItem Value="@("Nakit")">Nakit</MudSelectItem>
+                    <MudSelectItem Value="@("Kredi Kartı")">Kredi Kartı</MudSelectItem>
+                    <MudSelectItem Value="@("Havale/EFT")">Havale/EFT</MudSelectItem>
+                    <MudSelectItem Value="@("Çek")">Çek</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            
+            <MudItem xs="6">
+                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5); margin-bottom: 8px; display: block;">İşlem Tarihi</MudText>
+                <MudDatePicker @bind-Date="_islemTarihi" 
+                               Variant="Variant.Filled" 
+                               DateFormat="dd.MM.yyyy"
+                               Style="background: #2a2a2a; border-radius: 8px;"
+                               Class="custom-datepicker" />
+            </MudItem>
+            
+            <MudItem xs="6">
+                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5); margin-bottom: 8px; display: block;">Tutar</MudText>
+                <MudNumericField @bind-Value="Tutar" 
+                                 Variant="Variant.Filled" 
+                                 HideSpinButtons="true"
+                                 Style="background: #2a2a2a; border-radius: 8px;"
+                                 Class="custom-numeric" />
+            </MudItem>
+            
+            <MudItem xs="12">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5); display: block;">Açıklama</MudText>
+                    <MudCheckBox @bind-Value="_acilisFisi" 
+                                Color="Color.Info" 
+                                Dense="true"
+                                Size="Size.Small"
+                                UnCheckedColor="Color.Default">
+                         <span style="color: #4a9eff; font-size: 14px; font-weight: 500;">Açılış Fişi (Devir)</span>
+                    </MudCheckBox>
+                </div>
+            </MudItem>
+            
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Model.Aciklama" 
+                              Variant="Variant.Filled" 
+                              Lines="3"
+                              Placeholder="İşlem hakkında kısa bir açıklama..."
+                              Style="background: #2a2a2a; border-radius: 8px;"
+                              Class="custom-textarea" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <div style="display: flex; gap: 12px; width: 100%; padding: 8px 24px 24px 24px;">
+            <MudButton OnClick="Cancel" 
+                       Variant="Variant.Filled"
+                       Style="flex: 1; background: #3a3a3a; color: white; border-radius: 12px; padding: 12px; text-transform: none; font-size: 15px;">
+                Vazgeç
+            </MudButton>
+            <MudButton OnClick="Submit" 
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Check"
+                       Style="flex: 1; background: #166534; color: white; border-radius: 12px; padding: 12px; text-transform: none; font-size: 15px; font-weight: 600;">
+                KAYDET
+            </MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .custom-select .mud-input-slot,
+    .custom-datepicker .mud-input-slot,
+    .custom-numeric .mud-input-slot,
+    .custom-textarea .mud-input-slot {
+        color: white !important;
+        font-size: 14px !important;
+    }
+    
+    .custom-select .mud-select,
+    .custom-datepicker .mud-input,
+    .custom-numeric .mud-input,
+    .custom-textarea .mud-input {
+        color: white !important;
+    }
+    
+    .mud-dialog {
+        background: #1a1a1c !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .dialog-content-custom {
+        background: #1a1a1c !important;
+        color: white !important;
+    }
+    
+    .mud-picker-calendar-header-switch,
+    .mud-picker-calendar-header button,
+    .mud-picker-calendar-day,
+    .mud-picker-month,
+    .mud-picker-year {
+        color: white !important;
+    }
+    
+    .mud-picker-calendar-container {
+        background: #2a2a2a !important;
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int CariId { get; set; }
+    [Parameter] public string CariUnvan { get; set; } = "";
+    [Parameter] public string InitialType { get; set; } = "Tahsilat";
+
+    private CariHareket Model = new CariHareket();
+    private decimal Tutar = 0;
+    private DateTime? _islemTarihi = DateTime.Now;
+    private string _islemYontemi = "Nakit";
+    private bool _acilisFisi = false;
+
+    protected override void OnInitialized()
+    {
+        Model.CariId = CariId;
+        Model.IslemTuru = InitialType;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        if (Tutar <= 0)
+        {
+            Snackbar.Add("Lütfen geçerli bir tutar giriniz.", Severity.Warning);
+            return;
+        }
+
+        // RISK LIMIT CHECK
+        var freshCari = await DbService.GetCariAsync(CariId);
+        if (freshCari != null && (freshCari.RiskTakibiYapilsin || freshCari.FaturadaRiskKontrolu) && freshCari.RiskLimiti > 0)
+        {
+            decimal currentBalance = freshCari.Borc - freshCari.Alacak;
+            decimal impact = (InitialType == "Tahsilat" || InitialType == "Alacaklandir") ? -Tutar : Tutar;
+            decimal projected = currentBalance + impact;
+            
+            bool isSupplier = (freshCari.Tur ?? "").Contains("Sat", StringComparison.OrdinalIgnoreCase) || 
+                             (freshCari.Tur ?? "").Contains("Tedar", StringComparison.OrdinalIgnoreCase);
+
+            bool isLimitExceeded = false;
+            bool isRiskReducing = false;
+
+            if (!isSupplier)
+            {
+                if (projected > freshCari.RiskLimiti) isLimitExceeded = true;
+                if (impact < 0) isRiskReducing = true; // Tahsilat reduces customer debt
+            }
+            else
+            {
+                if ((-projected) > freshCari.RiskLimiti) isLimitExceeded = true;
+                if (impact > 0) isRiskReducing = true; // Payment reduces supplier debt (what we owe)
+            }
+
+            if (isLimitExceeded && !isRiskReducing)
+            {
+                if (freshCari.FaturadaRiskKontrolu)
+                {
+                    Snackbar.Add($"RİSK LİMİTİ AŞILDI! İşlem engellendi.\nLimit: {freshCari.RiskLimiti:N2}, Tahmin: {(isSupplier ? -projected : projected):N2}", Severity.Error);
+                    return;
+                }
+                else if (freshCari.RiskTakibiYapilsin)
+                {
+                    Snackbar.Add($"DİKKAT: Risk limiti aşıldı! (Limit: {freshCari.RiskLimiti:N2})", Severity.Warning);
+                }
+            }
+        }
+
+
+        Model.Tarih = _islemTarihi ?? DateTime.Now;
+        
+        // İşlem detayları
+        if (_acilisFisi)
+        {
+            Model.IslemTuru = "Açılış Fişi";
+            Model.Aciklama = string.IsNullOrEmpty(Model.Aciklama) ? "Açılış/Devir Kaydı" : $"DEVİR - {Model.Aciklama}";
+        }
+        else
+        {
+            string abbr = _islemYontemi switch {
+                "Kredi Kartı" => "KK",
+                "Havale/EFT" => "EFT",
+                "Havale / EFT" => "EFT",
+                _ => _islemYontemi
+            };
+            Model.IslemTuru = $"{InitialType} ({abbr})";
+            Model.Aciklama = string.IsNullOrEmpty(Model.Aciklama) ? $"{_islemYontemi} İşlemi" : $"{_islemYontemi} - {Model.Aciklama}";
+        }
+
+        if (InitialType == "Tahsilat" || InitialType == "Alacaklandir")
+        {
+            Model.Alacak = Tutar;
+            Model.Borc = 0;
+        }
+        else
+        {
+            Model.Borc = Tutar;
+            Model.Alacak = 0;
+        }
+
+        await DbService.SaveCariHareketAsync(Model);
+        Snackbar.Add($"{InitialType} işlemi başarıyla kaydedildi.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

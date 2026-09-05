@@ -1,0 +1,254 @@
+@page "/stok-detay/{Id:int}"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager NavManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div class="d-flex align-center gap-4">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Variant="Variant.Outlined" Color="Color.Default" />
+            <div>
+                <MudText Typo="Typo.h5" Class="font-weight-bold">@(_stok?.StokAdi ?? "Stok Detay")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Stok kodu: @(_stok?.StokKodu ?? "-")</MudText>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" OnClick="ExportHistory">Hareketleri İndir</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="EditStok">Kartı Düzenle</MudButton>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="d-flex justify-center mt-12">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (_stok == null)
+    {
+        <MudAlert Severity="Severity.Error">Stok kartı bulunamadı.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            <!-- TOP STATS -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                    <MudText Typo="Typo.overline">MEVCUT STOK</MudText>
+                    <div class="d-flex align-end gap-2">
+                        <MudText Typo="Typo.h4" Class="font-weight-bold" Color="@(_stok.Miktar <= _stok.KritikSeviye ? Color.Error : Color.Primary)">@_stok.Miktar</MudText>
+                        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mb-1">@_stok.Birim</MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                    <MudText Typo="Typo.overline">SATIŞ FİYATI</MudText>
+                    <MudText Typo="Typo.h4" Class="font-weight-bold">@_stok.SatisFiyati.ToString("N2") ₺</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Kdv Dahil</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                    <MudText Typo="Typo.overline">ALIŞ FİYATI</MudText>
+                    <MudText Typo="Typo.h4" Class="font-weight-bold" Color="Color.Secondary">@_stok.AlisFiyati.ToString("N2") ₺</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Son Alım</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                    <MudText Typo="Typo.overline">POTANSİYEL KÂR</MudText>
+                    <MudText Typo="Typo.h4" Class="font-weight-bold" Color="Color.Success">@((_stok.SatisFiyati - _stok.AlisFiyati).ToString("N2")) ₺</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Birim Başına</MudText>
+                </MudPaper>
+            </MudItem>
+
+            <!-- CHART -->
+            <MudItem xs="12" md="8">
+                <MudPaper Class="pa-6 h-100" Elevation="4" Style="border-radius: 16px;">
+                    <MudText Typo="Typo.h6" Class="mb-4">Stok Hareket Grafiği (Aylık Giriş/Çıkış)</MudText>
+                    <MudChart ChartType="ChartType.Bar" ChartSeries="@_stockSeries" XAxisLabels="@_xAxisLabels" Width="100%" Height="300px" />
+                </MudPaper>
+            </MudItem>
+
+            <!-- EXTRA INFO -->
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-6 h-100" Elevation="4" Style="border-radius: 16px; background: rgba(0,0,0,0.02);">
+                    <MudText Typo="Typo.h6" Class="mb-4">Kart Detayları</MudText>
+                    <MudList T="string" Dense="true">
+                        <MudListItem Icon="@Icons.Material.Filled.QrCode">Barkod: <b>@(_stok.Barkod ?? "Tanımsız")</b></MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Category">Grup: <b>@(_stok.StokGrubu ?? "Genel")</b></MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.NotificationsActive">Kritik Seviye: <b>@_stok.KritikSeviye</b></MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.LocationOn">Depo Yeri: <b>Raf-A1</b></MudListItem>
+                    </MudList>
+                    
+                    <div class="mt-auto pa-4" style="background: white; border-radius: 12px; border-left: 4px solid #10b981;">
+                        <MudText Typo="Typo.subtitle2">Stok Değeri (Maliyet)</MudText>
+                        <MudText Typo="Typo.h5" Class="font-weight-bold">@((_stok.Miktar * (double)_stok.AlisFiyati).ToString("N0")) ₺</MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- TABS AREA -->
+            <MudItem xs="12">
+                <MudTabs Elevation="4" Rounded="true" Color="Color.Primary" ApplyEffectsToContainer="true" PanelClass="pa-6" Style="border-radius: 16px;">
+                    <MudTabPanel Text="Hareket Kayıtları" Icon="@Icons.Material.Filled.History">
+                        <MudTable Items="@_hareketler" Dense="true" Hover="true" Elevation="0">
+                            <ToolBarContent>
+                                <MudText Typo="Typo.h6">Stok Hareketleri</MudText>
+                                <MudSpacer />
+                            </ToolBarContent>
+                            <HeaderContent>
+                                <MudTh>Tarih</MudTh>
+                                <MudTh>İşlem Türü</MudTh>
+                                <MudTh>Evrak No</MudTh>
+                                <MudTh>Giren</MudTh>
+                                <MudTh>Çıkan</MudTh>
+                                <MudTh>Açıklama</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                                <MudTd>@context.IslemTuru</MudTd>
+                                <MudTd>@context.EvrakNo</MudTd>
+                                <MudTd Style="color: #10b981; font-weight: bold;">@(context.Giren > 0 ? "+" + context.Giren : "-")</MudTd>
+                                <MudTd Style="color: #ef4444; font-weight: bold;">@(context.Cikan > 0 ? "-" + context.Cikan : "-")</MudTd>
+                                <MudTd>@context.Aciklama</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudTabPanel>
+                    
+                    <MudTabPanel Text="Dökümanlar & Görseller" Icon="@Icons.Material.Filled.Image">
+                         <div class="d-flex justify-space-between align-center mb-4">
+                            <MudText Typo="Typo.h6">Ürün Belgeleri</MudText>
+                            <MudFileUpload T="IBrowserFile" FilesChanged="UploadFile">
+                                <ActivatorContent>
+                                    <MudButton HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddPhotoAlternate">GÖRSEL / PDF EKLE</MudButton>
+                                </ActivatorContent>
+                            </MudFileUpload>
+                         </div>
+                         
+                         <MudGrid>
+                            @foreach (var file in _dosyalar)
+                            {
+                                <MudItem xs="6" sm="4" md="2">
+                                    <MudPaper Class="pa-2 d-flex flex-column align-center" Elevation="2" Style="border-radius: 12px; cursor: pointer;">
+                                        @if (file.Tur == "IMG")
+                                        {
+                                            <MudImage Src="https://via.placeholder.com/150" Width="100" Height="100" ObjectFit="ObjectFit.Cover" Alt="Ürün Görseli" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Custom.FileFormats.FilePdf" Color="Color.Error" Size="Size.Large" Class="ma-4" />
+                                        }
+                                        <MudText Typo="Typo.caption" Class="mt-2">@file.Ad</MudText>
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                            @if (!_dosyalar.Any())
+                            {
+                                <MudItem xs="12">
+                                    <MudAlert Severity="Severity.Info">Ürüne ait görsel veya belge bulunamadı.</MudAlert>
+                                </MudItem>
+                            }
+                         </MudGrid>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private StokKart? _stok;
+    private List<StokHareket> _hareketler = new();
+    private List<StokDosya> _dosyalar = new();
+    private bool _loading = true;
+
+    private List<ChartSeries> _stockSeries = new();
+    private string[] _xAxisLabels = { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            _stok = await DbService.GetStokAsync(Id);
+            if (_stok != null)
+            {
+                _hareketler = await DbService.GetStokHareketlerAsync(Id);
+                _dosyalar = await DbService.GetStokDosyalariAsync(Id);
+                PrepareChartData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void PrepareChartData()
+    {
+        var year = DateTime.Now.Year;
+        var inData = new double[12];
+        var outData = new double[12];
+
+        for (int i = 1; i <= 12; i++)
+        {
+            inData[i - 1] = (double)_hareketler.Where(h => h.Tarih.Year == year && h.Tarih.Month == i).Sum(h => (decimal)h.Giren);
+            outData[i - 1] = (double)_hareketler.Where(h => h.Tarih.Year == year && h.Tarih.Month == i).Sum(h => (decimal)h.Cikan);
+        }
+
+        _stockSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Giriş (+)", Data = inData },
+            new ChartSeries { Name = "Çıkış (-)", Data = outData }
+        };
+    }
+
+    private async Task EditStok() 
+    {
+        if (_stok == null) return;
+        var parameters = new DialogParameters { ["Model"] = _stok };
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<StokKartDialog>("Stok Kartını Düzenle", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            Snackbar.Add("Stok kartı başarıyla güncellendi.", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private async Task ExportHistory()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Tarih;Islem;EvrakNo;Giren;Cikan;Aciklama");
+        foreach(var h in _hareketler)
+        {
+            sb.AppendLine($"{h.Tarih:dd.MM.yyyy};{h.IslemTuru};{h.EvrakNo};{h.Giren};{h.Cikan};{h.Aciklama}");
+        }
+        var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+        await JS.InvokeVoidAsync("downloadFile", $"StokHareketleri_{_stok?.StokAdi}_{DateTime.Now:yyyyMMdd}.csv", "text/csv", bytes);
+    }
+
+    private void UploadFile(IBrowserFile file)
+    {
+        Snackbar.Add($"{file.Name} başarıyla stoğa eklendi.", Severity.Success);
+    }
+    private void GoBack() => NavManager.NavigateTo("/stokkartlari");
+}

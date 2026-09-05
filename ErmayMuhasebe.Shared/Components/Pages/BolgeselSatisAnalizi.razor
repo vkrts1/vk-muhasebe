@@ -1,0 +1,132 @@
+@page "/bolgesel-satis-analizi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Bölgesel Satış Analizi (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+            Yazdır / PDF
+        </MudButton>
+    </MudStack>
+</div>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">Bu rapor, satışların şehirlere (il) göre dağılımını ve yoğunluğunu gösterir.</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12" md="7">
+        <MudTable Items="@cityData" Dense="true" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Şehir (İl)</MudTh>
+                <MudTh Style="text-align: right;">Müşteri Sayısı</MudTh>
+                <MudTh Style="text-align: right;">Toplam Satış (TL)</MudTh>
+                <MudTh Style="text-align: right;">Pazar Payı (%)</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Sehir</MudTd>
+                <MudTd Style="text-align: right;">@context.MusteriSayisi</MudTd>
+                <MudTd Style="text-align: right;">@context.ToplamSatis.ToString("N2") ₺</MudTd>
+                <MudTd Style="text-align: right;">
+                    <div class="d-flex align-center justify-end">
+                        <MudText Typo="Typo.body2" Class="mr-2">% @context.Pay.ToString("N1")</MudText>
+                        <MudProgressLinear Color="@GetHeatColor(context.Pay)" Value="@context.Pay" Style="width: 100px;" />
+                    </div>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+    <MudItem xs="12" md="5">
+        <MudPaper Class="pa-4 d-flex flex-column align-center">
+             <MudText Typo="Typo.h6" Class="mb-4">Satış Isı Grafiği</MudText>
+             @if(cityData.Any())
+             {
+                 <MudChart ChartType="ChartType.Donut" InputData="@(cityData.Take(5).Select(x => (double)x.ToplamSatis).ToArray())" 
+                           InputLabels="@(cityData.Take(5).Select(x => x.Sehir).ToArray())" Width="300px" Height="300px" />
+             }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<CityData> cityData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var cariler = await DbService.GetCarilerAsync();
+        var faturalar = await DbService.GetFaturalarAsync();
+        var satisFaturalari = faturalar.Where(f => f.Tur == "Satis" || f.Tur == "Satış").ToList();
+
+        var cityGroups = cariler.GroupBy(c => string.IsNullOrEmpty(c.Il) ? "Belirtilmemiş" : c.Il)
+            .Select(g => new CityData
+            {
+                Sehir = g.Key,
+                MusteriSayisi = g.Count(),
+                ToplamSatis = satisFaturalari.Where(f => g.Select(c => c.Id).Contains(f.CariId)).Sum(f => f.GenelToplam)
+            })
+            .Where(x => x.ToplamSatis > 0 || x.MusteriSayisi > 0)
+            .OrderByDescending(x => x.ToplamSatis)
+            .ToList();
+
+        decimal totalSatis = cityGroups.Sum(x => x.ToplamSatis);
+        if (totalSatis > 0)
+        {
+            foreach(var city in cityGroups)
+            {
+                city.Pay = (double)(city.ToplamSatis / totalSatis * 100);
+            }
+        }
+
+        cityData = cityGroups;
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Şehir (İl)", "Müşteri Sayısı", "Toplam Satış", "Pazar Payı (%)" };
+            var rows = cityData.Select(c => new[] 
+            { 
+                c.Sehir, 
+                c.MusteriSayisi.ToString(), 
+                c.ToplamSatis.ToString("C2"),
+                "%" + c.Pay.ToString("N1")
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Bölgesel Satış Analiz Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("BolgeselSatisAnalizi.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Color GetHeatColor(double pay)
+    {
+        if (pay > 30) return Color.Error;
+        if (pay > 15) return Color.Warning;
+        if (pay > 5) return Color.Info;
+        return Color.Success;
+    }
+
+    public class CityData
+    {
+        public string Sehir { get; set; } = "";
+        public int MusteriSayisi { get; set; }
+        public decimal ToplamSatis { get; set; }
+        public double Pay { get; set; }
+    }
+}

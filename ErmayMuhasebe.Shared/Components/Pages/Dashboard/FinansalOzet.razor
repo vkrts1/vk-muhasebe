@@ -1,0 +1,45 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white;">
+            <MudText Typo="Typo.subtitle2" Style="opacity: 0.8;">Toplam Nakit</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight: bold;">@finStats.TotalCash.ToString("C2")</MudText>
+            <MudIcon Icon="@Icons.Material.Filled.Wallet" Style="position: absolute; bottom: 10px; right: 10px; opacity: 0.3; width: 48px; height: 48px;" />
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white;">
+            <MudText Typo="Typo.subtitle2" Style="opacity: 0.8;">Banka Mevcudu</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight: bold;">@finStats.TotalBank.ToString("C2")</MudText>
+             <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Style="position: absolute; bottom: 10px; right: 10px; opacity: 0.3; width: 48px; height: 48px;" />
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); color: white;">
+            <MudText Typo="Typo.subtitle2" Style="opacity: 0.8;">Alacaklar</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight: bold;">@dashStats.ToplamAlacak.ToString("C2")</MudText>
+             <MudIcon Icon="@Icons.Material.Filled.ArrowCircleUp" Style="position: absolute; bottom: 10px; right: 10px; opacity: 0.3; width: 48px; height: 48px;" />
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="2" Style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white;">
+             <MudText Typo="Typo.subtitle2" Style="opacity: 0.8;">Borçlar</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight: bold;">@dashStats.ToplamBorc.ToString("C2")</MudText>
+             <MudIcon Icon="@Icons.Material.Filled.ArrowCircleDown" Style="position: absolute; bottom: 10px; right: 10px; opacity: 0.3; width: 48px; height: 48px;" />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private FinancialSummary finStats = new();
+    private DashboardStats dashStats = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        finStats = await DbService.GetFinancialSummaryAsync();
+        dashStats = await DbService.GetDashboardStatsAsync();
+    }
+}

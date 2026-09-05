@@ -1,0 +1,166 @@
+@page "/rota-planlama"
+@using MudBlazor
+@using System.Collections.ObjectModel
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <div class="d-flex justify-space-between align-center mb-8">
+        <div>
+            <MudText Typo="Typo.h4" Class="font-weight-bold">Rota ve Sevkiyat Planlama</MudText>
+            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Günlük dağıtım rotaları, durak takibi ve lojistik koordinasyon</MudText>
+        </div>
+        <div class="d-flex gap-4">
+             <MudPaper Elevation="0" Class="pa-2 px-4 d-flex align-center gap-2 rounded-xl" Style="background: rgba(var(--mud-palette-primary-rgb), 0.1);">
+                <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" />
+                <MudText Typo="Typo.button" Color="Color.Primary" Class="font-weight-bold">BATUR LOJİSTİK EKİBİ</MudText>
+             </MudPaper>
+             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddLocation" 
+                       OnClick="OpenAddDialog" Style="border-radius: 12px; font-weight: bold;">YENİ DURAK EKLE</MudButton>
+        </div>
+    </div>
+
+    <MudGrid>
+        <!-- LEFT: INPUT & LIST -->
+        <MudItem xs="12" md="4">
+            <MudPaper Elevation="4" Class="pa-6 rounded-xl">
+                 <MudText Typo="Typo.h6" Class="mb-4">Güzergah Bilgileri</MudText>
+                 <div class="d-flex flex-column gap-4">
+                     <MudTextField @bind-Value="_ekipAdi" Label="Ekip / Araç Tanımı" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                     <MudDivider />
+                     <MudText Typo="Typo.subtitle2" Class="opacity-70">Durak Listesi (@_duraklar.Count)</MudText>
+                     
+                     <div style="max-height: 400px; overflow-y: auto;" class="d-flex flex-column gap-2">
+                         @foreach (var item in _duraklar)
+                         {
+                             <MudPaper Elevation="0" Class="pa-3 d-flex align-center gap-3 border" Style="@(item.ZiyaretEdildi ? "background: #f0fdf4;" : "")">
+                                 <MudCheckBox T="bool" @bind-Value="item.ZiyaretEdildi" Color="Color.Success" Dense="true" />
+                                 <div class="flex-grow-1">
+                                     <MudText Typo="Typo.body2" Class="@(item.ZiyaretEdildi ? "text-decoration-line-through opacity-50" : "font-weight-bold")">@item.Isim</MudText>
+                                     <MudText Typo="Typo.caption" Class="d-block">@item.Saat - @item.Adres</MudText>
+                                 </div>
+                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => _duraklar.Remove(item))" />
+                             </MudPaper>
+                         }
+                     </div>
+
+                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Class="mt-2" OnClick="SaveRoute">ROTAYI KAYDET</MudButton>
+                 </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- RIGHT: VISUAL TIMELINE -->
+        <MudItem xs="12" md="8">
+             <MudPaper Elevation="4" Class="pa-8 rounded-xl relative overflow-hidden" Style="min-height: 600px; background: #fafafa;">
+                <div style="position: absolute; top:0; right:0; width: 300px; height: 300px; background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%); pointer-events: none;"></div>
+                
+                <MudText Typo="Typo.h6" Class="mb-8">Yol Haritası Görünümü</MudText>
+
+                <MudTimeline TimelinePosition="TimelinePosition.Start">
+                    @foreach (var item in _duraklar)
+                    {
+                        <MudTimelineItem Color="@(item.ZiyaretEdildi ? Color.Success : Color.Primary)" Elevation="4">
+                            <ItemDot>
+                                <MudIcon Icon="@(item.ZiyaretEdildi ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.LocationOn)" Size="Size.Small" />
+                            </ItemDot>
+                            <ItemContent>
+                                <MudPaper Elevation="2" Class="@($"pa-4 rounded-lg {(item.ZiyaretEdildi ? "opacity-60" : "")}")" Style="@($"border-left: 6px solid {(item.ZiyaretEdildi ? "#10b981" : "#3b82f6")};")">
+                                    <div class="d-flex justify-space-between align-center mb-1">
+                                        <MudText Typo="Typo.h6" Class="font-weight-bold">@item.Isim</MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">@item.Saat</MudChip>
+                                    </div>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@item.Adres</MudText>
+                                    @if (!item.ZiyaretEdildi)
+                                    {
+                                        <div class="mt-3 d-flex gap-2">
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Navigation" Color="Color.Primary">Yol Tarifi</MudButton>
+                                            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => item.ZiyaretEdildi = true)">Ziyaret Edildi</MudButton>
+                                        </div>
+                                    }
+                                </MudPaper>
+                            </ItemContent>
+                        </MudTimelineItem>
+                    }
+                    @if (!_duraklar.Any())
+                    {
+                        <div class="d-flex flex-column align-center justify-center pa-12 opacity-30">
+                            <MudIcon Icon="@Icons.Material.Filled.AltRoute" Size="Size.Large" />
+                            <MudText Typo="Typo.h6">Henüz bir durak eklenmedi.</MudText>
+                        </div>
+                    }
+                </MudTimeline>
+             </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<!-- ADD DIALOG -->
+<MudDialog Visible="_addVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Yeni Durak Bilgisi</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="d-flex flex-column gap-4 pa-4">
+            <MudTextField @bind-Value="_newIsim" Label="Müşteri / Durak İsmi" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_newAdres" Label="Açık Adres" Variant="Variant.Outlined" Lines="2" />
+            <MudTextField @bind-Value="_newSaat" Label="Tahmini Varış Saati" Variant="Variant.Outlined" InputType="InputType.Time" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => _addVisible = false">Vazgeç</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddDurak">Durak Ekle</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private string _ekipAdi = "Batı Dağıtım Ekibi";
+    private List<DurakItem> _duraklar = new()
+    {
+        new DurakItem("Merkez Depo", "İkitelli Organize Sanayi Bölgesi", "09:00", true),
+        new DurakItem("Mega Gıda Ltd.", "Başakşehir 4. Etap", "10:30", false),
+        new DurakItem("Umut Ticaret", "Esenyurt Kıraç Mevkii", "12:00", false),
+        new DurakItem("Ayhanlar Yapı", "Hadımköy Cad. No: 12", "14:15", false)
+    };
+
+    private bool _addVisible;
+    private DialogOptions _dialogOptions = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small };
+
+    private string _newIsim = "";
+    private string _newAdres = "";
+    private string _newSaat = "09:00";
+
+    private void OpenAddDialog()
+    {
+        _newIsim = "";
+        _newAdres = "";
+        _addVisible = true;
+    }
+
+    private void AddDurak()
+    {
+        if (string.IsNullOrWhiteSpace(_newIsim)) return;
+        _duraklar.Add(new DurakItem(_newIsim, _newAdres, _newSaat, false));
+        _addVisible = false;
+        Snackbar.Add("Durak rotaya eklendi.", Severity.Success);
+    }
+
+    private void SaveRoute()
+    {
+        Snackbar.Add("Rota kaydedildi ve saha ekibine iletildi.", Severity.Success);
+    }
+
+    public class DurakItem
+    {
+        public string Isim { get; set; }
+        public string Adres { get; set; }
+        public string Saat { get; set; }
+        public bool ZiyaretEdildi { get; set; }
+
+        public DurakItem(string isim, string adres, string saat, bool ziyaretEdildi)
+        {
+            Isim = isim;
+            Adres = adres;
+            Saat = saat;
+            ZiyaretEdildi = ziyaretEdildi;
+        }
+    }
+}

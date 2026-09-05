@@ -1,0 +1,107 @@
+@page "/taksit-hesaplama"
+@using MudBlazor
+
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">Kredi Kartı Taksit Hesaplama</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="5">
+        <MudPaper Class="pa-4">
+            <MudNumericField @bind-Value="toplamTutar" Label="Satış Tutarı (TL)" Variant="Variant.Outlined" Format="N2" Class="mb-4" />
+            
+            <MudNumericField @bind-Value="komisyonOrani" Label="Banka Komisyon Oranı (%)" Variant="Variant.Outlined" Format="N2" Class="mb-4" />
+            
+            <MudSlider @bind-Value="taksitSayisi" Min="1" Max="12" Step="1" Color="Color.Primary" ValueLabel="true" Class="mb-4">
+                Taksit Sayısı: @taksitSayisi
+            </MudSlider>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="Hesapla" StartIcon="@Icons.Material.Filled.TableChart">
+                Hesaplama Tablosu Oluştur
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="7">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Ödeme Detayları</MudText>
+            
+            <MudSimpleTable Hover="true" Bordered="true" Striped="true" Dense="true">
+                <thead>
+                    <tr>
+                        <th>Taksit No</th>
+                        <th>Taksit Tutarı</th>
+                        <th>Kalan Borç</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (detaylar.Any())
+                    {
+                        @foreach (var d in detaylar)
+                        {
+                            <tr>
+                                <td>@d.No</td>
+                                <td>@d.Tutar.ToString("N2") TL</td>
+                                <td>@d.Kalan.ToString("N2") TL</td>
+                            </tr>
+                        }
+                        <tr class="mud-theme-primary">
+                            <td><b>TOPLAM</b></td>
+                            <td><b>@genelToplam.ToString("N2") TL</b></td>
+                            <td>-</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="3" class="text-center pa-4">Parametreleri girip tabloyu oluşturun.</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+
+            @if (detaylar.Any())
+            {
+                <div class="mt-4 pa-4 mud-alert-info rounded">
+                    <MudText Typo="Typo.body2">
+                        <b>Komisyon Farkı:</b> @((genelToplam - toplamTutar).ToString("N2")) TL <br />
+                        <b>Maliyet Artışı:</b> % (@(((genelToplam / toplamTutar - 1) * 100).ToString("N2")))
+                    </MudText>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private decimal toplamTutar = 1000;
+    private decimal komisyonOrani = 2.5m;
+    private int taksitSayisi = 3;
+
+    private List<TaksitDetay> detaylar = new();
+    private decimal genelToplam = 0;
+
+    private void Hesapla()
+    {
+        detaylar.Clear();
+        genelToplam = toplamTutar * (1 + (komisyonOrani / 100));
+        decimal taksitTutari = Math.Round(genelToplam / taksitSayisi, 2);
+        decimal kalan = genelToplam;
+
+        for (int i = 1; i <= taksitSayisi; i++)
+        {
+            if (i == taksitSayisi) // Son taksitte kuruş farkını düzelt
+            {
+                taksitTutari = kalan;
+            }
+            
+            kalan -= taksitTutari;
+            detaylar.Add(new TaksitDetay { No = i, Tutar = taksitTutari, Kalan = Math.Max(0, kalan) });
+        }
+    }
+
+    public class TaksitDetay
+    {
+        public int No { get; set; }
+        public decimal Tutar { get; set; }
+        public decimal Kalan { get; set; }
+    }
+}

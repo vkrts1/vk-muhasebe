@@ -1,0 +1,277 @@
+@page "/banka-hareketleri"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+
+<style>
+    .banka-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .banka-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        overflow: hidden;
+        padding: 24px;
+    }
+
+    .filter-panel {
+        background: rgba(255,255,255,0.02);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .mutabakat-card {
+        background: rgba(96, 165, 250, 0.05);
+        border: 1px solid rgba(96, 165, 250, 0.1);
+        border-radius: 20px;
+        padding: 24px;
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .action-btn {
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        padding: 8px 24px !important;
+        text-transform: none !important;
+    }
+
+    .status-pill {
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+</style>
+
+<div class="banka-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="banka-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(96, 165, 250, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Info" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Banka Hareket Dökümü</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">EFT, Havale ve Banka mutabakat işlemleri.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-2">
+                 <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.ArrowBack" Class="action-btn" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">GERİ DÖN</MudButton>
+                 @if(hareketler.Any())
+                 {
+                     <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Class="action-btn" OnClick="PrintReport">PDF EKSTRE AL</MudButton>
+                 }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. FILTER *@
+    <div class="glass-card mb-4">
+        <div class="filter-panel">
+            <MudGrid>
+                <MudItem xs="12" sm="3">
+                    <MudSelect T="string" @bind-Value="banka" Label="Banka Seçiniz" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("")">TÜM BANKALAR</MudSelectItem>
+                        @foreach(var b in bankalar)
+                        {
+                            <MudSelectItem Value="@b.BankaAdi">@b.BankaAdi</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudDatePicker @bind-Date="baslangic" Label="Başlangıç Tarihi" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudDatePicker @bind-Date="bitis" Label="Bitiş Tarihi" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true" Class="action-btn" StartIcon="@Icons.Material.Filled.FilterList" OnClick="Listele">LİSTELE</MudButton>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        @if(listelendi)
+        {
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudTable Items="@hareketler" Hover="true" Dense="true" Class="compact-table" Elevation="0" Style="background: transparent;">
+                        <HeaderContent>
+                            <MudTh>TARİH</MudTh>
+                            <MudTh>AÇIKLAMA / EVRAK</MudTh>
+                            <MudTh Style="text-align: right;">GELEN (+)</MudTh>
+                            <MudTh Style="text-align: right;">GİDEN (-)</MudTh>
+                            <MudTh Style="text-align: right;">BAKİYE</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                            <MudTd>
+                                <MudText Style="font-weight: 700; font-size: 13px;">@context.Aciklama</MudText>
+                            </MudTd>
+                            <MudTd Style="text-align: right; color: #34D399; font-weight: 800;">
+                                @(context.Gelen > 0 ? "+ " + context.Gelen.ToString("N2") : "")
+                            </MudTd>
+                            <MudTd Style="text-align: right; color: #F87171; font-weight: 800;">
+                                @(context.Giden > 0 ? "- " + context.Giden.ToString("N2") : "")
+                            </MudTd>
+                            <MudTd Style="text-align: right; font-weight: 900; color: white; background: rgba(255,255,255,0.02);">
+                                @context.Bakiye.ToString("N2") ₺
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <div class="mutabakat-card">
+                        <MudText Style="font-weight: 900; font-size: 14px; color: #60A5FA;" Class="mb-4">MUTABAKAT ANALİZİ</MudText>
+                        
+                        <div class="d-flex justify-space-between mb-2">
+                            <MudText Style="font-size: 12px; opacity: 0.6;">SİSTEM BAKİYESİ</MudText>
+                            <MudText Style="font-weight: 800;">@sistemBakiye.ToString("N2") ₺</MudText>
+                        </div>
+                        <div class="d-flex justify-space-between mb-4">
+                            <MudText Style="font-size: 12px; opacity: 0.6;">BANKA EKSTRE BAKİYESİ</MudText>
+                            <MudText Style="font-weight: 800;">@bankaBakiye.ToString("N2") ₺</MudText>
+                        </div>
+                        
+                        <MudDivider Style="border-color: rgba(255,255,255,0.1);" Class="my-4" />
+                        
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Style="font-size: 12px; font-weight: 900;">MUTABAKAT FARKI</MudText>
+                            <MudText Style='@($"font-size: 20px; font-weight: 900; color: {(fark == 0 ? "#34D399" : "#FBBF24")}")'>
+                                @fark.ToString("N2") ₺
+                            </MudText>
+                        </div>
+
+                        @if(fark == 0)
+                        {
+                            <div class="mt-6 pa-3 rounded-lg d-flex align-center gap-2" style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.2);">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                                <MudText Style="color: #34D399; font-weight: 800; font-size: 11px;">TAM MUTABAKAT SAĞLANDI</MudText>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mt-6 pa-3 rounded-lg d-flex align-center gap-2" style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2);">
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                                <MudText Style="color: #FBBF24; font-weight: 800; font-size: 11px;">BORÇ/ALACAK FARKI MEVCUT</MudText>
+                            </div>
+                        }
+                    </div>
+                </MudItem>
+            </MudGrid>
+        }
+    </div>
+</div>
+
+@code {
+    private string banka = "";
+    private List<BankaKart> bankalar = new();
+    private DateTime? baslangic = DateTime.Now.AddMonths(-1);
+    private DateTime? bitis = DateTime.Now;
+    private bool listelendi = false;
+    private List<BankaHareketView> hareketler = new();
+    
+    private decimal sistemBakiye = 0;
+    private decimal bankaBakiye = 0; 
+    private decimal fark => sistemBakiye - bankaBakiye;
+
+    class BankaHareketView
+    {
+        public DateTime Tarih { get; set; }
+        public string Aciklama { get; set; } = "";
+        public decimal Gelen { get; set; }
+        public decimal Giden { get; set; }
+        public decimal Bakiye { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        bankalar = await DbService.GetBankalarAsync();
+    }
+
+    private async Task Listele()
+    {
+        hareketler.Clear();
+        var tumHareketler = await DbService.GetBankaHareketleriAsync();
+        
+        var filtreli = tumHareketler.Where(h => 
+            (string.IsNullOrEmpty(banka) || h.BankaAdi == banka) &&
+            (!baslangic.HasValue || h.Tarih.Date >= baslangic.Value.Date) &&
+            (!bitis.HasValue || h.Tarih.Date <= bitis.Value.Date)
+        ).OrderBy(x => x.Tarih).ToList();
+
+        decimal bakiye = 0;
+        foreach(var h in filtreli)
+        {
+            decimal gelen = (h.IslemTuru?.Contains("Gelen") == true || h.IslemTuru?.Contains("Tahsilat") == true) ? h.Tutar : 0;
+            decimal giden = (h.IslemTuru?.Contains("Giden") == true || h.IslemTuru?.Contains("Ödeme") == true || h.IslemTuru?.Contains("Odeme") == true) ? h.Tutar : 0;
+            
+            if (gelen == 0 && giden == 0) giden = h.Tutar; 
+
+            bakiye += (gelen - giden);
+            
+            hareketler.Add(new BankaHareketView
+            {
+                Tarih = h.Tarih,
+                Aciklama = h.Aciklama ?? "",
+                Gelen = gelen,
+                Giden = giden,
+                Bakiye = bakiye
+            });
+        }
+        
+        hareketler = hareketler.OrderByDescending(x => x.Tarih).ToList();
+        sistemBakiye = bakiye;
+        bankaBakiye = bakiye;
+        listelendi = true;
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Tarih", "Açıklama", "Gelen", "Giden", "Bakiye" };
+            var rows = hareketler.Select(h => new[] 
+            { 
+                h.Tarih.ToString("dd.MM.yyyy"), 
+                h.Aciklama, 
+                (h.Gelen > 0 ? h.Gelen.ToString("N2") : "-"),
+                (h.Giden > 0 ? h.Giden.ToString("N2") : "-"),
+                h.Bakiye.ToString("N2")
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Banka Hareketleri Dökümü", headers, rows);
+            await FileService.SaveAndOpenFileAsync("BankaHareketleri.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

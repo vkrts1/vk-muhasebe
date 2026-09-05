@@ -1,0 +1,103 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MudBlazor
+@inject DatabaseService DbService
+
+<style>
+    .glass-dialog {
+        background: rgba(30, 34, 40, 0.6) !important;
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 24px !important;
+        color: white !important;
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .search-pill {
+        background: rgba(255,255,255,0.03) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 12px !important;
+        padding: 4px 16px;
+    }
+
+    .dialog-action-btn {
+        border-radius: 12px !important;
+        font-weight: 800 !important;
+        text-transform: none !important;
+    }
+</style>
+
+<MudDialog Class="glass-dialog">
+    <DialogContent>
+        <div style="min-width: 900px; height: 600px; display: flex; flex-direction: column;">
+            @* SEARCH BAR *@
+            <div class="search-pill mb-4">
+                 <MudTextField @bind-Value="searchString" Placeholder="Ürün Adı, Kodu veya Barkod ile Hızlı Arama..." 
+                               Variant="Variant.Text" Margin="Margin.Dense" 
+                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                               AdornmentColor="Color.Info" Immediate="true" />
+            </div>
+
+            @* TABLE *@
+            <div style="flex-grow: 1; overflow: auto; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                <MudTable Items="@filteredStoklar" Hover="true" FixedHeader="true" Height="100%"
+                          Filter="new Func<StokKart,bool>(FilterFunc)" @bind-SelectedItem="selectedStok" 
+                          OnRowClick="@((TableRowClickEventArgs<StokKart> args) => { selectedStok = args.Item; })" 
+                          T="StokKart" Dense="true" Class="compact-table" Elevation="0" Style="background: transparent;">
+                    <HeaderContent>
+                        <MudTh>STOK KODU</MudTh>
+                        <MudTh>ÜRÜN ADI</MudTh>
+                        <MudTh>BİRİM</MudTh>
+                        <MudTh Style="text-align: right;">SATIŞ FİYATI</MudTh>
+                        <MudTh Style="text-align: right;">MEVCUT</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd Style="font-weight: 800; color: #60A5FA;">@context.StokKodu</MudTd>
+                        <MudTd Style="font-weight: 700;">@context.StokAdi</MudTd>
+                        <MudTd>@context.Birim</MudTd>
+                        <MudTd Style="text-align: right; font-weight: 900;">@context.SatisFiyati.ToString("N2") ₺</MudTd>
+                        <MudTd Style="@($"text-align: right; font-weight: 900; color: {(context.Miktar <= 10 ? "#F87171" : "#34D399")}")">
+                            @context.Miktar.ToString("N1")
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Class="dialog-action-btn" Color="Color.Default">Vazgeç</MudButton>
+        <MudButton Color="Color.Info" Variant="Variant.Filled" Class="dialog-action-btn" OnClick="Submit" Disabled="@(selectedStok == null)">ÜRÜNÜ SEÇ</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private List<StokKart> stoklar = new();
+    private List<StokKart> filteredStoklar => 
+        string.IsNullOrWhiteSpace(searchString) 
+            ? stoklar 
+            : stoklar.Where(s => (s.StokAdi ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase) || 
+                                 (s.StokKodu ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                                 (s.Barkod ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private StokKart? selectedStok;
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        stoklar = await DbService.GetStoklarAsync();
+    }
+
+    private bool FilterFunc(StokKart element) => true; // Handled by property
+    
+    void Submit() 
+    {
+        if (selectedStok != null) MudDialog.Close(DialogResult.Ok(selectedStok));
+    }
+    void Cancel() => MudDialog.Cancel();
+}

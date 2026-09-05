@@ -1,0 +1,22 @@
+@page "/stok"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MudBlazor
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5">Stok Yönetimi</MudText>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<StokKart> stoklar = new();
+    protected override Task OnInitializedAsync()
+    {
+       //  stoklar = await DbService.GetStoklarAsync();
+       return Task.CompletedTask;
+    }
+}

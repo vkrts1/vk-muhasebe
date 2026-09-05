@@ -1,0 +1,164 @@
+@page "/optimal-fiyat"
+@using ErmayMuhasebe.Shared.ViewModels
+@inject OptimalFiyatViewModel ViewModel
+
+<div class="premium-container fade-in">
+    <!-- Header Section -->
+    <div class="d-flex align-items-center justify-content-between mb-8">
+        <div class="d-flex align-center gap-4">
+            <div class="icon-box-large bg-success-light" style="background: rgba(20, 184, 166, 0.1) !important;">
+                <MudIcon Icon="@Icons.Material.Filled.Calculate" Style="color: #14B8A6; font-size: 32px;" />
+            </div>
+            <div>
+                <h1 class="h2 fw-black mb-1 text-white">Optimal Fiyat Hesaplayıcı</h1>
+                <p class="text-muted mb-0">Maliyet, vergi ve hedef kar oranına göre en ideal satış fiyatını belirleyin.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-6">
+        <!-- Input Section -->
+        <div class="col-lg-4">
+            <div class="glass-panel pa-8 h-100 border-white-5">
+                <div class="d-flex flex-column gap-6">
+                    <div class="input-group-custom">
+                        <label class="label-custom">Alış Fiyatı (Birim)</label>
+                        <div class="premium-input-wrapper">
+                            <input type="number" @bind="ViewModel.AlisFiyati" @bind:event="oninput" @onkeyup="() => ViewModel.Hesapla()" class="premium-input" />
+                            <span class="input-suffix">₺</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group-custom">
+                        <label class="label-custom">Ek Maliyetler (Lojistik vb.)</label>
+                        <div class="premium-input-wrapper">
+                            <input type="number" @bind="ViewModel.EkMaliyet" @bind:event="oninput" @onkeyup="() => ViewModel.Hesapla()" class="premium-input" />
+                            <span class="input-suffix">₺</span>
+                        </div>
+                    </div>
+
+                    <div class="divider-white-5"></div>
+
+                    <div class="input-group-custom">
+                        <label class="label-custom">Hedef Kar Oranı (%)</label>
+                        <div class="premium-input-wrapper">
+                            <input type="number" @bind="ViewModel.HedefKarOrani" @bind:event="oninput" @onkeyup="() => ViewModel.Hesapla()" class="premium-input" />
+                            <span class="input-suffix">%</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group-custom">
+                        <label class="label-custom">KDV Oranı (%)</label>
+                        <div class="premium-input-wrapper">
+                            <input type="number" @bind="ViewModel.KdvOrani" @bind:event="oninput" @onkeyup="() => ViewModel.Hesapla()" class="premium-input" />
+                            <span class="input-suffix">%</span>
+                        </div>
+                    </div>
+
+                    <button class="action-btn-large w-100 mt-4" @onclick="ViewModel.Hesapla" style="background: #14B8A6; color: white; border: none;">
+                        <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="mr-2" /> YENİDEN HESAPLA
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div class="col-lg-8">
+            <div class="glass-panel pa-10 h-100 border-white-5 d-flex flex-column align-center justify-center">
+                <div class="text-center mb-10">
+                    <span class="text-muted fw-bold mb-2 d-block" style="letter-spacing: 2px;">ÖNERİLEN SATIŞ FİYATI</span>
+                    <h2 class="display-1 fw-black text-white">@ViewModel.OnerilenSatisFiyati.ToString("N2") <span style="font-size: 0.5em;">₺</span></h2>
+                </div>
+
+                <div class="row w-100 g-4 mb-10">
+                    <div class="col-4">
+                        <div class="result-card text-center">
+                            <span class="text-muted small fw-bold">NET KAR</span>
+                            <div class="h4 fw-bold text-success mt-1">@ViewModel.NetKar.ToString("N2") ₺</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="result-card text-center">
+                            <span class="text-muted small fw-bold">KDV TUTARI</span>
+                            <div class="h4 fw-bold text-warning mt-1">@ViewModel.KdvTutari.ToString("N2") ₺</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="result-card text-center">
+                            <span class="text-muted small fw-bold">TOPLAM VERGİ</span>
+                            <div class="h4 fw-bold text-danger mt-1">@ViewModel.KdvTutari.ToString("N2") ₺</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analysis-box pa-6 text-center">
+                    <div class="fw-bold mb-2" style="color: #14B8A6;">Analiz Özeti</div>
+                    <p class="text-muted mb-0 small" style="line-height: 1.6;">
+                        Seçilen marjlara göre ürünün karlılığı sürdürülebilir seviyededir. 
+                        Pazar fiyatlarını da göz önünde bulundurarak nihai kararı verebilirsiniz.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .label-custom {
+        display: block;
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.4);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .premium-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .premium-input {
+        width: 100%;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        height: 48px;
+        padding: 0 45px 0 15px;
+        color: white;
+        font-weight: 700;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+    .premium-input:focus {
+        background: rgba(255,255,255,0.06);
+        border-color: #14B8A6;
+        outline: none;
+        box-shadow: 0 0 15px rgba(20, 184, 166, 0.1);
+    }
+
+    .input-suffix {
+        position: absolute;
+        right: 15px;
+        color: rgba(255,255,255,0.3);
+        font-weight: 800;
+    }
+
+    .result-card {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 20px 10px;
+        border-radius: 16px;
+    }
+
+    .analysis-box {
+        background: rgba(20, 184, 166, 0.05);
+        border: 1px solid rgba(20, 184, 166, 0.1);
+        border-radius: 20px;
+        max-width: 500px;
+    }
+
+    .display-1 { font-size: 4.5rem; }
+</style>

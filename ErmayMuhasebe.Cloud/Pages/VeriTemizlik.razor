@@ -1,0 +1,98 @@
+@page "/veri-temizlik"
+@using ErmayMuhasebe.Shared.ViewModels
+@inject VeriTemizlikViewModel ViewModel
+@implements IDisposable
+
+<div class="fade-in p-8" style="height: 100%; overflow-y: auto;">
+    <!-- Header -->
+    <div class="d-flex align-center gap-4 mb-10">
+        <div class="header-icon-box" style="background: rgba(20, 184, 166, 0.1); border: 1px solid rgba(20, 184, 166, 0.2); width: 60px; height: 60px; border-radius: 18px; display: flex; align-center; justify-center;">
+            <MudIcon Icon="@Icons.Material.Filled.CleaningServices" Style="color: #14B8A6; font-size: 32px;" />
+        </div>
+        <div>
+            <h1 style="font-size: 28px; font-weight: 900; color: white; margin: 0;">Akıllı Veri Temizleme ve Onarım</h1>
+            <p style="font-size: 14px; color: rgba(255,255,255,0.4); margin: 0;">Veritabanındaki tutarsızlıkları, mükerrer kayıtları ve eksik bilgileri otomatik tespit edin.</p>
+        </div>
+    </div>
+
+    <div class="row g-5">
+        <!-- Control Panel -->
+        <div class="col-md-4">
+            <div class="glass-panel p-8 d-flex flex-column gap-6">
+                <h3 style="font-size: 18px; font-weight: 800; color: white;">Kontrol Merkezi</h3>
+                
+                <div class="d-flex flex-column gap-2">
+                    <span style="font-size: 13px; font-weight: 800; color: #14B8A6; text-transform: uppercase;">@ViewModel.StatusMessage</span>
+                    <div style="height: 10px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                        <div style="width: @ViewModel.Progress%; height: 100%; background: #14B8A6; transition: width 0.3s ease-out;"></div>
+                    </div>
+                </div>
+
+                <div class="desktop-divider"></div>
+
+                <div class="d-flex flex-column gap-3">
+                    <MudButton OnClick="ViewModel.TaraAsync" Variant="Variant.Filled" FullWidth="true" 
+                               Disabled="@ViewModel.IsBusy"
+                               Style="height: 55px; border-radius: 14px; background: #14B8A6; color: white; font-weight: 800;">
+                        @if (ViewModel.IsBusy) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2"/> }
+                        SİSTEMİ ŞİMDİ TARA
+                    </MudButton>
+
+                    <MudButton OnClick="ViewModel.HepsiniDuzeltAsync" Variant="Variant.Filled" FullWidth="true"
+                               Disabled="@(ViewModel.IsBusy || !ViewModel.Gorevler.Any())"
+                               Style="height: 55px; border-radius: 14px; background: #3B82F6; color: white; font-weight: 800; opacity: 0.8;">
+                        TÜMÜNÜ OTOMATİK DÜZELT
+                    </MudButton>
+                </div>
+
+                <div style="background: rgba(239, 68, 68, 0.08); border-radius: 12px; padding: 15px; text-align: center;">
+                    <span style="font-size: 12px; color: #EF4444; font-weight: 600;">Dikkat: Onarım işleminden önce yedek almanız önerilir.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Findings List -->
+        <div class="col-md-8">
+            <div class="glass-panel p-8" style="min-height: 500px;">
+                <h3 class="mb-6" style="font-size: 18px; font-weight: 800; color: white;">Tarama Bulguları</h3>
+
+                @if (!ViewModel.Gorevler.Any())
+                {
+                    <div class="d-flex flex-column align-center justify-center pt-12 opacity-40">
+                        <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size: 64px;" />
+                        <span class="mt-4">Henüz bir tarama yapılmadı veya bulgu yok.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var task in ViewModel.Gorevler)
+                        {
+                            <div class="p-5" style="background: rgba(255,255,255,0.03); border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <h4 style="font-size: 15px; font-weight: 700; color: white; margin: 0;">@task.Isim</h4>
+                                    <p style="font-size: 12px; color: rgba(255,255,255,0.4); margin: 4px 0 0 0;">@task.Aciklama</p>
+                                </div>
+                                <div style="background: rgba(239, 68, 68, 0.1); padding: 6px 15px; border-radius: 10px;">
+                                    <span style="color: #EF4444; font-size: 13px; font-weight: 800;">@task.BulunanHataCount Hata</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
+}

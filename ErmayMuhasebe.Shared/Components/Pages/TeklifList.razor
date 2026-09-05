@@ -1,0 +1,154 @@
+@page "/teklif-listesi"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Class="font-weight-bold">Teklif Yönetimi</MudText>
+            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Müşteri teklifleri, geçerlilik süreçleri ve analizler</MudText>
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="OpenNewTeklif" Style="border-radius: 8px; height: 48px; padding: 0 24px;">YENİ TEKLİF HAZIRLA</MudButton>
+        </div>
+    </div>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-6 d-flex align-center gap-4" Elevation="3" Style="border-bottom: 4px solid var(--mud-palette-warning);">
+                <MudIcon Icon="@Icons.Material.Filled.PendingActions" Color="Color.Warning" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">@list.Count(x => x.Durum == "Bekliyor")</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Onay Bekleyen Teklif</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-6 d-flex align-center gap-4" Elevation="3" Style="border-bottom: 4px solid var(--mud-palette-success);">
+                <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" Color="Color.Success" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">@list.Count(x => x.Durum == "Onaylandı")</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Onaylanan Teklifler</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-6 d-flex align-center gap-4" Elevation="3" Style="border-bottom: 4px solid var(--mud-palette-info);">
+                <MudIcon Icon="@Icons.Material.Filled.Calculate" Color="Color.Info" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">@list.Sum(x => x.GenelToplam).ToString("N0") ₺</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Toplam Teklif Hacmi</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudTable T="Teklif" Items="@list" Dense="true" Hover="true" Striped="false" Elevation="4" Style="border-radius: 16px;" Filter="new Func<Teklif,bool>(FilterFunc)" OnRowClick="RowClicked">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Teklif Kayıtları</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString" Placeholder="Teklif no, müşteri veya açıklama..." 
+                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                           IconSize="Size.Medium" Class="mt-0" Immediate="true" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Teklif No</MudTh>
+            <MudTh>Cari Ünvan</MudTh>
+            <MudTh>Tarih</MudTh>
+            <MudTh>Geçerlilik</MudTh>
+            <MudTh>Durum</MudTh>
+            <MudTh>Tutar</MudTh>
+            <MudTh Style="text-align: right;">İşlemler</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd Class="font-weight-bold">@context.TeklifNo</MudTd>
+            <MudTd>@context.CariUnvan</MudTd>
+            <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+            <MudTd>
+                @if(context.GecerlilikTarihi.HasValue)
+                {
+                    <MudText Typo="Typo.body2" Color="@(context.GecerlilikTarihi < DateTime.Now ? Color.Error : Color.Default)">
+                        @context.GecerlilikTarihi.Value.ToString("dd.MM.yyyy")
+                    </MudText>
+                }
+                else { <span>-</span> }
+            </MudTd>
+            <MudTd>
+                <MudChip T="string" Color="@GetStatusColor(context.Durum)" Variant="Variant.Filled" Size="Size.Small">
+                    @context.Durum
+                </MudChip>
+            </MudTd>
+            <MudTd Class="font-weight-bold">@context.GenelToplam.ToString("N2") ₺</MudTd>
+            <MudTd Style="text-align: right;">
+                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <MudMenuItem Icon="@Icons.Material.Filled.Visibility" OnClick="@(() => ViewItem(context))">Görüntüle</MudMenuItem>
+                    @if (context.Durum == "Bekliyor")
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.AutoFixHigh" IconColor="Color.Info" OnClick="@(() => ConvertToOrder(context))">Siparişe Dönüştür</MudMenuItem>
+                    }
+                    <MudDivider />
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="@(() => DeleteItem(context))">Sil</MudMenuItem>
+                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private List<Teklif> list = new List<Teklif>();
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+    private async Task LoadData() => list = await DbService.GetTekliflerAsync();
+
+    private bool FilterFunc(Teklif element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.TeklifNo?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.CariUnvan?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        return false;
+    }
+
+    private Color GetStatusColor(string? status) => status switch
+    {
+        "Onaylandı" => Color.Success,
+        "Bekliyor" => Color.Warning,
+        "Reddedildi" => Color.Error,
+        _ => Color.Default
+    };
+
+    private void OpenNewTeklif() => Nav.NavigateTo("/teklif-olustur");
+    private void ViewItem(Teklif item) => Nav.NavigateTo($"/teklif-detay/{item.Id}");
+
+    private void RowClicked(TableRowClickEventArgs<Teklif> args) => ViewItem(args.Item!);
+
+    private async Task ConvertToOrder(Teklif item)
+    {
+        var result = await DialogService.ShowMessageBox("Siparişe Dönüştür", $"{item.TeklifNo} nolu teklifi siparişe dönüştürmek istediğinize emin misiniz?", yesText:"Evet", cancelText:"İptal");
+        if (result == true)
+        {
+            await DbService.ConvertTeklifToSiparisAsync(item.Id);
+            Snackbar.Add("Teklif başarıyla siparişe dönüştürüldü.", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteItem(Teklif item)
+    {
+        var result = await DialogService.ShowMessageBox("Silme Onayı", "Bu teklifi silmek istediğinize emin misiniz?", yesText:"Sil", cancelText:"İptal");
+        if (result == true)
+        {
+            await DbService.DeleteTeklifAsync(item);
+            Snackbar.Add("Teklif silindi.", Severity.Info);
+            await LoadData();
+        }
+    }
+}

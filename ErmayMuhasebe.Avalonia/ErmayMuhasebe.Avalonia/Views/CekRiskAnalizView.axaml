@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Shared.ViewModels;assembly=ErmayMuhasebe.Shared"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.CekRiskAnalizView"
+             x:DataType="vm:CekRiskAnalizViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#26F59E0B">
+          <ic:SymbolIcon Symbol="Pulse" Foreground="#F59E0B" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Cari Risk Puanlama ve Analiz" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Ödeme alışkanlıkları ve finansal geçmişe göre carilerinizin risk skorlarını takip edin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, 350" ColumnSpacing="20">
+      <!-- Risk List -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="10" BorderBrush="#22FFFFFF" BorderThickness="1">
+         <DataGrid ItemsSource="{Binding RiskListesi}" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Cari Ünvan" Binding="{Binding CariUnvan}" Width="*"/>
+                <DataGridTemplateColumn Header="Risk Skoru" Width="120">
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <ProgressBar Value="{Binding Puan}" Width="60" Height="4" VerticalAlignment="Center" Foreground="{Binding Renk}" Background="#15FFFFFF"/>
+                            <TextBlock Text="{Binding Puan, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{Binding Renk}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Durum" Width="100">
+                    <DataTemplate>
+                        <Border Background="{Binding Renk}" CornerRadius="10" Padding="8,2" HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding Durum}" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+         </DataGrid>
+      </Border>
+
+      <!-- Summary -->
+      <StackPanel Grid.Column="1" Spacing="20">
+         <Border Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <StackPanel Spacing="20" HorizontalAlignment="Center">
+               <TextBlock Text="GENEL PORTFÖY RİSKİ" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+               <Panel HorizontalAlignment="Center">
+                  <Ellipse Width="150" Height="150" Stroke="#15FFFFFF" StrokeThickness="10"/>
+                  <Ellipse Width="150" Height="150" Stroke="#F59E0B" StrokeThickness="10" StrokeDashArray="10,2" Opacity="0.5"/>
+                  <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                     <TextBlock Text="{Binding GenelRiskPuani, StringFormat={}{0:N1}}" FontSize="40" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
+                     <TextBlock Text="PUAN" FontSize="12" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                  </StackPanel>
+               </Panel>
+            </StackPanel>
+         </Border>
+
+         <Border Background="#10F59E0B" CornerRadius="20" Padding="30" BorderBrush="#26F59E0B" BorderThickness="1">
+            <StackPanel Spacing="15">
+               <StackPanel Orientation="Horizontal" Spacing="10">
+                  <ic:SymbolIcon Symbol="Lightbulb" Foreground="#F59E0B"/> 
+                  <TextBlock Text="Yapay Zeka Analizi" FontWeight="Bold" Foreground="White"/>
+               </StackPanel>
+               <TextBlock Text="{Binding AnalizOzeti}" FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap"/>
+               <Button Command="{Binding DownloadRaporCommand}" Classes="SideButton Info" Background="#F59E0B" Height="40" HorizontalAlignment="Stretch">
+                  <TextBlock Text="DETAYLI RAPOR AL" FontWeight="Bold" FontSize="12"/>
+               </Button>
+            </StackPanel>
+         </Border>
+      </StackPanel>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,260 @@
+@page "/faturalar"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@using ErmayMuhasebe.Shared.ViewModels
+@inject ErmayMuhasebe.Cloud.ViewModels.FaturaListViewModel ViewModel
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject UiService UiService
+@inject IJSRuntime JS
+@inject IDialogService _dialogService
+@inject ClientAuthService AuthService
+@implements IDisposable
+
+<div class="fade-in d-flex flex-grow-1 flex-column" style="overflow: hidden;">
+    <!-- Notification Area -->
+    @if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
+    {
+        <div class="desktop-alert danger mb-4">
+            <MudIcon Icon="@Icons.Material.Filled.Error" Class="me-3" />
+            <span>@ViewModel.ErrorMessage</span>
+        </div>
+    }
+
+    <!-- Header (DESIGN 1:1 DESKTOP) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+        <div class="d-flex align-items-center gap-3">
+            <h2 style="font-size: 18px; font-weight: 800; color: white; margin: 0; padding-right: 15px;">Faturalar</h2>
+            
+            <div class="desktop-search-pill" style="width: 220px;">
+                <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" Style="color: rgba(255,255,255,0.4);" />
+                <input type="text" placeholder="Ara..." class="desktop-search-input" style="width: 100%;" @bind-value="ViewModel.SearchString" @bind-value:event="oninput" @onkeyup="HandleKeyUp" />
+            </div>
+
+            <div class="d-flex align-items-center gap-2" style="margin-left: 5px;">
+                <div class="desktop-search-pill" style="padding: 5px 12px;">
+                    <input type="text" @bind="ViewModel.StartDateStr" style="background: transparent; border: none; color: white; width: 70px; text-align: center; outline: none; font-size: 12px; font-weight: 500;" placeholder="01.03.2026" />
+                </div>
+                <span style="color: rgba(255,255,255,0.4); font-size: 14px;">-</span>
+                <div class="desktop-search-pill" style="padding: 5px 12px;">
+                    <input type="text" @bind="ViewModel.EndDateStr" style="background: transparent; border: none; color: white; width: 70px; text-align: center; outline: none; font-size: 12px; font-weight: 500;" placeholder="10.03.2026" />
+                </div>
+                
+                <button @onclick="ViewModel.LoadFaturalarAsync" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: rgba(255,255,255,0.6); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; transition: all 0.2s; margin-left: 2px;" onmouseover="this.style.color='white';" onmouseout="this.style.color='rgba(255,255,255,0.6)';">
+                    <MudIcon Icon="@Icons.Material.Filled.Sync" Size="Size.Small" Style="font-size: 18px;" />
+                </button>
+            </div>
+        </div>
+        
+        <div class="d-flex align-items-center gap-2">
+            <button class="action-capsule success" @onclick='() => ViewModel.OpenCreateInvoice("Satis")'>
+                <span style="font-size: 16px;">+</span> Yeni Satış
+            </button>
+            <button class="action-capsule warning" @onclick='() => ViewModel.OpenCreateInvoice("Alis")'>
+                <span style="font-size: 16px;">+</span> Yeni Alış
+            </button>
+            <button class="action-capsule success" @onclick="ViewModel.ExportToExcelAsync">
+                <MudIcon Icon="@Icons.Material.Filled.GridOn" Size="Size.Small" Style="margin-right: -4px;" /> Excel
+            </button>
+            <button class="action-capsule danger" @onclick="ViewModel.ExportAllToPdfAsync">
+                <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Size="Size.Small" Style="margin-right: -4px;" /> PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Table Container (DESIGN 1:1 DESKTOP) -->
+    <div class="desktop-panel flex-grow-1 d-flex flex-column min-h-0" style="overflow: hidden;">
+        <div class="desktop-table-container flex-grow-1">
+            <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="false">
+                <table class="desktop-data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%; text-align: left;">Fatura No</th>
+                            <th style="width: 15%; text-align: left;">Tarih</th>
+                            <th style="width: 35%; text-align: left;">Cari Hesap</th>
+                            <th style="width: 15%; text-align: left;">Tür</th>
+                            <th style="width: 15%; text-align: left;">Tutar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ViewModel.IsLoading && !ViewModel.Faturalar.Any())
+                        {
+                            @for (int i = 0; i < 8; i++)
+                            {
+                                <tr>
+                                    <td><div class="skeleton" style="height: 20px; width: 80px;"></div></td>
+                                    <td><div class="skeleton" style="height: 20px; width: 100px;"></div></td>
+                                    <td><div class="skeleton" style="height: 20px; width: 250px;"></div></td>
+                                    <td><div class="skeleton" style="height: 24px; width: 80px; border-radius: 12px;"></div></td>
+                                    <td class="text-end"><div class="skeleton ml-auto" style="height: 20px; width: 100px;"></div></td>
+                                </tr>
+                            }
+                        }
+                        else if (!ViewModel.Faturalar.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="pa-16 text-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Large" Style="opacity: 0.1;" />
+                                    <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.2);">Herhangi bir fatura bulunamadı.</MudText>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var fatura in ViewModel.Faturalar)
+                            {
+                                <tr class="@(selectedFatura?.Id == fatura.Id ? "selected" : "")" 
+                                    @onclick="() => selectedFatura = fatura"
+                                    @oncontextmenu="(e) => ShowContextMenu(e, fatura)" 
+                                    @oncontextmenu:preventDefault="true">
+                                    <td style="color: #9CA3AF;">@fatura.FaturaNo</td>
+                                    <td style="color: white; font-weight: 500;">@fatura.Tarih.ToString("dd.MM.yyyy")</td>
+                                    <td style="color: white; font-weight: 500;">@fatura.CariUnvan</td>
+                                    <td class="text-left">
+                                        <div style="display: inline-flex; align-items: center; justify-content: center; padding: 4px 16px; border-radius: 50px; font-size: 11px; font-weight: 700; min-width: 60px; @(fatura.Tur == "Satış" ? "background-color: #3B82F6; color: white;" : "background-color: #F97316; color: white;")">
+                                            @fatura.Tur
+                                        </div>
+                                    </td>
+                                    <td class="text-end" style="font-weight: 800; color: #60A5FA;">
+                                        @fatura.GenelToplam.ToString("N2") <span style="font-size: 0.9em; opacity: 0.7;">₺</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </MudHidden>
+
+            <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+                <div class="pa-4 d-flex flex-column gap-3">
+                    @foreach (var fatura in ViewModel.Faturalar)
+                    {
+                        <div class="mobile-card @(selectedFatura?.Id == fatura.Id ? "selected" : "")" @onclick="() => selectedFatura = fatura">
+                            <div class="d-flex justify-between mb-2">
+                                <span style="color: #60A5FA; font-weight: 800; font-size: 12px;">#@fatura.FaturaNo</span>
+                                <span class="vade-type-pill @(fatura.Tur == "Satış" ? "incoming" : "outgoing")" style="font-size: 9px; padding: 2px 8px;">@fatura.Tur</span>
+                            </div>
+                            <div class="card-title">@fatura.CariUnvan</div>
+                            <div class="d-flex justify-between align-end mt-2">
+                                <span class="card-meta">@fatura.Tarih.ToString("dd.MM.yyyy")</span>
+                                <span style="font-weight: 900; color: white; font-size: 1.1rem;">@fatura.GenelToplam.ToString("N2") ₺</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </MudHidden>
+        </div>
+    </div>
+</div>
+
+@* Simplified with Centralized Context Menu *@
+
+@code {
+    private Fatura? selectedFatura;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        await ViewModel.LoadFaturalarAsync();
+        UiService.OnEscapePressed += HandleEscape;
+    }
+
+    private void SelectFatura(Fatura f)
+    {
+        selectedFatura = f;
+    }
+
+    private void ShowContextMenu(MouseEventArgs e, Fatura f)
+    {
+        selectedFatura = f;
+        var items = new List<UiService.ContextMenuItem>
+        {
+            new UiService.ContextMenuItem { Text = "Düzenle", Icon = Icons.Material.Filled.Edit, Action = async () => await EditFatura() },
+            new UiService.ContextMenuItem { Text = "Görüntüle (PDF)", Icon = Icons.Material.Filled.PictureAsPdf, Action = async () => await ViewPdf() },
+            new UiService.ContextMenuItem { Text = "Yazdır", Icon = Icons.Material.Filled.Print, Action = async () => await ViewPdf() }
+        };
+
+        if (AuthService.IsAdmin)
+        {
+            items.Add(new UiService.ContextMenuItem { IsDivider = true });
+            items.Add(new UiService.ContextMenuItem { Text = "Sil", Icon = Icons.Material.Filled.Delete, IsDanger = true, Action = async () => await DeleteFatura() });
+        }
+
+        UiService.ShowContextMenu(e.ClientX, e.ClientY, items);
+    }
+
+    private void CloseContextMenu() => UiService.HideContextMenu();
+
+    private async Task EditFatura()
+    {
+        if (selectedFatura != null)
+        {
+            await ViewModel.EditFaturaAsync(selectedFatura);
+        }
+    }
+
+    private async Task ViewPdf()
+    {
+        if (selectedFatura != null)
+        {
+            // Reset message
+            ViewModel.ErrorMessage = ""; 
+            
+            await ViewModel.ViewFaturaPdfAsync(selectedFatura);
+            
+            if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
+            {
+                Snackbar.Add(ViewModel.ErrorMessage, Severity.Error);
+                ViewModel.ErrorMessage = "";
+            }
+        }
+    }
+
+    private async Task DeleteFatura()
+    {
+        if (selectedFatura != null)
+        {
+            await ConfirmDelete(selectedFatura);
+        }
+    }
+
+
+    private void GoToCari(int cariId)
+    {
+        NavManager.NavigateTo($"/cariler?selectId={cariId}");
+    }
+
+    private void HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            ViewModel.LoadFaturalarAsync();
+        }
+    }
+
+    private async Task ConfirmDelete(Fatura fatura)
+    {
+        bool? confirm = await _dialogService.ShowMessageBox(
+            "Silme Onayı", 
+            $"{fatura.FaturaNo} numaralı faturayı silmek istediğinize emin misiniz?", 
+            yesText: "Sil", cancelText: "Vazgeç");
+
+        if (confirm == true)
+        {
+            await ViewModel.DeleteFaturaAsync(fatura);
+            Snackbar.Add("Fatura başarıyla silindi", Severity.Success);
+        }
+    }
+
+    private Task<bool> HandleEscape()
+    {
+        return Task.FromResult(false);
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+}
+
+

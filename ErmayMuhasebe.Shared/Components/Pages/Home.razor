@@ -1,0 +1,249 @@
+@page "/"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4 dashboard-container">
+    <!-- Top Action Buttons -->
+    <div class="d-flex justify-end gap-3 mb-6">
+        <MudButton Variant="Variant.Outlined" Class="action-btn-glass" StartIcon="@Icons.Material.Filled.ShoppingCart" OnClick='() => OpenNewFaturaDialog("Alis")' Style="color: #60A5FA;">Alış</MudButton>
+        <MudButton Variant="Variant.Outlined" Class="action-btn-glass" StartIcon="@Icons.Material.Filled.Sell" OnClick='() => OpenNewFaturaDialog("Satis")' Style="color: #34D399;">Satış</MudButton>
+        <MudButton Variant="Variant.Outlined" Class="action-btn-glass" StartIcon="@Icons.Material.Filled.Assignment" OnClick="OpenSiparisDialog" Style="color: #FBBF24;">Sipariş</MudButton>
+        <MudButton Variant="Variant.Outlined" Class="action-btn-glass" StartIcon="@Icons.Material.Filled.LocalOffer" OnClick='() => Nav.NavigateTo("/teklif-listesi")' Style="color: #60A5FA;">Teklif</MudButton>
+    </div>
+
+    <!-- Summary Cards -->
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <div class="glass-card dashboard-sum-card">
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.caption" Class="text-secondary">Günlük Ciro</MudText>
+                        <MudText Typo="Typo.h5" Class="font-weight-bold">@gunlukCiro.ToString("N2") ₺</MudText>
+                    </div>
+                    <div class="icon-box blue">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                    </div>
+                </div>
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <div class="glass-card dashboard-sum-card">
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.caption" Class="text-secondary">Nakit Varlığı</MudText>
+                        <MudText Typo="Typo.h5" Class="font-weight-bold">@nakitVarligi.ToString("N2") ₺</MudText>
+                    </div>
+                    <div class="icon-box green">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
+                    </div>
+                </div>
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <div class="glass-card dashboard-sum-card">
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.caption" Class="text-secondary">Toplam Alacak</MudText>
+                        <MudText Typo="Typo.h5" Class="font-weight-bold">@totalAlacak.ToString("N2") ₺</MudText>
+                    </div>
+                    <div class="icon-box indigo">
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" />
+                    </div>
+                </div>
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <div class="glass-card dashboard-sum-card">
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.caption" Class="text-secondary">Toplam Borç</MudText>
+                        <MudText Typo="Typo.h5" Class="font-weight-bold">@totalBorc.ToString("N2") ₺</MudText>
+                    </div>
+                    <div class="icon-box red">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" />
+                    </div>
+                </div>
+            </div>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid>
+        <!-- Chart Section -->
+        <MudItem xs="12" md="7" lg="8">
+            <div class="glass-card pa-6" style="height: 100%; min-height: 500px;">
+                <div class="d-flex justify-space-between align-center mb-6">
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.TrackChanges" Color="Color.Success" />
+                        <MudText Typo="Typo.h6" Class="font-weight-bold">Hedef & Gerçekleşme</MudText>
+                    </div>
+                    <MudToggleGroup T="string" Value='"Hafta"' Color="Color.Primary">
+                        <MudToggleItem Value='"Hafta"' Text="Hafta" />
+                        <MudToggleItem Value='"Ay"' Text="Ay" />
+                    </MudToggleGroup>
+                </div>
+                
+                <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@XAxisLabels" 
+                         Width="100%" Height="400px" ChartOptions="@chartOptions" />
+            </div>
+        </MudItem>
+
+        <!-- Recent Transactions / Alacak Takibi -->
+        <MudItem xs="12" md="5" lg="4">
+            <div class="glass-card" style="height: 100%; overflow: hidden;">
+                <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true" PanelClass="pa-4">
+                    <MudTabPanel Text="Son İşlemler">
+                        <MudList T="string" Dense="true" Class="mt-2">
+                            @if (!recentTransactions.Any())
+                            {
+                                <div class="d-flex flex-column align-center justify-center py-12 opacity-50">
+                                    <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Large" Class="mb-2" />
+                                    <MudText Typo="Typo.body2">İşlem bulunmuyor.</MudText>
+                                </div>
+                            }
+                            @foreach (var item in recentTransactions.Take(8))
+                            {
+                                <MudListItem>
+                                    <div class="d-flex justify-space-between align-center">
+                                        <div>
+                                            <MudText Typo="Typo.body2" Class="font-weight-bold">@item.Title</MudText>
+                                            <MudText Typo="Typo.caption" Class="text-secondary">Satış Faturası • @item.Date.ToString("dd MMM HH:mm")</MudText>
+                                        </div>
+                                        <MudText Typo="Typo.body2" Class="font-weight-bold text-success">@item.Amount.ToString("N2") ₺</MudText>
+                                    </div>
+                                </MudListItem>
+                                <MudDivider DividerType="DividerType.Inset" Class="my-2 opacity-10" />
+                            }
+                        </MudList>
+                    </MudTabPanel>
+                    <MudTabPanel Text="Alacak Takibi">
+                        <div class="d-flex flex-column align-center justify-center py-20 opacity-40">
+                            <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Large" Class="mb-2" />
+                            <MudText Typo="Typo.body2">Takip edilecek alacak bulunmuyor.</MudText>
+                        </div>
+                    </MudTabPanel>
+                </MudTabs>
+            </div>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .dashboard-container {
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    .dashboard-sum-card {
+        padding: 24px !important;
+        transition: transform 0.3s ease !important;
+    }
+
+    .dashboard-sum-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .icon-box.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .icon-box.green { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+    .icon-box.indigo { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+    .icon-box.red { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+
+    .action-btn-glass {
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        text-transform: none !important;
+        font-weight: 600 !important;
+    }
+
+    .action-btn-glass:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .text-secondary {
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+@code {
+    decimal gunlukCiro = 0;
+    decimal totalAlacak = 0;
+    decimal totalBorc = 0;
+    decimal aylikCiro = 0;
+    decimal nakitVarligi = 0;
+
+    public List<ChartSeries> Series = new List<ChartSeries>();
+    public string[] XAxisLabels = { "1.H", "2.H", "3.H", "4.H", "5.H" };
+    public ChartOptions chartOptions = new ChartOptions 
+    { 
+        YAxisFormat = "N0",
+    };
+
+    private List<RecentTransactionItem> recentTransactions = new();
+    private List<CariAlertItem> riskyCaris = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.CompletedTask;
+        // Dummy data to match the image precisely
+        Series.Add(new ChartSeries { Name = "Hedef", Data = new double[] { 83333, 83333, 83333, 83333, 83333 } });
+        Series.Add(new ChartSeries { Name = "Gerçekleşen", Data = new double[] { 0, 0, 175982, 0, 0 } });
+
+        _ = Task.Run(async () => 
+        {
+            try 
+            {
+                var stats = await DbService.GetDashboardStatsAsync();
+                await InvokeAsync(() => 
+                {
+                    gunlukCiro = stats.GunlukCiro;
+                    totalAlacak = stats.ToplamAlacak;
+                    totalBorc = stats.ToplamBorc;
+                    aylikCiro = stats.AylikCiro;
+                    nakitVarligi = stats.ToplamNakitVarligi;
+                    StateHasChanged();
+                });
+                
+                var transactions = await DbService.GetRecentTransactionsAsync(15);
+                await InvokeAsync(() => 
+                {
+                    recentTransactions = transactions;
+                    StateHasChanged();
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"HOME_LOAD_ERROR: {ex.Message}");
+            }
+        });
+    }
+
+    private async Task OpenNewFaturaDialog(string type)
+    {
+         var parameters = new DialogParameters { ["IslemTipi"] = type, ["CariUnvan"] = "" };
+         var title = type == "Satis" ? "Satış Faturası" : "Alış Faturası";
+         await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.FaturaDialog>(title, parameters);
+    }
+
+    private async Task OpenSiparisDialog() => await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.SiparisOlusturDialog>("Yeni Sipariş");
+}

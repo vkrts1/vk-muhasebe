@@ -1,0 +1,259 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="750"
+             x:Class="ErmayMuhasebe.Avalonia.Views.CekEntryView"
+             x:DataType="vm:CekSenetListViewModel">
+
+  <UserControl.Resources>
+      <conv:BitmapAssetValueConverter x:Key="BitmapAssetValueConverter"/>
+  </UserControl.Resources>
+
+  <Grid IsVisible="{Binding IsEditFormVisible}" Background="#CC000000">
+      <Border Background="#080A0C" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="20" 
+              HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20"
+              MinWidth="750" MaxWidth="920" MinHeight="480" MaxHeight="680"
+              BoxShadow="0 20 60 0 #CC000000">
+          <Grid RowDefinitions="Auto, *">
+              <!-- Header -->
+              <Border Grid.Row="0" Background="#2660A5FA" Padding="25,10" CornerRadius="20,20,0,0">
+                  <Grid ColumnDefinitions="*, Auto">
+                      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                           <ic:SymbolIcon Symbol="Wallet" Foreground="#60A5FA" FontSize="20" VerticalAlignment="Center"/> 
+                           <TextBlock Text="{Binding EditTitle}" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                      </StackPanel>
+                      
+                      <Button Grid.Column="1" Command="{Binding CloseEditFormCommand}" 
+                              Width="30" Height="30" Padding="0" CornerRadius="15"
+                              Background="Transparent" BorderThickness="0">
+                           <Button.Styles>
+                               <Style Selector="Button:hover">
+                                   <Setter Property="Background" Value="#44FF0000"/>
+                                </Style>
+                           </Button.Styles>
+                           <ic:SymbolIcon Symbol="Dismiss" Foreground="#BBFFFFFF" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+                      </Button>
+                  </Grid>
+              </Border>
+
+              <!-- Form Body (Autoscaling without Scrollbars) -->
+              <Grid Grid.Row="1" ColumnDefinitions="*, 300" Margin="20,15">
+                  <!-- Left side input fields (Super compact to fit MaxHeight="680") -->
+                  <StackPanel Grid.Column="0" Spacing="6" Margin="0,0,15,0">
+                       <Grid ColumnDefinitions="2*, 1*, 1*" Margin="0,0,0,3">
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0" Spacing="3">
+                               <TextBlock Text="Cari Hesap" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                               <Button Command="{Binding OpenCariSecimCommand}" HorizontalAlignment="Stretch" Height="32" 
+                                       Background="#1A60A5FA" BorderBrush="#8060A5FA" BorderThickness="1.5" CornerRadius="8">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+                                        <ic:SymbolIcon Symbol="PeopleSearch" Foreground="#60A5FA" FontSize="16"/> 
+                                        <TextBlock Text="{Binding EditCariUnvan}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="11"/>
+                                    </StackPanel>
+                               </Button>
+                            </StackPanel>
+                           
+                            <StackPanel Grid.Column="1" Margin="0,0,8,0" Spacing="3">
+                               <TextBlock Text="İşlem Yöntemi" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                               <ComboBox SelectedItem="{Binding EditTransactionMethod}" HorizontalAlignment="Stretch" Height="32" VerticalContentAlignment="Center" FontSize="11">
+                                   <sys:String>Nakit</sys:String>
+                                   <sys:String>Kredi Kartı</sys:String>
+                                   <sys:String>Havale/EFT</sys:String>
+                                   <sys:String>Çek</sys:String>
+                               </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="3">
+                               <TextBlock Text="Çek Türü" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                               <ComboBox SelectedItem="{Binding EditCekTuru}" HorizontalAlignment="Stretch" Height="32" VerticalContentAlignment="Center" FontSize="11">
+                                   <sys:String>Alınan</sys:String>
+                                   <sys:String>Verilen</sys:String>
+                               </ComboBox>
+                            </StackPanel>
+                       </Grid>
+
+                      <StackPanel Spacing="3">
+                          <TextBlock Text="Asıl Borçlu (Cari harici ise belirtin)" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                          <TextBox Text="{Binding EditAsilBorclu}" Watermark="Örn: Ahmet Yılmaz..." Height="32" FontSize="11" VerticalContentAlignment="Center"/>
+                      </StackPanel>
+
+                      <Grid ColumnDefinitions="*, *, *">
+                           <StackPanel Grid.Column="0" Margin="0,0,8,0" Spacing="3">
+                              <TextBlock Text="İşlem Tarihi" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                              <TextBox Text="{Binding EditIslemTarihiStr}" Watermark="GG.AA.YYYY" HorizontalAlignment="Stretch" Height="32" FontSize="11" VerticalContentAlignment="Center"/>
+                          </StackPanel>
+                           <StackPanel Grid.Column="1" Margin="0,0,8,0" Spacing="3">
+                              <TextBlock Text="Vade Tarihi" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                              <TextBox Text="{Binding EditVadeTarihiStr}" Watermark="GG.AA.YYYY" HorizontalAlignment="Stretch" Height="32" FontSize="11" VerticalContentAlignment="Center"/>
+                          </StackPanel>
+                           <StackPanel Grid.Column="2" Spacing="3">
+                              <TextBlock Text="Tutar (₺)" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                              <NumericUpDown Value="{Binding EditTutar}" ShowButtonSpinner="False" Height="32" FontSize="11" VerticalContentAlignment="Center"/>
+                          </StackPanel>
+                      </Grid>
+
+                      <Grid ColumnDefinitions="*, *">
+                           <StackPanel Grid.Column="0" Margin="0,0,8,0" Spacing="3">
+                              <TextBlock Text="Banka" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                              <TextBox Text="{Binding EditBanka}" Height="32" FontSize="11" VerticalContentAlignment="Center"/>
+                          </StackPanel>
+                           <StackPanel Grid.Column="1" Spacing="3">
+                              <TextBlock Text="Şube" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                              <TextBox Text="{Binding EditSube}" Height="32" FontSize="11" VerticalContentAlignment="Center"/>
+                          </StackPanel>
+                      </Grid>
+
+                      <Grid ColumnDefinitions="*, *">
+                           <StackPanel Grid.Column="0" Margin="0,0,8,0" Spacing="3">
+                              <TextBlock Text="Seri No" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                              <TextBox Text="{Binding EditSeriNo}" Height="32" FontSize="11" VerticalContentAlignment="Center"/>
+                          </StackPanel>
+                           <StackPanel Grid.Column="1" Spacing="3">
+                              <TextBlock Text="Portföy No" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                              <TextBox Text="{Binding EditPortfoyNo}" IsReadOnly="True" Height="32" FontSize="11" Background="#11FFFFFF" VerticalContentAlignment="Center"/>
+                          </StackPanel>
+                      </Grid>
+
+                      <StackPanel Spacing="3" IsVisible="{Binding SelectedCariGrup, Converter={x:Static ObjectConverters.NotEqual}, ConverterParameter='Tedarikçi'}">
+                          <TextBlock Text="Yönlendirilen Tedarikçi (Opsiyonel)" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                          <Grid ColumnDefinitions="*, 8, Auto">
+                              <TextBox Text="{Binding EditYonlendirilenCariUnvan}" Watermark="Seçiniz..." IsReadOnly="True" Height="32" FontSize="11" VerticalContentAlignment="Center"/>
+                              <Button Grid.Column="2" Command="{Binding OpenTedarikciSecimCommand}" Width="80" Height="32" Classes="SideButton Info" CornerRadius="8" Padding="0">
+                                  <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                      <ic:SymbolIcon Symbol="PeopleSearch" FontSize="13"/> 
+                                      <TextBlock Text="Seç" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
+                                  </StackPanel>
+                              </Button>
+                          </Grid>
+                      </StackPanel>
+
+                      <StackPanel Spacing="3">
+                          <TextBlock Text="Açıklama" FontSize="11" FontWeight="Bold" Opacity="0.6"/>
+                          <TextBox Text="{Binding EditAciklama}" Height="36" FontSize="11" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Padding="8,4"/>
+                      </StackPanel>
+
+                      <!-- Action Buttons (Save & Cancel Side-by-Side) -->
+                      <Grid ColumnDefinitions="*, *" Margin="0,8,0,0">
+                           <Button Grid.Column="0" Command="{Binding CloseEditFormCommand}" Classes="SideButton Secondary" Height="38" Margin="0,0,5,0" CornerRadius="10">
+                                <TextBlock Text="VAZGEÇ" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
+                           </Button>
+                           <Button Grid.Column="1" Classes="SideButton Success" Command="{Binding SaveCekCommand}" Height="38" Margin="5,0,0,0" CornerRadius="10">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+                                    <ic:SymbolIcon Symbol="Save" FontSize="16" VerticalAlignment="Center"/> 
+                                    <TextBlock Text="KAYDET" FontWeight="Black" FontSize="11" VerticalAlignment="Center"/>
+                                </StackPanel>
+                           </Button>
+                      </Grid>
+                  </StackPanel>
+
+                  <!-- Image Section (Right Side) -->
+                  <Border Grid.Column="1" Background="#11FFFFFF" CornerRadius="15" BorderBrush="#22FFFFFF" BorderThickness="1" Margin="5,0,0,0">
+                       <Grid RowDefinitions="*, *">
+                            <Grid Grid.Row="0" RowDefinitions="Auto, *, Auto">
+                                 <Border Grid.Row="0" Background="#1AFFFFFF" Padding="15,4" CornerRadius="15,15,0,0">
+                                      <TextBlock Text="Çek Ön Yüzü" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                                 </Border>
+                                 <Panel Grid.Row="1" Margin="5" MinHeight="80">
+                                      <Image Source="{Binding EditGorselYoluOn, Converter={StaticResource BitmapAssetValueConverter}}" Stretch="Uniform" IsVisible="{Binding EditGorselYoluOn, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                      <StackPanel VerticalAlignment="Center" Spacing="2" IsVisible="{Binding EditGorselYoluOn, Converter={x:Static StringConverters.IsNullOrEmpty}}">
+                                           <ic:SymbolIcon Symbol="ImageAdd" FontSize="24" Opacity="0.3"/> 
+                                           <TextBlock Text="Ön yüz eklenmedi" FontSize="9" Opacity="0.5" HorizontalAlignment="Center"/>
+                                      </StackPanel>
+                                 </Panel>
+                                 <Button Grid.Row="2" Command="{Binding OpenGorselSecOnCommand}" CommandParameter="{Binding $self}" 
+                                         Classes="SideButton Info" Margin="6,0,6,6" Height="30" HorizontalContentAlignment="Stretch">
+                                      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+                                           <ic:SymbolIcon Symbol="Camera" FontSize="14" VerticalAlignment="Center"/> 
+                                           <TextBlock Text="Ön Yüz Seç" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                      </StackPanel>
+                                 </Button>
+                            </Grid>
+
+                            <Border Grid.Row="1" BorderBrush="#22FFFFFF" BorderThickness="0,1,0,0">
+                                 <Grid RowDefinitions="Auto, *, Auto">
+                                      <Border Grid.Row="0" Background="#1AFFFFFF" Padding="15,4">
+                                           <TextBlock Text="Çek Arka Yüzü" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center"/>
+                                      </Border>
+                                      <Panel Grid.Row="1" Margin="5" MinHeight="80">
+                                           <Image Source="{Binding EditGorselYoluArka, Converter={StaticResource BitmapAssetValueConverter}}" Stretch="Uniform" IsVisible="{Binding EditGorselYoluArka, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                           <StackPanel VerticalAlignment="Center" Spacing="2" IsVisible="{Binding EditGorselYoluArka, Converter={x:Static StringConverters.IsNullOrEmpty}}">
+                                                <ic:SymbolIcon Symbol="ImageAdd" FontSize="24" Opacity="0.3"/> 
+                                                <TextBlock Text="Arka yüz eklenmedi" FontSize="9" Opacity="0.5" HorizontalAlignment="Center"/>
+                                           </StackPanel>
+                                      </Panel>
+                                      <Button Grid.Row="2" Command="{Binding OpenGorselSecArkaCommand}" CommandParameter="{Binding $self}" 
+                                              Classes="SideButton Info" Margin="6,0,6,6" Height="30" HorizontalContentAlignment="Stretch">
+                                           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+                                                <ic:SymbolIcon Symbol="Camera" FontSize="14" VerticalAlignment="Center"/> 
+                                                <TextBlock Text="Arka Yüz Seç" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                           </StackPanel>
+                                      </Button>
+                                 </Grid>
+                            </Border>
+                       </Grid>
+                  </Border>
+              </Grid>
+          </Grid>
+      </Border>
+
+      <!-- CARI SECIM DIALOG (Overlay) -->
+      <Grid IsVisible="{Binding IsCariSecimVisible}" Background="#E6000000">
+         <Border Background="#080A0C" BorderBrush="#33FFFFFF" BorderThickness="1" 
+                 BoxShadow="0 10 40 0 #AA000000" CornerRadius="20" 
+                 Width="600" Height="450" VerticalAlignment="Center" HorizontalAlignment="Center" ClipToBounds="True">
+            <Grid RowDefinitions="Auto, Auto, *, Auto">
+               <Border Grid.Row="0" Background="#2660A5FA" Padding="25,14">
+                  <Grid ColumnDefinitions="*, Auto">
+                      <StackPanel Orientation="Horizontal" Spacing="15">
+                          <ic:SymbolIcon Symbol="People" FontSize="20" Foreground="#60A5FA"/> 
+                          <TextBlock Text="Cari Hesap Seçimi" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                      </StackPanel>
+                      <Button Grid.Column="1" Command="{Binding CloseCariSecimCommand}" 
+                              Width="30" Height="30" Padding="0" CornerRadius="15" VerticalAlignment="Center"
+                              Background="Transparent" BorderThickness="0">
+                          <ic:SymbolIcon Symbol="Dismiss" Foreground="#88FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+                      </Button>
+                  </Grid>
+               </Border>
+               <Border Grid.Row="1" Background="#11FFFFFF" Margin="20,10,20,5" Padding="12" CornerRadius="12">
+                  <Grid ColumnDefinitions="*, Auto">
+                     <TextBox Grid.Column="0" Text="{Binding CariSearchText}" Watermark="Cari Ünvan ile ara..." Height="36" CornerRadius="18" Padding="15,5" VerticalContentAlignment="Center">
+                          <TextBox.KeyBindings>
+                              <KeyBinding Command="{Binding SearchCariCommand}" Gesture="Enter"/>
+                          </TextBox.KeyBindings>
+                     </TextBox>
+                     <Button Grid.Column="1" Command="{Binding SearchCariCommand}" Classes="SideButton Info" Width="90" Margin="10,0,0,0">
+                        <TextBlock Text="ARA" FontWeight="Bold" FontSize="11"/>
+                     </Button>
+                  </Grid>
+               </Border>
+               <Border Grid.Row="2" Margin="20,10" Background="#0AFFFFFF" CornerRadius="12" BorderBrush="#22FFFFFF" BorderThickness="1">
+                  <DataGrid ItemsSource="{Binding CariListesi}" SelectedItem="{Binding SelectedCariForAdd}" AutoGenerateColumns="False" IsReadOnly="True" Background="Transparent" GridLinesVisibility="Horizontal"
+                            DoubleTapped="OnCariDoubleTapped">
+                     <DataGrid.Columns>
+                        <DataGridTextColumn Header="Grup" Binding="{Binding Grup}" Width="100"/>
+                        <DataGridTextColumn Header="Ünvan" Binding="{Binding Unvan}" Width="*"/>
+                        <DataGridTextColumn Header="Bakiye" Binding="{Binding Bakiye, StringFormat='N2'}" Width="110"/>
+                     </DataGrid.Columns>
+                  </DataGrid>
+               </Border>
+               <Border Grid.Row="3" Background="#0AFFFFFF" Padding="20,12">
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                     <Button Command="{Binding CloseCariSecimCommand}" Classes="SideButton Danger" Width="100" Content="Vazgeç"/>
+                     <Button Command="{Binding SelectCariCommand}" Classes="SideButton Success" Width="140">
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                              <ic:SymbolIcon Symbol="Checkmark" FontSize="16"/> 
+                              <TextBlock Text="SEÇ" FontWeight="Bold" FontSize="11"/>
+                          </StackPanel>
+                     </Button>
+                  </StackPanel>
+               </Border>
+            </Grid>
+         </Border>
+      </Grid>
+  </Grid>
+</UserControl>

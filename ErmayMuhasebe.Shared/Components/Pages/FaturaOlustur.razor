@@ -1,0 +1,257 @@
+@page "/fatura-olustur"
+@page "/fatura-olustur/{Tur}"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="p-4">
+            <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">@PageTitle Oluştur</MudText>
+            
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string" @bind-Value="fatura.FaturaNo" Label="Fatura No" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker Label="Tarih" @bind-Date="date" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                
+                <MudItem xs="12">
+                    <div class="d-flex align-center gap-2">
+                        <MudTextField T="string" Value="@fatura.CariUnvan" Label="Cari Hesap" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Secondary" OnClick="OpenCariDialog">Seç</MudButton>
+                    </div>
+                </MudItem>
+                <MudItem xs="12">
+                     <MudTextField T="string" @bind-Value="fatura.Aciklama" Label="Fatura Açıklaması" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudTable Items="@detaylar" Hover="true" Breakpoint="Breakpoint.Sm">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Kalemler</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenStokDialog">Ürün Ekle</MudButton>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Stok</MudTh>
+                <MudTh>Miktar</MudTh>
+                <MudTh>Birim</MudTh>
+                <MudTh>Fiyat</MudTh>
+                <MudTh>Tutar</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.StokAdi</MudTd>
+                <MudTd>
+                    <MudNumericField T="double" @bind-Value="context.Miktar" Min="1" Margin="Margin.Dense" Variant="Variant.Text" TextChanged="RecalculateTotals" />
+                </MudTd>
+                 <MudTd>@context.Birim</MudTd>
+                <MudTd>
+                     <MudNumericField T="decimal" @bind-Value="context.BirimFiyat" Min="0" Margin="Margin.Dense" Variant="Variant.Text" TextChanged="RecalculateTotals" Format="N2" />
+                </MudTd>
+                <MudTd>@context.Tutar.ToString("C2")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="MudBlazor.Color.Error" OnClick="@(() => RemoveItem(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+    
+    <MudItem xs="12" Class="d-flex justify-end">
+        <MudPaper Class="p-4" Width="300px">
+            <div class="d-flex justify-space-between mb-2">
+                <MudText>Ara Toplam:</MudText>
+                <MudText>@fatura.AraToplam.ToString("C2")</MudText>
+            </div>
+             <div class="d-flex justify-space-between mb-2">
+                <MudText>KDV:</MudText>
+                <MudText>@fatura.ToplamKDV.ToString("C2")</MudText>
+            </div>
+             <MudDivider Class="my-2"/>
+             <div class="d-flex justify-space-between">
+                <MudText Typo="Typo.h6">Genel Toplam:</MudText>
+                <MudText Typo="Typo.h6" Color="MudBlazor.Color.Success">@fatura.GenelToplam.ToString("C2")</MudText>
+            </div>
+            
+            <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Success" FullWidth="true" Class="mt-4" OnClick="SaveFatura">FATURAYI KAYDET</MudButton>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<style>
+    /* Dark Mode Fixes for Invoice Form */
+    [data-theme="dark"] .mud-input-slot {
+        color: var(--bilsoft-text) !important;
+    }
+    
+    [data-theme="dark"] .mud-input-text {
+        color: var(--bilsoft-text) !important;
+    }
+    
+    [data-theme="dark"] .mud-table-cell {
+        color: var(--bilsoft-text) !important;
+    }
+    
+    [data-theme="dark"] .mud-table-head .mud-table-cell {
+        color: var(--bilsoft-text) !important;
+        background-color: var(--bilsoft-sidebar-bg) !important;
+    }
+    
+    [data-theme="dark"] .mud-input-label {
+        color: var(--bilsoft-text-secondary) !important;
+    }
+    
+    [data-theme="dark"] .mud-input-helper-text {
+        color: var(--bilsoft-text-secondary) !important;
+    }
+    
+    [data-theme="dark"] .mud-picker-calendar-header-day {
+        color: var(--bilsoft-text) !important;
+    }
+    
+    [data-theme="dark"] .mud-picker-calendar-day {
+        color: var(--bilsoft-text) !important;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string? Tur { get; set; }
+
+    private string PageTitle => Tur == "Alis" ? "Alış Faturası" : "Satış Faturası";
+
+    private Fatura fatura = new() { FaturaNo = "", Tur = "Satis" };
+    private List<FaturaDetay> detaylar = new();
+    private DateTime? date = DateTime.Now;
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(Tur)) Tur = "Satis";
+        fatura.Tur = Tur;
+        fatura.FaturaNo = (Tur == "Alis" ? "ALS-" : "SAT-") + DateTime.Now.Ticks.ToString().Substring(12);
+    }
+    
+    protected override void OnParametersSet()
+    {
+         if (string.IsNullOrEmpty(Tur)) Tur = "Satis";
+         fatura.Tur = Tur;
+    }
+
+    private async Task OpenCariDialog()
+    {
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.CariSecDialog>("Cari Seç");
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is CariKart cari)
+        {
+            fatura.CariId = cari.Id;
+            fatura.CariUnvan = cari.Unvan;
+        }
+    }
+
+    private async Task OpenStokDialog()
+    {
+         var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.StokSecDialog>("Stok Seç");
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is StokKart stok)
+        {
+            detaylar.Add(new FaturaDetay
+            {
+                 StokId = stok.Id,
+                 StokKodu = stok.StokKodu,
+                 StokAdi = stok.StokAdi,
+                 Birim = stok.Birim,
+                 BirimFiyat = Tur == "Alis" ? stok.AlisFiyati : stok.SatisFiyati,
+                 Miktar = 1,
+                 KDVOrani = 20
+            });
+            RecalculateTotals();
+        }
+    }
+
+    private void RemoveItem(FaturaDetay item)
+    {
+        detaylar.Remove(item);
+        RecalculateTotals();
+    }
+
+    private void RecalculateTotals()
+    {
+        fatura.AraToplam = detaylar.Sum(d => d.Tutar);
+        fatura.ToplamKDV = detaylar.Sum(d => d.KDVTutari);
+        fatura.GenelToplam = detaylar.Sum(d => d.ToplamTutar);
+        StateHasChanged();
+    }
+
+    private async Task SaveFatura()
+    {
+        if (fatura.CariId == 0)
+        {
+            Snackbar.Add("Lütfen bir cari seçin!", Severity.Warning);
+            return;
+        }
+        if (detaylar.Count == 0)
+        {
+            Snackbar.Add("Lütfen en az bir ürün ekleyin!", Severity.Warning);
+            return;
+        }
+
+        // Risk Limit Check
+        var cariObj = await DbService.GetCariAsync(fatura.CariId);
+        if (cariObj != null && (cariObj.RiskTakibiYapilsin || cariObj.FaturadaRiskKontrolu) && cariObj.RiskLimiti > 0)
+        {
+            bool isSupplier = (cariObj.Tur ?? "").Contains("Sat", StringComparison.OrdinalIgnoreCase) || 
+                             (cariObj.Grup ?? "").Contains("Sat", StringComparison.OrdinalIgnoreCase) ||
+                             (cariObj.Tur ?? "").Contains("Tedar", StringComparison.OrdinalIgnoreCase) ||
+                             (cariObj.Grup ?? "").Contains("Tedar", StringComparison.OrdinalIgnoreCase);
+
+            decimal currentBalance = cariObj.Borc - cariObj.Alacak;
+            bool isSatis = (fatura.Tur ?? "").Equals("Satış", StringComparison.OrdinalIgnoreCase) || (fatura.Tur ?? "").Equals("Satis", StringComparison.OrdinalIgnoreCase);
+            decimal impact = isSatis ? fatura.GenelToplam : -fatura.GenelToplam;
+            decimal projected = currentBalance + impact;
+
+            bool isLimitExceeded = (!isSupplier && projected > cariObj.RiskLimiti) || (isSupplier && (-projected) > cariObj.RiskLimiti);
+
+            if (isLimitExceeded)
+            {
+                if (cariObj.FaturadaRiskKontrolu)
+                {
+                    Snackbar.Add($"RİSK LİMİTİ AŞILDI! İşlem engellendi.\nLimit: {cariObj.RiskLimiti:N2}, Tahmini: {(isSupplier ? -projected : projected):N2}", Severity.Error);
+                    return;
+                }
+                else if (cariObj.RiskTakibiYapilsin)
+                {
+                    Snackbar.Add($"DİKKAT: Risk Limiti aşıldı! (Limit: {cariObj.RiskLimiti:N2})", Severity.Warning);
+                }
+            }
+        }
+
+            // Loss Prevention Check
+            foreach(var detay in detaylar)
+            {
+                var stok = await DbService.GetStokAsync(detay.StokId);
+                if (stok != null && detay.BirimFiyat < (decimal)stok.AlisFiyati)
+                {
+                    Snackbar.Add($"UYARI: {stok.StokAdi} zararına satılıyor! Maliyet: {stok.AlisFiyati:C2}, Satış: {detay.BirimFiyat:C2}", Severity.Warning);
+                    // Not blocking, just warning
+                }
+            }
+        
+        fatura.Tarih = date ?? DateTime.Now;
+        
+        await DbService.SaveFaturaWithDetailsAndTransactionAsync(fatura, detaylar);
+        Snackbar.Add($"{PageTitle} başarıyla kaydedildi.", Severity.Success);
+        
+        NavManager.NavigateTo("");
+    }
+}

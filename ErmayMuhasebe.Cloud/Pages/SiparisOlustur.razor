@@ -1,0 +1,692 @@
+@page "/siparis-olustur"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IJSRuntime JS
+@inject UiService UiService
+@implements IDisposable
+
+<style>
+    .fatura-page {
+        background-color: #0d1012;
+        color: #e0e0e0;
+        height: calc(100vh - 74px);
+        margin-left: 0;
+        width: 100%;
+        padding: 2px 10px;
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+
+    /* Mobile adjustments */
+    @@media (max-width: 960px) {
+        .fatura-page {
+            margin-left: 0;
+            width: 100%;
+            height: auto;
+            overflow-y: auto;
+            padding: 5px;
+            gap: 10px;
+        }
+        .fatura-header-section {
+            flex-direction: column !important;
+            height: auto !important;
+            min-height: 0 !important;
+            gap: 10px !important;
+        }
+        .cari-section, .siparis-section, .title-section {
+            flex: none !important;
+            width: 100% !important;
+        }
+        .cari-section {
+            flex-direction: column !important;
+        }
+        .table-main-wrapper {
+            flex-direction: column !important;
+            height: auto !important;
+            min-height: 400px;
+        }
+        .actions-sidebar {
+            width: 100% !important;
+            flex-direction: row !important;
+            overflow-x: auto;
+            padding: 10px !important;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #111315 !important;
+        }
+        .sidebar-modern-btn {
+            min-width: 100px;
+            flex: 0 0 auto;
+        }
+        .fatura-footer {
+            flex-direction: column !important;
+            height: auto !important;
+            align-items: stretch !important;
+            gap: 15px;
+            padding: 20px 0 !important;
+        }
+        .footer-buttons {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+        }
+    }
+
+    .fatura-header-section {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 4px;
+        flex-shrink: 0;
+    }
+
+    .fatura-panel {
+        background: #111315;
+        border: 1px solid #2d2f31;
+        border-radius: 4px;
+        padding: 4px 8px;
+        position: relative;
+    }
+
+    .fatura-panel-title {
+        font-size: 9px;
+        font-weight: 800;
+        color: #555;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Cari Bilgileri */
+    .cari-section { flex: 5; display: flex; flex-direction: row; gap: 8px; }
+    .cari-inputs { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+    .cari-row { display: flex; align-items: center; gap: 5px; }
+    .cari-label { width: 55px; font-size: 10px; color: #888; font-weight: 500; }
+    .cari-input-box { flex: 1; }
+    .cari-input-box input, .cari-input-box select, .cari-input-box textarea {
+        width: 100%;
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 4px;
+        color: #fff;
+        padding: 1px 6px;
+        font-size: 11px;
+        height: 20px;
+        transition: border-color 0.2s;
+    }
+    .cari-input-box input:focus { border-color: #3b82f6; outline: none; }
+    
+    .cari-sec-btn {
+        width: 48px;
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.15);
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .cari-sec-btn:hover { background: rgba(59, 130, 246, 0.15); transform: translateY(-1px); }
+    .cari-sec-text { font-size: 8px; color: #3b82f6; font-weight: 800; text-transform: uppercase; text-align: center; }
+
+    /* Sipariş Bilgileri */
+    .siparis-section { flex: 3; display: flex; flex-direction: column; gap: 1px; }
+
+    /* Form Title */
+    .title-section { flex: 2; display: flex; align-items: stretch; }
+    .invoice-title-card {
+        background: #1e3a8a;
+        color: white;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        font-size: 24px;
+        font-weight: 900;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    /* Table Section */
+    .table-main-wrapper {
+        flex: 1;
+        display: flex;
+        gap: 8px;
+        overflow: hidden;
+        width: 100%;
+    }
+    .table-container {
+        flex: 1;
+        background: #000;
+        border: 1px solid #2d2f31;
+        border-radius: 4px;
+        overflow-y: auto;
+    }
+    .fatura-table-modern {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .fatura-table-modern th {
+        background: #111;
+        color: #555;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 8px;
+        text-align: left;
+        position: sticky;
+        top: 0;
+        border-bottom: 1px solid #222;
+        z-index: 10;
+    }
+    .fatura-table-modern td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #111;
+        font-size: 12px;
+        color: #bbb;
+    }
+    .fatura-table-modern tr:hover { background: #1a1d21; }
+    .fatura-table-modern tr.selected { background: rgba(37, 99, 235, 0.15); }
+
+    /* Ürün İşlemleri Sidebar */
+    .actions-sidebar {
+        width: 155px;
+        background: #111315;
+        border: 1px solid #2d2f31;
+        border-radius: 4px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .actions-title-box {
+        text-align: center;
+        font-size: 8px;
+        font-weight: 800;
+        color: #444;
+        text-transform: uppercase;
+    }
+    .sidebar-modern-btn {
+        border-radius: 18px;
+        height: 30px;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 9px;
+        font-weight: 800;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-width: 1px;
+        border-style: solid;
+        border-color: #555;
+    }
+    .btn-search { border-color: #00C2FF; color: #00C2FF; }
+    .btn-edit { border-color: #FFA500; color: #FFA500; }
+    .btn-delete { border-color: #FF1493; color: #FF1493; }
+    .btn-amount { border-color: #666; color: #aaa; }
+    
+    .sidebar-modern-btn:hover { background: rgba(255,255,255,0.02); }
+
+    /* Footer Section */
+    .fatura-footer {
+        height: 65px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 4px 0;
+        flex-shrink: 0;
+    }
+    .total-display-section { display: flex; flex-direction: column; gap: 2px; }
+    .total-label-red { color: #f43f5e; font-size: 11px; font-weight: 900; margin-left: 2px; }
+    .total-amount-box {
+        background: #374151;
+        min-width: 160px;
+        padding: 2px 12px;
+        border-radius: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .total-amount-box span { font-size: 26px; font-weight: 900; color: white; }
+
+    .footer-buttons { display: flex; flex-direction: column; gap: 5px; }
+    .main-action-btn {
+        min-width: 120px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-save { background: transparent; color: #10b981; border: 1px solid #10b981; }
+    .btn-cancel { background: transparent; color: #f43f5e; border: 1px solid #f43f5e; }
+
+    /* Table Inputs */
+    .table-input {
+        background: #000;
+        border: 1px solid #333;
+        color: #fff;
+        border-radius: 4px;
+        padding: 2px 4px;
+        font-size: 11px;
+        outline: none;
+    }
+
+    .custom-mud-autocomplete {
+        --mud-palette-text-primary: #fff;
+        --mud-palette-surface: #111;
+    }
+    .custom-mud-autocomplete .mud-input {
+        background: #000 !important;
+        border: 1px solid #333 !important;
+        border-radius: 4px !important;
+        padding-left: 8px !important;
+        color: #fff !important;
+        font-size: 11px !important;
+        height: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .custom-mud-autocomplete .mud-input-adornment { display: none; }
+    .custom-mud-autocomplete .mud-input > input { 
+        padding: 0 !important; 
+        height: 100% !important;
+        line-height: 20px !important;
+    }
+
+
+</style>
+
+<div class="fatura-page" @onkeydown="HandleKeyDown" tabindex="0">
+    <div class="fatura-header-section">
+        <!-- Cari Bilgileri -->
+        <div class="fatura-panel cari-section">
+            <div class="cari-inputs">
+                <div class="fatura-panel-title">Cari Bilgileri</div>
+                <div class="cari-row">
+                    <span class="cari-label">Ünvan</span>
+                    <div class="cari-input-box">
+                        <MudAutocomplete T="CariKart" 
+                                         Value="SelectedCari"
+                                         ValueChanged="OnCariChanged"
+                                         SearchFunc="@SearchCarilerAsync"
+                                         ToStringFunc="@(c => c?.Unvan)"
+                                         Placeholder="Cari Ünvanı veya Kod yazın..."
+                                         Variant="Variant.Text"
+                                         Margin="Margin.None"
+                                         Dense="true"
+                                         Class="custom-mud-autocomplete" />
+                    </div>
+                    <span class="cari-label" style="width:70px; margin-left:10px;">Vergi Dairesi</span>
+                    <div class="cari-input-box"><input @bind="CariVergiDairesi" /></div>
+                </div>
+                <div class="cari-row">
+                    <span class="cari-label">Yetkili</span>
+                    <div class="cari-input-box"><input @bind="CariYetkili" /></div>
+                    <span class="cari-label" style="width:70px; margin-left:10px;">Vergi No</span>
+                    <div class="cari-input-box"><input @bind="CariVergiNo" /></div>
+                </div>
+                <div class="cari-row">
+                    <span class="cari-label">Adres</span>
+                    <div class="cari-input-box"><input @bind="CariAdres" /></div>
+                    <span class="cari-label" style="width:70px; margin-left:10px;">İl</span>
+                    <div class="cari-input-box"><input @bind="CariIl" /></div>
+                </div>
+                <div class="cari-row">
+                    <span class="cari-label">&nbsp;</span>
+                    <div class="cari-input-box" style="visibility:hidden;"><input /></div>
+                    <span class="cari-label" style="width:70px; margin-left:10px;">İlçe</span>
+                    <div class="cari-input-box"><input @bind="CariIlce" /></div>
+                </div>
+                <div class="cari-row">
+                    <span class="cari-label">E-Mail</span>
+                    <div class="cari-input-box"><input @bind="CariEmail" /></div>
+                </div>
+            </div>
+            <div class="cari-sec-btn" @onclick="OpenCariSec">
+                <MudIcon Icon="@Icons.Material.Filled.PersonSearch" Size="Size.Medium" Style="color:#3b82f6;" />
+                <span class="cari-sec-text">Cari Seç</span>
+            </div>
+        </div>
+
+        <!-- Sipariş Bilgileri -->
+        <div class="fatura-panel siparis-section">
+            <div class="fatura-panel-title">Sipariş Bilgileri</div>
+            <div class="cari-row">
+                <span class="cari-label" style="width:85px;">Sipariş Tarihi</span>
+                <div class="cari-input-box"><input type="date" value="@OrderDate?.ToString("yyyy-MM-dd")" @onchange="@(e => OrderDate = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : OrderDate)" /></div>
+            </div>
+            <div class="cari-row">
+                <span class="cari-label" style="width:85px;">Teslimat Tarihi</span>
+                <div class="cari-input-box"><input type="date" value="@DeliveryDate?.ToString("yyyy-MM-dd")" @onchange="@(e => DeliveryDate = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : DeliveryDate)" /></div>
+            </div>
+            <div class="cari-row">
+                <span class="cari-label" style="width:85px;">Sipariş No</span>
+                <div class="cari-input-box"><input @bind="Order.SiparisNo" /></div>
+            </div>
+            <div class="cari-row">
+                <span class="cari-label" style="width:85px;">Açıklama</span>
+                <div class="cari-input-box"><input @bind="Order.Aciklama" /></div>
+            </div>
+            <div class="cari-row">
+                <span class="cari-label" style="width:85px;">PDF Notları</span>
+                <div class="cari-input-box"><input @bind="Order.PdfNotlar" placeholder="PDF Notları.." /></div>
+            </div>
+            <div class="cari-row">
+                <span class="cari-label" style="width:85px;">Ödeme Bilgisi</span>
+                <div class="cari-input-box"><input @bind="Order.OdemeBilgisi" /></div>
+            </div>
+        </div>
+
+        <!-- Form Title -->
+        <div class="title-section">
+            <div class="invoice-title-card">
+                SİPARİŞ FORMU
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle: Table and Actions -->
+    <div class="table-main-wrapper">
+        <div class="table-container">
+            <table class="fatura-table-modern">
+                <thead>
+                    <tr>
+                        <th style="width:auto;">Ad</th>
+                        <th style="text-align:center;">Miktar</th>
+                        <th style="text-align:center;">Miktar Açıklaması</th>
+                        <th style="text-align:center;">Birim</th>
+                        <th style="text-align:right;">Birim Fiyatı</th>
+                        <th style="text-align:center;">KDV</th>
+                        <th style="text-align:right;">Toplam</th>
+                        <th style="text-align:right;">Genel Toplam</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var line in OrderDetails)
+                    {
+                        <tr class="@(selectedLine == line ? "selected" : "")" @onclick="() => selectedLine = line">
+                            <td>@line.StokAdi</td>
+                            <td style="text-align:center; padding: 2px;">
+                                <input type="number" 
+                                       value="@line.Miktar" 
+                                       @oninput="@(e => { string val = e.Value?.ToString() ?? "0"; if(double.TryParse(val, out var v)) { line.Miktar = v; RecalculateLine(line); StateHasChanged(); } })"
+                                       class="table-input" style="text-align:center; width: 60px;" />
+                            </td>
+                            <td style="text-align:center; padding: 2px;">
+                                <input type="text" @bind="line.MiktarAciklama" class="table-input" style="text-align:center; width: 100px;" />
+                            </td>
+                            <td style="text-align:center; padding: 2px;">
+                                <select @bind="line.Birim" class="table-input" style="text-align:center; width: 60px;">
+                                    <option value="Adet">Adet</option>
+                                    <option value="Kg">Kg</option>
+                                    <option value="Metre">Metre</option>
+                                </select>
+                            </td>
+                            <td style="text-align:right; padding: 2px;">
+                                <input type="number" 
+                                       value="@line.BirimFiyat" 
+                                       @oninput="@(e => { string val = e.Value?.ToString() ?? "0"; if(decimal.TryParse(val, out var v)) { line.BirimFiyat = v; RecalculateLine(line); StateHasChanged(); } })"
+                                       class="table-input" style="text-align:right; width: 80px;" />
+                            </td>
+                            <td style="text-align:center; padding: 2px;">
+                                <select value="@line.KdvOrani" @onchange="(e => { if(double.TryParse(e.Value?.ToString(), out var v)) { line.KdvOrani = v; RecalculateLine(line); StateHasChanged(); } })" class="table-input" style="text-align:center; width: 60px;">
+                                    <option value="0">%0</option>
+                                    <option value="10">%10</option>
+                                    <option value="20">%20</option>
+                                </select>
+                            </td>
+                            <td style="text-align:right;">@(( (decimal)line.Miktar * line.BirimFiyat ).ToString("N2"))</td>
+                            <td style="text-align:right; font-weight:bold;">@line.Tutar.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="actions-sidebar">
+            <div class="actions-title-box">ÜRÜN İŞLEMLERİ</div>
+            <button class="sidebar-modern-btn btn-search" @onclick="OpenUrunEkle" style="border-radius: 15px;">
+                <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" />
+                <span>Ürün Ekle (F2)</span>
+            </button>
+            <button class="sidebar-modern-btn btn-delete" @onclick="RemoveLine" style="border-radius: 15px;">
+                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                <span>Ürünü Sil</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="fatura-footer">
+        <div class="total-display-section">
+            <span class="total-label-red">GENEL TOPLAM</span>
+            <div class="total-amount-box">
+                <span>@OrderDetails.Sum(x => x.Tutar).ToString("N2")</span>
+            </div>
+        </div>
+        <div class="footer-buttons">
+            <button class="main-action-btn btn-save" @onclick="SaveOrder" disabled="@_saving">
+                <span>Kaydet (F4)</span>
+                <MudIcon Icon="@Icons.Material.Filled.FactCheck" Size="Size.Small" />
+            </button>
+            <button class="main-action-btn btn-cancel" @onclick="Cancel">
+                <span>Vazgeç (ESC)</span>
+                <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+            </button>
+        </div>
+    </div>
+</div>
+
+@using System.Text.Json
+
+@code {
+    [SupplyParameterFromQuery] public int? Id { get; set; }
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+
+    private Siparis Order = new();
+    private List<SiparisDetay> OrderDetails = new();
+    private CariKart? SelectedCari;
+    private SiparisDetay? selectedLine;
+    
+    // UI temporary fields
+    private string? SelectedCariUnvan;
+    private string? CariYetkili;
+    private string? CariAdres;
+    private string? CariEmail;
+    private string? CariVergiDairesi;
+    private string? CariVergiNo;
+    private string? CariIl;
+    private string? CariIlce;
+
+    private DateTime? OrderDate = DateTime.Now;
+    private DateTime? DeliveryDate = DateTime.Now.AddDays(1);
+    private bool _saving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        UiService.OnEscapePressed += HandleEscape;
+        
+        if (Id.HasValue && Id.Value > 0)
+        {
+            var existing = await DbService.GetSiparisAsync(Id.Value);
+            if (existing != null)
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(existing);
+                Order = System.Text.Json.JsonSerializer.Deserialize<Siparis>(json) ?? new Siparis();
+                
+                OrderDate = Order.Tarih;
+                DeliveryDate = Order.TeslimatTarihi;
+                
+                var details = await DbService.GetSiparisDetaylarAsync(Order.Id);
+                OrderDetails = details ?? new List<SiparisDetay>();
+                
+                var cariler = await DbService.GetCarilerAsync();
+                SelectedCari = cariler.FirstOrDefault(c => c.Id == Order.CariId);
+                if (SelectedCari != null) MapCari(SelectedCari);
+            }
+        }
+        else
+        {
+            Order.SiparisNo = "SIP-" + DateTime.Now.ToString("yyyyMMddHHmmss");
+        }
+    }
+
+    private void MapCari(CariKart cari)
+    {
+        SelectedCari = cari;
+        SelectedCariUnvan = cari.Unvan;
+        CariYetkili = cari.Yetkili;
+        CariAdres = cari.Adres;
+        CariEmail = cari.Email;
+        CariVergiDairesi = cari.VergiDairesi;
+        CariVergiNo = cari.VergiNo;
+        CariIl = cari.Il;
+        CariIlce = cari.Ilce;
+    }
+
+    private void RecalculateLine(SiparisDetay line)
+    {
+        decimal subtotal = (decimal)line.Miktar * line.BirimFiyat;
+        line.Tutar = subtotal * (1 + (decimal)line.KdvOrani / 100m);
+    }
+
+    private async Task OpenCariSec()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<CariSecimDialog>("Cari Seçimi", options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is CariKart cari)
+        {
+            MapCari(cari);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenUrunEkle()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<StokSecimDialog>("Ürün Seçimi", options);
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is StokKart s)
+        {
+            var newLine = new SiparisDetay {
+                StokId = s.Id,
+                StokAdi = s.StokAdi,
+                Miktar = 1,
+                Birim = s.Birim,
+                BirimFiyat = s.SatisFiyati,
+                KdvOrani = 10,
+                ParaBirimi = "TL"
+            };
+            RecalculateLine(newLine);
+            OrderDetails.Add(newLine);
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveLine()
+    {
+        if (selectedLine != null)
+        {
+            OrderDetails.Remove(selectedLine);
+            selectedLine = null;
+        }
+    }
+
+
+    private async Task SaveOrder()
+    {
+        if (SelectedCari == null) { Snackbar.Add("Lütfen bir cari seçin.", Severity.Warning); return; }
+        if (!OrderDetails.Any()) { Snackbar.Add("En az bir ürün eklemelisiniz.", Severity.Warning); return; }
+
+        _saving = true;
+        try
+        {
+            Order.CariId = SelectedCari.Id;
+            Order.CariUnvan = SelectedCariUnvan;
+            Order.Tarih = OrderDate ?? DateTime.Now;
+            Order.TeslimatTarihi = DeliveryDate;
+            Order.GenelToplam = OrderDetails.Sum(x => x.Tutar);
+            Order.Durum = "Bekliyor";
+
+            await DbService.SaveSiparisWithDetailsAsync(Order, OrderDetails);
+            Snackbar.Add("Sipariş başarıyla kaydedildi.", Severity.Success);
+            if (!string.IsNullOrEmpty(ReturnUrl))
+            {
+                NavManager.NavigateTo(ReturnUrl);
+            }
+            else
+            {
+                NavManager.NavigateTo("/siparisler");
+            }
+        }
+        catch (Exception ex) { Snackbar.Add($"Hata: {ex.Message}", Severity.Error); }
+        finally { _saving = false; }
+    }
+
+    private async Task Cancel()
+    {
+        if (!string.IsNullOrEmpty(ReturnUrl))
+        {
+            NavManager.NavigateTo(ReturnUrl);
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("history.back");
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "F2": await OpenUrunEkle(); break;
+            case "F4": await SaveOrder(); break;
+        }
+    }
+
+    private Task<bool> HandleEscape()
+    {
+        return Task.FromResult(false);
+    }
+
+    private async Task<IEnumerable<CariKart>> SearchCarilerAsync(string value, CancellationToken token)
+    {
+        var all = await DbService.GetCarilerAsync();
+        if (string.IsNullOrEmpty(value)) return all.Take(10);
+        return all.Where(x => (x.Unvan?.Contains(value, StringComparison.OrdinalIgnoreCase) ?? false) || 
+                             (x.CariKod?.Contains(value, StringComparison.OrdinalIgnoreCase) ?? false)).Take(20);
+    }
+
+    private void OnCariChanged(CariKart cari)
+    {
+        if (cari != null) MapCari(cari);
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+}

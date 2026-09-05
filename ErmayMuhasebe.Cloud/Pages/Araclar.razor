@@ -1,0 +1,273 @@
+@page "/araclar"
+@using MudBlazor
+@using System.Collections.Generic
+@inject NavigationManager Nav
+@inject ErmayMuhasebe.Cloud.Services.ClientAuthService AuthService
+
+<div class="araclar-container">
+    <!-- Header Section -->
+    <div class="araclar-header">
+        <div class="header-icon-box">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Style="font-size: 28px; color: #60A5FA;" />
+        </div>
+        <div class="header-content">
+            <h1 class="araclar-title">Araçlar ve Modüller</h1>
+            <p class="araclar-subtitle">İşletmenizin dijital dönüşümünde size yardımcı olacak interaktif araçlar.</p>
+        </div>
+    </div>
+
+    <!-- Tools Grid -->
+    <div class="araclar-grid">
+        @foreach (var tool in _tools)
+        {
+            <div class="tool-card-wrapper" @onclick="() => NavigateToTool(tool.Url)">
+                <div class="tool-card" style="--tool-color: @tool.Color; --tool-rgb: @tool.RgbColor;">
+                    <div class="tool-card-top">
+                        <div class="tool-icon-box" style="background: @(tool.Color)26;">
+                            <MudIcon Icon="@tool.Icon" Style="@($"color: {tool.Color}; font-size: 24px;")" />
+                        </div>
+                        @if (tool.IsImplemented)
+                        {
+                            <div class="tool-badge">AKTİF</div>
+                        }
+                    </div>
+                    
+                    <div class="tool-card-body">
+                        <h3 class="tool-title">@tool.Title</h3>
+                        <p class="tool-description">@tool.Description</p>
+                    </div>
+
+                    <div class="tool-card-footer">
+                        <div class="status-dot" style="background-color: @tool.Color;"></div>
+                        <span class="status-text" style="color: @tool.Color;">@tool.StatusText</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .araclar-container {
+        padding: 30px 30px 30px 30px !important;
+        background: transparent;
+        min-height: 100%;
+        color: white;
+        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        overflow-y: auto;
+    }
+
+    /* Header Styles */
+    .araclar-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .header-icon-box {
+        width: 55px;
+        height: 55px;
+        background: rgba(96, 165, 250, 0.15);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .araclar-title {
+        font-size: 30px;
+        font-weight: 900;
+        margin: 0;
+        color: white;
+        background: none;
+        -webkit-background-clip: unset;
+        -webkit-text-fill-color: white;
+    }
+
+    .araclar-subtitle {
+        font-size: 15px;
+        color: #9CA3AF;
+        margin-top: 2px;
+        font-weight: 400;
+    }
+
+    /* Grid Layout - 4 columns matching desktop WrapPanel with 350px items */
+    .araclar-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+
+    /* Tool Card Styles */
+    .tool-card-wrapper {
+        cursor: pointer;
+    }
+
+    .tool-card {
+        background: var(--panel-bg, rgba(26, 32, 44, 0.6));
+        border: 1.5px solid rgba(255, 255, 255, 0.07);
+        border-radius: 20px;
+        padding: 24px;
+        height: 180px;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .tool-card-wrapper:hover .tool-card {
+        border-color: var(--tool-color);
+        transform: scale(1.02);
+    }
+
+    .tool-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .tool-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tool-badge {
+        background: #10B981;
+        color: white;
+        font-size: 10px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 8px;
+        letter-spacing: 0.5px;
+    }
+
+    .tool-card-body {
+        margin-top: 15px;
+        flex-grow: 1;
+    }
+
+    .tool-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 5px 0;
+    }
+
+    .tool-description {
+        font-size: 12px;
+        color: #9CA3AF;
+        line-height: 1.5;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .tool-card-footer {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+    }
+
+    .status-text {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.8;
+    }
+
+    /* Responsive */
+    @@media (max-width: 1400px) {
+        .araclar-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @@media (max-width: 1024px) {
+        .araclar-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .araclar-container {
+            padding: 20px !important;
+        }
+        .araclar-grid {
+            grid-template-columns: 1fr;
+        }
+        .araclar-title {
+            font-size: 26px;
+        }
+    }
+</style>
+
+@code {
+    private List<ToolItem> _tools = new();
+
+    protected override void OnInitialized()
+    {
+        // Match desktop ToolsViewModel.cs order and data exactly
+        _tools = new List<ToolItem>
+        {
+            new("Sistem Sağlığı ve Bakımı", "Sistem durumu izleme, temizlik ve yedekleme.", Icons.Material.Filled.Favorite, "#10B981", "16, 185, 129", "/sistem-saglik"),
+            new("Belge Arşivleme", "Dijital evrak saklama.", Icons.Material.Filled.Folder, "#8B5CF6", "139, 92, 246", "/belge-arsiv"),
+            new("Döviz Kurları & Otomasyon", "Canlı kur ekranı ve otomatik çekme ayarları.", Icons.Material.Filled.CurrencyExchange, "#F59E0B", "245, 158, 11", "/doviz-otomasyon"),
+            new("Cari Birleştirme", "Mükerrer cari kartları birleştir.", Icons.Material.Filled.People, "#3B82F6", "59, 130, 246", "/cari-birlestirme"),
+            new("Ürün Birleştirme", "Mükerrer kartları birleştir.", Icons.Material.Filled.TableChart, "#EC4899", "236, 72, 153", "/urun-birlestirme"),
+            new("Gecikme Faizi", "Faiz hesaplama aracı.", Icons.Material.Filled.Receipt, "#EF4444", "239, 68, 68", "/faiz-hesaplama"),
+            new("Risk Puanlayıcı", "Ödeme analizi paneli.", Icons.Material.Filled.ShowChart, "#F59E0B", "245, 158, 11", "/cek-risk-analiz"),
+            new("Toplu Fiyat Güncelleme", "Tüm ürünlere toplu zam/indirim.", Icons.Material.Filled.LocalOffer, "#10B981", "16, 185, 129", "/toplu-fiyat"),
+            new("Limit Yönetimi", "Risk ve kredi limitleri.", Icons.Material.Filled.Shield, "#EF4444", "239, 68, 68", "/limit-yonetimi"),
+            new("Bütçe Planlama Merkezi", "Yıllık, aylık ve haftalık hedef yönetimi.", Icons.Material.Filled.BarChart, "#60A5FA", "96, 165, 250", "/butce-planlama"),
+            new("Portföy Listesi", "Varlık yönetimi paneli.", Icons.Material.Filled.BusinessCenter, "#8B5CF6", "139, 92, 246", "/portfoy-listesi")
+        };
+    }
+
+    private void NavigateToTool(string url)
+    {
+        if (!string.IsNullOrEmpty(url))
+        {
+            Nav.NavigateTo(url);
+        }
+    }
+
+    public class ToolItem
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Icon { get; set; }
+        public string Color { get; set; }
+        public string RgbColor { get; set; }
+        public string Url { get; set; }
+        public bool IsImplemented { get; set; }
+        public string StatusText { get; set; }
+
+        public ToolItem(string title, string description, string icon, string color, string rgbColor, string url, bool implemented = true)
+        {
+            Title = title;
+            Description = description;
+            Icon = icon;
+            Color = color;
+            RgbColor = rgbColor;
+            Url = url;
+            IsImplemented = implemented;
+            StatusText = implemented ? "AKTİF" : "YENİ";
+        }
+    }
+}

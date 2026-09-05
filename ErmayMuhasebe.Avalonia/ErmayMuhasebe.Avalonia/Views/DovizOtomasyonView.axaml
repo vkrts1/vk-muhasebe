@@ -1,0 +1,99 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Shared.ViewModels;assembly=ErmayMuhasebe.Shared"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             x:Class="ErmayMuhasebe.Avalonia.Views.DovizOtomasyonView"
+             x:DataType="vm:DovizOtomasyonViewModel">
+  
+  <UserControl.Resources>
+      <conv:SymbolIconConverter x:Key="SymbolIconConverter"/>
+  </UserControl.Resources>
+
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <!-- Header -->
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#26F59E0B">
+          <ic:SymbolIcon Symbol="{Binding Converter={StaticResource SymbolIconConverter}, ConverterParameter=CurrencyDollar}" Foreground="#F59E0B" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Döviz Kurları ve Otomasyon" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Canlı kurları takip edin ve otomatik güncelleme ayarlarını yönetin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="400, *">
+      <!-- Left Column: Settings -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1" VerticalAlignment="Top" Margin="0,0,20,0">
+          <StackPanel Spacing="25">
+              <Grid ColumnDefinitions="*, Auto">
+                  <StackPanel Spacing="10">
+                      <TextBlock Text="Otomatik Güncelleme" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                      <TextBlock Text="Arka planda otomatik kur çekme." FontSize="12" Foreground="#9CA3AF"/>
+                  </StackPanel>
+                  <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsOtomatikGuncellemeDurumu}" OnContent="Açık" OffContent="Kapalı"/>
+              </Grid>
+
+              <Separator Background="#15FFFFFF"/>
+
+              <StackPanel Spacing="15">
+                  <TextBlock Text="Ayarlar" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                  <StackPanel Spacing="8">
+                      <TextBlock Text="Veri Kaynağı" Foreground="#9CA3AF" FontSize="12"/>
+                      <TextBox IsReadOnly="True" Text="{Binding Kaynak}" Opacity="0.7"/>
+                  </StackPanel>
+                  <StackPanel Spacing="8">
+                      <TextBlock Text="Güncelleme Aralığı" Foreground="#9CA3AF" FontSize="12"/>
+                      <ComboBox SelectedItem="{Binding GuncellemeAraligi}" HorizontalAlignment="Stretch">
+                          <x:String>Açılışta (Bir Kez)</x:String>
+                          <x:String>Her Saat</x:String>
+                          <x:String>Günde 1 (15:30'da)</x:String>
+                      </ComboBox>
+                  </StackPanel>
+              </StackPanel>
+
+              <Separator Background="#15FFFFFF"/>
+
+              <StackPanel Spacing="10">
+                  <TextBlock Text="Son Durum" FontSize="14" Foreground="#9CA3AF" FontWeight="Bold"/>
+                  <Border Background="#1060A5FA" CornerRadius="12" Padding="15">
+                      <Grid ColumnDefinitions="Auto, *">
+                          <ic:SymbolIcon Symbol="Info" Foreground="#60A5FA" FontSize="20" Margin="0,0,15,0"/> 
+                          <StackPanel Grid.Column="1" Spacing="3">
+                               <TextBlock Foreground="White" FontSize="13">
+                                  <Run Text="Son Güncelleme: " Foreground="#9CA3AF"/>
+                                  <Run Text="{Binding SonGuncelleme, StringFormat={}{0:dd.MM.yyyy HH:mm}}"/>
+                               </TextBlock>
+                               <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="#60A5FA"/>
+                          </StackPanel>
+                      </Grid>
+                  </Border>
+              </StackPanel>
+
+              <StackPanel Spacing="10">
+                  <Button Command="{Binding SimdiGuncelleCommand}" Classes="SideButton Info" HorizontalAlignment="Stretch" Height="45">
+                      <TextBlock Text="ŞİMDİ GÜNCELLE" FontWeight="Bold"/>
+                  </Button>
+                  <Button Command="{Binding AyarlariKaydetCommand}" Classes="SideButton Info" HorizontalAlignment="Stretch" Height="45" Background="#10B981">
+                      <TextBlock Text="AYARLARI KAYDET" FontWeight="Bold"/>
+                  </Button>
+              </StackPanel>
+          </StackPanel>
+      </Border>
+
+      <!-- Right Column: Rates Table -->
+      <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="20" BorderBrush="#22FFFFFF" BorderThickness="1">
+        <DataGrid ItemsSource="{Binding Kurlar}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="None" Background="Transparent" VerticalAlignment="Stretch">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Kod" Binding="{Binding Kod}" Width="80"/>
+            <DataGridTextColumn Header="Döviz Adı" Binding="{Binding Isim}" Width="*"/>
+            <DataGridTextColumn Header="Alış" Binding="{Binding Alis}" Width="110"/>
+            <DataGridTextColumn Header="Satış" Binding="{Binding Satis}" Width="110"/>
+             <DataGridTextColumn Header="Ef. Alış" Binding="{Binding EfektifAlis}" Width="110"/>
+            <DataGridTextColumn Header="Ef. Satış" Binding="{Binding EfektifSatis}" Width="110"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

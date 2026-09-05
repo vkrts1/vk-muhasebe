@@ -1,0 +1,489 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ErmayMuhasebe.Repositories.IUnitOfWork Uow
+
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<MudDialog Class="custom-dark-dialog" Options="@(new DialogOptions { CloseOnEscapeKey = true })">
+    <TitleContent>
+        <div style="background: #34495e; color: white; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <MudText Typo="Typo.h6" Style="font-weight: bold;">Cari Hesap İşlemleri</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="Cancel" Size="Size.Small" />
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div style="width: 100%; padding: 20px; background: #1a252f; color: white;" tabindex="0" @onkeydown="HandleKeyDown" @ref="dialogRef">
+            <style>
+                .custom-dark-dialog .mud-dialog-title { padding: 0 !important; }
+                .custom-dark-dialog .mud-dialog-content { padding: 0 !important; overflow-x: hidden; }
+                .custom-dark-dialog .mud-dialog-actions { padding: 0 !important; }
+                .custom-dark-dialog .mud-input-control { margin-top: 8px; }
+                .custom-dark-dialog .mud-input-label { color: #bdc3c7 !important; text-transform: uppercase; font-size: 13px !important; letter-spacing: 1px; }
+                .custom-dark-dialog .mud-input { background: #2c3e50; color: white; border-radius: 4px; }
+                .custom-dark-dialog .mud-input.mud-input-outlined fieldset { border-color: #34495e; }
+            </style>
+            <div style="margin-bottom: 12px;">
+                <MudText Style="font-size: 14px; margin-bottom: 4px;">ÜNVAN</MudText>
+                <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Value="@CariUnvan" ReadOnly="true" />
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <MudText Style="font-size: 14px; margin-bottom: 4px;">YETKİLİ</MudText>
+                <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Value="@CariYetkili" ReadOnly="true" />
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <MudText Style="font-size: 14px; margin-bottom: 4px;">Ödeme Yöntemi</MudText>
+                <MudSelect T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Value="@odemeYontemi" ValueChanged="OnOdemeYontemiChanged">
+                    <MudSelectItem Value="@("Nakit")">Nakit</MudSelectItem>
+                    <MudSelectItem Value="@("Kredi Kartı")">Kredi Kartı</MudSelectItem>
+                    <MudSelectItem Value="@("Havale / EFT")">Havale / EFT</MudSelectItem>
+                    <MudSelectItem Value="@("Çek")">Çek</MudSelectItem>
+                </MudSelect>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <MudText Style="font-size: 14px; margin-bottom: 4px;">İşlem Tarihi</MudText>
+                <MudDatePicker @bind-Date="islemTarihi" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <MudText Style="font-size: 14px; margin-bottom: 4px;">Açıklama</MudText>
+                <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" @bind-Value="aciklama" />
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <MudText Style="font-size: 14px; margin-bottom: 4px;">Tutar</MudText>
+                <MudNumericField T="decimal" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="tutar" Format="N2" Adornment="Adornment.End" AdornmentText="₺" />
+            </div>
+
+            @if (odemeYontemi == "Kredi Kartı" || odemeYontemi == "Havale / EFT")
+            {
+                <div style="margin-bottom: 12px;">
+                    <MudText Style="font-size: 14px; margin-bottom: 4px;">@(odemeYontemi == "Kredi Kartı" ? "Kart Seçimi" : "Banka Hesabı")</MudText>
+                    <MudSelect T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="seciliKartId">
+                        <MudSelectItem T="int?" Value="null">Seçiniz...</MudSelectItem>
+                        @foreach (var kart in bankalar)
+                        {
+                            @if ((odemeYontemi == "Kredi Kartı" && kart.KartTuru == "Kredi Kartı") || (odemeYontemi == "Havale / EFT" && kart.KartTuru != "Kredi Kartı"))
+                            {
+                                <MudSelectItem T="int?" Value="@kart.Id">@kart.BankaAdi (@kart.HesapNo)</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </div>
+                
+                <div style="margin-bottom: 12px; border: 1px dashed #34495e; padding: 12px; border-radius: 4px; text-align: center;">
+                    @if (string.IsNullOrEmpty(slipImageBase64))
+                    {
+                        <MudFileUpload T="IBrowserFile" OnFilesChanged="UploadSlip" Accept=".jpg,.jpeg,.png">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.PhotoCamera">
+                                    Slip Görseli Ekle
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                    }
+                    else
+                    {
+                        <div style="position: relative; display: inline-block;">
+                            <img src="@slipImageBase64" style="max-width: 100px; max-height: 100px; border-radius: 4px;" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" 
+                                           Style="position: absolute; top: -10px; right: -10px; background: #1a252f;" 
+                                           OnClick="@(() => slipImageBase64 = "")" />
+                        </div>
+                    }
+                </div>
+            }
+
+            @if ((odemeYontemi == "Kredi Kartı" || odemeYontemi == "Havale / EFT") && !IsSupplierInContext())
+            {
+                <div style="margin-bottom: 12px;">
+                    <MudText Style="font-size: 14px; margin-bottom: 4px;">Hedef (Tedarikçiye Aktar)</MudText>
+                    <MudCheckBox @bind-Value="_ciroEdilsin" Label="Tedarikçiye Ciro Et / Aktar" Color="Color.Info" Dense="true" />
+                </div>
+
+                @if (_ciroEdilsin)
+                {
+                    <div style="margin-bottom: 12px;">
+                        <MudText Style="font-size: 14px; margin-bottom: 4px; color: #4a9eff;">AKTARILACAK TEDARİKÇİ</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudTextField @bind-Value="_yonlendirilenCariUnvan" Label="Tedarikçi Seçin" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true"/>
+                            <MudIconButton Icon="@Icons.Material.Filled.PersonAdd" OnClick="TedarikciSec" Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" />
+                        </MudStack>
+                    </div>
+                }
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div style="background: #1a252f; width: 100%; padding: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+            <MudButton OnClick="Cancel" Variant="Variant.Filled" Style="background: #6C7A89; color: white; padding: 8px 24px; font-weight: bold;" Disabled="@_isSaving">VAZGEÇ</MudButton>
+            <MudButton OnClick="Save" Variant="Variant.Filled" Color="Color.Primary" Style="padding: 8px 24px; font-weight: bold;" Disabled="@_isSaving">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">KAYDEDİLİYOR...</MudText>
+                }
+                else
+                {
+                    <MudText>KAYDET</MudText>
+                }
+            </MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public string CariUnvan { get; set; } = "";
+    [Parameter] public string CariYetkili { get; set; } = "";
+    [Parameter] public string IslemTipi { get; set; } = "Stoksuz Satış";
+    [Parameter] public int CariId { get; set; }
+    [Parameter] public CariHareket? ExistingHareket { get; set; }
+    
+    private DateTime? islemTarihi = DateTime.Now;
+    private string aciklama = "";
+    private decimal tutar = 0;
+    private string odemeYontemi = "Nakit";
+    private string slipImageBase64 = "";
+    private Cek? bagliCek = null;
+    private List<BankaKart> bankalar = new();
+    private int? seciliKartId;
+    private bool _isSaving = false;
+    private ElementReference dialogRef;
+    
+    private CariKart? cari;
+    private bool _ciroEdilsin = false;
+    private int? _yonlendirilenCariId;
+    private string? _yonlendirilenCariUnvan;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cari = await DbService.GetCariAsync(CariId);
+        if (ExistingHareket != null)
+        {
+            islemTarihi = ExistingHareket.Tarih;
+            aciklama = ExistingHareket.Aciklama ?? "";
+            tutar = ExistingHareket.Borc > 0 ? ExistingHareket.Borc : ExistingHareket.Alacak;
+            IslemTipi = ExistingHareket.IslemTuru ?? "Stoksuz Satış";
+            slipImageBase64 = ExistingHareket.SlipImage ?? "";
+            
+            // Extract payment method from description if available
+            if (aciklama.Contains("(Nakit)")) odemeYontemi = "Nakit";
+            else if (aciklama.Contains("(Kredi Kartı)")) odemeYontemi = "Kredi Kartı";
+            else if (aciklama.Contains("(Havale / EFT)")) odemeYontemi = "Havale / EFT";
+            else if (aciklama.Contains("(Çek)")) odemeYontemi = "Çek";
+        }
+        else
+        {
+            aciklama = IslemTipi;
+        }
+
+        await LoadBankalar();
+    }
+
+    private async Task LoadBankalar()
+    {
+        bankalar = await DbService.GetBankaKartlariAsync();
+        StateHasChanged();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("eval", "document.querySelector('[tabindex=\"0\"]')?.focus()");
+        }
+    }
+    
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" || e.Code == "Escape")
+        {
+            Cancel();
+        }
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+
+    private async Task OnOdemeYontemiChanged(string val)
+    {
+        odemeYontemi = val;
+        
+        if (val == "Çek")
+        {
+            var isTahsilat = IslemTipi == "Tahsilat";
+            var yeniCek = new Cek 
+            { 
+                CekTuru = isTahsilat ? "Alınan" : "Verilen", 
+                Durum = "Portfoy", 
+                VadeTarihi = DateTime.Now.AddMonths(1),
+                CariId = CariId,
+                CariUnvan = CariUnvan,
+                Tutar = tutar > 0 ? tutar : 0, 
+                Aciklama = aciklama,
+                IslemTuru = IslemTipi // "Tahsilat", "Ödeme" etc.
+            };
+
+            var parameters = new DialogParameters 
+            { 
+                ["Model"] = yeniCek,
+                ["HideCariSearch"] = true,
+                ["IsSupplier"] = IsSupplierInContext()
+            };
+            
+            var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.CekDialog>("Çek İşlemi", parameters, options);
+            var result = await dialog.Result;
+
+            if (result != null && !result.Canceled)
+            {
+                if (result.Data is Cek cek)
+                {
+                    bagliCek = cek;
+                    tutar = cek.Tutar;
+                    aciklama = $"Çek No: {cek.CekNo} - {cek.Banka}";
+                    Snackbar.Add("Çek bilgileri alındı.", Severity.Info);
+                }
+                else
+                {
+                    // Handle switch to other methods
+                    if (result.Data != null)
+                    {
+                        try 
+                        {
+                            dynamic data = result.Data;
+                            string? switchMethod = data.SwitchMethod;
+                            if (!string.IsNullOrEmpty(switchMethod))
+                            {
+                                odemeYontemi = switchMethod;
+                                tutar = data.Amount ?? 0;
+                                StateHasChanged();
+                                return; 
+                            }
+                        }
+                        catch { }
+                    }
+                    
+                    // Default fallback if cancelled or unknown return
+                    odemeYontemi = "Nakit";
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                // If cancelled, revert to Nakit
+                odemeYontemi = "Nakit";
+                StateHasChanged();
+            }
+        }
+    }
+    
+    async Task Save()
+    {
+        if (_isSaving) return;
+        
+        if (tutar <= 0)
+        {
+            Snackbar.Add("Lütfen geçerli bir tutar girin", Severity.Warning);
+            return;
+        }
+
+        // Kredi Kartı veya Havale seçilmişse ve banka/kart seçilmemişse uyar
+        if ((odemeYontemi == "Kredi Kartı" || odemeYontemi == "Havale / EFT") && !seciliKartId.HasValue)
+        {
+            Snackbar.Add($"Lütfen işlem yapılacak {(odemeYontemi == "Kredi Kartı" ? "kartı" : "bankayı")} seçin", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            _isSaving = true;
+            StateHasChanged();
+
+            var hareket = ExistingHareket ?? new CariHareket();
+            hareket.CariId = CariId;
+            hareket.CariUnvan = CariUnvan;
+            hareket.Tarih = islemTarihi ?? DateTime.Now;
+            hareket.SlipImage = slipImageBase64;
+            
+            string finalAciklama = aciklama;
+            if (!finalAciklama.Contains($"({odemeYontemi})"))
+            {
+                finalAciklama += $" ({odemeYontemi})";
+            }
+            hareket.Aciklama = finalAciklama;
+            
+            if (ExistingHareket == null || string.IsNullOrEmpty(hareket.EvrakNo) || hareket.EvrakNo == "-") 
+                hareket.EvrakNo = "CRI-" + DateTime.Now.Ticks.ToString().Substring(10);
+            
+            hareket.IslemTuru = IslemTipi;
+
+            if (IslemTipi == "Stoksuz Satış" || IslemTipi == "Satis" || IslemTipi == "Ödeme" || IslemTipi == "Cariyi Borçlandırma" || IslemTipi == "Ödeme Makbuzu" || IslemTipi.Contains("Satis") || IslemTipi.Contains("Satış"))
+            {
+                hareket.Borc = tutar;
+                hareket.Alacak = 0;
+            }
+            else
+            {
+                hareket.Borc = 0;
+                hareket.Alacak = tutar;
+            }
+            
+            if (bagliCek != null)
+            {
+                await DbService.SaveCekSenetAsync(bagliCek);
+            }
+
+            if ((odemeYontemi == "Kredi Kartı" || odemeYontemi == "Havale / EFT") && seciliKartId.HasValue)
+            {
+                var kart = bankalar.FirstOrDefault(x => x.Id == seciliKartId);
+                
+                if (kart != null)
+                {
+                    // Banka Hareket oluştur (Böylece banka detayda görünür)
+                    var bankaHareket = new BankaHareket
+                    {
+                        BankaId = kart.Id,
+                        BankaKartId = kart.Id,
+                        BankaAdi = kart.BankaAdi,
+                        Tarih = hareket.Tarih,
+                        Aciklama = $"Cari: {CariUnvan} - {aciklama}",
+                        Tutar = tutar,
+                        EvrakNo = hareket.EvrakNo, // Link by EvrakNo
+                        CariUnvan = CariUnvan,
+                        CariId = CariId // Link with customer
+                    };
+
+                    if (hareket.Borc > 0) // Biz ödeme yapıyoruz (Ödeme) -> Bankadan para çıkıyor
+                    {
+                        bankaHareket.IslemTuru = odemeYontemi == "Kredi Kartı" ? "Ödeme (KK)" : "Ödeme (EFT)";
+                        bankaHareket.Cikan = tutar;
+                        bankaHareket.Giren = 0;
+                    }
+                    else // Biz tahsilat yapıyoruz (Tahsilat) -> Bankaya para giriyor
+                    {
+                        bankaHareket.IslemTuru = odemeYontemi == "Kredi Kartı" ? "Tahsilat (KK)" : "Tahsilat (EFT)";
+                        bankaHareket.Giren = tutar;
+                        bankaHareket.Cikan = 0;
+                    }
+
+                    await DbService.SaveBankaHareketAsync(bankaHareket);
+                    
+                    if (_ciroEdilsin && _yonlendirilenCariId.HasValue)
+                    {
+                        // Create associated movement for Credit Card Slip or EFT Endorsement
+                        if (odemeYontemi == "Kredi Kartı")
+                        {
+                             var kkIslem = new KrediKartiIslem
+                             {
+                                 MusteriId = CariId,
+                                 MusteriUnvan = CariUnvan,
+                                 Tarih = hareket.Tarih,
+                                 Banka = kart.BankaAdi,
+                                 Tutar = tutar,
+                                 OnayKodu = hareket.EvrakNo,
+                                 YonlendirilenCariId = _yonlendirilenCariId,
+                                 YonlendirmeTarihi = DateTime.Now
+                             };
+                             await DbService.SaveKrediKartiWithTransactionAsync(kkIslem);
+                        }
+                        else // EFT Endorsement
+                        {
+                             var eft = new EftIslem
+                             {
+                                 MusteriId = CariId,
+                                 MusteriUnvan = CariUnvan,
+                                 Tarih = hareket.Tarih,
+                                 Banka = kart.BankaAdi,
+                                 BankaId = kart.Id,
+                                 Tutar = tutar,
+                                 EvrakNo = hareket.EvrakNo ?? "",
+                                 YonlendirilenCariId = _yonlendirilenCariId,
+                                 YonlendirmeTarihi = DateTime.Now
+                             };
+                             await DbService.SaveEftIslemAsync(eft);
+                        }
+                    }
+                }
+                
+                // Recalculate balances
+                await Uow.Cariler.RecalculateBalanceAsync(CariId);
+                if (_ciroEdilsin && _yonlendirilenCariId.HasValue)
+                {
+                    await Uow.Cariler.RecalculateBalanceAsync(_yonlendirilenCariId.Value);
+                }
+
+                // Since SaveBankaHareketAsync now automatically creates the CariHareket via EvrakNo+CariId,
+                // we don't need to call SaveCariHareketAsync separately for Bank transactions.
+                Snackbar.Add("İşlem başarıyla kaydedildi", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+
+            await DbService.SaveCariHareketAsync(hareket);
+            
+            await Uow.Cariler.RecalculateBalanceAsync(CariId);
+            if (bagliCek != null && bagliCek.YonlendirilenCariId.HasValue)
+            {
+                await Uow.Cariler.RecalculateBalanceAsync(bagliCek.YonlendirilenCariId.Value);
+            }
+
+            Snackbar.Add("İşlem başarıyla kaydedildi", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(hareket));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata oluştu: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool IsSupplierInContext()
+    {
+        if (cari == null) return false;
+        string t = (cari.Tur ?? "").ToLowerInvariant();
+        return t.Contains("sat") || t.Contains("tedar") || t.Contains("satici");
+    }
+
+    private async Task TedarikciSec()
+    {
+        var parameters = new DialogParameters { ["FilterType"] = "Satici" };
+        var dialog = await DialogService.ShowAsync<CariSecDialog>("Tedarikçi Seç", parameters);
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is CariKart selected)
+        {
+            _yonlendirilenCariId = selected.Id;
+            _yonlendirilenCariUnvan = selected.Unvan;
+        }
+    }
+
+    private async Task UploadSlip(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            if (file.Size > 2 * 1024 * 1024) // 2MB limit
+            {
+                Snackbar.Add("Dosya boyutu 2MB'dan küçük olmalıdır.", Severity.Warning);
+                return;
+            }
+
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(2 * 1024 * 1024).ReadAsync(buffer);
+            var base64 = Convert.ToBase64String(buffer);
+            slipImageBase64 = $"data:{file.ContentType};base64,{base64}";
+        }
+    }
+}

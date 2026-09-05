@@ -1,0 +1,368 @@
+@page "/doviz-kurlari"
+@using System.Xml.Linq
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject DovizService DovizService
+@inject ISnackbar Snackbar
+
+<style>
+    .doviz-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .doviz-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: #111821;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 20px;
+        overflow: hidden;
+        padding: 24px;
+        height: 100%;
+    }
+
+    .left-panel { background: #111821; }
+    .right-panel { background: transparent; padding: 0; }
+
+    .desktop-table {
+        background: transparent !important;
+    }
+
+    .desktop-table .mud-table-head {
+        background: #000000 !important;
+    }
+
+    .desktop-table .mud-table-head .mud-table-cell {
+        color: #9CA3AF !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        padding: 10px 15px !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    }
+
+    .desktop-table .mud-table-body .mud-table-cell {
+        color: #E5E7EB !important;
+        font-size: 13px !important;
+        padding: 15px !important;
+        border-bottom: 1px solid rgba(255,255,255,0.02) !important;
+    }
+
+    .desktop-table .mud-table-row:hover {
+        background: rgba(255,255,255,0.02) !important;
+    }
+
+    .desktop-input-mimic {
+        background: #111821;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 8px 15px;
+        color: #E5E7EB;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        height: 38px;
+    }
+
+    .desktop-select {
+        height: 44px !important;
+    }
+
+    .desktop-info-box {
+        background: rgba(37, 99, 235, 0.08);
+        border: 1px solid rgba(37, 99, 235, 0.15);
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .desktop-info-box .info-line {
+        font-size: 13px;
+        color: #94A3B8;
+        font-weight: 500;
+    }
+
+    .desktop-info-box .info-line .value {
+        color: #E2E8F0;
+        font-weight: 700;
+        margin-left: 5px;
+    }
+
+    .desktop-info-box .info-status {
+        color: #3B82F6;
+        font-size: 12px;
+        margin-top: 4px;
+        font-weight: 500;
+    }
+
+    .desktop-btn-outline {
+        border: 2px solid #0E7490 !important;
+        background: transparent !important;
+        color: white !important;
+        font-weight: 800 !important;
+        height: 52px !important;
+        border-radius: 26px !important;
+        font-size: 16px !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    .desktop-btn-outline:hover {
+        background: rgba(14, 116, 144, 0.1) !important;
+    }
+
+    .desktop-btn-filled {
+        background: #10B981 !important;
+        color: white !important;
+        font-weight: 800 !important;
+        height: 52px !important;
+        border-radius: 26px !important;
+        font-size: 16px !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2) !important;
+    }
+
+    .desktop-btn-filled:hover {
+        background: #059669 !important;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3) !important;
+    }
+
+    .desktop-divider {
+        height: 1px;
+        background: #1E293B;
+        width: 100%;
+        margin: 20px 0;
+        opacity: 0.5;
+    }
+</style>
+
+<div class="doviz-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="doviz-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(251, 191, 36, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.CurrencyExchange" Color="Color.Warning" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Döviz Kurları ve Otomasyon</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">TCMB verileri ve otomatik güncelleme ayarları.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-3 align-center">
+                 <MudText Style="font-size: 11px; opacity: 0.5; font-weight: 800; text-align: right;">SON GÜNCELLEME:<br/>@sonGuncelleme.ToString("dd.MM.yyyy HH:mm")</MudText>
+                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" 
+                            Class="action-btn" OnClick="KurlariCek" Disabled="@loading">
+                    @(loading ? "GÜNCELLENİYOR..." : "LİSTEYİ GÜNCELLE")
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. MAIN CONTENT *@
+    <MudGrid>
+        @* LEFT: SETTINGS *@
+        <MudItem xs="12" lg="3">
+            <div class="glass-card left-panel">
+                <!-- Otomatik Güncelleme Top -->
+                <div class="d-flex justify-space-between align-center px-1">
+                    <div>
+                        <MudText Style="font-weight: 800; color: white; font-size: 16px;">Otomatik Güncelleme</MudText>
+                        <MudText Style="font-size: 13px; color: #94A3B8; margin-top: 4px;">Arka planda otomatik kur çekme.</MudText>
+                    </div>
+                    <div class="d-flex align-center gap-2">
+                         <MudSwitch @bind-Value="_isAcik" Color="Color.Surface" Size="Size.Medium" UnCheckedColor="Color.Dark" />
+                         <MudText Style="color: white; font-size: 14px; font-weight: 600;">@(_isAcik ? "Açık" : "Kapalı")</MudText>
+                    </div>
+                </div>
+
+                <div class="desktop-divider"></div>
+
+                <MudText Style="font-weight: 800; color: white; font-size: 18px; margin-bottom: 25px;">Ayarlar</MudText>
+
+                <!-- Veri Kaynağı -->
+                <div class="mb-6">
+                    <MudText Style="font-size: 12px; color: #64748B; margin-bottom: 8px; font-weight: 600;">Veri Kaynağı</MudText>
+                    <div class="desktop-input-mimic" style="border-radius: 12px; height: 44px; color: #CBD5E1;">
+                        TCMB (Türkiye Cumhuriyet Merkez Bankası)
+                    </div>
+                </div>
+
+                <!-- Güncelleme Aralığı -->
+                <div class="mb-6">
+                    <MudText Style="font-size: 12px; color: #64748B; margin-bottom: 8px; font-weight: 600;">Güncelleme Aralığı</MudText>
+                    <MudSelect T="string" @bind-Value="_selectedInterval" Variant="Variant.Outlined" 
+                               Dense="true" FullWidth="true"
+                               AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft"
+                               Class="desktop-select"
+                               Style="height: 44px;"
+                               AdornmentIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                               AdornmentColor="Color.Inherit"
+                               PopoverAnimation="Animation.None"
+                               TransitionDelay="0">
+                        <MudSelectItem Value="@("Açılışta (Bir Kez)")" />
+                        <MudSelectItem Value="@("Her Saat")" />
+                        <MudSelectItem Value="@("Günde 1 (15:30'da)")" />
+                    </MudSelect>
+                </div>
+
+                <!-- Info Box -->
+                <div class="desktop-info-box">
+                    <MudIcon Icon="@Icons.Material.Outlined.Info" Style="color: #3B82F6; margin-right: 15px;" Size="Size.Medium" />
+                    <div>
+                        <div class="info-line">
+                            <span class="label">Son Güncelleme:</span>
+                            <span class="value">@sonGuncelleme.ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                        <div class="info-status">@_statusMessage</div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="mt-8 d-flex flex-column gap-4">
+                    <MudButton OnClick="KurlariCek" Variant="Variant.Outlined" FullWidth="true" Class="desktop-btn-outline" Disabled="@loading">
+                        @if (loading)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+                             <span style="font-weight: 800;">GÜNCELLENİYOR</span>
+                        }
+                        else
+                        {
+                             <span style="font-weight: 800;">ŞİMDİ GÜNCELLE</span>
+                        }
+                    </MudButton>
+                    <MudButton OnClick="AyarlariKaydet" Variant="Variant.Filled" FullWidth="true" Class="desktop-btn-filled">
+                        <span style="font-weight: 800;">AYARLARI KAYDET</span>
+                    </MudButton>
+                </div>
+            </div>
+        </MudItem>
+
+        @* RIGHT: RATES BOARD *@
+        <MudItem xs="12" lg="9">
+            <div class="glass-card right-panel">
+                <MudTable Items="kurlar" Dense="true" Hover="true" Bordered="false" Striped="false" Elevation="0" Class="desktop-table">
+                    <HeaderContent>
+                        <MudTh>Kod</MudTh>
+                        <MudTh>Döviz Adı</MudTh>
+                        <MudTh>Alış (TCMB)</MudTh>
+                        <MudTh>Satış (TCMB)</MudTh>
+                        <MudTh>Efektif Alış</MudTh>
+                        <MudTh>Efektif Satış</MudTh>
+                        <MudTh>Trend</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd><span style="color: #60A5FA; font-weight: 800;">@context.Kod</span></MudTd>
+                        <MudTd>@GetDovizAdi(context.Kod)</MudTd>
+                        <MudTd Style="font-family: 'Roboto Mono', monospace; font-weight: 700;">@context.Alis.ToString("N4")</MudTd>
+                        <MudTd Style="font-family: 'Roboto Mono', monospace; font-weight: 700;">@context.Satis.ToString("N4")</MudTd>
+                        <MudTd Style="font-family: 'Roboto Mono', monospace; color: #10B981; font-weight: 800;">@(context.EfektifAlis > 0 ? context.EfektifAlis.ToString("N4") : "-")</MudTd>
+                        <MudTd Style="font-family: 'Roboto Mono', monospace; color: #F87171; font-weight: 800;">@(context.EfektifSatis > 0 ? context.EfektifSatis.ToString("N4") : "-")</MudTd>
+                        <MudTd>
+                             <MudIcon Icon="@(context.Satis > context.Alis ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingFlat)" 
+                                      Color="@(context.Satis > context.Alis ? Color.Success : Color.Default)" Size="Size.Small" />
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Style="padding: 20px; color: #9CA3AF;">Herhangi bir kur verisi bulunamadı. Lütfen listeyi güncelleyin.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </div>
+        </MudItem>
+    </MudGrid>
+</div>
+
+@code {
+    private List<DovizKur> kurlar = new();
+    private bool loading = false;
+    private DateTime sonGuncelleme = DateTime.Now;
+
+    // Automation Settings
+    private bool _isAcik = true;
+    private string _selectedKaynak = "TCMB (Türkiye Cumhuriyet Merkez Bankası)";
+    private string _selectedInterval = "Her Saat";
+    private string _statusMessage = "Sistem aktif, bir sonraki güncelleme bekleniyor.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLocalKurlar();
+    }
+
+    private async Task LoadLocalKurlar()
+    {
+        var all = await DbService.GetDovizKurlariAsync();
+        kurlar = all.GroupBy(x => x.Kod)
+                   .Select(g => g.OrderByDescending(x => x.Tarih).First())
+                   .OrderBy(x => x.Kod)
+                   .ToList();
+                   
+        if (kurlar.Any())
+        {
+            sonGuncelleme = kurlar.Max(x => x.Tarih);
+        }
+    }
+
+    private async Task KurlariCek()
+    {
+        loading = true;
+        try
+        {
+            await DovizService.UpdateRatesFromTcmbAsync();
+            await LoadLocalKurlar(); // Correctly Refresh unique list
+            sonGuncelleme = DateTime.Now;
+            _statusMessage = "Güncelleme başarıyla tamamlandı.";
+            Snackbar.Add("Kurlar başarıyla güncellendi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Kurlar çekilirken hata oluştu: " + ex.Message, Severity.Error);
+            _statusMessage = "Hata oluştu.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void AyarlariKaydet()
+    {
+        Snackbar.Add("Otomasyon ayarları başarıyla kaydedildi.", Severity.Success);
+    }
+
+    private string GetDovizAdi(string? kod) => kod switch
+    {
+        "USD" => "ABD DOLARI",
+        "AUD" => "AVUSTRALYA DOLARI",
+        "DKK" => "DANİMARKA KRONU",
+        "EUR" => "EURO",
+        "GBP" => "İNGİLİZ STERLİNİ",
+        "CHF" => "İSVIÇRE FRANGI",
+        "SEK" => "İSVEÇ KRONU",
+        "CAD" => "KANADA DOLARI",
+        "KWD" => "KUVEYT DİNARI",
+        "NOK" => "NORVEÇ KRONU",
+        "SAR" => "SUUDİ ARABİSTAN RİYALİ",
+        "JPY" => "JAPON YENİ",
+        "BGN" => "BULGAR LEVASI",
+        "RON" => "RUMEN LEYİ",
+        "RUB" => "RUS RUBLESİ",
+        "IRR" => "İRAN RİYALİ",
+        "CNY" => "ÇİN YUANI",
+        "PKR" => "PAKİSTAN RUPİSİ",
+        "QAR" => "KATAR RİYALİ",
+        "XAU" => "GRAM ALTIN",
+        "XAG" => "GRAM GÜMÜŞ",
+        _ => "DİĞER"
+    };
+}

@@ -1,0 +1,267 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
+             x:Class="ErmayMuhasebe.Avalonia.Views.FaturaListView"
+             x:DataType="vm:FaturaListViewModel">
+
+  <UserControl.Resources>
+    <conv:FaturaTurToColorConverter x:Key="FaturaTurToColorConverter"/>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+
+
+      <!-- Action Buttons Constraints -->
+      <Style Selector="Button.Success, Button.Warning">
+          <Setter Property="MinWidth" Value="120"/>
+          <Setter Property="MaxWidth" Value="140"/>
+          <Setter Property="HorizontalAlignment" Value="Center"/>
+      </Style>
+  </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto, Auto, *" Margin="20">
+      <!-- Notification Area -->
+      <StackPanel Grid.Row="0" Margin="0,0,0,10" Spacing="8">
+          <Border Background="#1AFF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1" CornerRadius="8" Padding="15,10" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                  <ic:SymbolIcon Symbol="DismissCircle" Foreground="#FF6B6B" FontSize="20"/>
+                  <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+              </StackPanel>
+          </Border>
+          <Border Background="#1A60A5FA" BorderBrush="#4060A5FA" BorderThickness="1" CornerRadius="8" Padding="15,10" IsVisible="{Binding IsLoading}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                  <ProgressBar IsIndeterminate="True" Width="18" Height="18" Foreground="#60A5FA" VerticalAlignment="Center"/>
+                  <TextBlock Text="İşlem yapılıyor, lütfen bekleyin..." Foreground="#60A5FA" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+              </StackPanel>
+          </Border>
+      </StackPanel>
+      <!-- Header -->
+      <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" Margin="0,0,0,15">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+          <TextBlock Text="Faturalar" FontSize="20" FontWeight="ExtraBold" Foreground="White" VerticalAlignment="Center"/>
+          
+          <!-- Integrated Search & Date Selection -->
+          <Border Background="#0DFFFFFF" BorderBrush="#14FFFFFF" BorderThickness="1" CornerRadius="20" Padding="5">
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                  <TextBox Width="200" Watermark="Fatura / Cari Ara..." 
+                           Text="{Binding SearchString, UpdateSourceTrigger=PropertyChanged}" 
+                           BorderThickness="0" Background="Transparent"
+                           Height="32" FontSize="12" VerticalContentAlignment="Center">
+                     <TextBox.InnerLeftContent>
+                       <ic:SymbolIcon Symbol="Search" Margin="10,0,0,0" FontSize="14" Foreground="#60A5FA"/> 
+                     </TextBox.InnerLeftContent>
+                  </TextBox>
+
+                  <Separator Width="1" Height="16" Background="#20FFFFFF" VerticalAlignment="Center"/>
+
+                  <!-- Date Range Section -->
+                  <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Margin="5,0">
+                      <ic:SymbolIcon Symbol="Calendar" FontSize="14" Foreground="#60A5FA" Margin="0,0,5,0"/>
+                      
+                      <CalendarDatePicker SelectedDate="{Binding StartDate}" 
+                                          Watermark="Başlangıç" Width="120" Height="32" FontSize="11"
+                                          Background="Transparent" BorderThickness="0"
+                                          CustomDateFormatString="dd.MM.yyyy"
+                                          SelectedDateFormat="Custom"/>
+                      
+                      <TextBlock Text="—" VerticalAlignment="Center" Foreground="#888" FontSize="10" Margin="2,0"/>
+                      
+                      <CalendarDatePicker SelectedDate="{Binding EndDate}" 
+                                          Watermark="Bitiş" Width="120" Height="32" FontSize="11"
+                                          Background="Transparent" BorderThickness="0"
+                                          CustomDateFormatString="dd.MM.yyyy"
+                                          SelectedDateFormat="Custom"/>
+
+                      <Button Command="{Binding SearchCommand}" Width="32" Height="32" Padding="0" 
+                              Background="Transparent" BorderThickness="0" CornerRadius="16">
+                         <ic:SymbolIcon Symbol="ArrowSync" FontSize="14" Foreground="#60A5FA"/> 
+                      </Button>
+                  </StackPanel>
+              </StackPanel>
+          </Border>
+        </StackPanel>
+        
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Command="{Binding OpenCreateInvoiceCommand}" CommandParameter="Satış" 
+                  Classes="Success" Width="130" Height="34" Padding="0" CornerRadius="17">
+             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                <ic:SymbolIcon Symbol="AddCircle" FontSize="16" Foreground="#00FF87"/> 
+                <TextBlock Text="Yeni Satış" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+             </StackPanel>
+          </Button>
+          <Button Command="{Binding OpenCreateInvoiceCommand}" CommandParameter="Alış" 
+                  Classes="Warning" Width="130" Height="34" Padding="0" CornerRadius="17">
+             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                <ic:SymbolIcon Symbol="AddCircle" FontSize="16" Foreground="#FF8C00"/> 
+                <TextBlock Text="Yeni Alış" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+             </StackPanel>
+          </Button>
+          
+          <Separator Width="1" Height="20" Background="#20FFFFFF" Margin="5,0"/>
+          
+          <Button Command="{Binding ExportToExcelCommand}" 
+                  Classes="Secondary" Width="36" Height="34" Padding="0" CornerRadius="17" ToolTip.Tip="Excel'e Aktar">
+              <ic:SymbolIcon Symbol="Table" FontSize="16" Foreground="#00FF87"/> 
+          </Button>
+          <Button Command="{Binding ExportAllToPdfCommand}" 
+                  Classes="Secondary" Width="36" Height="34" Padding="0" CornerRadius="17" ToolTip.Tip="Toplu PDF">
+              <ic:SymbolIcon Symbol="DocumentPdf" FontSize="16" Foreground="#FF416C"/> 
+          </Button>
+        </StackPanel>
+      </Grid>
+ 
+      <!-- Content -->
+      <Border Grid.Row="1" Background="{DynamicResource PanelBrush}" CornerRadius="12" Padding="2" BorderThickness="1" BorderBrush="{DynamicResource BorderColor}">
+        <Panel>
+          <DataGrid ItemsSource="{Binding Faturalar}" 
+                    SelectedItem="{Binding SelectedFatura}"
+                    AutoGenerateColumns="False" IsReadOnly="True"
+                    GridLinesVisibility="Horizontal" Background="Transparent"
+                    RowHeight="28" FontSize="12"
+                    DoubleTapped="OnDoubleTapped"
+                    IsVisible="{Binding !IsMobile}">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Düzenle" Command="{Binding EditFaturaCommand}" CommandParameter="{Binding SelectedFatura}">
+                        <MenuItem.Icon><ic:SymbolIcon Symbol="Edit"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Görüntüle (PDF)" Command="{Binding ViewFaturaPdfCommand}" CommandParameter="{Binding SelectedFatura}">
+                        <MenuItem.Icon><ic:SymbolIcon Symbol="DocumentPdf"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Yazdır" Command="{Binding PrintFaturaCommand}" CommandParameter="{Binding SelectedFatura}">
+                        <MenuItem.Icon><ic:SymbolIcon Symbol="Print"/></MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="WhatsApp ile Paylaş" Command="{Binding ShareFaturaWhatsAppCommand}" CommandParameter="{Binding SelectedFatura}">
+                        <MenuItem.Icon><ic:SymbolIcon Symbol="Chat" Foreground="#22C55E"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="E-posta ile Gönder" Command="{Binding ShareFaturaEmailCommand}" CommandParameter="{Binding SelectedFatura}">
+                        <MenuItem.Icon><ic:SymbolIcon Symbol="Mail" Foreground="#A855F7"/></MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Sil" Command="{Binding DeleteFaturaConfirmCommand}" CommandParameter="{Binding SelectedFatura}" Foreground="#EF4444">
+                        <MenuItem.Icon><ic:SymbolIcon Symbol="Delete" Foreground="#EF4444"/> </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Fatura No" Binding="{Binding FaturaNo}" Width="130"/>
+              <DataGridTextColumn Header="Tarih" Binding="{Binding Tarih, StringFormat='dd.MM.yyyy'}" Width="100"/>
+              <DataGridTextColumn Header="Cari Hesap" Binding="{Binding CariUnvan}" Width="250"/>
+              <DataGridTemplateColumn Header="Tür" Width="90">
+                <DataTemplate>
+                   <Border Padding="14,0" CornerRadius="999" Height="28"
+                           Background="{Binding Tur, Converter={StaticResource FaturaTurToColorConverter}}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Tur}" Foreground="White" FontSize="13" FontWeight="Medium" 
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+                   </Border>
+                </DataTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="Tutar" Width="*">
+                <DataTemplate>
+                  <TextBlock Text="{Binding GenelToplam, StringFormat='{}{0:N2} ₺'}" 
+                             VerticalAlignment="Center" HorizontalAlignment="Right"
+                             FontWeight="SemiBold" Foreground="#60A5FA" Margin="10,0"/>
+                </DataTemplate>
+              </DataGridTemplateColumn>
+            </DataGrid.Columns>
+          </DataGrid>
+
+          <!-- Mobil Kart Listesi -->
+          <ListBox ItemsSource="{Binding Faturalar}" SelectedItem="{Binding SelectedFatura}"
+                   Background="Transparent" BorderThickness="0"
+                   DoubleTapped="OnDoubleTapped"
+                   IsVisible="{Binding IsMobile}">
+            <ListBox.ContextMenu>
+              <ContextMenu>
+                  <MenuItem Header="Düzenle" Command="{Binding EditFaturaCommand}" CommandParameter="{Binding SelectedFatura}">
+                      <MenuItem.Icon><ic:SymbolIcon Symbol="Edit"/></MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="Görüntüle (PDF)" Command="{Binding ViewFaturaPdfCommand}" CommandParameter="{Binding SelectedFatura}">
+                      <MenuItem.Icon><ic:SymbolIcon Symbol="DocumentPdf"/></MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="Yazdır" Command="{Binding PrintFaturaCommand}" CommandParameter="{Binding SelectedFatura}">
+                      <MenuItem.Icon><ic:SymbolIcon Symbol="Print"/></MenuItem.Icon>
+                  </MenuItem>
+                  <Separator/>
+                  <MenuItem Header="WhatsApp ile Paylaş" Command="{Binding ShareFaturaWhatsAppCommand}" CommandParameter="{Binding SelectedFatura}">
+                      <MenuItem.Icon><ic:SymbolIcon Symbol="Chat" Foreground="#22C55E"/></MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="E-posta ile Gönder" Command="{Binding ShareFaturaEmailCommand}" CommandParameter="{Binding SelectedFatura}">
+                      <MenuItem.Icon><ic:SymbolIcon Symbol="Mail" Foreground="#A855F7"/></MenuItem.Icon>
+                  </MenuItem>
+                  <Separator/>
+                  <MenuItem Header="Sil" Command="{Binding DeleteFaturaConfirmCommand}" CommandParameter="{Binding SelectedFatura}" Foreground="#EF4444">
+                      <MenuItem.Icon><ic:SymbolIcon Symbol="Delete" Foreground="#EF4444"/> </MenuItem.Icon>
+                  </MenuItem>
+              </ContextMenu>
+            </ListBox.ContextMenu>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" 
+                        BorderThickness="1.5" CornerRadius="12" Margin="5,4" Padding="15,12">
+                  <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
+                    <StackPanel Grid.Column="0" Grid.Row="0" Spacing="4">
+                      <TextBlock Text="{Binding FaturaNo}" FontSize="11" Foreground="#60A5FA" FontWeight="Bold"/>
+                      <TextBlock Text="{Binding CariUnvan}" FontSize="13" Foreground="White" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
+                      <TextBlock Text="{Binding Tarih, StringFormat='dd.MM.yyyy'}" FontSize="11" Foreground="#94a3b8"/>
+                      <Border Padding="8,2" CornerRadius="4" Background="{Binding Tur, Converter={StaticResource FaturaTurToColorConverter}}">
+                        <TextBlock Text="{Binding Tur}" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                      </Border>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Text="{Binding GenelToplam, StringFormat='{}{0:N2} ₺'}" 
+                               Foreground="#60A5FA" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Panel>
+      </Border>
+
+      <!-- DELETE CONFIRMATION OVERLAY -->
+      <Grid Grid.RowSpan="3" Background="#E6000000" IsVisible="{Binding IsConfirmVisible}">
+           <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="16" Width="400" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 20 60 0 #CC000000" ClipToBounds="True">
+               <Grid RowDefinitions="Auto, *">
+                    <Border Grid.Row="0" Background="#26FF416C" Padding="20,12">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <ic:SymbolIcon Symbol="Delete" Foreground="White" FontSize="20"/> 
+                            <TextBlock Text="Onay Gerekiyor" FontWeight="Bold" FontSize="15" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Margin="30" Spacing="25">
+                        <ic:SymbolIcon Symbol="Warning" Foreground="#FF416C" FontSize="48" HorizontalAlignment="Center"/> 
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding ConfirmTitle}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" FontSize="18"/>
+                            <TextBlock Text="{Binding ConfirmMessage}" Foreground="#BBB" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="13"/>
+                        </StackPanel>
+                        
+                        <Grid ColumnDefinitions="*,*" Margin="0,10,0,0">
+                            <Button Grid.Column="0" Classes="SideButton Danger" Command="{Binding ConfirmYesCommand}" Margin="0,0,5,0" Height="45">
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                    <ic:SymbolIcon Symbol="Checkmark" FontSize="18" VerticalAlignment="Center"/> 
+                                    <TextBlock Text="EVET, SİL" FontWeight="Bold" VerticalAlignment="Center" FontSize="12"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="1" Classes="SideButton Secondary" Command="{Binding ConfirmNoCommand}" Margin="5,0,0,0" Height="45">
+                                 <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                    <ic:SymbolIcon Symbol="Dismiss" FontSize="18" VerticalAlignment="Center"/> 
+                                    <TextBlock Text="VAZGEÇ" FontWeight="Bold" VerticalAlignment="Center" FontSize="12"/>
+                                 </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+               </Grid>
+           </Border>
+      </Grid>
+    </Grid>
+</UserControl>

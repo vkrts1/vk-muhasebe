@@ -1,0 +1,138 @@
+@page "/doviz-donusturucu"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Repositories
+@inject IUnitOfWork Uow
+
+<div class="conv-page fade-in">
+    <div class="conv-header">
+        <div class="icon-box" style="background: rgba(16, 185, 129, 0.15);">
+             <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" Style="color: #10B981; font-size: 26px;" />
+        </div>
+        <div>
+            <h1 class="conv-title">Döviz Dönüştürücü ve Varlık Analizi</h1>
+            <p class="conv-sub">Tüm döviz varlıklarınızın toplam değerini görün ve istediğiniz para birimine dönüştürün.</p>
+        </div>
+    </div>
+
+    <div class="conv-content">
+        <!-- Varlık Listesi -->
+        <div class="assets-panel">
+            <MudTable Items="_varliklar" Dense="true" Hover="true" Bordered="true" Elevation="0" Class="desktop-grid">
+                <HeaderContent>
+                    <MudTh>Döviz</MudTh>
+                    <MudTh>Miktar</MudTh>
+                    <MudTh>Kur</MudTh>
+                    <MudTh>TRY Karşılığı</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.DovizKodu</MudTd>
+                    <MudTd>@context.Miktar.ToString("N2")</MudTd>
+                    <MudTd>@context.Kur.ToString("N4")</MudTd>
+                    <MudTd>@context.TryKarsiligi.ToString("N2") TL</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </div>
+
+        <!-- Dönüştürücü -->
+        <div class="calc-panel">
+            <h2 class="panel-title">Dönüşüm Hesabı</h2>
+            
+            <div class="form-item">
+                <label>Toplam Değer (TRY)</label>
+                <span class="total-try">@_toplamTry.ToString("N2") TL</span>
+            </div>
+
+            <hr class="divider" />
+
+            <div class="form-item">
+                <label>Hedef Döviz Kodu</label>
+                <MudTextField @bind-Value="_hedefDovizKodu" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </div>
+
+            <div class="form-item">
+                <label>Hedef Kur (TRY Bazlı)</label>
+                <MudNumericField @bind-Value="_hedefDovizKuru" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0.0001m" />
+            </div>
+
+            <div class="result-box">
+                <span class="result-label">DÖNÜŞTÜRÜLMÜŞ TUTAR</span>
+                <div class="result-value">
+                    <span class="val">@DonusturulmusTutar.ToString("N2")</span>
+                    <span class="cur">@_hedefDovizKodu</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<VarlikItem> _varliklar = new();
+    private decimal _toplamTry => _varliklar.Sum(x => x.TryKarsiligi);
+    private string _hedefDovizKodu = "USD";
+    private decimal _hedefDovizKuru = 34.25m;
+
+    private decimal DonusturulmusTutar => _hedefDovizKuru != 0 ? _toplamTry / _hedefDovizKuru : 0;
+
+    protected override void OnInitialized()
+    {
+        // Mock data matching desktop feel
+        _varliklar = new List<VarlikItem>
+        {
+            new VarlikItem { DovizKodu = "USD", Miktar = 1250.50m, Kur = 34.22m },
+            new VarlikItem { DovizKodu = "EUR", Miktar = 840.00m, Kur = 36.10m },
+            new VarlikItem { DovizKodu = "GBP", Miktar = 200.00m, Kur = 43.15m }
+        };
+    }
+
+    public class VarlikItem
+    {
+        public string DovizKodu { get; set; } = "";
+        public decimal Miktar { get; set; }
+        public decimal Kur { get; set; }
+        public decimal TryKarsiligi => Miktar * Kur;
+    }
+}
+
+<style>
+.conv-page { padding: 30px; background: var(--background-color); min-height: calc(100vh - 50px); color: white; }
+.conv-header { display: flex; gap: 15px; align-items: center; margin-bottom: 25px; }
+.icon-box { 
+    width: 50px; height: 50px; background: rgba(16, 185, 129, 0.15); 
+    border-radius: 12px; display: flex; align-items: center; justify-content: center;
+}
+.conv-title { font-size: 28px; font-weight: 700; margin: 0; }
+.conv-sub { font-size: 15px; color: #9CA3AF; margin: 5px 0 0 65px; }
+
+.conv-content { display: grid; grid-template-columns: 1fr 400px; gap: 20px; }
+
+.assets-panel { 
+    background: #1D2126; border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 20px; padding: 10px; overflow: hidden;
+}
+
+.calc-panel {
+    background: #1D2126; border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 20px; padding: 30px; display: flex; flex-direction: column; gap: 20px;
+}
+.panel-title { font-size: 18px; font-weight: 600; margin-bottom: 5px; }
+
+.form-item { display: flex; flex-direction: column; gap: 8px; }
+.form-item label { font-size: 12px; color: #9CA3AF; }
+.total-try { font-size: 24px; font-weight: 700; color: #10B981; }
+
+.divider { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 5px 0; }
+
+.result-box {
+    background: rgba(96, 165, 250, 0.1); border-radius: 12px; padding: 25px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.result-label { font-size: 12px; color: #9CA3AF; }
+.result-value { display: flex; gap: 5px; align-items: flex-end; }
+.result-value .val { font-size: 32px; font-weight: 900; color: white; }
+.result-value .cur { font-size: 18px; color: #60A5FA; margin-bottom: 5px; }
+
+.desktop-grid { background: transparent !important; }
+.desktop-grid th { background: #1a1d23 !important; color: #9CA3AF !important; font-weight: bold !important; font-size: 13px !important; }
+.desktop-grid td { color: white !important; font-size: 13px !important; border-bottom: 1px solid rgba(255,255,255,0.05) !important; }
+</style>

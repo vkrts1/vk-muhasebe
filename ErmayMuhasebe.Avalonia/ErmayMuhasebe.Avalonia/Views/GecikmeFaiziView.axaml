@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.GecikmeFaiziView"
+             x:DataType="vm:GecikmeFaiziViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#26EF4444">
+          <ic:SymbolIcon Symbol="Receipt" Foreground="#EF4444" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Gecikme Faizi Hesaplayıcı" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Vadesi geçmiş borçlar için yasal veya akdi gecikme faizi hesaplaması yapın." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="400, *">
+      <!-- Calculator -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1" Margin="0,0,20,0" VerticalAlignment="Top">
+        <StackPanel Spacing="25">
+           <StackPanel Spacing="8">
+             <TextBlock Text="Ana Para Tutarı" Foreground="#9CA3AF" FontSize="13"/>
+             <NumericUpDown Value="{Binding AnaPara}"  Increment="1000"/>
+           </StackPanel>
+
+           <StackPanel Spacing="8">
+             <TextBlock Text="Yıllık Faiz Oranı (%)" Foreground="#9CA3AF" FontSize="13"/>
+             <Grid ColumnDefinitions="*, 1.3*">
+               <NumericUpDown Grid.Column="0" Value="{Binding FaizOrani}" Increment="1" Minimum="0" Maximum="500" Margin="0,0,10,0"/>
+               <ComboBox Grid.Column="1" SelectedIndex="{Binding SeciliFaizIndex}" HorizontalAlignment="Stretch" Height="40" VerticalContentAlignment="Center" CornerRadius="8">
+                 <ComboBoxItem Content="Yasal (%24)"/>
+                 <ComboBoxItem Content="Ticari (%48)"/>
+                 <ComboBoxItem Content="{Binding TcmbRateText}"/>
+                 <ComboBoxItem Content="Özel"/>
+               </ComboBox>
+             </Grid>
+           </StackPanel>
+
+           <StackPanel Spacing="8">
+             <TextBlock Text="Gecikme Günü" Foreground="#9CA3AF" FontSize="13"/>
+             <NumericUpDown Value="{Binding GecikmeGunu}" Minimum="1" Maximum="3650"/>
+           </StackPanel>
+
+           <Button Command="{Binding HesaplaCommand}" Classes="SideButton Info" Height="50" HorizontalAlignment="Stretch" Background="#EF4444">
+              <TextBlock Text="HESAPLA" FontWeight="Bold"/>
+           </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- Results -->
+      <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="40" BorderBrush="#22FFFFFF" BorderThickness="1">
+         <StackPanel Spacing="40" VerticalAlignment="Center" HorizontalAlignment="Center">
+            
+            <StackPanel Spacing="10" HorizontalAlignment="Center">
+               <TextBlock Text="FAİZ DAHİL TOPLAM TUTAR" FontSize="16" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+               <TextBlock Text="{Binding ToplamTutar, StringFormat={}{0:N2} TL}" FontSize="50" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <Separator Background="#15FFFFFF" Width="300"/>
+
+            <StackPanel Spacing="5" HorizontalAlignment="Center">
+               <TextBlock Text="SADECE FAİZ TUTARI" FontSize="15" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+               <TextBlock Text="{Binding FaizTutari, StringFormat={}{0:N2} TL}" FontSize="30" FontWeight="Bold" Foreground="#EF4444" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <Border Background="#10EF4444" CornerRadius="15" Padding="25" MaxWidth="450">
+               <StackPanel Spacing="10">
+                  <TextBlock Text="Faiz Detayı" FontWeight="Bold" Foreground="#EF4444"/>
+                  <TextBlock Foreground="#9CA3AF" FontSize="13" TextWrapping="Wrap" TextAlignment="Center">
+                    Hesaplama yıllık basit faiz formülü (AnaPara * Oran * Gün / 365) kullanılarak yapılmıştır.
+                  </TextBlock>
+               </StackPanel>
+            </Border>
+         </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

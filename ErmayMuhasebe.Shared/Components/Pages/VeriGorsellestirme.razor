@@ -1,0 +1,68 @@
+@page "/veri-gorsellestirme"
+@using MudBlazor
+
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">Akıllı Veri Görselleştirme</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <div class="d-flex justify-space-between align-center mb-4">
+                <MudText Typo="Typo.h6">Gider Dağılımı (Kategori Bazlı)</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.PieChart" Color="Color.Primary" />
+            </div>
+            <MudChart ChartType="ChartType.Pie" InputData="@pieData" InputLabels="@pieLabels" Width="100%" Height="300px" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <div class="d-flex justify-space-between align-center mb-4">
+                <MudText Typo="Typo.h6">Aylık Satış Performansı</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.BarChart" Color="Color.Secondary" />
+            </div>
+            <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@Labels" Width="100%" Height="300px" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-4">Tahsilat Oranı</MudText>
+            <div class="d-flex flex-column align-center">
+                <div style="position:relative; width:120px; height:120px; display:flex; align-items:center; justify-content:center;">
+                    <MudProgressCircular Color="Color.Success" Value="75" Size="Size.Large" StrokeWidth="4" Style="width:100%; height:100%; position:absolute;" />
+                    <MudText Typo="Typo.h6" Class="mt-1" Style="z-index:1;">%75</MudText>
+                </div>
+                <MudText Typo="Typo.body2" Class="mt-4">Hedeflenen tahsilatın çoğu tamamlandı.</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-4">Bakiye Trendi (Günlük)</MudText>
+            <MudChart ChartType="ChartType.Line" ChartSeries="@TrendSeries" XAxisLabels="@TrendLabels" Width="100%" Height="150px" ChartOptions="@trendOptions" />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    // Pie Chart Data
+    public double[] pieData = { 25, 30, 15, 20, 10 };
+    public string[] pieLabels = { "Kira", "Personel", "Elektrik", "Nakliye", "Diğer" };
+
+    // Bar Chart Data
+    public List<ChartSeries> Series = new List<ChartSeries>()
+    {
+        new ChartSeries() { Name = "Geçen Yıl", Data = new double[] { 40, 20, 25, 27, 46, 60, 48 } },
+        new ChartSeries() { Name = "Bu Yıl", Data = new double[] { 19, 24, 35, 13, 28, 15, 13 } },
+    };
+    public string[] Labels = { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem" };
+
+    // Line Chart Data
+    public List<ChartSeries> TrendSeries = new List<ChartSeries>()
+    {
+        new ChartSeries() { Name = "Kasa Bakiyesi", Data = new double[] { 10, 12, 11, 15, 14, 18, 20, 19, 22, 25 } },
+    };
+    public string[] TrendLabels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+    private ChartOptions trendOptions = new ChartOptions { YAxisTicks = 5, LineStrokeWidth = 2 };
+}

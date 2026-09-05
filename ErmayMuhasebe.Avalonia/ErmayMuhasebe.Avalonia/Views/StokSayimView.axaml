@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             x:Class="ErmayMuhasebe.Avalonia.Views.StokSayimView"
+             x:DataType="vm:StokSayimViewModel">
+
+  <Grid RowDefinitions="Auto, *" Margin="20">
+    <Grid Grid.Row="0" Margin="0,0,0,20">
+        <TextBlock Text="Stok Sayım Yönetimi" FontSize="24" FontWeight="Bold"/>
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="300, 20, *">
+        <!-- SOL: Fiş Listesi -->
+        <Border Grid.Column="0" Background="#242424" CornerRadius="8" Padding="10">
+            <Grid RowDefinitions="Auto, *">
+                <TextBlock Text="Sayım Fişleri" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding Fisler}" SelectedItem="{Binding SelectedFis}"
+                          AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" Background="Transparent">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Tarih" Binding="{Binding Tarih, StringFormat='dd.MM.yyyy'}" Width="100"/>
+                        <DataGridTextColumn Header="Açıklama" Binding="{Binding Aciklama}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                
+                <!-- Yeni Ekle Butonu burada olabilir -->
+            </Grid>
+        </Border>
+
+        <!-- SAĞ: Detaylar -->
+        <Border Grid.Column="2" Background="#242424" CornerRadius="8" Padding="10">
+            <Grid RowDefinitions="Auto, *">
+                 <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+                    <TextBlock Text="Fiş Detayları" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding SelectedFis.FisNo}" FontSize="16" Foreground="Gray" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <DataGrid Grid.Row="1" ItemsSource="{Binding SelectedFisDetaylar}" AutoGenerateColumns="False" IsReadOnly="True" 
+                          GridLinesVisibility="All" Background="Transparent"
+                          IsVisible="{Binding SelectedFis, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Stok Kodu" Binding="{Binding StokKodu}" Width="120"/>
+                        <DataGridTextColumn Header="Stok Adi" Binding="{Binding StokAdi}" Width="*"/>
+                        <DataGridTextColumn Header="Sistem" Binding="{Binding MevcutMiktar}" Width="80"/>
+                        <DataGridTextColumn Header="Sayilan" Binding="{Binding SayilanMiktar}" Width="80"/>
+                        <DataGridTextColumn Header="Fark" Binding="{Binding Fark}" Width="80"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                
+                <TextBlock Grid.Row="1" Text="Lütfen soldan bir fiş seçiniz." 
+                           HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Gray"
+                           IsVisible="{Binding SelectedFis, Converter={x:Static ObjectConverters.IsNull}}"/>
+            </Grid>
+        </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,180 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MudBlazor
+@using System.IO
+@inject IDialogService DialogService
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudDialog Style="min-width: 500px;">
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="6">
+                 <MudSelect T="string" Label="İşlem Türü" @bind-Value="Model.IslemTuru" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.SwapVert" Margin="Margin.Dense">
+                    <MudSelectItem Value="@("Gelen Havale")">Gelen Havale (Giriş)</MudSelectItem>
+                    <MudSelectItem Value="@("Giden Havale")">Giden Havale (Çıkış)</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6">
+                <MudDatePicker Label="Tarih" @bind-Date="date" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+            
+            <MudItem xs="12">
+                 <MudSelect T="string" Label="Banka Hesabı" @bind-Value="SelectedBankaAdi" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach(var banka in BankaListesi)
+                    {
+                        <MudSelectItem Value="@banka.BankaAdi">@banka.BankaAdi - @banka.HesapNo</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                     <MudTextField @bind-Value="CariUnvan" Label="@(Model.IslemTuru == "Gelen Havale" ? "Kimden (Müşteri)" : "Kime (Tedarikçi)")" Variant="Variant.Outlined" ReadOnly="true" Margin="Margin.Dense" />
+                     <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="CariSec" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" />
+                </MudStack>
+            </MudItem>
+
+            <MudItem xs="12">
+                 <MudNumericField @bind-Value="Model.Tutar" Label="Tutar" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Margin="Margin.Dense" />
+            </MudItem>
+            
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Model.Aciklama" Label="Açıklama" Variant="Variant.Outlined" Lines="2" Margin="Margin.Dense" />
+            </MudItem>
+            
+            <MudItem xs="12">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudFileUpload T="IBrowserFile" FilesChanged="UploadFile">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Secondary"
+                                       StartIcon="@Icons.Material.Filled.AttachFile">
+                                Dekont Ekle
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                    
+                    @if (!string.IsNullOrEmpty(Model.DekontPath))
+                    {
+                        <div class="d-flex align-center gap-2">
+                             <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                             <MudText Typo="Typo.caption">Dosya Eklendi</MudText>
+                        </div>
+                    }
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public BankaHareket Model { get; set; } = new();
+    
+    private DateTime? date;
+    public string CariUnvan { get; set; } = "";
+    public int? CariId { get; set; }
+    
+    private List<BankaKart> BankaListesi = new();
+    private string SelectedBankaAdi = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Model.Tarih == default) Model.Tarih = DateTime.Now;
+        date = Model.Tarih;
+        if (string.IsNullOrEmpty(Model.IslemTuru)) Model.IslemTuru = "Gelen Havale";
+        
+        BankaListesi = await DbService.GetBankalarAsync();
+        
+        // If edit mode and bank exists
+        if (!string.IsNullOrEmpty(Model.BankaAdi))
+        {
+            SelectedBankaAdi = Model.BankaAdi;
+        }
+        else if (Model.BankaId != 0)
+        {
+             var b = BankaListesi.FirstOrDefault(x => x.Id == Model.BankaId);
+             if (b != null) SelectedBankaAdi = b.BankaAdi ?? "";
+        }
+        
+        CariUnvan = Model.CariUnvan ?? "";
+    }
+
+    private async Task CariSec()
+    {
+        var dialog = await DialogService.ShowAsync<CariSecDialog>("Cari Seç");
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is CariKart cari)
+        {
+            CariId = cari.Id;
+            CariUnvan = cari.Unvan ?? "";
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        try
+        {
+            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayAttachments");
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            
+            var fileName = $"{Guid.NewGuid()}_{file.Name}";
+            var fullPath = Path.Combine(path, fileName);
+            
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var fs = File.Create(fullPath);
+            await stream.CopyToAsync(fs);
+            
+            Model.DekontPath = fullPath;
+            Snackbar.Add("Dekont başarıyla yüklendi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    void Submit()
+    {
+        if (Model.Tutar <= 0) 
+        {
+            Snackbar.Add("Tutar girmelisiniz.", Severity.Warning);
+            return;
+        }
+        if (string.IsNullOrEmpty(SelectedBankaAdi)) 
+        {
+            Snackbar.Add("Banka seçmelisiniz.", Severity.Warning);
+            return;
+        }
+        
+        if (date.HasValue) Model.Tarih = date.Value;
+        Model.BankaAdi = SelectedBankaAdi;
+        Model.CariUnvan = CariUnvan; // Ensure this is saved
+        
+        // Find IBAN for selected bank
+        var selectedBanka = BankaListesi.FirstOrDefault(b => b.BankaAdi == SelectedBankaAdi);
+        if (selectedBanka != null) 
+        {
+            Model.IBAN = selectedBanka.IBAN;
+            Model.BankaId = selectedBanka.Id; // Ensure ID is correct
+        }
+        
+        MudDialog.Close(DialogResult.Ok(new BankaIslemResult { BankaHareket = Model, CariId = CariId, CariUnvan = CariUnvan }));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+    
+    public class BankaIslemResult
+    {
+        public BankaHareket BankaHareket { get; set; } = new();
+        public int? CariId { get; set; }
+        public string CariUnvan { get; set; } = "";
+    }
+}

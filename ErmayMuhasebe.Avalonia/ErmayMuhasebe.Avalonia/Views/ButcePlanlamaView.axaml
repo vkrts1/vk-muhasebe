@@ -1,0 +1,223 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Shared.ViewModels;assembly=ErmayMuhasebe.Shared"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+             x:Class="ErmayMuhasebe.Avalonia.Views.ButcePlanlamaView"
+             x:DataType="vm:ButcePlanlamaViewModel">
+
+  <Grid RowDefinitions="Auto, *" Margin="20">
+      
+      <!-- 1. Header (Select Year & Summary) -->
+      <Border Grid.Row="0" Margin="0,0,0,20">
+          <Grid ColumnDefinitions="Auto, *, Auto">
+              <!-- Title & Year Selector -->
+              <StackPanel Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
+                 <Border Width="50" Height="50" CornerRadius="12" Background="#2660A5FA">
+                    <ic:SymbolIcon Symbol="DataArea" Foreground="#60A5FA" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                 </Border>
+                 <StackPanel>
+                     <TextBlock Text="Bütçe Planlama Merkezi" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                     <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                         <TextBlock Text="Mali Yıl:" Foreground="#9CA3AF" VerticalAlignment="Center"/>
+                         <ComboBox ItemsSource="{Binding AvailableYears}" SelectedItem="{Binding SelectedYear}" 
+                                   Width="100"/>
+                     </StackPanel>
+                 </StackPanel>
+              </StackPanel>
+
+              <!-- Central Big Metric -->
+              <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                      Background="#11FFFFFF" CornerRadius="15" Padding="20,10" Margin="20,0">
+                  <StackPanel Orientation="Horizontal" Spacing="40">
+                      <StackPanel>
+                          <TextBlock Text="YILLIK HEDEF" FontSize="11" Foreground="#9CA3AF" FontWeight="Bold"/>
+                          <Grid ColumnDefinitions="Auto, Auto">
+                              <NumericUpDown Value="{Binding YillikHedef, Mode=TwoWay}" IsVisible="{Binding IsEditMode}" Width="150" Margin="0,5,0,0" ShowButtonSpinner="False" FormatString="N0"/>
+                              <TextBlock Text="{Binding YillikHedef, StringFormat='{}{0:N0} ₺'}" IsVisible="{Binding !IsEditMode}" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,5,0,0"/>
+                          </Grid>
+                      </StackPanel>
+                      <StackPanel>
+                          <TextBlock Text="GERÇEKLEŞEN" FontSize="11" Foreground="#9CA3AF" FontWeight="Bold"/>
+                          <TextBlock Text="{Binding YillikGerceklesen, StringFormat='{}{0:N0} ₺'}" FontSize="24" FontWeight="Bold" Foreground="#10B981" Margin="0,5,0,0"/>
+                      </StackPanel>
+                      <StackPanel VerticalAlignment="Center">
+                          <Border Background="#20FFFFFF" CornerRadius="8" Padding="10,5">
+                              <TextBlock Text="{Binding YillikYuzde, StringFormat='{}%{0:N1}'}" FontSize="18" FontWeight="Bold" Foreground="#F59E0B"/>
+                          </Border>
+                      </StackPanel>
+                  </StackPanel>
+              </Border>
+
+               <!-- Edit Action -->
+                <!-- Edit Action -->
+                <Border Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                         <!-- Normal State -->
+                         <Button Classes="SideButton Info" Command="{Binding ToggleEditModeCommand}" IsVisible="{Binding !IsEditMode}" Width="155">
+                             <StackPanel Orientation="Horizontal" Spacing="6">
+                                 <ic:SymbolIcon Symbol="Edit" FontSize="16"/>
+                                 <TextBlock Text="Hedefleri Düzenle" VerticalAlignment="Center" FontSize="12"/>
+                             </StackPanel>
+                         </Button>
+     
+                         <!-- Edit State -->
+                         <Button Command="{Binding UpdateYillikHedefCommand}" IsVisible="{Binding IsEditMode}" Classes="SideButton Info" Width="135" ToolTip.Tip="Yıllık hedefi aylara ve haftalara eşit dağıtır.">
+                             <StackPanel Orientation="Horizontal" Spacing="5">
+                                 <ic:SymbolIcon Symbol="Wand" FontSize="14"/>
+                                 <TextBlock Text="Otomatik Doldur" VerticalAlignment="Center" FontSize="11"/>
+                             </StackPanel>
+                         </Button>
+                         <Button Command="{Binding SaveAylikPlanlarCommand}" IsVisible="{Binding IsEditMode}" Width="95" Background="#22C55E" CornerRadius="100" Padding="12,6">
+                             <StackPanel Orientation="Horizontal" Spacing="5">
+                                 <ic:SymbolIcon Symbol="Save" FontSize="14" Foreground="White" />
+                                 <TextBlock Text="Kaydet" VerticalAlignment="Center" FontSize="11" Foreground="White" FontWeight="Bold"/>
+                             </StackPanel>
+                         </Button>
+                         <Button Classes="SideButton Secondary" Command="{Binding ToggleEditModeCommand}" IsVisible="{Binding IsEditMode}" Width="75">
+                             <TextBlock Text="İptal" FontSize="11"/>
+                         </Button>
+                         
+                         <!-- Status Message -->
+                         <TextBlock Text="{Binding StatusMessage}" IsVisible="{Binding IsEditMode}" 
+                                    Foreground="#F59E0B" FontSize="11" VerticalAlignment="Center" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+          </Grid>
+      </Border>
+
+      <!-- 2. Content (Chart & Table) -->
+      <Grid Grid.Row="1">
+          <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="2*" />
+              <ColumnDefinition Width="20" />
+              <ColumnDefinition Width="3*" />
+          </Grid.ColumnDefinitions>
+
+          <!-- Left: Matrix Table -->
+          <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="0,20">
+              <DataGrid ItemsSource="{Binding AylikPlanlar}" SelectedItem="{Binding SelectedAylikPlan}" AutoGenerateColumns="False" Background="Transparent"
+                        CanUserResizeColumns="True" GridLinesVisibility="Horizontal"
+                        HorizontalScrollBarVisibility="Auto" RowBackground="Transparent">
+                  <DataGrid.Columns>
+                      <DataGridTextColumn Header="AY" Binding="{Binding AyAdi}" Width="*"/>
+                      
+                      <!-- Editable Target Column -->
+                      <DataGridTemplateColumn Header="HEDEF" Width="1.5*">
+                          <DataGridTemplateColumn.CellTemplate>
+                              <DataTemplate>
+                                  <TextBlock Text="{Binding Hedef, StringFormat='{}{0:N0} ₺'}" VerticalAlignment="Center" Margin="10,0"/>
+                              </DataTemplate>
+                          </DataGridTemplateColumn.CellTemplate>
+                          <DataGridTemplateColumn.CellEditingTemplate>
+                              <DataTemplate>
+                                  <NumericUpDown Value="{Binding Hedef}" ShowButtonSpinner="False" />
+                              </DataTemplate>
+                          </DataGridTemplateColumn.CellEditingTemplate>
+                      </DataGridTemplateColumn>
+                      <!-- Only show TextBox if IsEditMode (Implemented via triggers is hard in simple DataGrid, so we use CellEditing but for bulk edits simpler: ) -->
+                      <!-- Better approach for bulk edit: Use a TemplateColumn that swaps TextBlock/TextBox based on ViewModel property. 
+                           However, DataGrid doesn't see ViewModel IsEditMode easily in CellTemplate. 
+                           So we will make column editable always but only commit on Save. Or use simple IsReadOnly binding if possible.
+                      -->
+                      
+                       <DataGridTextColumn Header="GERÇEKLEŞEN" Binding="{Binding Gerceklesen, StringFormat='{}{0:N0} ₺'}" Width="1.5*" IsReadOnly="True" Foreground="#10B981"/>
+                       
+                       <DataGridTemplateColumn Header="DURUM" Width="*">
+                           <DataGridTemplateColumn.CellTemplate>
+                               <DataTemplate>
+                                   <Border Background="{Binding Renk}" CornerRadius="4" Padding="6,2" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.2">
+                                       <TextBlock Text="{Binding Yuzde, StringFormat='{}%{0:N0}'}" Foreground="{Binding Renk}" FontWeight="Bold"/>
+                                   </Border>
+                               </DataTemplate>
+                           </DataGridTemplateColumn.CellTemplate>
+                       </DataGridTemplateColumn>
+
+                  </DataGrid.Columns>
+              </DataGrid>
+          </Border>
+
+          <!-- Right: Visuals -->
+          <Grid Grid.Column="2" RowDefinitions="*, 20, *">
+              <!-- Chart -->
+              <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="20">
+                  <Grid RowDefinitions="Auto, *">
+                      <TextBlock Text="Hedef &amp; Gerçekleşme Trendi" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                      <lvc:CartesianChart Grid.Row="1" Series="{Binding TrendSeries}" XAxes="{Binding TrendXAxis}" ZoomMode="X"/>
+                  </Grid>
+              </Border>
+
+              <!-- Monthly Details / Forecast / Weekly Breakdown -->
+              <Border Grid.Row="2" Background="{DynamicResource PanelBrush}" CornerRadius="20" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="20">
+                   <Grid>
+                       <!-- Default Placeholder -->
+                       <Grid RowDefinitions="Auto, *" IsVisible="{Binding !IsWeeklyVisible}">
+                           <TextBlock Text="Finansal Özet &amp; Tahminler" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                           <StackPanel Spacing="10">
+                               <Border Background="#103B82F6" CornerRadius="10" Padding="15">
+                                   <StackPanel>
+                                       <TextBlock Text="Yıl Sonu Tahmini (Mevcut Hızla)" FontSize="12" Foreground="#60A5FA"/>
+                                       <TextBlock Text="Veri bekleniyor..." FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                   </StackPanel>
+                               </Border>
+                               <TextBlock Text="* Detaylı haftalık analiz için sol tablodan bir ay seçiniz." Opacity="0.7" FontSize="13" Foreground="#F59E0B" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                           </StackPanel>
+                       </Grid>
+                       
+                       <!-- Weekly Breakdown Table -->
+                       <Grid RowDefinitions="Auto, Auto, *" IsVisible="{Binding IsWeeklyVisible}">
+                           <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,10">
+                               <StackPanel Orientation="Horizontal" Spacing="10">
+                                   <TextBlock Text="{Binding SelectedAylikPlan.AyAdi, StringFormat='{}{0} ayı Haftalık Detay'}" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                                   <Border IsVisible="{Binding IsEditMode}" Background="#EF4444" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                       <TextBlock Text="DÜZENLEME MODU" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                   </Border>
+                               </StackPanel>
+                               <Button Grid.Column="1" Command="{Binding SaveHaftalikPlanlarCommand}" IsVisible="{Binding IsEditMode}" Classes="SideButton Info" Height="30" Padding="10,0">
+                                   <TextBlock Text="Haftalık Değişiklikleri Kaydet" FontSize="11"/>
+                               </Button>
+                           </Grid>
+
+                           <DataGrid Grid.Row="2" ItemsSource="{Binding HaftalikPlanlar}" AutoGenerateColumns="False" Background="Transparent"
+                                     CanUserResizeColumns="True" GridLinesVisibility="Horizontal"
+                                     HorizontalScrollBarVisibility="Auto" RowBackground="Transparent">
+                               <DataGrid.Columns>
+                                   <DataGridTextColumn Header="HAFTA" Binding="{Binding HaftaAdi}" Width="2*"/>
+                                   
+                                   <DataGridTemplateColumn Header="HEDEF" Width="*">
+                                       <DataGridTemplateColumn.CellTemplate>
+                                           <DataTemplate>
+                                               <TextBlock Text="{Binding Hedef, StringFormat='{}{0:N0} ₺'}" VerticalAlignment="Center" Margin="10,0"/>
+                                           </DataTemplate>
+                                       </DataGridTemplateColumn.CellTemplate>
+                                       <DataGridTemplateColumn.CellEditingTemplate>
+                                           <DataTemplate>
+                                               <NumericUpDown Value="{Binding Hedef}" ShowButtonSpinner="False"/>
+                                           </DataTemplate>
+                                       </DataGridTemplateColumn.CellEditingTemplate>
+                                   </DataGridTemplateColumn>
+
+                                   <DataGridTextColumn Header="GERÇEKLEŞEN" Binding="{Binding Gerceklesen, StringFormat='{}{0:N0} ₺'}" Width="*" IsReadOnly="True" Foreground="#10B981"/>
+
+                                   <DataGridTemplateColumn Header="DURUM" Width="*">
+                                       <DataGridTemplateColumn.CellTemplate>
+                                           <DataTemplate>
+                                               <Border Background="{Binding Renk}" CornerRadius="4" Padding="6,2" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.2">
+                                                   <TextBlock Text="{Binding Yuzde, StringFormat='{}%{0:N0}'}" Foreground="{Binding Renk}" FontWeight="Bold"/>
+                                               </Border>
+                                           </DataTemplate>
+                                       </DataGridTemplateColumn.CellTemplate>
+                                   </DataGridTemplateColumn>
+                               </DataGrid.Columns>
+                           </DataGrid>
+                       </Grid>
+                   </Grid>
+              </Border>
+          </Grid>
+
+      </Grid>
+  </Grid>
+</UserControl>

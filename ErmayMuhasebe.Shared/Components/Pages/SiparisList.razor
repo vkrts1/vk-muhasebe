@@ -1,0 +1,149 @@
+@page "/siparis-listesi"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Class="font-weight-bold">Sipariş Yönetimi</MudText>
+            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Müşteri siparişleri ve tedarikçi talepleri</MudText>
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FileDownload" Color="Color.Info">Excel</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="OpenNewDialog" Style="border-radius: 8px; height: 48px; padding: 0 24px;">YENİ SİPARİŞ OLUŞTUR</MudButton>
+        </div>
+    </div>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="3">
+            <MudPaper Class="pa-4 d-flex align-center gap-4" Elevation="2">
+                <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Warning" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">@list.Count(x => x.Durum == "Bekliyor")</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Bekleyen Sipariş</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudPaper Class="pa-4 d-flex align-center gap-4" Elevation="2">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold">@list.Count(x => x.Durum == "Onaylandı")</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Onaylı Sipariş</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudPaper Class="pa-2 d-flex align-center px-4" Elevation="2" Style="height: 100%;">
+                 <MudTextField @bind-Value="searchString" Placeholder="Sipariş No, Müşteri veya Tutar Ara..." 
+                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                               IconSize="Size.Medium" Class="mt-0" Immediate="true" FullWidth="true" />
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudTable T="Siparis" Items="@list" Dense="true" Hover="true" Striped="false" Elevation="4" Style="border-radius: 16px;" Filter="new Func<Siparis,bool>(FilterFunc)" OnRowClick="RowClicked">
+        <HeaderContent>
+            <MudTh>Sipariş No</MudTh>
+            <MudTh>Cari Ünvan</MudTh>
+            <MudTh>Tarih</MudTh>
+            <MudTh>Durum</MudTh>
+            <MudTh>Tutar</MudTh>
+            <MudTh Style="text-align: right;">İşlemler</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd Class="font-weight-bold">@context.SiparisNo</MudTd>
+            <MudTd>@context.CariUnvan</MudTd>
+            <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+            <MudTd>
+                <MudChip T="string" Color="@GetStatusColor(context.Durum)" Variant="Variant.Text" Size="Size.Small" Class="font-weight-bold">
+                    @context.Durum?.ToUpper()
+                </MudChip>
+            </MudTd>
+            <MudTd Class="font-weight-bold" Style="color: var(--mud-palette-primary);">@context.GenelToplam.ToString("N2") ₺</MudTd>
+            <MudTd Style="text-align: right;">
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <MudMenuItem Icon="@Icons.Material.Filled.Visibility" OnClick="@(() => ViewItem(context))">Detayları Gör</MudMenuItem>
+                    @if (context.Durum != "Faturalandırıldı" && context.Durum != "İptal")
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.Receipt" IconColor="Color.Info" OnClick="@(() => ConvertToInvoice(context))">Faturaya Dönüştür</MudMenuItem>
+                    }
+                    <MudDivider />
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="@(() => DeleteItem(context))">Sil</MudMenuItem>
+                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private List<Siparis> list = new List<Siparis>();
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        list = await DbService.GetSiparislerAsync();
+    }
+
+    private bool FilterFunc(Siparis element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.SiparisNo?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.CariUnvan?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.GenelToplam.ToString().Contains(searchString)) return true;
+        return false;
+    }
+
+    private Color GetStatusColor(string? status)
+    {
+        return status switch
+        {
+            "Onaylandı" => Color.Success,
+            "Faturalandırıldı" => Color.Primary,
+            "Bekliyor" => Color.Warning,
+            "Hazırlanıyor" => Color.Info,
+            "İptal" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private void OpenNewDialog() => Nav.NavigateTo("/siparis-olustur");
+    private void ViewItem(Siparis item) => Nav.NavigateTo($"/siparis-detay/{item.Id}");
+
+    private void RowClicked(TableRowClickEventArgs<Siparis> args) => ViewItem(args.Item!);
+
+    private async Task ConvertToInvoice(Siparis item)
+    {
+        bool? result = await DialogService.ShowMessageBox("Onay", "Siparişi faturaya dönüştürmek istediğinize emin misiniz?", yesText:"Evet", cancelText:"İptal");
+        if (result == true)
+        {
+            await DbService.ConvertSiparisToFaturaAsync(item.Id);
+            Snackbar.Add("Sipariş başarıyla faturalandırıldı.", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteItem(Siparis item)
+    {
+        bool? result = await DialogService.ShowMessageBox("Silme Onayı", "Bu siparişi silmek istediğinize emin misiniz?", yesText:"Sil", cancelText:"İptal");
+        if (result == true)
+        {
+            await DbService.DeleteSiparisAsync(item);
+            Snackbar.Add("Sipariş silindi.", Severity.Info);
+            await LoadData();
+        }
+    }
+}

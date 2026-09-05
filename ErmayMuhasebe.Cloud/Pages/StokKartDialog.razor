@@ -1,0 +1,92 @@
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudDialog Class="premium-dialog">
+    <TitleContent>
+        <div class="d-flex align-center gap-3">
+            <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight: 800;">Stok Kartı Tanımla</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid Class="pa-4">
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" Label="Stok Kodu" @bind-Value="Model.StokKodu" Variant="Variant.Outlined" 
+                             Margin="Margin.Dense" Required="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.QrCode" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" Label="Birim" @bind-Value="Model.Birim" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
+                    <MudSelectItem Value='@("Adet")'>Adet</MudSelectItem>
+                    <MudSelectItem Value='@("KG")'>Kilogram</MudSelectItem>
+                    <MudSelectItem Value='@("Metre")'>Metre</MudSelectItem>
+                    <MudSelectItem Value='@("Paket")'>Paket</MudSelectItem>
+                    <MudSelectItem Value='@("Koli")'>Koli</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Stok Adı" @bind-Value="Model.StokAdi" Variant="Variant.Outlined" 
+                             Margin="Margin.Dense" Required="true" Placeholder="Örn: Pamuklu Kumaş V2" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="decimal" Label="Alış Fiyatı" @bind-Value="Model.AlisFiyati" Variant="Variant.Outlined" 
+                                Margin="Margin.Dense" HideSpinButtons="true" Adornment="Adornment.End" AdornmentText="₺" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="decimal" Label="Satış Fiyatı" @bind-Value="Model.SatisFiyati" Variant="Variant.Outlined" 
+                                Margin="Margin.Dense" HideSpinButtons="true" Adornment="Adornment.End" AdornmentText="₺" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="double" Label="Mevcut Miktar" @bind-Value="Model.Miktar" Variant="Variant.Outlined" 
+                                Margin="Margin.Dense" HideSpinButtons="true" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" Label="Barkod" @bind-Value="Model.Barkod" Variant="Variant.Outlined" 
+                             Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.QrCodeScanner" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Class="mr-2">Vazgeç</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" StartIcon="@Icons.Material.Filled.Save" 
+                   Style="border-radius: 12px; padding: 10px 30px; font-weight: bold;">
+            KAYDET
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .premium-dialog {
+        border-radius: 20px !important;
+        overflow: hidden;
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public StokKart Model { get; set; } = new StokKart();
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(Model.Birim)) Model.Birim = "Adet";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        try
+        {
+            await DbService.SaveStokAsync(Model);
+            Snackbar.Add("Stok kartı kaydedildi.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

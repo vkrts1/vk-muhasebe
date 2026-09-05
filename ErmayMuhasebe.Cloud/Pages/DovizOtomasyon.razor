@@ -1,0 +1,161 @@
+@page "/doviz-otomasyon"
+@using MudBlazor
+@using ErmayMuhasebe.Shared.ViewModels
+@inject DovizOtomasyonViewModel ViewModel
+
+<div class="doviz-page">
+    <div class="premium-header">
+        <div class="header-left">
+            <div class="icon-box gold">
+                <MudIcon Icon="@Icons.Material.Filled.CurrencyExchange" Style="font-size: 28px; color: #F59E0B;" />
+            </div>
+            <div class="header-text">
+                <h1 class="main-title">Döviz Otomasyon Merkezi</h1>
+                <p class="subtitle">Canlı kur takibi ve otomatik fiyatlandırma ayarları</p>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <div class="sync-status">
+                <span class="label">SON GÜNCELLEME:</span>
+                <span class="time">@(ViewModel.SonGuncelleme?.ToString("HH:mm:ss") ?? "--:--")</span>
+            </div>
+            <button class="action-btn-filled info" @onclick="ViewModel.SimdiGuncelleAsync">
+                <MudIcon Icon="@Icons.Material.Filled.Sync" Size="Size.Small" Class="mr-2" />
+                Şimdi Güncelle
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Sol Panel: Kurlar -->
+        <div class="col-lg-7">
+            <div class="glass-card">
+                <div class="card-header-premium">
+                    <h3 class="card-title">Canlı Döviz Kurları (TCMB)</h3>
+                </div>
+                <div class="kur-grid">
+                    @foreach (var kur in ViewModel.Kurlar)
+                    {
+                        <div class="kur-item">
+                            <div class="kur-info">
+                                <span class="kur-code">@kur.Kod</span>
+                                <span class="kur-name">@kur.Isim</span>
+                            </div>
+                            <div class="kur-values">
+                                <div class="val-box">
+                                    <span class="v-label">ALIŞ</span>
+                                    <span class="v-price">@kur.Alis.ToString("N4")</span>
+                                </div>
+                                <div class="val-box">
+                                    <span class="v-label">SATIŞ</span>
+                                    <span class="v-price highlight">@kur.Satis.ToString("N4")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ Panel: Ayarlar -->
+        <div class="col-lg-5">
+            <div class="glass-card settings">
+                <div class="card-header-premium">
+                    <h3 class="card-title">Otomasyon Ayarları</h3>
+                </div>
+                <div class="settings-body">
+                    <div class="setting-row">
+                        <div class="s-text">
+                            <span class="s-title">Otomatik Güncelleme</span>
+                            <span class="s-desc">Sistem kurları periyodik olarak arka planda günceller.</span>
+                        </div>
+                        <MudSwitch @bind-Value="ViewModel.IsOtomatikGuncellemeDurumu" Color="Color.Primary" />
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="s-text">
+                            <span class="s-title">Güncelleme Sıklığı</span>
+                            <span class="s-desc">Kurların hangi aralıkla kontrol edileceğini seçin.</span>
+                        </div>
+                        <select class="custom-select" @bind="ViewModel.GuncellemeAraligi">
+                            <option value="Her Saat">Her Saat</option>
+                            <option value="Günde 1">Günde 1</option>
+                            <option value="Açılışta">Açılışta</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="s-text">
+                            <span class="s-title">Fiyatlara Yansıt</span>
+                            <span class="s-desc">Döviz bazlı stokların TL fiyatlarını otomatik güncelle.</span>
+                        </div>
+                        <MudSwitch T="bool" Value="true" Color="Color.Primary" />
+                    </div>
+
+                    <div class="info-alert mt-6">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2" />
+                        <span>Kurlar doğrudan TCMB üzerinden çekilmektedir.</span>
+                    </div>
+
+                    <button class="save-btn mt-8" @onclick="ViewModel.AyarlariKaydet">Ayarları Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .doviz-page { padding: 30px; background: #080A0C; min-height: 100vh; color: white; }
+
+    .premium-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    
+    .icon-box { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+    .icon-box.gold { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
+
+    .main-title { font-size: 26px; font-weight: 800; margin: 0; }
+    .subtitle { font-size: 14px; color: #94A3B8; margin: 4px 0 0 0; }
+
+    .sync-status { text-align: right; margin-right: 20px; }
+    .sync-status .label { display: block; font-size: 10px; font-weight: 700; color: #64748B; }
+    .sync-status .time { font-size: 18px; font-weight: 900; color: #F59E0B; }
+
+    .action-btn-filled.info { background: #3B82F6; color: white; padding: 10px 24px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; }
+
+    .glass-card { background: #111418; border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; height: 100%; }
+    .card-header-premium { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01); }
+    .card-title { font-size: 16px; font-weight: 700; margin: 0; }
+
+    .kur-grid { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .kur-item { 
+        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03); 
+        border-radius: 14px; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;
+        transition: transform 0.2s;
+    }
+    .kur-item:hover { transform: translateX(5px); background: rgba(255,255,255,0.04); border-color: rgba(59, 130, 246, 0.2); }
+
+    .kur-code { display: block; font-size: 20px; font-weight: 900; color: white; }
+    .kur-name { font-size: 12px; color: #64748B; }
+
+    .kur-values { display: flex; gap: 30px; }
+    .val-box { text-align: right; }
+    .v-label { display: block; font-size: 9px; font-weight: 800; color: #64748B; margin-bottom: 2px; }
+    .v-price { font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .v-price.highlight { color: #10B981; }
+
+    .settings-body { padding: 24px; }
+    .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .s-title { display: block; font-size: 14px; font-weight: 700; color: white; }
+    .s-desc { font-size: 12px; color: #64748B; }
+
+    .custom-select { 
+        background: #1A1D21; border: 1px solid rgba(255,255,255,0.1); 
+        color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; outline: none;
+    }
+
+    .info-alert { background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 10px; font-size: 12px; color: #94A3B8; display: flex; align-items: center; }
+
+    .save-btn { width: 100%; background: #111418; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .save-btn:hover { background: white; color: black; }
+</style>

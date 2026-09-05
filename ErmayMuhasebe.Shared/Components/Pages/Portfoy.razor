@@ -1,0 +1,338 @@
+@page "/portfoy"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MiniExcelLibs
+@using System.IO
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject IFileService FileService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudText Typo="Typo.h5" Class="mb-4 d-flex align-center gap-2">
+        <MudIcon Icon="@Icons.Material.Filled.FolderSpecial" Color="Color.Primary" />
+        Portföy Listesi
+    </MudText>
+
+    <!-- Top Actions -->
+    <div class="d-flex justify-space-between align-center mb-4">
+        <div class="d-flex gap-2">
+            <!-- Import Button -->
+            <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.UploadFile">
+                        Excel Yükle
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+
+            <!-- Export Button -->
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Download" OnClick="ExportExcel">
+                Portföyü İndir
+            </MudButton>
+        </div>
+        
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => OpenDialog(new PortfoyKart()))">
+            Yeni Portföy Kaydı
+        </MudButton>
+    </div>
+
+    <!-- Filters -->
+    <MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+        <MudGrid>
+             <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="searchString" Placeholder="Ara..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" />
+            </MudItem>
+            <MudItem xs="6" md="4">
+                 <MudSelect T="string" Label="Tüm İller" @bind-Value="ilFilter" Clearable="true">
+                     @foreach(var il in iller)
+                     {
+                         <MudSelectItem Value="@il">@il</MudSelectItem>
+                     }
+                 </MudSelect>
+            </MudItem>
+            <MudItem xs="6" md="4">
+                 <MudSelect T="string" Label="Tüm Sektörler" @bind-Value="sektorFilter" Clearable="true">
+                      @foreach(var sk in sektorler)
+                     {
+                         <MudSelectItem Value="@sk">@sk</MudSelectItem>
+                     }
+                 </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Data Table -->
+    <MudTable Items="@FilteredItems" Dense="true" Hover="true" Bordered="false" Striped="true" Elevation="0" Outlined="true">
+        <HeaderContent>
+            <MudTh>Firma İsmi</MudTh>
+            <MudTh>Bulunduğu İl</MudTh>
+            <MudTh>İlçe</MudTh>
+            <MudTh>Telefon</MudTh>
+            <MudTh>Sektör</MudTh>
+            <MudTh Style="text-align:center">Görüşme</MudTh>
+            <MudTh Style="text-align:center">İşlemler</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Firma İsmi" Class="fw-bold text-primary" Style="cursor:pointer" @onclick="@(() => GoToDetail(context.Id))">
+                @context.FirmaIsmi
+            </MudTd>
+            <MudTd DataLabel="İl">@context.Il</MudTd>
+            <MudTd DataLabel="İlçe">@context.Ilce</MudTd>
+            <MudTd DataLabel="Telefon">@context.Telefon</MudTd>
+            <MudTd DataLabel="Sektör">@context.Sektor</MudTd>
+            <MudTd DataLabel="Görüşme" Style="text-align:center">
+                <MudIconButton Icon="@(context.Gorusuldu ? Icons.Material.Filled.CheckBox : Icons.Material.Filled.CheckBoxOutlineBlank)" 
+                               Color="@(context.Gorusuldu ? Color.Primary : Color.Default)"
+                               OnClick="@(() => ToggleGorusuldu(context))" />
+            </MudTd>
+            <MudTd DataLabel="İşlemler" Style="text-align:center">
+                <MudTooltip Text="Cari Hesaba Aktar">
+                    <MudIconButton Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" OnClick="@(() => TransferToCari(context))" />
+                </MudTooltip>
+                
+                <MudTooltip Text="Düzenle">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenDialog(context))" />
+                </MudTooltip>
+                
+                <MudTooltip Text="Sil">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeletePortfoy(context))" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+
+</MudContainer>
+
+@code {
+    private List<PortfoyKart> items = new();
+    private string searchString = "";
+    private string? ilFilter;
+    private string? sektorFilter;
+    
+    private List<string> iller = new();
+    private List<string> sektorler = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        items = await DbService.GetPortfoyListAsync();
+        
+        // Extract filters
+        iller = items.Select(x => x.Il).Where(x => !string.IsNullOrEmpty(x)).Cast<string>().Distinct().OrderBy(x => x).ToList();
+        sektorler = items.Select(x => x.Sektor).Where(x => !string.IsNullOrEmpty(x)).Cast<string>().Distinct().OrderBy(x => x).ToList();
+    }
+
+    private IEnumerable<PortfoyKart> FilteredItems
+    {
+        get
+        {
+            var result = items.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchString))
+                result = result.Where(x => x.FirmaIsmi != null && x.FirmaIsmi.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(ilFilter))
+                result = result.Where(x => x.Il == ilFilter);
+
+            if (!string.IsNullOrEmpty(sektorFilter))
+                result = result.Where(x => x.Sektor == sektorFilter);
+
+            return result;
+        }
+    }
+
+    private async Task OpenDialog(PortfoyKart? existing)
+    {
+        var parameters = new DialogParameters();
+        if (existing != null)
+        {
+            parameters.Add("Model", new PortfoyKart 
+            { 
+                Id = existing.Id, 
+                FirmaIsmi = existing.FirmaIsmi,
+                VKN = existing.VKN,
+                VergiDairesi = existing.VergiDairesi,
+                GSM = existing.GSM,
+                Telefon = existing.Telefon,
+                Email = existing.Email,
+                WebSitesi = existing.WebSitesi,
+                Adres = existing.Adres,
+                Il = existing.Il,
+                Ilce = existing.Ilce,
+                Sektor = existing.Sektor,
+                Gorusuldu = existing.Gorusuldu,
+                Notlar = existing.Notlar,
+                KayitTarihi = existing.KayitTarihi
+            });
+        }
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.PortfoyDialog>(
+            existing == null ? "Yeni Portföy Kaydı" : "Portföy Düzenle", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            var model = (PortfoyKart?)result.Data;
+            if (model != null)
+            {
+                await DbService.SavePortfoyAsync(model);
+                Snackbar.Add("Kayıt başarıyla kaydedildi", Severity.Success);
+                await LoadData();
+            }
+        }
+    }
+
+    private async Task DeletePortfoy(PortfoyKart item)
+    {
+        var result = await DialogService.ShowMessageBox("Sil", $"{item.FirmaIsmi} silinsin mi?", yesText: "Sil", cancelText: "İptal");
+        if (result == true)
+        {
+            await DbService.DeletePortfoyAsync(item.Id);
+            Snackbar.Add("Kayıt silindi", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private async Task ToggleGorusuldu(PortfoyKart item)
+    {
+        item.Gorusuldu = !item.Gorusuldu;
+        await DbService.SavePortfoyAsync(item);
+    }
+
+    private async Task TransferToCari(PortfoyKart item)
+    {
+        // İlk olarak kullanıcıya Müşteri mi Tedarikçi mi olduğunu soralım
+        var parameters = new DialogParameters
+        {
+            ["Message"] = $"{item.FirmaIsmi} cari hesaplara eklensin mi?",
+            ["Options"] = new List<string> { "Müşteri", "Tedarikçi" }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.ChoiceDialog>("Cari Türü Seçin", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is string selectedTur)
+        {
+            var cari = new CariKart
+            {
+                CariKod = item.PortfoyNo?.StartsWith("C-") == true ? item.PortfoyNo : "C-" + item.PortfoyNo,
+                Unvan = item.FirmaIsmi,
+                VKN = item.VKN ?? "",
+                VergiDairesi = item.VergiDairesi ?? "",
+                Telefon = item.Telefon,
+                CepTelefon = item.GSM,
+                Email = item.Email,
+                WebAdresi = item.WebSitesi,
+                Adres = item.Adres,
+                SevkAdresi = item.SevkAdresi,
+                Il = item.Il,
+                Ilce = item.Ilce,
+                Grup = selectedTur, // proper casing (Müşteri / Tedarikçi)
+                Tur = (selectedTur == "Tedarikçi") ? "Satici" : "Alici", // DB standard
+                VadeGunu = item.VadeGunu,
+                RiskLimiti = item.RiskLimiti,
+                Aciklama = item.Aciklama,
+                RiskTakibiYapilsin = item.RiskTakibiYapilsin,
+                VadeGecmisteEngelle = item.VadeGecmisteEngelle,
+                FaturadaRiskKontrolu = item.FaturadaRiskKontrolu,
+                KayitTarihi = DateTime.Now
+            };
+
+            await DbService.SaveCariAsync(cari);
+            await DbService.DeletePortfoyAsync(item.Id);
+            await LoadData();
+            Snackbar.Add($"Cari kart {selectedTur} olarak oluşturuldu!", Severity.Success);
+        }
+    }
+
+    private void GoToDetail(int id)
+    {
+        NavManager.NavigateTo($"/portfoy-detay/{id}");
+    }
+
+    // EXCEL EXPORT
+    private async Task ExportExcel()
+    {
+        try 
+        {
+            var data = items.Select(x => new {
+                Firma = x.FirmaIsmi,
+                VKN = x.VKN,
+                VergiDairesi = x.VergiDairesi,
+                Telefon = x.Telefon,
+                GSM = x.GSM,
+                Email = x.Email,
+                Web = x.WebSitesi,
+                Adres = x.Adres,
+                Il = x.Il,
+                Ilce = x.Ilce,
+                Sektor = x.Sektor,
+                Gorusuldu = x.Gorusuldu ? "Evet" : "Hayır",
+                Notlar = x.Notlar
+            });
+
+            using var memoryStream = new MemoryStream();
+            await MiniExcel.SaveAsAsync(memoryStream, data);
+            
+            var fileName = $"Portfoy_Listesi_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            await FileService.SaveAndOpenFileAsync(fileName, memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            
+            Snackbar.Add("Excel dosyası indirildi", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // EXCEL IMPORT
+    private async Task UploadFiles(IBrowserFile file)
+    {
+        try
+        {
+            // Save to temp file to read
+            var tempFile = Path.GetTempFileName() + ".xlsx";
+            using (var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024))
+            using (var fs = File.OpenWrite(tempFile))
+            {
+                await stream.CopyToAsync(fs);
+            }
+
+            var rows = MiniExcel.Query(tempFile, useHeaderRow: true).ToList();
+            int count = 0;
+            
+            foreach (var row in rows)
+            {
+                var dict = (IDictionary<string, object>)row;
+                var p = PortfoyKart.FromDictionary(dict);
+                if (string.IsNullOrWhiteSpace(p.FirmaIsmi)) continue;
+                if (string.IsNullOrEmpty(p.PortfoyNo)) p.PortfoyNo = "P-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+
+                await DbService.SavePortfoyAsync(p);
+                count++;
+            }
+            
+            Snackbar.Add($"{count} kayıt başarıyla yüklendi", Severity.Success);
+            await LoadData();
+            
+            // Cleanup
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Yükleme hatası: {ex.Message}", Severity.Error);
+        }
+    }
+}

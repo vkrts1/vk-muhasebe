@@ -1,0 +1,308 @@
+/**
+ * ============================================================================
+ * ERMAY MUHASEBE - PREMIUM DESIGN SYSTEM
+ * Avalonia Desktop ile birebir aynı tasarım sistemi
+ * ============================================================================
+ */
+
+:root {
+    /* ========== BASE COLORS (Avalonia ile aynı) ========== */
+    --background-color: #0D1012;
+    --surface-color: #1A1D21;
+    --panel-color: rgba(29, 33, 38, 0.89);
+    /* #E31D2126 */
+    --solid-panel-color: rgba(29, 33, 38, 0.89);
+
+    /* ========== PREMIUM FLUID GRADIENTS ========== */
+    --fluid-blue-gradient: linear-gradient(135deg, #0061FF 0%, #60A5FA 50%, #00D2FF 100%);
+    --fluid-green-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --fluid-red-gradient: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    --fluid-orange-gradient: linear-gradient(135deg, #FF8C00 0%, #FFA500 100%);
+
+    /* ========== SHINE EFFECT ========== */
+    --fluid-shine: linear-gradient(135deg,
+            transparent 0%,
+            transparent 40%,
+            rgba(255, 255, 255, 0.6) 50%,
+            transparent 60%,
+            transparent 100%);
+
+    /* ========== SEMANTIC COLORS ========== */
+    --color-success: #00FF87;
+    --color-success-bg: rgba(0, 255, 135, 0.1);
+    --color-danger: #FF416C;
+    --color-danger-bg: rgba(255, 65, 108, 0.1);
+    --color-warning: #FF8C00;
+    --color-warning-bg: rgba(255, 140, 0, 0.1);
+    --color-info: #00D2FF;
+    --color-info-bg: rgba(0, 210, 255, 0.1);
+
+    /* ========== TEXT COLORS ========== */
+    --text-primary: #FFFFFF;
+    --text-secondary: #AAAAAA;
+    --text-muted: #666666;
+
+    /* ========== BORDER & EFFECTS ========== */
+    --border-color: rgba(255, 255, 255, 0.2);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --glow-color: rgba(255, 255, 255, 0.1);
+
+    /* ========== SPACING ========== */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 50px;
+
+    /* ========== SHADOWS ========== */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 20px rgba(96, 165, 250, 0.3);
+
+    /* ========== TRANSITIONS ========== */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+}
+
+/* ========== GLOBAL RESETS ========== */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-primary);
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* ========== PREMIUM GLASS PANELS ========== */
+.glass-panel {
+    background: var(--panel-color);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-panel-solid {
+    background: var(--solid-panel-color);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+}
+
+/* ========== PREMIUM BUTTONS ========== */
+.btn-premium {
+    background: rgba(26, 29, 33, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--glow-color);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.btn-premium:hover {
+    border-color: white;
+    background: #252A30;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-premium:hover::before {
+    opacity: 1;
+}
+
+.btn-premium:active {
+    transform: scale(0.96);
+}
+
+/* Semantic Button Variants */
+.btn-success {
+    border-color: var(--color-success);
+    background: var(--color-success-bg);
+}
+
+.btn-danger {
+    border-color: var(--color-danger);
+    background: var(--color-danger-bg);
+}
+
+.btn-warning {
+    border-color: var(--color-warning);
+    background: var(--color-warning-bg);
+}
+
+.btn-info {
+    border-color: var(--color-info);
+    background: var(--color-info-bg);
+}
+
+/* ========== GRADIENT BACKGROUNDS ========== */
+.bg-gradient-blue {
+    background: var(--fluid-blue-gradient);
+}
+
+.bg-gradient-green {
+    background: var(--fluid-green-gradient);
+}
+
+.bg-gradient-red {
+    background: var(--fluid-red-gradient);
+}
+
+.bg-gradient-orange {
+    background: var(--fluid-orange-gradient);
+}
+
+/* ========== SHINE ANIMATION ========== */
+@keyframes shine {
+    0% {
+        transform: translateX(-600px);
+    }
+
+    100% {
+        transform: translateX(800px);
+    }
+}
+
+.shine-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.shine-effect::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 600px;
+    height: 100%;
+    background: var(--fluid-shine);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+}
+
+.shine-effect:hover::after {
+    opacity: 1;
+    animation: shine 1.8s infinite;
+}
+
+/* ========== PREMIUM CARDS ========== */
+.premium-card {
+    background: var(--panel-color);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    transition: all var(--transition-normal);
+}
+
+.premium-card:hover {
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-4px);
+}
+
+/* ========== STATUS BADGES ========== */
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-success {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+}
+
+.badge-danger {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+}
+
+.badge-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    border: 1px solid var(--color-warning);
+}
+
+.badge-info {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+    border: 1px solid var(--color-info);
+}
+
+/* ========== SCROLLBAR STYLING ========== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--panel-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--surface-color);
+}
+
+/* ========== UTILITY CLASSES ========== */
+.text-gradient-blue {
+    background: var(--fluid-blue-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-gradient-green {
+    background: var(--fluid-green-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.glow {
+    box-shadow: var(--shadow-glow);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .glass-panel {
+        border-radius: var(--radius-sm);
+    }
+
+    .btn-premium {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}

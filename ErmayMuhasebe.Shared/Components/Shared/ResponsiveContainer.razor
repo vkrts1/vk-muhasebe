@@ -1,0 +1,65 @@
+@* Responsive Helper Component for ERMAY Muhasebe *@
+@* This component provides responsive utilities and breakpoint detection *@
+
+#nullable enable
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    [Parameter]
+    public string? Class { get; set; }
+    
+    [Parameter]
+    public Breakpoint Breakpoint { get; set; } = Breakpoint.None;
+    
+    [Parameter]
+    public bool HideOnMobile { get; set; }
+    
+    [Parameter]
+    public bool HideOnTablet { get; set; }
+    
+    [Parameter]
+    public bool HideOnDesktop { get; set; }
+    
+    [Parameter]
+    public bool ShowOnMobileOnly { get; set; }
+    
+    [Parameter]
+    public bool ShowOnTabletOnly { get; set; }
+    
+    [Parameter]
+    public bool ShowOnDesktopOnly { get; set; }
+    
+    private string GetResponsiveClass()
+    {
+        var classes = new List<string>();
+        
+        if (!string.IsNullOrEmpty(Class))
+            classes.Add(Class);
+        
+        if (HideOnMobile)
+            classes.Add("d-sm-none");
+        
+        if (HideOnTablet)
+            classes.Add("d-md-none");
+        
+        if (HideOnDesktop)
+            classes.Add("d-lg-none");
+        
+        if (ShowOnMobileOnly)
+            classes.Add("d-sm-block d-md-none");
+        
+        if (ShowOnTabletOnly)
+            classes.Add("d-none d-md-block d-lg-none");
+        
+        if (ShowOnDesktopOnly)
+            classes.Add("d-none d-lg-block");
+        
+        return string.Join(" ", classes);
+    }
+}
+
+<div class="@GetResponsiveClass()">
+    @ChildContent
+</div>

@@ -1,0 +1,162 @@
+@page "/teklif-detay/{Id:int}"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager NavManager
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div class="d-flex align-center gap-4">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Variant="Variant.Outlined" Color="Color.Default" />
+            <div>
+                <MudText Typo="Typo.h5" Class="font-weight-bold">Teklif Detayı</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">#@(_teklif?.TeklifNo ?? "-") numaralı kayıt</MudText>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            @if (_teklif?.Durum == "Bekliyor")
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Done" OnClick="ConvertToOrder">Siparişe Dönüştür</MudButton>
+            }
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Print" OnClick='() => NavManager.NavigateTo($"/teklif-goruntule/{Id}")'>Yazdır</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Email" Color="Color.Info">E-Posta Gönder</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick='() => NavManager.NavigateTo($"/teklif-olustur?Id={Id}")'>Düzenle</MudButton>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="d-flex justify-center mt-12">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (_teklif == null)
+    {
+        <MudAlert Severity="Severity.Error">Teklif bulunamadı.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            <!-- HEADER INFO -->
+            <MudItem xs="12">
+                <MudPaper Class="pa-8" Elevation="4" Style="border-radius: 20px; border-left: 8px solid var(--mud-palette-warning);">
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.h6" Color="Color.Warning" Class="font-weight-bold mb-2">Potansiyel Müşteri</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold">@_teklif.CariUnvan</MudText>
+                            <MudText Typo="Typo.body1" Color="Color.Secondary">Teklif Geçerlilik: @(_teklif.GecerlilikTarihi?.ToString("dd.MM.yyyy") ?? "Süresiz")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                             <div class="d-flex flex-column align-end">
+                                <MudChip T="string" Color="@GetStatusColor(_teklif.Durum)" Variant="Variant.Filled" Size="Size.Large" Class="mb-4">
+                                    Teklif Durumu: @_teklif.Durum
+                                </MudChip>
+                                <div class="d-flex gap-8 text-right">
+                                    <div>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">TEKLİF TARİHİ</MudText>
+                                        <MudText Typo="Typo.body1" Class="font-weight-bold">@_teklif.Tarih.ToString("dd.MM.yyyy")</MudText>
+                                    </div>
+                                    <div>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">GEÇERLİLK</MudText>
+                                        <MudText Typo="Typo.body1" Class="font-weight-bold" Color="@(_teklif.GecerlilikTarihi < DateTime.Now ? Color.Error : Color.Default)">@(_teklif.GecerlilikTarihi?.ToString("dd.MM.yyyy") ?? "-")</MudText>
+                                    </div>
+                                </div>
+                             </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+
+            <!-- LINE ITEMS -->
+            <MudItem xs="12">
+                <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 20px;">
+                    <MudTable Items="@_detaylar" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>#</MudTh>
+                            <MudTh>Açıklama</MudTh>
+                            <MudTh>Miktar</MudTh>
+                            <MudTh>Birim Fiyat</MudTh>
+                            <MudTh Style="text-align: right;">Teklif Tutarı</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@( ( _detaylar.IndexOf(context) + 1 ).ToString() )</MudTd>
+                            <MudTd Class="font-weight-bold">@context.StokAdi</MudTd>
+                            <MudTd>@context.Miktar @context.Birim</MudTd>
+                            <MudTd>@context.BirimFiyat.ToString("N2") ₺</MudTd>
+                            <MudTd Style="text-align: right; font-weight: bold;">@context.Tutar.ToString("N2") ₺</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+
+                    <MudDivider Class="my-6" />
+
+                    <div class="d-flex justify-space-between pr-4 mt-4">
+                        <div style="max-width: 50%;">
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">ÖDEME BİLGİSİ</MudText>
+                            <MudText Typo="Typo.body2">@(_teklif.OdemeBilgisi ?? "-")</MudText>
+                        </div>
+                        <div style="min-width: 250px;">
+                            <div class="d-flex justify-space-between mt-2">
+                                <MudText Typo="Typo.h5" Class="font-weight-bold">TOPLAM TEKLİF:</MudText>
+                                <MudText Typo="Typo.h5" Color="Color.Warning" Class="font-weight-bold">@_teklif.GenelToplam.ToString("N2") ₺</MudText>
+                            </div>
+                        </div>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Teklif? _teklif;
+    private List<TeklifDetay> _detaylar = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _teklif = await DbService.GetTeklifAsync(Id);
+            if (_teklif != null)
+            {
+                _detaylar = await DbService.GetTeklifDetaylarAsync(Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Color GetStatusColor(string? status) => status switch
+    {
+        "Onaylandı" => Color.Success,
+        "Bekliyor" => Color.Warning,
+        "Reddedildi" => Color.Error,
+        _ => Color.Default
+    };
+
+    private async Task ConvertToOrder()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Siparişe Dönüştür", 
+            "Bu teklifi siparişe dönüştürmek istediğinize emin misiniz?", 
+            yesText:"Evet", cancelText:"Hayır");
+
+        if (result == true)
+        {
+            await DbService.ConvertTeklifToSiparisAsync(Id);
+            NavManager.NavigateTo("/siparisler");
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("/teklifler");
+}

@@ -1,0 +1,128 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudDialog Class="custom-dark-dialog" Options="@(new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <div style="background: #e74c3c; color: white; padding: 16px; margin: -24px -24px 0 -24px; display: flex; align-items: center; justify-content: space-between;">
+            <MudText Typo="Typo.h6" Style="font-weight: bold;">GİDER EKLE</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="Cancel" Size="Size.Small" />
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div style="background: #1a252f; color: white; margin: -16px -24px -24px -24px; padding: 24px;">
+            <style>
+                .custom-dark-dialog .mud-input-control { margin-top: 8px; }
+                .custom-dark-dialog .mud-input-label { color: #bdc3c7 !important; text-transform: uppercase; font-size: 11px !important; letter-spacing: 1px; }
+                .custom-dark-dialog .mud-input { background: #2c3e50; color: white; border-radius: 4px; }
+                .custom-dark-dialog .mud-input.mud-input-outlined fieldset { border-color: #34495e; }
+            </style>
+
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudSelect T="string" Label="ÖDEME TİPİ" @bind-Value="odemeTipi" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("Nakit")">Nakit (Kasa)</MudSelectItem>
+                        <MudSelectItem Value="@("Banka")">Banka Havale / EFT</MudSelectItem>
+                        <MudSelectItem Value="@("Kredi Kartı")">Kredi Kartı</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                @if (odemeTipi == "Banka" || odemeTipi == "Kredi Kartı")
+                {
+                    <MudItem xs="12">
+                        <MudSelect T="int" Label="@(odemeTipi == "Banka" ? "HESAP SEÇİMİ" : "KREDİ KARTI SEÇİMİ")" @bind-Value="seciliBankaId" Variant="Variant.Outlined">
+                            @foreach (var banka in bankalar.Where(x => (odemeTipi == "Banka" && x.KartTuru == "Mevduat") || (odemeTipi == "Kredi Kartı" && x.KartTuru == "Kredi Kartı")))
+                            {
+                                <MudSelectItem Value="@banka.Id">@banka.BankaAdi (@banka.HesapNo)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+
+                <MudItem xs="12">
+                    <MudDatePicker Label="TARİH" @bind-Date="tarih" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudNumericField @bind-Value="tutar" Label="TUTAR" Variant="Variant.Outlined" Format="N2" Adornment="Adornment.End" AdornmentText="₺" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="aciklama" Label="AÇIKLAMA / GİDER TÜRÜ" Variant="Variant.Outlined" Lines="2" Placeholder="Örn: Kira, Elektrik, Yakıt, Personel..." />
+                </MudItem>
+            </MudGrid>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div style="background: #1a252f; width: 100%; margin: -40px -24px -24px -24px; padding: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+            <MudButton OnClick="Cancel" Variant="Variant.Filled" Style="background: #6C7A89; color: white;">VAZGEÇ</MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Submit">KAYDET</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private string odemeTipi = "Nakit";
+    private int seciliBankaId;
+    private DateTime? tarih = DateTime.Now;
+    private decimal tutar;
+    private string aciklama = "";
+    private List<BankaKart> bankalar = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        bankalar = await DbService.GetBankaKartlariAsync();
+    }
+
+    async Task Submit()
+    {
+        if (tutar <= 0)
+        {
+            Snackbar.Add("Lütfen geçerli bir tutar girin", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            if (odemeTipi == "Nakit")
+            {
+                var kasaH = new KasaHareket
+                {
+                    Tarih = tarih ?? DateTime.Now,
+                    IslemTuru = "Odeme",
+                    Tutar = tutar,
+                    Aciklama = "Genel Gider: " + aciklama + " (Nakit)"
+                };
+                await DbService.SaveKasaHareketAsync(kasaH);
+            }
+            else
+            {
+                var banka = bankalar.FirstOrDefault(x => x.Id == seciliBankaId);
+                var bankaH = new BankaHareket
+                {
+                    Tarih = tarih ?? DateTime.Now,
+                    BankaKartId = seciliBankaId,
+                    BankaAdi = banka?.BankaAdi ?? "",
+                    IBAN = banka?.IBAN ?? "",
+                    IslemTuru = odemeTipi == "Kredi Kartı" ? "Kredi Kartı Harcaması" : "Giden Havale",
+                    Tutar = tutar,
+                    Aciklama = "Genel Gider: " + aciklama + (odemeTipi == "Kredi Kartı" ? " (KK)" : " (Banka)")
+                };
+                await DbService.SaveBankaHareketAsync(bankaH);
+            }
+
+            Snackbar.Add("Gider kaydı başarıyla eklendi", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata oluştu: {ex.Message}", Severity.Error);
+        }
+    }
+
+    void Cancel() => MudDialog.Cancel();
+}

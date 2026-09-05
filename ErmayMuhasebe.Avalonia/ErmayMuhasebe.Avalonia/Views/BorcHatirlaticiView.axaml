@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.BorcHatirlaticiView"
+             x:DataType="vm:BorcHatirlaticiViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#26EF4444">
+          <ic:SymbolIcon Symbol="Alert" Foreground="#EF4444" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Akıllı Borç ve Tahsilat Hatırlatıcı" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Vadesi geçen ödemeleri takip edin ve müşterilerinize tek tıkla hatırlatma gönderin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" RowDefinitions="Auto, *">
+        <Border Grid.Row="0" Background="#1A1F2937" CornerRadius="15" Padding="20" Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal" Spacing="40">
+                <StackPanel Spacing="5">
+                    <TextBlock Text="Gecikmedeki Kayıtlar" FontSize="12" Foreground="#9CA3AF"/>
+                    <TextBlock Text="{Binding ToplamGecikenCount}" FontSize="24" FontWeight="Bold" Foreground="#EF4444"/>
+                </StackPanel>
+                <Separator Background="#15FFFFFF" Width="1" Height="40"/>
+                <TextBlock Text="Otomatik Hatırlatma Sistemi Aktif" VerticalAlignment="Center" Foreground="#10B981" FontWeight="SemiBold"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="10" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <DataGrid ItemsSource="{Binding Hatirlatmalar}" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Borçlu Müşteri" Binding="{Binding CariUnvan}" Width="2*"/>
+                    <DataGridTextColumn Header="Tutar" Binding="{Binding Tutar, StringFormat={}{0:N2} TL}" Width="150"/>
+                    <DataGridTextColumn Header="Vade Tarihi" Binding="{Binding Vade, StringFormat={}{0:dd.MM.yyyy}}" Width="120"/>
+                    <DataGridTemplateColumn Header="Gecikme" Width="100">
+                        <DataTemplate>
+                            <TextBlock Text="{Binding GecikmeGunu, StringFormat={}{0} GÜN}" Foreground="#EF4444" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Hatırlat" Width="200">
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Command="{Binding $parent[UserControl].DataContext.SmsGonderCommand}" 
+                                        CommandParameter="{Binding}"
+                                        Classes="SideButton" Background="#3B82F6">
+                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                        <ic:SymbolIcon Symbol="Chat" FontSize="16"/> 
+                                        <TextBlock Text="SMS" FontSize="10"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding $parent[UserControl].DataContext.EmailGonderCommand}" 
+                                        CommandParameter="{Binding}"
+                                        Classes="SideButton" Background="#8B5CF6">
+                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                        <ic:SymbolIcon Symbol="Mail" FontSize="16"/> 
+                                        <TextBlock Text="EMAIL" FontSize="10"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+  </Grid>
+</UserControl>

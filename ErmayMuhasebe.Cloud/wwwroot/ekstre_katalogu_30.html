@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ermay Muhasebe - 30 PDF Ekstre Katalogu</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --p: #2563eb;
+            --bg: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            padding: 40px;
+            color: #1e293b;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            background: #0f172a;
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+        }
+
+        header h1 {
+            font-family: 'Outfit';
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 15px;
+            background: #f8fafc;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-family: 'Outfit';
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .id-badge {
+            background: #2563eb;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .preview-box {
+            height: 450px;
+            padding: 15px;
+            background: #cbd5e1;
+            overflow-y: auto;
+        }
+
+        .pdf {
+            background: white;
+            min-height: 100%;
+            padding: 15px;
+            font-size: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Shared Components */
+        .pdf-t {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .pdf-t th {
+            background: #f1f5f9;
+            padding: 6px;
+            text-align: left;
+        }
+
+        .pdf-t td {
+            padding: 6px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detay {
+            background: #f9f9f9;
+            font-size: 8px;
+            color: #777;
+            padding-left: 20px !important;
+        }
+
+        .badge {
+            padding: 2px 6px;
+            border-radius: 8px;
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        /* Styles (Subset of 30 for the Mockup Demo) */
+        .s2 {
+            border-top: 5px solid #0ea5e9;
+        }
+
+        .s3 {
+            background: #0f172a;
+            color: white;
+        }
+
+        .s3 th {
+            background: #1e293b;
+            color: #38bdf8;
+        }
+
+        .s3 td {
+            border-color: #1e293b;
+        }
+
+        .s4 {
+            font-family: 'Helvetica', sans-serif;
+            border: 2px solid black;
+        }
+
+        .s4 th {
+            border-bottom: 2px solid black;
+            background: white;
+            font-weight: 900;
+        }
+
+        .s11 {
+            background: #fffcf0;
+            font-family: 'Roboto Mono';
+        }
+
+        .s13 {
+            border-top: 8px solid #1e3a8a;
+        }
+
+        .s13 .h-box {
+            border-left: 4px solid #d4af37;
+            padding-left: 10px;
+        }
+
+        .s12 {
+            background: #000;
+            color: #0f0;
+        }
+
+        .s12 th {
+            background: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+        }
+
+        .s25 {
+            border-top: 8px solid #065f46;
+            color: #064e3b;
+        }
+
+        .s26 {
+            background: #334155;
+            color: white;
+        }
+
+        .s26 .accent {
+            color: #f97316;
+        }
+
+        .s30 {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border: 1px solid #3b82f6;
+        }
+
+        .select-btn {
+            padding: 12px;
+            background: #0f172a;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .select-btn:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Ermay Muhasebe - PDF Tasarım Kataloğu</h1>
+        <p>Aşağıda tam 30 adet benzersiz Ekstre ve Detaylı Ekstre tasarımı sunulmuştur.</p>
+    </header>
+
+    <div class="grid" id="catalog">
+        <!-- JS ile 30 tane doldurulacak -->
+    </div>
+
+    <script>
+        const styles = [
+            { id: "01", name: "ERP Classic", class: "" },
+            { id: "02", name: "Modern Azure", class: "s2" },
+            { id: "03", name: "Midnight Neon", class: "s3" },
+            { id: "04", name: "Swiss Grid", class: "s4" },
+            { id: "05", name: "Minimal Mono", class: "s4" },
+            { id: "06", name: "Ivory Premium", class: "s11" },
+            { id: "07", name: "Vibrant Action", class: "" },
+            { id: "08", name: "Glass Arctic", class: "s30" },
+            { id: "09", name: "Material Float", class: "" },
+            { id: "10", name: "Industrial Mono", class: "s11" },
+            { id: "11", name: "Retro Ledger", class: "s11" },
+            { id: "12", name: "Cyber Punk", class: "s12" },
+            { id: "13", name: "Executive Navy", class: "s13" },
+            { id: "14", name: "Soft Pastel", class: "" },
+            { id: "15", name: "Magazine Edit", class: "" },
+            { id: "16", name: "Brutalist Raw", class: "s4" },
+            { id: "17", name: "Nordic Air", class: "" },
+            { id: "18", name: "Dashboard Plus", class: "s2" },
+            { id: "19", name: "Simple Horizon", class: "" },
+            { id: "20", name: "Official Stamp", class: "" },
+            { id: "21", name: "Gradient Aura", class: "s30" },
+            { id: "22", name: "Textured Paper", class: "s11" },
+            { id: "23", name: "Compact Data", class: "" },
+            { id: "24", name: "Iconic Flow", class: "" },
+            { id: "25", name: "Emerald Trust", class: "s25" },
+            { id: "26", name: "Carbon Slate", class: "s26" },
+            { id: "27", name: "Blueprint Tech", class: "s11" },
+            { id: "28", name: "Zen Garden", class: "s25" },
+            { id: "29", name: "Steel & Fire", class: "" },
+            { id: "30", name: "Hologram Blue", class: "s30" }
+        ];
+
+        const container = document.getElementById('catalog');
+        styles.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-header">
+                    <h3>${s.name}</h3>
+                    <span class="id-badge">ID: ${s.id}</span>
+                </div>
+                <div class="preview-box">
+                    <div class="pdf ${s.class}">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                            <b>ERMAY S.A.</b>
+                            <span>25.02.2026</span>
+                        </div>
+                        <h2 style="font-size:14px; margin-bottom:10px">Ekstre: YAĞMUR PERDE</h2>
+                        <div style="background:rgba(0,0,0,0.05); padding:10px; margin-bottom:10px">
+                            Bakie: <b style="color:#ef4444">₺329.444,00</b>
+                        </div>
+                        <table class="pdf-t">
+                            <thead><tr><th>Tarih</th><th>İşlem</th><th>Borç</th><th>Alacak</th></tr></thead>
+                            <tbody>
+                                <tr><td>07.10</td><td>Satış (Detaylı)</td><td>1.200</td><td>-</td></tr>
+                                <tr><td colspan="4" class="detay">- 5 Adet Ürün X (200 TL)</td></tr>
+                                <tr><td>13.10</td><td>Tahsilat</td><td>-</td><td>500</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <a href="#" class="select-btn">BU TASARIMI SEÇ (ID: ${s.id})</a>
+            `;
+            container.appendChild(card);
+        });
+
+        document.querySelectorAll('.select-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                const id = btn.innerText.split('ID: ')[1].replace(')', '');
+                alert("Stil ID " + id + " seçildi. Şimdi bu tasarımı kodlara uyguluyorum!");
+            };
+        });
+    </script>
+</body>
+
+</html>

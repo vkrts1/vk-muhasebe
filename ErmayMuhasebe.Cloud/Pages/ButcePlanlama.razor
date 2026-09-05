@@ -1,0 +1,560 @@
+@page "/butce-planlama"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Repositories
+@using System.Globalization
+@inject IUnitOfWork Uow
+@inject ISnackbar Snackbar
+
+<div class="butce-sync-page">
+    <div class="ambient-glow bg-glow-blue"></div>
+
+    <!-- ===== HEADER SECTION ===== -->
+    <div class="butce-premium-header">
+        <div class="header-left-part">
+            <div class="icon-box blue">
+                <MudIcon Icon="@Icons.Material.Filled.BarChart" Style="font-size: 24px; color: #0061FF;" />
+            </div>
+            <div class="title-area">
+                <h1 class="main-title">Bütçe Planlama Merkezi</h1>
+                <div class="year-picker">
+                    <span class="label">Mali Yıl:</span>
+                    <select class="year-select" @onchange="OnYearChanged">
+                        @foreach (var y in _years)
+                        {
+                            <option value="@y" selected="@(y == _year)">@y</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-center-metrics">
+            <div class="metric-block">
+                <span class="m-label">YILLIK HEDEF</span>
+                <span class="m-value">@_yillikHedef.ToString("N0") ₺</span>
+            </div>
+            <div class="metric-block">
+                <span class="m-label">GERÇEKLEŞEN</span>
+                <span class="m-value color-green">@_yillikGerceklesen.ToString("N0") ₺</span>
+            </div>
+            <div class="badge-pct">
+                %@_yillikYuzde.ToString("N1").Replace(".", ",")
+            </div>
+        </div>
+
+        <div class="header-right-actions">
+            @if (!_editMode)
+            {
+                <button class="action-btn-outline" @onclick="() => _editMode = true">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" style="font-size: 14px; opacity: 0.6;" />
+                    Hedefleri Düzenle
+                </button>
+            }
+            else
+            {
+                <div class="d-flex gap-2">
+                     <button class="action-btn-filled info" @onclick="DistributeYearly">Otomatik Doldur</button>
+                     <button class="action-btn-filled success" @onclick="SaveAll">Kaydet</button>
+                     <button class="action-btn-outline" @onclick="() => _editMode = false">İptal</button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ===== MAIN CONTENT GRID ===== -->
+    <div class="butce-content-wrapper">
+        <div class="row g-4 h-100">
+            <!-- Left: Monthly Table -->
+            <div class="col-lg-5 h-100">
+                <div class="premium-glass-card h-100 flex-column overflow-hidden">
+                    <div class="table-container-scroll">
+                        <table class="premium-data-table">
+                            <thead>
+                                <tr>
+                                    <th>AY</th>
+                                    <th>HEDEF</th>
+                                    <th>GERÇEKLEŞEN</th>
+                                    <th>DURUM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in _monthPlans)
+                                {
+                                    <tr class="@(p == _selMonth ? "row-selected" : "")" @onclick="() => SelectMonth(p)">
+                                        <td class="td-month">@p.AyAdi</td>
+                                        <td>
+                                            @if (_editMode)
+                                            {
+                                                <input class="inline-edit-input" type="number" @bind="p.Hedef" @onclick:stopPropagation="true" />
+                                            }
+                                            else
+                                            {
+                                                <span>@p.Hedef.ToString("N0") ₺</span>
+                                            }
+                                        </td>
+                                        <td class="color-green">@p.Gerceklesen.ToString("N0") ₺</td>
+                                        <td>
+                                            <div class="status-badge" style="background: @(p.Renk + "15"); color: @p.Renk; border: 1px solid @(p.Renk + "30");">
+                                                %@p.Yuzde.ToString("N0")
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Chart and Weekly Table -->
+            <div class="col-lg-7 h-100 d-flex flex-column gap-4">
+                <!-- Trend Chart Section -->
+                <div class="premium-glass-card p-6 min-h-250">
+                    <div class="card-header-simple mb-4">
+                        <h3 class="card-inner-title">Hedef & Gerçekleşme Trendi</h3>
+                    </div>
+                    <div class="chart-box">
+                         <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@_series" 
+                                  XAxisLabels="@_xLabels" 
+                                  Width="100%" Height="180px" 
+                                  ChartOptions="@_chartOpts" />
+                    </div>
+                </div>
+
+                <!-- Weekly Details Section -->
+                <div class="premium-glass-card p-6 flex-grow-1 overflow-hidden">
+                    <div class="card-header-simple d-flex justify-between align-center mb-4">
+                        <h3 class="card-inner-title">@(string.IsNullOrEmpty(_selMonth?.AyAdi) ? "Finansal Özet" : _selMonth.AyAdi + " ayı Haftalık Detay")</h3>
+                        @if (_editMode && _selMonth != null)
+                        {
+                            <button class="action-btn-mini" @onclick="DistributeMonthly">Haftalara Dağıt</button>
+                        }
+                    </div>
+
+                    @if (_selMonth == null)
+                    {
+                        <div class="empty-state-card mt-10">
+                            <div class="d-flex flex-column align-center gap-4">
+                                <MudIcon Icon="@Icons.Material.Filled.Search" Style="font-size: 48px; opacity: 0.1;" />
+                                <span class="empty-txt">Detaylı haftalık analiz için sol tablodan bir ay seçiniz.</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-container-scroll">
+                            <table class="premium-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>HAFTA</th>
+                                        <th>HEDEF</th>
+                                        <th>GERÇEKLEŞEN</th>
+                                        <th>DURUM</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var w in _weekPlans)
+                                    {
+                                        <tr>
+                                            <td class="td-week">@w.HaftaAdi</td>
+                                            <td>
+                                                @if (_editMode)
+                                                {
+                                                    <input class="inline-edit-input" type="number" @bind="w.Hedef" />
+                                                }
+                                                else
+                                                {
+                                                    <span>@w.Hedef.ToString("N0") ₺</span>
+                                                }
+                                            </td>
+                                            <td class="color-green">@w.Gerceklesen.ToString("N0") ₺</td>
+                                            <td>
+                                                <div class="status-badge" style="background: @(w.Renk + "15"); color: @w.Renk; border: 1px solid @(w.Renk + "30");">
+                                                    %@w.Yuzde.ToString("N0")
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _loading = true;
+    private bool _editMode = false;
+    private int _year = DateTime.Now.Year;
+    private List<int> _years = Enumerable.Range(DateTime.Now.Year - 2, 5).ToList();
+
+    private decimal _yillikHedef;
+    private decimal _yillikGerceklesen;
+    private decimal _yillikYuzde => _yillikHedef > 0 ? (_yillikGerceklesen / _yillikHedef) * 100 : 0;
+
+    private List<MonthPlan> _monthPlans = new();
+    private MonthPlan? _selMonth;
+    private List<WeekPlan> _weekPlans = new();
+
+    private List<ChartSeries> _series = new();
+    private string[] _xLabels = { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" };
+    private ChartOptions _chartOpts = new() { 
+        YAxisLines = true, 
+        XAxisLines = false,
+        YAxisTicks = 10,
+        ChartPalette = new[] { "#0061FF", "#10B981" }
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            var faturalar = await Uow.Faturalar.GetAllAsync();
+            var sales = faturalar.Where(f => (f.Tur == "Satış" || f.Tur == "Satis") && f.Tarih.Year == _year).ToList();
+            _yillikGerceklesen = sales.Sum(x => x.GenelToplam);
+
+            var yH = await Uow.Hedefler.GetAllYillikHedeflerAsync();
+            _yillikHedef = yH.FirstOrDefault(x => x.Yil == _year)?.HedefTutari ?? 0;
+
+            var mH = await Uow.Hedefler.GetAylikHedeflerAsync(_year);
+            _monthPlans.Clear();
+            var tData = new double[12];
+            var aData = new double[12];
+
+            for (int i = 1; i <= 12; i++)
+            {
+                var t = mH.FirstOrDefault(x => x.Ay == i)?.HedefTutari ?? 0;
+                var a = sales.Where(x => x.Tarih.Month == i).Sum(x => x.GenelToplam);
+                _monthPlans.Add(new MonthPlan(i, t, a));
+                tData[i - 1] = (double)t;
+                aData[i - 1] = (double)a;
+            }
+
+            _series = new List<ChartSeries>
+            {
+                new() { Name = "Hedef", Data = tData },
+                new() { Name = "Gerçek", Data = aData }
+            };
+
+            if (_selMonth != null)
+            {
+                var updated = _monthPlans.FirstOrDefault(x => x.Ay == _selMonth.Ay);
+                if (updated != null) SelectMonth(updated);
+            }
+        }
+        catch (Exception ex) { Snackbar.Add("Hata: " + ex.Message, Severity.Error); }
+        finally { _loading = false; }
+    }
+
+    private async void OnYearChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var y)) { _year = y; _selMonth = null; await LoadData(); }
+    }
+
+    private async void SelectMonth(MonthPlan plan)
+    {
+        _selMonth = plan;
+        _weekPlans.Clear();
+        try
+        {
+            var faturalar = await Uow.Faturalar.GetAllAsync();
+            var wH = await Uow.Hedefler.GetHaftalikHedeflerAsync(_year);
+            foreach (var wk in GetWeeksInMonth(_year, plan.Ay))
+            {
+                var t = wH.FirstOrDefault(x => x.Hafta == wk)?.HedefTutari ?? 0;
+                var a = faturalar.Where(f => (f.Tur == "Satış" || f.Tur == "Satis") && f.Tarih.Year == _year && GetIsoWeek(f.Tarih) == wk).Sum(x => x.GenelToplam);
+                _weekPlans.Add(new WeekPlan(wk, _year, t, a));
+            }
+        }
+        catch { }
+        StateHasChanged();
+    }
+
+    private void DistributeYearly()
+    {
+        if (_yillikHedef <= 0) return;
+        var per = Math.Round(_yillikHedef / 12, 0);
+        foreach (var p in _monthPlans) p.Hedef = per;
+        _series[0] = new ChartSeries { Name = "Hedef", Data = _monthPlans.Select(x => (double)x.Hedef).ToArray() };
+        Snackbar.Add("Yıllık hedef aylara dağıtıldı.", Severity.Info);
+    }
+
+    private void DistributeMonthly()
+    {
+        if (_selMonth == null || _selMonth.Hedef <= 0 || !_weekPlans.Any()) return;
+        var per = Math.Round(_selMonth.Hedef / _weekPlans.Count, 0);
+        foreach (var p in _weekPlans) p.Hedef = per;
+        Snackbar.Add("Aylık hedef haftalara dağıtıldı.", Severity.Info);
+    }
+
+    private async Task SaveAll()
+    {
+        try
+        {
+            await Uow.Hedefler.SaveYillikHedefAsync(new YillikSatisHedefi { Yil = _year, HedefTutari = _yillikHedef });
+            foreach (var m in _monthPlans)
+                await Uow.Hedefler.SaveAylikHedefAsync(new SatisHedefi { Yil = _year, Ay = m.Ay, HedefTutari = m.Hedef });
+            foreach (var w in _weekPlans)
+                await Uow.Hedefler.SaveHaftalikHedefAsync(new HaftalikSatisHedefi { Yil = _year, Hafta = w.Hafta, HedefTutari = w.Hedef });
+            _editMode = false;
+            Snackbar.Add("Bütçe planları kaydedildi!", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex) { Snackbar.Add("Hata: " + ex.Message, Severity.Error); }
+    }
+
+    private List<int> GetWeeksInMonth(int year, int month)
+    {
+        var result = new List<int>();
+        for (var d = new DateTime(year, month, 1); d.Month == month; d = d.AddDays(1))
+        {
+            int w = GetIsoWeek(d);
+            if (!result.Contains(w)) result.Add(w);
+        }
+        return result;
+    }
+
+    private int GetIsoWeek(DateTime date)
+    {
+        var day = CultureInfo.InvariantCulture.Calendar.GetDayOfWeek(date);
+        if (day >= DayOfWeek.Monday && day <= DayOfWeek.Wednesday) date = date.AddDays(3);
+        return CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+    }
+
+    public class MonthPlan
+    {
+        public int Ay { get; }
+        public decimal Hedef { get; set; }
+        public decimal Gerceklesen { get; }
+        public string AyAdi => CultureInfo.GetCultureInfo("tr-TR").DateTimeFormat.GetMonthName(Ay);
+        public decimal Yuzde => Hedef > 0 ? (Gerceklesen / Hedef) * 100 : 0;
+        public string Renk => Yuzde >= 100 ? "#10B981" : Yuzde >= 70 ? "#3b82f6" : Yuzde >= 40 ? "#F59E0B" : "#EF4444";
+        public MonthPlan(int ay, decimal hedef, decimal gercek) { Ay = ay; Hedef = hedef; Gerceklesen = gercek; }
+    }
+
+    public class WeekPlan
+    {
+        public int Hafta { get; }
+        public decimal Hedef { get; set; }
+        public decimal Gerceklesen { get; }
+        public string HaftaAdi => $"{Hafta}. Hafta ({GetHaftaTarihAraligi(Hafta, DateTime.Now.Year)})";
+        
+        public static string GetHaftaTarihAraligi(int weekNumber, int year)
+        {
+            try {
+                DateTime jan1 = new DateTime(year, 1, 1);
+                int daysOffset = DayOfWeek.Monday - jan1.DayOfWeek;
+                DateTime firstMonday = jan1.AddDays(daysOffset);
+                var cal = CultureInfo.CurrentCulture.Calendar;
+                int firstWeek = cal.GetWeekOfYear(jan1, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+                if (firstWeek <= 1) weekNumber -= 1;
+                DateTime result = firstMonday.AddDays(weekNumber * 7);
+                return $"{result.ToString("dd MMM")} - {result.AddDays(6).ToString("dd MMM")}";
+            } catch { return ""; }
+        }
+
+        public decimal Yuzde => Hedef > 0 ? (Gerceklesen / Hedef) * 100 : 0;
+        public string Renk => Yuzde >= 100 ? "#10B981" : Yuzde >= 70 ? "#3b82f6" : Yuzde >= 40 ? "#F59E0B" : "#EF4444";
+        public WeekPlan(int hafta, int year, decimal hedef, decimal gercek) { Hafta = hafta; Hedef = hedef; Gerceklesen = gercek; }
+    }
+}
+
+<style>
+    .butce-sync-page {
+        padding: 30px;
+        background: #0d1117;
+        min-height: 100vh;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ambient-glow {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        filter: blur(140px);
+        opacity: 0.1;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .bg-glow-blue { background: #0061FF; top: -100px; right: -100px; }
+
+    /* Header */
+    .butce-premium-header {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        gap: 20px;
+    }
+
+    .header-left-part {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .icon-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .icon-box.blue { background: rgba(0, 97, 255, 0.1); border: 1px solid rgba(0, 97, 255, 0.2); }
+
+    .main-title { font-size: 24px; font-weight: 800; margin: 0; }
+    .year-picker { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .year-picker .label { font-size: 13px; color: rgba(255,255,255,0.4); }
+    .year-select {
+        background: #141719;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        border-radius: 8px;
+        padding: 4px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .header-center-metrics {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 30px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 20px;
+        padding: 10px 30px;
+    }
+
+    .metric-block { text-align: center; }
+    .m-label { display: block; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); margin-bottom: 2px; letter-spacing: 0.5px; }
+    .m-value { font-size: 20px; font-weight: 900; }
+    .color-green { color: #10B981 !important; }
+
+    .badge-pct {
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        color: #F59E0B;
+        padding: 5px 15px;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+    }
+
+    /* Actions */
+    .action-btn-outline {
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+    }
+    .action-btn-outline:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.3); }
+
+    .action-btn-filled {
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 13px;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+    }
+    .action-btn-filled.info { background: #0061FF; color: white; }
+    .action-btn-filled.success { background: #10B981; color: white; }
+
+    /* Grid & Cards */
+    .butce-content-wrapper { position: relative; z-index: 10; height: calc(100vh - 150px); }
+    .premium-glass-card {
+        background: #161b22;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 20px;
+        display: flex;
+    }
+    .min-h-250 { min-height: 250px; }
+
+    /* Tables */
+    .table-container-scroll { flex: 1; overflow-y: auto; padding-right: 2px; }
+    .premium-data-table { width: 100%; border-collapse: collapse; }
+    .premium-data-table th {
+        position: sticky; top: 0; background: #000000;
+        padding: 14px 16px; text-align: left;
+        font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4);
+        text-transform: uppercase; letter-spacing: 1px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        z-index: 10;
+    }
+    .premium-data-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+        font-size: 13px;
+        color: rgba(255,255,255,0.8);
+    }
+    .premium-data-table tr { cursor: pointer; transition: all 0.1s; }
+    .premium-data-table tr:hover { background: rgba(255,255,255,0.02); }
+    .premium-data-table tr.row-selected { background: rgba(0, 97, 255, 0.12) !important; color: white !important; }
+
+    .td-month, .td-week { font-weight: 700; color: white; }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        min-width: 45px;
+        text-align: center;
+    }
+
+    .inline-edit-input {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(0, 97, 255, 0.4);
+        border-radius: 6px;
+        color: white;
+        padding: 4px 10px;
+        width: 130px;
+        font-size: 12px;
+        outline: none;
+    }
+
+    /* Cards Header */
+    .card-inner-title { font-size: 15px; font-weight: 800; color: white; margin: 0; }
+    .action-btn-mini {
+        background: rgba(0, 97, 255, 0.1);
+        border: 1px solid rgba(0, 97, 255, 0.3);
+        color: #60A5FA;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        float: right;
+    }
+
+    .empty-state-card { text-align: center; opacity: 0.5; }
+    .empty-txt { font-size: 13px; color: #94A3B8; }
+
+    /* Chart Box */
+    .chart-box { padding: 10px 0; }
+</style>

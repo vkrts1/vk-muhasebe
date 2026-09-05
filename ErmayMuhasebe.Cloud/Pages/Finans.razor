@@ -1,0 +1,804 @@
+@page "/finans"
+@page "/kasalar"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@inject KasaListViewModel KasaVm
+@inject CekSenetListViewModel CekVm
+@inject KrediKartiListViewModel KrediKartiVm
+@inject EFTListViewModel EftVm
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject UiService UiService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="fade-in d-flex flex-grow-1 flex-column finans-page-container" style="overflow: hidden;">
+    <style>
+        .desktop-tabs-wrapper {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-shrink: 0;
+        }
+        .desktop-tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .desktop-tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .desktop-tab-btn.active {
+            background: rgba(251, 192, 45, 0.1) !important;
+            color: #FBC02D !important;
+            border-color: rgba(251, 192, 45, 0.3) !important;
+            box-shadow: 0 4px 15px rgba(251, 192, 45, 0.1);
+        }
+        .tab-icon {
+            font-size: 18px !important;
+        }
+        .category-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(0, 200, 83, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(0, 200, 83, 0.2);
+            flex-shrink: 0;
+        }
+        .category-icon-box .mud-icon-root {
+            color: white !important;
+            font-size: 24px;
+        }
+        .desktop-category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+        .row-edit-btn, .row-delete-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);
+            color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;
+        }
+        .row-edit-btn:hover { color: white; border-color: rgba(255,255,255,0.3); }
+        .row-delete-btn:hover { color: #EF4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
+    </style>
+
+    <!-- Desktop Sync Tabs -->
+    <div class="desktop-tabs-wrapper">
+        <div class="desktop-tab-btn @(activeTab == "Nakit" ? "active" : "")" @onclick='() => activeTab = "Nakit"'>
+            <MudIcon Icon="@Icons.Material.Filled.Payments" Class="tab-icon" />
+            Nakit
+        </div>
+        <div class="desktop-tab-btn @(activeTab == "Cek" ? "active" : "")" @onclick='() => activeTab = "Cek"'>
+            <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="tab-icon" />
+            Çek
+        </div>
+        <div class="desktop-tab-btn @(activeTab == "KrediKarti" ? "active" : "")" @onclick='() => activeTab = "KrediKarti"'>
+            <MudIcon Icon="@Icons.Material.Filled.CreditCard" Class="tab-icon" />
+            Kredi Kartı
+        </div>
+        <div class="desktop-tab-btn @(activeTab == "EFT" ? "active" : "")" @onclick='() => activeTab = "EFT"'>
+            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="tab-icon" />
+            Havale / EFT
+        </div>
+    </div>
+
+    @if (activeTab == "Nakit")
+    {
+        <div class="fade-in d-flex flex-column flex-grow-1" style="min-height: 0;">
+            <div class="desktop-category-header finans-header">
+                <div class="d-flex align-center gap-4">
+                    <div class="category-icon-box">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                    </div>
+                    <div class="d-flex flex-column">
+                        <h2 class="category-title" style="font-weight: 800; font-size: 16px; margin: 0;">Kasa / Nakit Hesapları</h2>
+                        <p class="category-subtitle" style="font-size: 11px; color: rgba(255,255,255,0.4); margin: 0;">Nakit akışını ve kasa bakiyelerini yönetin</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="action-capsule primary" @onclick="KasaVm.OpenAddKasaDialog">
+                        + Yeni Kasa Tanımla
+                    </button>
+                </div>
+            </div>
+
+            <div class="desktop-panel d-flex flex-column flex-grow-1" style="margin-top: 0; overflow: hidden; border-radius: 12px;">
+                <div class="desktop-table-container">
+                    <table class="desktop-data-table">
+                        <thead>
+                            <tr>
+                                <th>Kasa Adı</th>
+                                <th>Döviz</th>
+                                <th>Bakiye</th>
+                                <th>Yetkili</th>
+                                <th class="text-end">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var kasa in KasaVm.Kasalar)
+                            {
+                                <tr class="clickable" @onclick="() => KasaVm.NavigateToDetay(kasa)">
+                                    <td style="font-weight: 700; color: white;">@kasa.BankaAdi</td>
+                                    <td>@kasa.DovizTuru</td>
+                                    <td class="fw-bold text-success">@kasa.GuncelBakiye.ToString("N2")</td>
+                                    <td style="color: rgba(255,255,255,0.5);">@kasa.Yetkili</td>
+                                    <td class="text-end" @onclick:stopPropagation>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button class="row-edit-btn" @onclick="() => KasaVm.OpenEditKasaDialog(kasa)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                            </button>
+                                            <button class="row-delete-btn" @onclick="() => ConfirmDeleteKasa(kasa)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    } else if (activeTab == "Cek")
+    {
+        <div class="fade-in d-flex flex-column flex-grow-1" style="min-height: 0;">
+            <div class="desktop-category-header finans-header">
+                <div class="d-flex align-center gap-4">
+                    <div class="category-icon-box">
+                        <MudIcon Icon="@Icons.Material.Filled.Receipt" />
+                    </div>
+                    <div class="d-flex flex-column">
+                        <h2 class="category-title" style="font-weight: 800; font-size: 16px; margin: 0;">Çek Listesi ve Kontrolü</h2>
+                        <p class="category-subtitle" style="font-size: 11px; color: rgba(255,255,255,0.4); margin: 0;">Alınan ve verilen çeklerin portföy takibi</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="action-capsule primary" @onclick="CekVm.OpenNewCekForm">
+                        + Yeni Çek Kaydı
+                    </button>
+                    <button class="row-edit-btn" @onclick="CekVm.LoadDataAsync">
+                        <MudIcon Icon="@Icons.Material.Filled.Sync" Size="Size.Small" />
+                    </button>
+                </div>
+            </div>
+
+            <div class="desktop-panel d-flex flex-column flex-grow-1" style="margin-top: 0; overflow: hidden; border-radius: 12px;">
+                <div class="desktop-table-container" style="flex: 1;">
+                    <table class="desktop-data-table">
+                        <thead>
+                            <tr>
+                                <th>Portföy No</th>
+                                <th>Vade</th>
+                                <th>Asıl Borçlu / Cari</th>
+                                <th class="text-end">Tutar</th>
+                                <th class="text-center">Durum</th>
+                                <th class="text-end">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cek in CekVm.Cekler)
+                            {
+                                <tr class="clickable" @onclick="() => CekVm.OpenEditCekForm(cek)">
+                                    <td style="font-weight: 700; color: white;">@cek.PortfoyNo</td>
+                                    <td style="color: @(cek.VadeTarihi < DateTime.Now ? "#F87171" : "rgba(255,255,255,0.6)");">@cek.VadeTarihi.ToString("dd.MM.yyyy")</td>
+                                    <td style="font-weight: 500;">@cek.CariUnvan</td>
+                                    <td class="text-end fw-bold" style="color: #60A5FA;">@cek.Tutar.ToString("N2") ₺</td>
+                                    <td class="text-center">
+                                        <span class="vade-type-pill @(cek.Durum?.Contains("Tahsil") == true ? "incoming" : (cek.Durum?.Contains("Portföy") == true ? "info" : "outgoing"))">@cek.Durum</span>
+                                    </td>
+                                    <td class="text-end" @onclick:stopPropagation>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button class="row-edit-btn" @onclick="() => CekVm.OpenEditCekForm(cek)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                            </button>
+                                            <button class="row-delete-btn" @onclick="() => ConfirmDeleteCek(cek)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.05); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 12px 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.4); font-size: 13px;">
+                        <MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" />
+                        Portföydeki toplam çek sayısı ve genel mali tablo özeti.
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span style="color: rgba(255,255,255,0.5); font-weight: 700; font-size: 13px;">TOPLAM ÇEK TUTARI:</span>
+                        <span style="background: rgba(96, 165, 250, 0.15); color: #60A5FA; padding: 6px 16px; border-radius: 8px; font-weight: 800; font-size: 16px; min-width: 120px; text-align: center;">@CekVm.Cekler.Sum(c => c.Tutar).ToString("N2") ₺</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    } else if (activeTab == "KrediKarti")
+    {
+        <div class="fade-in d-flex flex-column flex-grow-1" style="min-height: 0;">
+            <div class="desktop-category-header finans-header">
+                <div class="d-flex align-center gap-4">
+                    <div class="category-icon-box">
+                        <MudIcon Icon="@Icons.Material.Filled.CreditCard" />
+                    </div>
+                    <div class="d-flex flex-column">
+                        <h2 class="category-title" style="font-weight: 800; font-size: 16px; margin: 0;">Kredi Kartı İşlemleri</h2>
+                        <p class="category-subtitle" style="font-size: 11px; color: rgba(255,255,255,0.4); margin: 0;">Müşterilerden gelen kredi kartı sliplerini yönetin</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="action-capsule primary" @onclick="KrediKartiVm.OpenAddIslemDialog">
+                        + Yeni İşlem Kaydı
+                    </button>
+                </div>
+            </div>
+
+            <div class="desktop-panel d-flex flex-column flex-grow-1" style="margin-top: 0; overflow: hidden; border-radius: 12px;">
+                <div class="desktop-table-container">
+                    <table class="desktop-data-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Müşteri</th>
+                                <th class="text-end">Tutar</th>
+                                <th>Banka</th>
+                                <th>Durum</th>
+                                <th>Yönlendirilen Tedarikçi</th>
+                                <th class="text-end">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var islem in KrediKartiVm.Islemler)
+                            {
+                                <tr class="desktop-row clickable" @onclick="() => KrediKartiVm.OpenEditIslemDialog(islem)">
+                                    <td style="color: rgba(255,255,255,0.6);">@islem.Tarih.ToString("dd.MM.yyyy")</td>
+                                    <td style="font-weight: 500; color: white;">@islem.MusteriUnvan</td>
+                                    <td class="text-end fw-bold text-success">@islem.Tutar.ToString("N2")</td>
+                                    <td>@islem.Banka</td>
+                                    <td>
+                                        <span class="vade-type-pill @(islem.Durum?.Contains("Tedarikçi") == true ? "warning" : "info")">@islem.Durum</span>
+                                    </td>
+                                    <td style="color: rgba(255,255,255,0.6);">@islem.YonlendirilenCariUnvan</td>
+                                    <td class="text-end" @onclick:stopPropagation>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button class="row-edit-btn" @onclick="() => KrediKartiVm.OpenEditIslemDialog(islem)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                            </button>
+                                            <button class="row-delete-btn" @onclick="() => ConfirmDeleteKk(islem)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    } else if (activeTab == "EFT")
+    {
+        <div class="fade-in d-flex flex-column flex-grow-1" style="min-height: 0;">
+            <div class="desktop-category-header finans-header">
+                <div class="d-flex align-center gap-4">
+                    <div class="category-icon-box">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
+                    </div>
+                    <div class="d-flex flex-column">
+                        <h2 class="category-title" style="font-weight: 800; font-size: 16px; margin: 0;">Havale / EFT İşlemleri</h2>
+                        <p class="category-subtitle" style="font-size: 11px; color: rgba(255,255,255,0.4); margin: 0;">Bankadan gelen havale ve EFT işlemlerini takip edin</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="action-capsule primary" @onclick="EftVm.OpenAddIslemDialog">
+                        + Yeni İşlem Kaydı
+                    </button>
+                </div>
+            </div>
+
+            <div class="desktop-panel d-flex flex-column flex-grow-1" style="margin-top: 0; overflow: hidden; border-radius: 12px;">
+                <div class="desktop-table-container">
+                    <table class="desktop-data-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Müşteri</th>
+                                <th class="text-end">Tutar</th>
+                                <th>Banka</th>
+                                <th>Durum</th>
+                                <th>Yönlendirilen Tedarikçi</th>
+                                <th class="text-end">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var islem in EftVm.Islemler)
+                            {
+                                <tr class="desktop-row clickable" @onclick="() => EftVm.OpenEditIslemDialog(islem)">
+                                    <td style="color: rgba(255,255,255,0.6);">@islem.Tarih.ToString("dd.MM.yyyy")</td>
+                                    <td style="font-weight: 500; color: white;">@islem.MusteriUnvan</td>
+                                    <td class="text-end fw-bold text-success">@islem.Tutar.ToString("N2")</td>
+                                    <td>@islem.Banka</td>
+                                    <td>
+                                        <span class="vade-type-pill @(islem.Durum?.Contains("Tedarikçi") == true ? "warning" : "info")">@islem.Durum</span>
+                                    </td>
+                                    <td style="color: rgba(255,255,255,0.6);">@islem.YonlendirilenCariUnvan</td>
+                                    <td class="text-end" @onclick:stopPropagation>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button class="row-edit-btn" @onclick="() => EftVm.OpenEditIslemDialog(islem)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                            </button>
+                                            <button class="row-delete-btn" @onclick="() => ConfirmDeleteEft(islem)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (KasaVm.IsEditDialogVisible)
+    {
+        <div class="premium-dialog-overlay fade-in">
+            <div class="desktop-grid-wrapper" style="width: 550px; background: #111417; border-radius: 24px; padding: 0; position: relative;">
+                <!-- Header -->
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="icon-box-primary">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                        </div>
+                        <div>
+                            <h2 class="desktop-title">@KasaVm.DialogTitle</h2>
+                            <p class="desktop-subtitle">Kasa bilgilerini buradan güncelleyebilirsiniz</p>
+                        </div>
+                    </div>
+                    <button @onclick="KasaVm.CloseDialog" style="width: 36px; height: 36px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                    </button>
+                </div>
+
+                <div style="padding: 30px;">
+                    @if (!string.IsNullOrEmpty(KasaVm.ErrorMessage))
+                    {
+                        <div style="background: rgba(255, 65, 108, 0.1); border-left: 3px solid #FF416C; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                            <MudText Color="Color.Error" Typo="Typo.caption">@KasaVm.ErrorMessage</MudText>
+                        </div>
+                    }
+
+                    <div class="mb-4">
+                        <label class="form-label">Kasa Ünvanı / Adı</label>
+                        <input type="text" @bind="KasaVm.EditKasaAdi" class="dark-input" placeholder="Örn: Merkez Nakit Kasası..." />
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Döviz Türü</label>
+                            <div class="select-wrapper">
+                                <select @bind="KasaVm.EditDovizTuru" class="dark-input">
+                                    <option value="TL">Türk Lirası (₺)</option>
+                                    <option value="USD">Amerikan Doları ($)</option>
+                                    <option value="EUR">Euro (€)</option>
+                                </select>
+                                <div class="select-arrow">▼</div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">Açılış Bakiyesi</label>
+                            <input type="number" @bind="KasaVm.EditAcilisBakiyesi" class="dark-input" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Yetkili / Sorumlu</label>
+                        <input type="text" @bind="KasaVm.EditYetkili" class="dark-input" placeholder="İsim soyisim..." />
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                        <button @onclick="KasaVm.CloseDialog" class="action-btn-outline">Vazgeç</button>
+                        <button @onclick="KasaVm.SaveKasaAsync" class="action-btn-filled" disabled="@KasaVm.IsLoading">
+                            @if (KasaVm.IsLoading)
+                            {
+                                <MudProgressCircular Color="Color.Default" Size="Size.Small" Indeterminate="true" Class="me-2" />
+                            }
+                            Kaydet
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- ÇEK KAYDI DİALOG -->
+    @if (CekVm.IsEditFormVisible)
+    {
+        <div class="premium-dialog-overlay fade-in">
+            <div class="desktop-grid-wrapper" style="width: 600px; background: #111417; border-radius: 24px; padding: 0;">
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="icon-box-primary">
+                            <MudIcon Icon="@Icons.Material.Filled.ConfirmationNumber" />
+                        </div>
+                        <div>
+                            <h2 class="desktop-title">@CekVm.EditTitle</h2>
+                            <p class="desktop-subtitle">Çek bilgilerini eksiksiz doldurunuz</p>
+                        </div>
+                    </div>
+                    <button @onclick="CekVm.CloseEditForm" style="width: 36px; height: 36px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                    </button>
+                </div>
+
+                <div style="padding: 30px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Portföy No</label>
+                            <input type="text" @bind="CekVm.EditPortfoyNo" class="dark-input" readonly />
+                        </div>
+                        <div>
+                            <label class="form-label">İşlem Türü</label>
+                            <div class="select-wrapper">
+                                <select @bind="CekVm.EditIslemTuru" class="dark-input">
+                                    <option value="Tahsilat">Tahsilat (Alınan Çek)</option>
+                                    <option value="Ödeme">Ödeme (Verilen Çek)</option>
+                                </select>
+                                <div class="select-arrow">▼</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Cari Hesap</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" @bind="CekVm.EditCariUnvan" class="dark-input" readonly style="flex: 1;" />
+                            <button class="action-btn-outline" style="width: auto; padding: 0 15px;" @onclick="CekVm.OpenCariSecim">SEÇ</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Vade Tarihi</label>
+                            <input type="text" @bind="CekVm.EditVadeTarihiStr" class="dark-input" placeholder="01.01.2024" />
+                        </div>
+                        <div>
+                            <label class="form-label">Tutar</label>
+                            <input type="number" @bind="CekVm.EditTutar" class="dark-input fw-bold" style="color: #10B981 !important;" />
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Banka Adı</label>
+                            <input type="text" @bind="CekVm.EditBanka" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Şube / Seri No</label>
+                            <input type="text" @bind="CekVm.EditSeriNo" class="dark-input" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Açıklama</label>
+                        <textarea @bind="CekVm.EditAciklama" rows="2" class="dark-input"></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                        <button @onclick="CekVm.CloseEditForm" class="action-btn-outline">Vazgeç</button>
+                        <button @onclick="CekVm.SaveCekAsync" class="action-btn-filled">Kaydet</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- KREDİ KARTI DİALOG -->
+    @if (KrediKartiVm.IsEditDialogVisible)
+    {
+        <div class="premium-dialog-overlay fade-in">
+            <div class="desktop-grid-wrapper" style="width: 600px; background: #111417; border-radius: 24px; padding: 0;">
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="icon-box-primary indigo">
+                            <MudIcon Icon="@Icons.Material.Filled.CreditCard" />
+                        </div>
+                        <div>
+                            <h2 class="desktop-title">@KrediKartiVm.DialogTitle</h2>
+                            <p class="desktop-subtitle">Kredi kartı işlem detayları</p>
+                        </div>
+                    </div>
+                    <button @onclick="KrediKartiVm.CloseDialog" style="width: 36px; height: 36px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                    </button>
+                </div>
+
+                <div style="padding: 30px;">
+                    <div class="mb-4">
+                        <label class="form-label">Müşteri (Tahsil Edilen)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" @bind="KrediKartiVm.EditMusteriUnvan" class="dark-input" readonly style="flex: 1;" />
+                            <button class="action-btn-outline" style="width: auto; padding: 0 15px;" @onclick="KrediKartiVm.OpenMusteriSecim">SEÇ</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">İşlem Tarihi</label>
+                            <input type="text" @bind="KrediKartiVm.EditTarihStr" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">İşlem Tutarı</label>
+                            <input type="number" @bind="KrediKartiVm.EditTutar" class="dark-input fw-bold" style="color: #60A5FA !important;" />
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Banka</label>
+                            <input type="text" @bind="KrediKartiVm.EditBanka" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Onay Kodu / Slip No</label>
+                            <input type="text" @bind="KrediKartiVm.EditOnayKodu" class="dark-input" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Yönlendirilen Tedarikçi (Opsiyonel)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" @bind="KrediKartiVm.EditYonlendirilenCariUnvan" class="dark-input" readonly style="flex: 1;" />
+                            <button class="action-btn-outline" style="width: auto; padding: 0 15px;" @onclick="KrediKartiVm.OpenTedarikciSecim">SEÇ</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                        <button @onclick="KrediKartiVm.CloseDialog" class="action-btn-outline">Vazgeç</button>
+                        <button @onclick="KrediKartiVm.SaveIslemAsync" class="action-btn-filled">Kaydet</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- HAVALE / EFT DİALOG -->
+    @if (EftVm.IsEditDialogVisible)
+    {
+        <div class="premium-dialog-overlay fade-in">
+            <div class="desktop-grid-wrapper" style="width: 600px; background: #111417; border-radius: 24px; padding: 0;">
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="icon-box-primary indigo">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
+                        </div>
+                        <div>
+                            <h2 class="desktop-title">@EftVm.DialogTitle</h2>
+                            <p class="desktop-subtitle">Banka havale / EFT detayları</p>
+                        </div>
+                    </div>
+                    <button @onclick="EftVm.CloseDialog" style="width: 36px; height: 36px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                    </button>
+                </div>
+
+                <div style="padding: 30px;">
+                    <div class="mb-4">
+                        <label class="form-label">Müşteri / Cari Hesap</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" @bind="EftVm.EditMusteriUnvan" class="dark-input" readonly style="flex: 1;" />
+                            <button class="action-btn-outline" style="width: auto; padding: 0 15px;" @onclick="EftVm.OpenMusteriSecim">SEÇ</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Tarih</label>
+                            <input type="text" @bind="EftVm.EditTarihStr" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Tutar</label>
+                            <input type="number" @bind="EftVm.EditTutar" class="dark-input fw-bold" style="color: #60A5FA !important;" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Banka / Hesap Bilgisi</label>
+                        <input type="text" @bind="EftVm.EditBanka" class="dark-input" placeholder="Banka ve Şube..." />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Dekont / İşlem No</label>
+                        <input type="text" @bind="EftVm.EditDekontNo" class="dark-input" />
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                        <button @onclick="EftVm.CloseDialog" class="action-btn-outline">Vazgeç</button>
+                        <button @onclick="EftVm.SaveIslemAsync" class="action-btn-filled">Kaydet</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- CARİ SEÇİM MODAL (GENERIC) -->
+    @if (CekVm.IsCariSecimVisible || KrediKartiVm.IsCariSecimVisible || EftVm.IsCariSecimVisible)
+    {
+        var activeVm = CekVm.IsCariSecimVisible ? (object)CekVm : (KrediKartiVm.IsCariSecimVisible ? (object)KrediKartiVm : (object)EftVm);
+        
+        <div class="premium-dialog-overlay fade-in" style="z-index: 3000;">
+            <div class="desktop-grid-wrapper" style="width: 500px; background: #1A1D21; border-radius: 20px; padding: 0;">
+                <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="desktop-title">Cari Hesap Seçimi</h3>
+                    <button @onclick='() => { CekVm.CloseCariSecim(); KrediKartiVm.CloseCariSecim(); EftVm.CloseCariSecim(); }' style="background: transparent; border: none; color: white;">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" />
+                    </button>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="mb-3">
+                        @if (CekVm.IsCariSecimVisible)
+                        {
+                            <input type="text" class="dark-input" placeholder="Cari Ünvan ile ara..." 
+                                   @bind:event="oninput" @bind="CekVm.CariSearchText" 
+                                   @onkeyup="CekVm.SearchCariAsync" />
+                        }
+                        else if (KrediKartiVm.IsCariSecimVisible)
+                        {
+                            <input type="text" class="dark-input" placeholder="Cari Ünvan ile ara..." 
+                                   @bind:event="oninput" @bind="KrediKartiVm.CariSearchText" 
+                                   @onkeyup="KrediKartiVm.SearchCariAsync" />
+                        }
+                        else if (EftVm.IsCariSecimVisible)
+                        {
+                            <input type="text" class="dark-input" placeholder="Cari Ünvan ile ara..." 
+                                   @bind:event="oninput" @bind="EftVm.CariSearchText" 
+                                   @onkeyup="EftVm.SearchCariAsync" />
+                        }
+                    </div>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="desktop-table">
+                            <tbody>
+                                @{
+                                    IEnumerable<CariKart> list = CekVm.IsCariSecimVisible ? CekVm.CariListesi : (KrediKartiVm.IsCariSecimVisible ? KrediKartiVm.CariListesi : EftVm.CariListesi);
+                                }
+                                @foreach (var c in list)
+                                {
+                                    <tr class="desktop-row clickable" @onclick='() => { if (CekVm.IsCariSecimVisible) { CekVm.SelectedCariForAdd = c; CekVm.SelectCari(); } else if (KrediKartiVm.IsCariSecimVisible) KrediKartiVm.SelectCari(c); else EftVm.SelectCari(c); }'>
+                                        <td>@c.Unvan</td>
+                                        <td class="text-end fw-bold">@c.Bakiye.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string activeTab = "Nakit";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Global shortcut handler
+        UiService.OnEscapePressed += HandleEscape;
+
+        // UI refresh handlers
+        KasaVm.PropertyChanged += (s, e) => StateHasChanged();
+        CekVm.PropertyChanged += (s, e) => StateHasChanged();
+        KrediKartiVm.PropertyChanged += (s, e) => StateHasChanged();
+        EftVm.PropertyChanged += (s, e) => StateHasChanged();
+
+        // REFRESH DATA from DB to ensure parity with Cari entries
+        await KasaVm.LoadKasalarAsync();
+        await CekVm.LoadDataAsync();
+        await KrediKartiVm.LoadIslemlerAsync();
+        await EftVm.LoadIslemlerAsync();
+    }
+
+    private async Task<bool> HandleEscape()
+    {
+        if (CekVm.IsCariSecimVisible || KrediKartiVm.IsCariSecimVisible || EftVm.IsCariSecimVisible)
+        {
+            CekVm.CloseCariSecim();
+            KrediKartiVm.CloseCariSecim();
+            EftVm.CloseCariSecim();
+            StateHasChanged();
+            return true;
+        }
+
+        if (CekVm.IsEditFormVisible) { CekVm.IsEditFormVisible = false; StateHasChanged(); return true; }
+        if (KrediKartiVm.IsEditDialogVisible) { KrediKartiVm.CloseDialog(); StateHasChanged(); return true; }
+        if (EftVm.IsEditDialogVisible) { EftVm.CloseDialog(); StateHasChanged(); return true; }
+        if (KasaVm.IsEditDialogVisible) { KasaVm.CloseDialog(); StateHasChanged(); return true; }
+
+        await Task.CompletedTask;
+        return false;
+    }
+
+    public void Dispose()
+    {
+        KasaVm.PropertyChanged -= (s, e) => StateHasChanged();
+        CekVm.PropertyChanged -= (s, e) => StateHasChanged();
+        KrediKartiVm.PropertyChanged -= (s, e) => StateHasChanged();
+        EftVm.PropertyChanged -= (s, e) => StateHasChanged();
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+
+    private async Task ConfirmDeleteKasa(BankaKart kasa)
+    {
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Kasa Silinecek",
+            $"{kasa.BankaAdi} hesabını silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+        if (confirm == true)
+        {
+            await KasaVm.DeleteKasaAsync(kasa);
+            Snackbar.Add("Kasa hesabı silindi", Severity.Success);
+        }
+    }
+
+    private async Task ConfirmDeleteCek(Cek cek)
+    {
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Çek Kaydı Silinecek",
+            $"{cek.PortfoyNo} numaralı çek kaydını silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+        if (confirm == true)
+        {
+            await CekVm.DeleteCekAsync(cek);
+            Snackbar.Add("Çek kaydı silindi", Severity.Success);
+        }
+    }
+
+    private async Task ConfirmDeleteKk(KrediKartiIslem islem)
+    {
+        bool? confirm = await DialogService.ShowMessageBox(
+            "İşlem Silinecek",
+            "Bu kredi kartı işlemini silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+        if (confirm == true)
+        {
+            await KrediKartiVm.DeleteIslemAsync(islem);
+            Snackbar.Add("İşlem silindi", Severity.Success);
+        }
+    }
+
+    private async Task ConfirmDeleteEft(EftIslem islem)
+    {
+        bool? confirm = await DialogService.ShowMessageBox(
+            "İşlem Silinecek",
+            "Bu havale/EFT işlemini silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+        if (confirm == true)
+        {
+            await EftVm.DeleteIslemAsync(islem);
+            Snackbar.Add("İşlem silindi", Severity.Success);
+        }
+    }
+}
+
+

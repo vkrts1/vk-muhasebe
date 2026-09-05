@@ -1,0 +1,357 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+@using ErmayMuhasebe.Services
+@using Microsoft.JSInterop
+@inject DatabaseService DbService
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<style>
+    .fatura-dialog-glass {
+        background: rgba(30,34,40,0.95) !important;
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        overflow: hidden;
+    }
+
+    .fatura-split-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        height: calc(100vh - 120px);
+        max-height: 800px;
+    }
+
+    .fatura-left-panel {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255,255,255,0.05);
+        overflow: hidden;
+    }
+
+    .fatura-right-panel {
+        padding: 24px;
+        background: rgba(255,255,255,0.02);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .fatura-table-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.05);
+        background: rgba(0,0,0,0.1);
+        margin: 15px 0;
+    }
+
+    .fatura-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 100px 100px 60px 120px;
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        align-items: center;
+        font-size: 13px;
+        transition: background 0.2s;
+        cursor: pointer;
+    }
+
+    .fatura-row:hover {
+        background: rgba(255,255,255,0.03);
+    }
+
+    .active-row {
+        background: rgba(96, 165, 250, 0.1) !important;
+        border-left: 3px solid #60A5FA;
+    }
+
+    .table-header {
+        background: rgba(255,255,255,0.05);
+        font-weight: 800;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255,255,255,0.4);
+    }
+
+    .summary-card {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: auto;
+    }
+
+    .action-btn {
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        padding: 10px !important;
+    }
+</style>
+
+<MudDialog Class="fatura-dialog-glass rounded-xl">
+    <TitleContent>
+        <div class="d-flex align-center justify-space-between px-4">
+            <div class="d-flex align-center gap-3">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(96, 165, 250, 0.1); display: flex; align-items: center; justify-content: center;">
+                    <MudIcon Icon="@(IslemTipi == "Satis" ? Icons.Material.Filled.Description : Icons.Material.Filled.Receipt)" Color="Color.Info" />
+                </div>
+                <div>
+                    <MudText Style="font-weight: 900; font-size: 18px;">@(IslemTipi == "Satis" ? "SATIŞ FATURASI" : "ALIŞ FATURASI")</MudText>
+                    <MudText Style="font-size: 11px; color: rgba(255,255,255,0.4);">Yeni işlem girişi ve faturalandırma.</MudText>
+                </div>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="Cancel" />
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div class="fatura-split-layout">
+            @* SOL PANEL: Cari ve Kalemler *@
+            <div class="fatura-left-panel">
+                <MudGrid Spacing="2">
+                    <MudItem xs="6">
+                        <MudSelect T="string" Label="Cari Türü" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                                   Value="@cariSekli" ValueChanged="@OnCariSekliChanged" Class="bg-dark-select">
+                            <MudSelectItem Value="@("MÜŞTERİ")">MÜŞTERİ</MudSelectItem>
+                            <MudSelectItem Value="@("TEDARİKÇİ")">TEDARİKÇİ</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6">
+                         <MudAutocomplete T="CariKart" Label="Hesap Ünvanı" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          SearchFunc="@SearchCariler" @bind-Value="selectedCari"
+                                          ToStringFunc="@(c => c?.Unvan ?? "")" Class="bg-dark-input" />
+                    </MudItem>
+                </MudGrid>
+
+                <div class="fatura-table-container">
+                    <div class="fatura-row table-header">
+                        <span>ÜRÜN / HİZMET ADI</span>
+                        <span>AÇIKLAMA</span>
+                        <span style="text-align: right;">BİRİM FİYAT</span>
+                        <span style="text-align: right;">MİKTAR</span>
+                        <span style="text-align: center;">KDV</span>
+                        <span style="text-align: right;">TOPLAM (KDV D)</span>
+                    </div>
+                    @if (!faturaKalemleri.Any())
+                    {
+                        <div class="d-flex flex-column align-center justify-center py-12" style="opacity: 0.3;">
+                            <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Size="Size.Large" />
+                            <MudText>Henüz kalem eklenmemiş. [F2] Ürün Ekle</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        @for (int i = 0; i < faturaKalemleri.Count; i++)
+                        {
+                            var index = i;
+                            var kalem = faturaKalemleri[i];
+                            <div class="fatura-row @(selectedIndex == index ? "active-row" : "")" @onclick="() => selectedIndex = index" @ondblclick="() => UrunDuzelt()">
+                                <span style="font-weight: 700;">@kalem.UrunAdi</span>
+                                <span style="color: rgba(255,255,255,0.4); font-size: 11px;">@kalem.Aciklama</span>
+                                <span style="text-align: right;">@kalem.BirimFiyat.ToString("N2") ₺</span>
+                                <span style="text-align: right; font-weight: 700;">@kalem.Miktar @kalem.Birim</span>
+                                <span style="text-align: center; color: rgba(255,255,255,0.6);">%@kalem.KDVOrani</span>
+                                <span style="text-align: right; font-weight: 900; color: #60A5FA;">@kalem.GenelToplam.ToString("N2") ₺</span>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="d-flex gap-2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="UrunEkle" Class="action-btn">Ürün Ekle [F2]</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Edit" Disabled="@(selectedIndex < 0)" OnClick="UrunDuzelt" Class="action-btn">Düzenle [F3]</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" Disabled="@(selectedIndex < 0)" OnClick="UrunSil" Class="action-btn">Satırı Sil</MudButton>
+                </div>
+            </div>
+
+            @* SAĞ PANEL: Ayarlar ve Toplam *@
+            <div class="fatura-right-panel">
+                <MudStack Spacing="4">
+                    <div class="glass-card pa-4" style="background: rgba(255,255,255,0.03) !important;">
+                        <MudText Style="font-size: 11px; font-weight: 800; opacity: 0.4; letter-spacing: 1px;" Class="mb-3">FATURA AYARLARI</MudText>
+                        <MudStack Spacing="3">
+                            <MudDatePicker @bind-Date="faturaTarihi" Label="Fatura Tarihi" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                            <MudTextField @bind-Value="faturaNo" Label="Fatura No" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                            <MudTextField @bind-Value="aciklamaGenel" Label="Genel Açıklama" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Class="bg-dark-input" />
+                        </MudStack>
+                    </div>
+
+                    <div class="summary-card">
+                         <MudStack Spacing="2">
+                             <div class="d-flex justify-between" style="font-size: 13px; opacity: 0.7;">
+                                 <span>Ara Toplam</span>
+                                 <span>@toplamTutar.ToString("C2")</span>
+                             </div>
+                             <div class="d-flex justify-between" style="font-size: 13px; opacity: 0.7;">
+                                 <span>Toplam KDV</span>
+                                 <span>@toplamKDV.ToString("C2")</span>
+                             </div>
+                             <MudDivider Style="border-color: rgba(255,255,255,0.1);" Class="my-2" />
+                             <div class="d-flex justify-between align-center">
+                                 <span style="font-weight: 800; font-size: 14px;">GENEL TOPLAM</span>
+                                 <span style="font-weight: 900; font-size: 22px; color: #34D399;">@genelToplam.ToString("C2")</span>
+                             </div>
+                         </MudStack>
+                    </div>
+
+                    <div class="mt-auto d-flex flex-column gap-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" Style="height: 50px; font-weight: 900; border-radius: 12px; font-size: 16px;" OnClick="Kaydet">KAYDET VE KAPAT [F4]</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Inherit" FullWidth="true" OnClick="Cancel" Style="opacity: 0.5;">Vazgeç [ESC]</MudButton>
+                    </div>
+                </MudStack>
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public string CariUnvan { get; set; } = "";
+    [Parameter] public string IslemTipi { get; set; } = "Satis";
+    [Parameter] public Fatura? ExistingFatura { get; set; }
+    [Parameter] public List<FaturaKalemi>? PreloadedItems { get; set; }
+
+    private List<CariKart> allCariler = new();
+    private string cariSekli = "MÜŞTERİ";
+    private CariKart? selectedCari;
+    private string faturaNo = "";
+    private string aciklamaGenel = "";
+    private DateTime? faturaTarihi = DateTime.Now;
+    
+    private List<FaturaKalemi> faturaKalemleri = new();
+    private int selectedIndex = -1;
+    
+    private decimal toplamTutar => faturaKalemleri.Sum(k => k.Toplam);
+    private decimal toplamKDV => faturaKalemleri.Sum(k => k.KDVTutari);
+    private decimal genelToplam => faturaKalemleri.Sum(k => k.GenelToplam);
+
+    protected override async Task OnInitializedAsync()
+    {
+        allCariler = await DbService.GetCarilerAsync();
+        
+        if (ExistingFatura != null)
+        {
+            IslemTipi = ExistingFatura.Tur ?? "Satis";
+            faturaTarihi = ExistingFatura.Tarih;
+            faturaNo = ExistingFatura.FaturaNo ?? "";
+            aciklamaGenel = ExistingFatura.Aciklama ?? "";
+            selectedCari = allCariler.FirstOrDefault(c => c.Id == ExistingFatura.CariId);
+            
+            var details = await DbService.GetFaturaDetaylarAsync(ExistingFatura.Id);
+            faturaKalemleri = details.Select(d => new FaturaKalemi {
+                StokId = d.StokId,
+                UrunAdi = d.StokAdi ?? "",
+                Miktar = (int)d.Miktar,
+                BirimFiyat = d.BirimFiyat,
+                Birim = d.Birim ?? "Adet",
+                KDVOrani = d.KDVOrani,
+                Toplam = d.Tutar,
+                KDVTutari = d.KDVTutari,
+                GenelToplam = d.Tutar + d.KDVTutari
+            }).ToList();
+        }
+        else 
+        {
+             if (IslemTipi == "Alis") cariSekli = "TEDARİKÇİ";
+             if (!string.IsNullOrEmpty(CariUnvan)) selectedCari = allCariler.FirstOrDefault(c => c.Unvan == CariUnvan);
+             if (PreloadedItems != null) faturaKalemleri = PreloadedItems;
+             faturaNo = (IslemTipi == "Satis" ? "SF" : "AF") + DateTime.Now.ToString("-yyyyMMdd-HHmm");
+        }
+    }
+
+    private async Task<IEnumerable<CariKart>> SearchCariler(string value, CancellationToken token)
+    {
+        await Task.CompletedTask;
+        var baseList = allCariler.Where(c => c.Grup == (cariSekli == "MÜŞTERİ" ? "Müşteri" : "Tedarikçi"));
+        if (string.IsNullOrEmpty(value)) return baseList.Take(10);
+        return baseList.Where(x => x.Unvan!.Contains(value, StringComparison.OrdinalIgnoreCase)).Take(10);
+    }
+
+    private void OnCariSekliChanged(string newVal)
+    {
+        cariSekli = newVal;
+        selectedCari = null;
+    }
+
+    private async Task UrunEkle()
+    {
+        var parameters = new DialogParameters { ["IsSatis"] = IslemTipi == "Satis" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, Position = DialogPosition.Center, NoHeader = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.UrunDetayDialog>("", parameters, options);
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is FaturaKalemi yeni)
+        {
+            faturaKalemleri.Add(yeni);
+            selectedIndex = faturaKalemleri.Count - 1;
+        }
+    }
+
+    private async Task UrunDuzelt()
+    {
+        if (selectedIndex < 0) return;
+        var parameters = new DialogParameters { ["ExistingItem"] = faturaKalemleri[selectedIndex], ["IsSatis"] = IslemTipi == "Satis" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, Position = DialogPosition.Center, NoHeader = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.UrunDetayDialog>("", parameters, options);
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is FaturaKalemi guncel)
+        {
+            faturaKalemleri[selectedIndex] = guncel;
+        }
+    }
+
+    private void UrunSil()
+    {
+        if (selectedIndex >= 0) { faturaKalemleri.RemoveAt(selectedIndex); selectedIndex = -1; }
+    }
+
+    private async Task Kaydet()
+    {
+        if (selectedCari == null) { Snackbar.Add("Lütfen cari seçiniz.", Severity.Warning); return; }
+        if (!faturaKalemleri.Any()) { Snackbar.Add("En az bir kalem eklemelisiniz.", Severity.Warning); return; }
+
+        var fatura = ExistingFatura ?? new Fatura();
+        fatura.CariId = selectedCari.Id;
+        fatura.CariUnvan = selectedCari.Unvan;
+        fatura.Tarih = faturaTarihi ?? DateTime.Now;
+        fatura.FaturaNo = faturaNo;
+        fatura.Aciklama = aciklamaGenel;
+        fatura.Tur = IslemTipi;
+        fatura.AraToplam = toplamTutar;
+        fatura.ToplamKDV = toplamKDV;
+        fatura.GenelToplam = genelToplam;
+
+        var detaylar = faturaKalemleri.Select(k => new FaturaDetay {
+            StokId = k.StokId, StokAdi = k.UrunAdi, Miktar = k.Miktar, Birim = k.Birim, BirimFiyat = k.BirimFiyat, KDVOrani = (int)k.KDVOrani
+        }).ToList();
+
+        try {
+            await DbService.SaveFaturaWithDetailsAndTransactionAsync(fatura, detaylar, IslemTipi == "Satis");
+            Snackbar.Add("Fatura başarıyla kaydedildi.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        } catch (Exception ex) {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    void Cancel() => MudDialog.Cancel();
+
+    public class FaturaKalemi {
+        public int StokId { get; set; }
+        public string UrunAdi { get; set; } = "";
+        public string Aciklama { get; set; } = "";
+        public string Birim { get; set; } = "";
+        public decimal BirimFiyat { get; set; }
+        public int Miktar { get; set; }
+        public decimal KDVOrani { get; set; }
+        public decimal Toplam { get; set; }
+        public decimal KDVTutari { get; set; }
+        public decimal GenelToplam { get; set; }
+        public string TopMiktari { get;set; } = "";
+    }
+}

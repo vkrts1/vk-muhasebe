@@ -1,0 +1,34 @@
+@using MudBlazor
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText><b>@CariUnvan</b> için <b>@FaturaNo</b> nolu fatura hatırlatması gönderilecek.</MudText>
+        <MudText Typo="Typo.body2" Class="mt-2 text-muted">Aşağıdaki iletişim kanallarından birini seçebilirsiniz:</MudText>
+        
+        <MudList T="string" Class="mt-4">
+            <MudListItem Icon="@Icons.Custom.Brands.WhatsApp" OnClick='() => Send("WhatsApp")'>WhatsApp Mesajı</MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Email" OnClick='() => Send("Email")'>E-Posta Gönder</MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Sms" OnClick='() => Send("SMS")'>SMS Gönder</MudListItem>
+        </MudList>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Kapat</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string CariUnvan { get; set; } = "";
+    [Parameter] public string FaturaNo { get; set; } = "";
+    [Parameter] public string Telefon { get; set; } = "";
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Send(string channel)
+    {
+        Snackbar.Add($"{channel} üzerinden hatırlatma gönderildi.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

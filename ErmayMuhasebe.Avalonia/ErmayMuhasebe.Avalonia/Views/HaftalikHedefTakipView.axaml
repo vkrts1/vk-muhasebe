@@ -1,0 +1,173 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             x:Class="ErmayMuhasebe.Avalonia.Views.HaftalikHedefTakipView"
+             x:DataType="vm:HaftalikHedefTakipViewModel">
+
+  <Grid RowDefinitions="Auto, *" Margin="25">
+    
+     <!-- Header Section -->
+     <Border Grid.Row="0" Margin="0,0,0,25">
+       <Grid ColumnDefinitions="*, Auto">
+         <StackPanel Spacing="5">
+           <StackPanel Orientation="Horizontal" Spacing="12">
+             <Border Width="45" Height="45" CornerRadius="12" Background="#2660A5FA">
+                <ic:SymbolIcon Symbol="Target" Foreground="#60A5FA" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+             </Border>
+             <TextBlock Text="Haftalık Hedef ve Bütçe Takibi" FontSize="26" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+           </StackPanel>
+           
+           <!-- Year Creation Input (Visible only in Year List Mode) -->
+           <StackPanel Orientation="Horizontal" Spacing="10" Margin="57,0,0,0" IsVisible="{Binding IsYearListVisible}">
+               <TextBlock Text="Yıl Oluştur:" VerticalAlignment="Center" Foreground="#9CA3AF"/>
+               <TextBox Text="{Binding SelectedFilterYil}" Width="80" VerticalAlignment="Center" TextAlignment="Center"/>
+               <Button Content="Oluştur" Command="{Binding CreateYearlyTargetsCommand}" 
+                       Classes="SideButton Secondary" Width="80"/>
+           </StackPanel>
+
+           <!-- Back Button & Current Year Title (Visible only in Week Mode) -->
+           <StackPanel Orientation="Horizontal" Spacing="10" Margin="57,0,0,0" IsVisible="{Binding IsWeekListVisible}">
+                <Button Command="{Binding BackToYearsCommand}" Classes="SideButton Secondary" Width="40" Padding="0">
+                    <ic:SymbolIcon Symbol="ArrowLeft" FontSize="16"/>
+                </Button>
+                <TextBlock Text="{Binding SelectedFilterYil, StringFormat='{}Seçilen Yıl: {0}'}" VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold" Foreground="#E5E7EB"/>
+           </StackPanel>
+         </StackPanel>
+         
+         <Button Grid.Column="1" Classes="SideButton Info" Command="{Binding OpenNewFormCommand}" Height="40" IsVisible="{Binding IsWeekListVisible}">
+           <StackPanel Orientation="Horizontal" Spacing="8" Margin="10,0">
+             <ic:SymbolIcon Symbol="Add" FontSize="16"/> 
+             <TextBlock Text="Yeni Ekle" FontWeight="SemiBold" VerticalAlignment="Center"/>
+           </StackPanel>
+         </Button>
+      </Grid>
+     </Border>
+
+     <!-- Content Area -->
+     <Grid Grid.Row="1">
+         
+         <!-- YEAR LIST VIEW -->
+         <ScrollViewer IsVisible="{Binding IsYearListVisible}">
+            <ItemsControl ItemsSource="{Binding AvailableYears}">
+               <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                     <WrapPanel Orientation="Horizontal" />
+                  </ItemsPanelTemplate>
+               </ItemsControl.ItemsPanel>
+               <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                     <Button Command="{Binding $parent[UserControl].DataContext.SelectYearCommand}" CommandParameter="{Binding}"
+                             Background="Transparent" BorderThickness="0" Margin="10" Padding="0"
+                             Cursor="Hand">
+                         <Border Background="{DynamicResource PanelBrush}" CornerRadius="16" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1" 
+                                 BoxShadow="0 4 15 0 #20000000" Width="220" Height="150">
+                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+                                 <ic:SymbolIcon Symbol="Calendar" FontSize="32" Foreground="#60A5FA"/>
+                                 <TextBlock Text="{Binding}" FontSize="28" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                 <TextBlock Text="Haftaları Görüntüle" FontSize="12" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                             </StackPanel>
+                         </Border>
+                     </Button>
+                  </DataTemplate>
+               </ItemsControl.ItemTemplate>
+            </ItemsControl>
+         </ScrollViewer>
+
+         <!-- WEEK LIST VIEW -->
+         <ScrollViewer IsVisible="{Binding IsWeekListVisible}">
+            <ItemsControl ItemsSource="{Binding Hedefler}">
+               <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                     <WrapPanel ItemWidth="300" />
+                  </ItemsPanelTemplate>
+               </ItemsControl.ItemsPanel>
+               <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                     <Border Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="20" Margin="0,0,20,20" BorderBrush="#22FFFFFF" BorderThickness="1" BoxShadow="0 4 20 0 #20000000">
+                        <Grid RowDefinitions="Auto, Auto, Auto">
+                           <!-- Card Header -->
+                           <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,15">
+                              <StackPanel>
+                                 <TextBlock Text="{Binding Model.Yil}" FontSize="12" Foreground="#9CA3AF"/>
+                                 <TextBlock Text="{Binding HaftaAdi}" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                              </StackPanel>
+                              
+                              <!-- Actions -->
+                              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalAlignment="Top">
+                                  <Button Command="{Binding $parent[UserControl].DataContext.OpenEditFormCommand}" CommandParameter="{Binding}" 
+                                          Background="Transparent" BorderThickness="0" Padding="5" Width="30" Height="30" CornerRadius="5" ToolTip.Tip="Düzenle">
+                                      <ic:SymbolIcon Symbol="Edit" FontSize="16" Foreground="#60A5FA"/>
+                                  </Button>
+                                  <Button Command="{Binding $parent[UserControl].DataContext.DeleteCommand}" CommandParameter="{Binding}" 
+                                          Background="Transparent" BorderThickness="0" Padding="5" Width="30" Height="30" CornerRadius="5" ToolTip.Tip="Sil">
+                                      <ic:SymbolIcon Symbol="Delete" FontSize="16" Foreground="#EF4444"/>
+                                  </Button>
+                              </StackPanel>
+                           </Grid>
+
+                           <!-- Progress Section -->
+                           <Grid Grid.Row="1" Margin="0,0,0,15">
+                              <StackPanel Spacing="10">
+                                 <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Text="Gerçekleşme" FontSize="12" Foreground="#9CA3AF"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Yuzde, StringFormat='{}{0:N1}%'}" FontSize="12" FontWeight="Bold" Foreground="{Binding Renk}"/>
+                                 </Grid>
+                                 <ProgressBar Value="{Binding Yuzde}" Maximum="100" Height="10" CornerRadius="5" Foreground="{Binding Renk}" Background="#10FFFFFF"/>
+                              </StackPanel>
+                           </Grid>
+
+                           <!-- Details -->
+                           <Grid Grid.Row="2" ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" RowSpacing="5">
+                              <TextBlock Grid.Row="0" Grid.Column="0" Text="HEDEF" FontSize="10" Foreground="#F59E0B" FontWeight="Bold"/>
+                              <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Model.HedefTutari, StringFormat='{}{0:N0} ₺'}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+
+                              <TextBlock Grid.Row="0" Grid.Column="1" Text="ACTUAL" FontSize="10" Foreground="#10B981" FontWeight="Bold" HorizontalAlignment="Right"/>
+                              <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Gerceklesen, StringFormat='{}{0:N0} ₺'}" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Right"/>
+                           </Grid>
+                        </Grid>
+                     </Border>
+                  </DataTemplate>
+               </ItemsControl.ItemTemplate>
+            </ItemsControl>
+         </ScrollViewer>
+     </Grid>
+
+    <!-- Edit Overlay -->
+    <Grid Grid.RowSpan="2" Background="#B3000000" IsVisible="{Binding IsEditFormVisible}" Margin="-25">
+      <Border Width="400" VerticalAlignment="Center" HorizontalAlignment="Center" Background="#1F2937" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="20" Padding="30" BoxShadow="0 10 30 0 #A0000000">
+        <StackPanel Spacing="20">
+          <TextBlock Text="{Binding EditTitle}" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+          
+          <StackPanel Spacing="8">
+            <TextBlock Text="Yıl" Foreground="#9CA3AF" FontSize="12" FontWeight="SemiBold"/>
+            <NumericUpDown Value="{Binding EditYil}" ShowButtonSpinner="False" />
+          </StackPanel>
+          
+          <StackPanel Spacing="8">
+            <TextBlock Text="Hafta (1-53)" Foreground="#9CA3AF" FontSize="12" FontWeight="SemiBold"/>
+             <ComboBox ItemsSource="{Binding Haftalar}" SelectedItem="{Binding EditHafta}" HorizontalAlignment="Stretch"/>
+          </StackPanel>
+          
+          <StackPanel Spacing="8">
+            <TextBlock Text="Hedef Tutar" Foreground="#9CA3AF" FontSize="12" FontWeight="SemiBold"/>
+            <NumericUpDown Value="{Binding EditHedefTutar}" ShowButtonSpinner="False" />
+          </StackPanel>
+          
+          <Grid ColumnDefinitions="*, 12, *" Margin="0,10,0,0">
+             <Button Grid.Column="0" Classes="SideButton Info" Command="{Binding SaveCommand}" Height="45">
+               <TextBlock Text="KAYDET" FontWeight="Bold"/>
+             </Button>
+             <Button Grid.Column="2" Classes="SideButton Secondary" Command="{Binding CloseFormCommand}" Height="45">
+               <TextBlock Text="İPTAL" FontWeight="Bold"/>
+             </Button>
+          </Grid>
+        </StackPanel>
+      </Border>
+    </Grid>
+
+  </Grid>
+</UserControl>

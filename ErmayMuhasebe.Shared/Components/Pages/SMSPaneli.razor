@@ -1,0 +1,146 @@
+@page "/sms-paneli"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">Toplu SMS Gönderim Paneli</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="5">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Mesaj Oluştur</MudText>
+            
+            <MudSelect T="string" Label="Şablon Seç" Variant="Variant.Outlined" Class="mb-3" @bind-Value="seciliSablon" AnchorOrigin="Origin.BottomCenter">
+                <MudSelectItem Value="@("Borç Hatırlatma")">Borç Hatırlatma</MudSelectItem>
+                <MudSelectItem Value="@("Kampanya Duyurusu")">Kampanya Duyurusu</MudSelectItem>
+                <MudSelectItem Value="@("Bayram Tebriği")">Bayram Tebriği</MudSelectItem>
+                <MudSelectItem Value="@("Özel Mesaj")">Özel Mesaj (Boş)</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField T="string" Label="Mesaj Metni" Variant="Variant.Outlined" Lines="5" @bind-Value="mesajMetni" HelperText="@($"{mesajMetni.Length} karakter ({(mesajMetni.Length / 160) + 1} SMS)")" Counter="160" Class="mb-4" />
+
+            <div class="pa-2 mud-alert-warning rounded mb-4">
+                <MudText Typo="Typo.caption" Color="Color.Warning"><b>İpucu:</b> {Unvan} etiketi müşterinin ismiyle yer değiştirir.</MudText>
+            </div>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="Gonder" StartIcon="@Icons.Material.Filled.Send" Disabled="@(!seciliCariler.Any())">
+                Seçili @seciliCariler.Count Kişiye Gönder
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="7">
+        <MudPaper Class="pa-4">
+            <MudTable Items="@cariler" MultiSelection="true" @bind-SelectedItems="seciliCariler" Hover="true" Dense="true" Striped="true" Bordered="true" Loading="@loading">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Alıcı Listesi</MudText>
+                    <MudSpacer />
+                    <MudTextField T="string" @bind-Value="searchString" Placeholder="Ara..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Ünvan</MudTh>
+                    <MudTh>Telefon</MudTh>
+                    <MudTh>Bakiye</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Unvan</MudTd>
+                    <MudTd>@context.Telefon</MudTd>
+                    <MudTd DataLabel="Bakiye">
+                        <MudText Color="@(context.Bakiye > 0 ? Color.Error : Color.Success)">@context.Bakiye.ToString("N2") TL</MudText>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<CariKart> cariler = new();
+    private HashSet<CariKart> seciliCariler = new();
+    private string mesajMetni = "";
+    private string searchString = "";
+    private bool loading = false;
+    private string _seciliSablon = "Özel Mesaj";
+
+    private string seciliSablon
+    {
+        get => _seciliSablon;
+        set
+        {
+            _seciliSablon = value;
+            UpdateMesajMetni();
+        }
+    }
+
+    private void UpdateMesajMetni()
+    {
+        mesajMetni = _seciliSablon switch
+        {
+            "Borç Hatırlatma" => "Sayın {Unvan}, mevcut bakiyeniz olan {Bakiye} TL için ödeme beklenmektedir. İyi çalışmalar dileriz.",
+            "Kampanya Duyurusu" => "Sayın {Unvan}, bu aya özel tüm ürünlerde %20 indirim fırsatını kaçırmayın! Hemen bekliyoruz.",
+            "Bayram Tebriği" => "Sayın {Unvan}, mübarek Kurban Bayramınızı kutlar, esenlikler dileriz.",
+            _ => ""
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        cariler = await DbService.GetCarilerAsync();
+        loading = false;
+    }
+
+    private async Task Gonder()
+    {
+        if (!seciliCariler.Any()) return;
+
+        int successCount = 0;
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            foreach (var cari in seciliCariler)
+            {
+                // Template Replacement
+                var text = mesajMetni
+                    .Replace("{Unvan}", cari.Unvan)
+                    .Replace("{Bakiye}", cari.Bakiye.ToString("N2"));
+
+                var sms = new SmsGecmisi
+                {
+                    CariId = cari.Id,
+                    Unvan = cari.Unvan,
+                    Telefon = cari.Telefon ?? "",
+                    Mesaj = text,
+                    Tarih = DateTime.Now,
+                    Durum = "Gönderildi",
+                    HataMesaji = ""
+                };
+
+                await DbService.SaveSmsGecmisiAsync(sms);
+                successCount++;
+                
+                // Simulate network delay slightly for realism if needed, or just fast
+                // await Task.Delay(50); 
+            }
+            
+            Snackbar.Add($"{successCount} adet SMS başarıyla gönderildi.", Severity.Success);
+            
+            // Clear selection after send
+            seciliCariler.Clear();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"SMS gönderim hatası: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

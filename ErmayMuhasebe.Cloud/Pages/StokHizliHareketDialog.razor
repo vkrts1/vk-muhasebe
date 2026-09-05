@@ -1,0 +1,73 @@
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@(IsEntry ? Icons.Material.Filled.AddShoppingCart : Icons.Material.Filled.RemoveShoppingCart)" Class="mr-3 mb-n1" 
+                    Color="@(IsEntry ? Color.Success : Color.Error)" />
+            Hızlı Stok @(IsEntry ? "Girişi" : "Çıkışı")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="d-flex flex-column gap-4 pa-2">
+            <MudPaper Outlined="true" Class="pa-4" Style="background: rgba(0,0,0,0.02);">
+                <MudText Typo="Typo.subtitle1" Class="font-weight-bold">@Model.StokAdi</MudText>
+                <MudText Typo="Typo.caption">Mevcut Stok: <b>@Model.Miktar @Model.Birim</b></MudText>
+            </MudPaper>
+
+            <MudNumericField @bind-Value="_miktar" Label="İşlem Miktarı" Variant="Variant.Outlined" Min="0.01" FullWidth="true" AutoFocus="true" />
+            
+            <MudTextField @bind-Value="_aciklama" Label="Açıklama / Not" Variant="Variant.Outlined" Lines="2" Placeholder="Örn: Sayım farkı, numune vs." />
+
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
+                Yeni Stok: <b>@(IsEntry ? Model.Miktar + _miktar : Model.Miktar - _miktar) @Model.Birim</b>
+            </MudAlert>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Vazgeç</MudButton>
+        <MudButton Color="@(IsEntry ? Color.Success : Color.Error)" Variant="Variant.Filled" OnClick="Submit">KAYDI TAMAMLA</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public StokKart Model { get; set; } = new();
+    [Parameter] public bool IsEntry { get; set; } = true;
+
+    private double _miktar = 1;
+    private string _aciklama = "";
+
+    private async Task Submit()
+    {
+        if (_miktar <= 0)
+        {
+            Snackbar.Add("Miktar 0'dan büyük olmalıdır.", Severity.Warning);
+            return;
+        }
+
+        if (!IsEntry && _miktar > Model.Miktar)
+        {
+             Snackbar.Add("Stok eksiye düşecek!", Severity.Warning);
+             // We can proceed or return. Let's proceed with warning.
+        }
+
+        // Update Stock
+        if (IsEntry) Model.Miktar += _miktar;
+        else Model.Miktar -= _miktar;
+
+        await DbService.SaveStokAsync(Model);
+        
+        // Simüle stok hareketi
+        // await DbService.SaveStokHareketAsync(...);
+
+        Snackbar.Add($"Stok {(IsEntry ? "girişi" : "çıkışı")} başarıyla kaydedildi.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

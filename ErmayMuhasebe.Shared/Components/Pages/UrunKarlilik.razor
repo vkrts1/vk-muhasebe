@@ -1,0 +1,147 @@
+@page "/urun-karlilik"
+@inject ISnackbar Snackbar
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@using MudBlazor
+
+<div>
+    <div class="d-flex align-center justify-space-between mb-4">
+        <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary">Ürün Karlılık Analizi</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+            @if(analizYapildi)
+            {
+                 <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                    Yazdır / PDF
+                </MudButton>
+            }
+        </MudStack>
+    </div>
+
+    <MudPaper Class="pa-4 mb-3 d-flex gap-2">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="AnalizYap">Analiz Yap</MudButton>
+    </MudPaper>
+
+    @if(analizYapildi)
+    {
+        <MudPaper Class="pa-4">
+            <MudTable Items="@urunler" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Ürün</MudTh>
+                    <MudTh>Satış Adedi</MudTh>
+                    <MudTh>Satış Tutarı</MudTh>
+                    <MudTh>Maliyet</MudTh>
+                    <MudTh>Brüt Kar</MudTh>
+                    <MudTh>Kar Marjı %</MudTh>
+                    <MudTh>Performans</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Ad</MudTd>
+                    <MudTd>@context.SatisAdedi</MudTd>
+                    <MudTd>@context.SatisTutari.ToString("C2")</MudTd>
+                    <MudTd>@context.Maliyet.ToString("C2")</MudTd>
+                    <MudTd><span style="@(context.BrutKar >= 0 ? "color:green" : "color:red")">@context.BrutKar.ToString("C2")</span></MudTd>
+                    <MudTd>%@context.KarMarji.ToString("N2")</MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="@GetPerformansColor(context.Performans)">@context.Performans</MudChip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    }
+</div>
+
+@code {
+    private bool analizYapildi = false;
+    private List<UrunKarlilikModel> urunler = new();
+
+    private async Task AnalizYap()
+    {
+        urunler = new List<UrunKarlilikModel>();
+        
+        var faturalar = await DbService.GetFaturalarAsync();
+        var satisFaturalari = faturalar.Where(x => x.Tur == "Satis" || x.Tur == "Satış").ToList();
+        var cariler = await DbService.GetCarilerAsync();
+        var stoklar = await DbService.GetStoklarAsync();
+
+        foreach(var fatura in satisFaturalari)
+        {
+             var detaylar = await DbService.GetFaturaDetaylarAsync(fatura.Id);
+             
+             foreach(var d in detaylar)
+             {
+                 var stok = stoklar.FirstOrDefault(s => s.Id == d.StokId);
+                 string urunAdi = d.StokAdi ?? (stok?.StokAdi ?? "Bilinmeyen Ürün");
+                 
+                 var entry = urunler.FirstOrDefault(u => u.Ad == urunAdi);
+                 if (entry == null)
+                 {
+                     entry = new UrunKarlilikModel { Ad = urunAdi };
+                     urunler.Add(entry);
+                 }
+                 
+                 entry.SatisAdedi += (int)d.Miktar;
+                 entry.SatisTutari += d.Tutar; 
+                 
+                 if (stok != null)
+                 {
+                     entry.Maliyet += (stok.AlisFiyati * (decimal)d.Miktar);
+                 }
+             }
+        }
+        
+        urunler = urunler.OrderByDescending(x => x.BrutKar).ToList();
+        analizYapildi = true;
+    }
+
+    private MudBlazor.Color GetPerformansColor(string performans)
+    {
+        return performans switch
+        {
+            "Yüksek" => MudBlazor.Color.Success,
+            "Orta" => MudBlazor.Color.Info,
+            "Düşük" => MudBlazor.Color.Warning,
+            _ => MudBlazor.Color.Default
+        };
+    }
+
+    class UrunKarlilikModel
+    {
+        public string Ad { get; set; } = "";
+        public int SatisAdedi { get; set; }
+        public decimal SatisTutari { get; set; }
+        public decimal Maliyet { get; set; }
+        public decimal BrutKar => SatisTutari - Maliyet;
+        public decimal KarMarji => SatisTutari > 0 ? (BrutKar / SatisTutari) * 100 : 0;
+        public string Performans => KarMarji >= 25 ? "Yüksek" : KarMarji >= 15 ? "Orta" : "Düşük";
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Ürün", "Satış Adedi", "Satış Tutarı", "Maliyet", "Brüt Kar", "Kar Marjı %", "Performans" };
+            var rows = urunler.Select(u => new[] 
+            { 
+                u.Ad,
+                u.SatisAdedi.ToString(),
+                u.SatisTutari.ToString("C2"),
+                u.Maliyet.ToString("C2"),
+                u.BrutKar.ToString("C2"),
+                $"%{u.KarMarji:N2}",
+                u.Performans
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Ürün Karlılık Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("UrunKarlilikRaporu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

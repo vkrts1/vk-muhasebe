@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.BelgeArsivView"
+             x:DataType="vm:BelgeArsivViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <!-- Header -->
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#268B5CF6">
+          <ic:SymbolIcon Symbol="DocumentFolder" Foreground="#8B5CF6" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Belge Arşivleme (DMS)" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Fatura, dekont ve diğer tüm resmi evraklarınızı dijital ortamda saklayın." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" RowDefinitions="Auto, *">
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" CornerRadius="15" Padding="15" Margin="0,0,0,15" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <Grid ColumnDefinitions="*, Auto, Auto">
+                <TextBox Grid.Column="0" Text="{Binding SearchQuery}" Watermark="Belge adında ara..." Classes="SearchBox" Margin="0,0,10,0"/>
+                
+                <TextBlock Grid.Column="1" Text="{Binding StorageInfo}" VerticalAlignment="Center" Foreground="#9CA3AF" Margin="20,0"/>
+
+                <Button Grid.Column="2" Command="{Binding YeniBelgeEkleCommand}" Classes="SideButton Info" Background="#8B5CF6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ic:SymbolIcon Symbol="Add" FontSize="18"/> 
+                        <TextBlock Text="YENİ BELGE YÜKLE"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Document List -->
+        <Border Grid.Row="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="10" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <DataGrid ItemsSource="{Binding Documents}" AutoGenerateColumns="False" IsReadOnly="True" Cursor="Hand">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Width="50">
+                        <DataTemplate>
+                            <ic:SymbolIcon Symbol="Document" Foreground="#8B5CF6" HorizontalAlignment="Center"/> 
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Belge Adı" Binding="{Binding Name}" Width="*"/>
+                    <DataGridTextColumn Header="Tür" Binding="{Binding Type}" Width="100"/>
+                    <DataGridTextColumn Header="Boyut" Binding="{Binding Size, StringFormat={}{0} Bytes}" Width="150"/>
+                    <DataGridTextColumn Header="Kayıt Tarihi" Binding="{Binding CreatedAt}" Width="200"/>
+                    <DataGridTemplateColumn Header="İşlem" Width="130">
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                <Button Command="{Binding $parent[UserControl].DataContext.BelgeAcCommand}" 
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent" BorderThickness="0" Width="30" Height="30" Padding="5" ToolTip.Tip="Aç">
+                                    <ic:SymbolIcon Symbol="Open" FontSize="18" Foreground="#60A5FA"/> 
+                                </Button>
+                                <Button Command="{Binding $parent[UserControl].DataContext.DosyaIndirCommand}" 
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent" BorderThickness="0" Width="30" Height="30" Padding="5" ToolTip.Tip="İndir">
+                                    <ic:SymbolIcon Symbol="ArrowDownload" FontSize="18" Foreground="#10B981"/> 
+                                </Button>
+                                <Button Command="{Binding $parent[UserControl].DataContext.BelgeSilCommand}" 
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent" BorderThickness="0" Width="30" Height="30" Padding="5" ToolTip.Tip="Sil">
+                                    <ic:SymbolIcon Symbol="Delete" FontSize="18" Foreground="#EF4444"/> 
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+  </Grid>
+</UserControl>

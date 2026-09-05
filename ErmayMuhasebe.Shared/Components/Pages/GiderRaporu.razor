@@ -1,0 +1,260 @@
+@page "/gider-raporu"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@using MudBlazor
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 pb-8">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-weight:bold;">Kapsamlı Gider Raporu</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Harcamalarınızın detaylı analizi ve tasarruf fırsatları.</MudText>
+        </div>
+        <MudStack Row="true">
+            <MudDateRangePicker Label="Tarih Aralığı" @bind-DateRange="_dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadData">Sorgula</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintPdf" Disabled="@(reportData == null)">PDF / YAZDIR</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.List" OnClick='() => Nav.NavigateTo("/raporlar-menu")'>Tüm Raporlar</MudButton>
+        </MudStack>
+    </div>
+
+    @if (reportData == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudGrid>
+            @* 1. ÖZET KARTLAR (Monthly Comparison & Net Profit/Loss) *@
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Style="height:120px; border-left: 6px solid #e74c3c;">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">BU AY TOPLAM GİDER</MudText>
+                    <MudText Typo="Typo.h5" Style="font-weight:bold;">@reportData.TotalExpenseThisMonth.ToString("N2") ₺</MudText>
+                    <div class="d-flex align-center mt-1">
+                        @{
+                            var change = reportData.MonthlyChangePercent;
+                            var color = change > 0 ? Color.Error : Color.Success;
+                            var icon = change > 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown;
+                        }
+                        <MudIcon Icon="@icon" Color="@color" Size="Size.Small" Class="mr-1" />
+                        <MudText Typo="Typo.caption" Color="@color">%@Math.Abs(change).ToString("N1") (Önceki aya göre)</MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Style="height:120px; border-left: 6px solid #2ecc71;">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">GELİR - GİDER DENGESİ</MudText>
+                    <MudText Typo="Typo.h5" Style="font-weight:bold;" Color="@(reportData.NetProfitLoss >= 0 ? Color.Success : Color.Error)">
+                        @reportData.NetProfitLoss.ToString("N2") ₺
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Seçili Dönem Net Durum</MudText>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Style="height:120px; border-left: 6px solid #3498db;">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">EN YÜKSEK GİDER KALEMİ</MudText>
+                    <MudText Typo="Typo.h6" Style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        @(reportData.Categories.FirstOrDefault()?.Category ?? "-")
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Toplam Pay: %@(reportData.Categories.FirstOrDefault()?.Percentage.ToString("N1") ?? "0")</MudText>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Style="height:120px; border-left: 6px solid #f1c40f;">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">FAVORİ ÖDEME KANALI</MudText>
+                    <MudText Typo="Typo.h5" Style="font-weight:bold;">
+                        @(reportData.Channels.OrderByDescending(x => x.Amount).FirstOrDefault()?.Channel ?? "-")
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Nakit / Banka / KK</MudText>
+                </MudPaper>
+            </MudItem>
+
+            @* 2. GİDER TÜRÜ DAĞILIMI (PASTA GRAFİK) *@
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-6" Style="height: 450px;">
+                    <MudText Typo="Typo.h6" Class="mb-4">Gider Türü Dağılımı</MudText>
+                    <div class="d-flex justify-center align-center" style="height: 300px;">
+                        <MudChart ChartType="ChartType.Pie" 
+                                  InputData="@reportData.Categories.Select(x => (double)x.Amount).ToArray()" 
+                                  InputLabels="@reportData.Categories.Select(x => x.Category).ToArray()" 
+                                  Width="300px" Height="300px" />
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            @* 3. ÖDEME KANALLARI ANALİZİ *@
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-6" Style="height: 450px;">
+                    <MudText Typo="Typo.h6" Class="mb-4">Ödeme Kanalları Analizi</MudText>
+                    <MudTable Items="@reportData.Channels" Dense="true" Hover="true" Bordered="false" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>Kanal</MudTh>
+                            <MudTh Style="text-align:right;">Toplam Tutar</MudTh>
+                            <MudTh Style="text-align:right;">Pay (%)</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Channel</MudTd>
+                            <MudTd Style="text-align:right;">@context.Amount.ToString("N2") ₺</MudTd>
+                            <MudTd Style="text-align:right;">% @((context.Amount / (reportData.TotalExpense == 0 ? 1 : reportData.TotalExpense) * 100).ToString("N1"))</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+
+            @* 4. KREDİ KARTI HARCAMA DETAYLARI *@
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-6">
+                    <MudText Typo="Typo.h6" Class="mb-4">Kredi Kartı Harcama Detayları</MudText>
+                    @if (!reportData.CardExpenses.Any())
+                    {
+                        <MudAlert Severity="Severity.Info">Bu dönemde kredi kartı harcaması bulunmuyor.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudTable Items="@reportData.CardExpenses" Dense="true" Hover="true">
+                            <HeaderContent>
+                                <MudTh>Banka / Kart</MudTh>
+                                <MudTh Style="text-align:right;">Harcama Toplamı</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.CardName</MudTd>
+                                <MudTd Style="text-align:right;">@context.Amount.ToString("N2") ₺</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            @* 5. EN YÜKSEK HARCAMA KALEMLERİ (TOP 10) *@
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-6">
+                    <MudText Typo="Typo.h6" Class="mb-4">En Yüksek 10 Harcama</MudText>
+                    <MudTable Items="@reportData.TopExpenses" Dense="true" Hover="true">
+                        <HeaderContent>
+                            <MudTh>Açıklama</MudTh>
+                            <MudTh>Kanal</MudTh>
+                            <MudTh Style="text-align:right;">Tutar</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Description</MudTd>
+                            <MudTd>@context.Channel</MudTd>
+                            <MudTd Style="text-align:right; font-weight:bold;">@context.Amount.ToString("N2") ₺</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+
+            @* 6. GÜNLÜK GİDER DEFTERİ (TÜM LİSTE) *@
+            <MudItem xs="12">
+                <MudPaper Class="pa-6">
+                    <MudText Typo="Typo.h6" Class="mb-4">Günlük Gider Defteri (Kronolojik)</MudText>
+                    <MudTable Items="@reportData.DailyLedger" Dense="true" Hover="true" Striped="true" Height="400px" FixedHeader="true">
+                        <HeaderContent>
+                            <MudTh>Tarih</MudTh>
+                            <MudTh>Açıklama / Detay</MudTh>
+                            <MudTh>Ödeme Yöntemi</MudTh>
+                            <MudTh Style="text-align:right;">Tutar</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Date.ToString("dd.MM.yyyy")</MudTd>
+                            <MudTd>@context.Description</MudTd>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small" Color="@(context.Channel == "Nakit" ? Color.Warning : context.Channel == "Banka" ? Color.Info : Color.Error)">
+                                    @context.Channel
+                                </MudChip>
+                            </MudTd>
+                            <MudTd Style="text-align:right; font-weight:bold;">@context.Amount.ToString("N2") ₺</MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager InfoFormat="{first_item}-{last_item} of {all_items}" RowsPerPageString="Satır Sayısı:" />
+                        </PagerContent>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private DateRange _dateRange = new DateRange(DateTime.Now.AddDays(-30), DateTime.Now);
+    private ExpenseReportData? reportData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        reportData = null;
+        StateHasChanged();
+        
+        if (_dateRange.Start.HasValue && _dateRange.End.HasValue)
+        {
+            reportData = await DbService.GetExpenseReportAsync(_dateRange.Start.Value, _dateRange.End.Value);
+        }
+        else
+        {
+            reportData = await DbService.GetExpenseReportAsync(DateTime.Now.AddDays(-30), DateTime.Now);
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task PrintPdf()
+    {
+        if (reportData == null) return;
+
+        try
+        {
+            var sections = new List<ReportSection>();
+
+            // 1. Özet Bilgiler
+            var summaryRows = new List<string[]>()
+            {
+                new[] { "Dönem Toplam Gider", reportData.TotalExpense.ToString("C2") },
+                new[] { "Gelir-Gider Dengesi", reportData.NetProfitLoss.ToString("C2") },
+                new[] { "Önceki Aya Göre Değişim", "%" + reportData.MonthlyChangePercent.ToString("N2") }
+            };
+            sections.Add(new ReportSection { Title = "GİDER ÖZET BİLGİLERİ", Headers = new[] { "Açıklama", "Tutar / Değer" }, Rows = summaryRows });
+
+            // 2. Kategorik Dağılım
+            var catRows = reportData.Categories.Select(c => new[] { c.Category, c.Amount.ToString("C2"), "%" + c.Percentage.ToString("N1") }).ToList();
+            sections.Add(new ReportSection { Title = "KATEGORİ BAZLI GİDER DAĞILIMI", Headers = new[] { "Kategori", "Tutar", "Pay" }, Rows = catRows });
+
+            // 3. Ödeme Kanalları
+            var channelRows = reportData.Channels.Select(c => new[] { c.Channel, c.Amount.ToString("C2") }).ToList();
+            sections.Add(new ReportSection { Title = "ÖDEME KANALLARI ANALİZİ", Headers = new[] { "Kanal", "Toplam Tutar" }, Rows = channelRows });
+
+            // 4. Kredi Kartları
+            if (reportData.CardExpenses.Any())
+            {
+                var cardRows = reportData.CardExpenses.Select(c => new[] { c.CardName, c.Amount.ToString("C2") }).ToList();
+                sections.Add(new ReportSection { Title = "KREDİ KARTI HARCAMALARI", Headers = new[] { "Kart", "Toplam Tutar" }, Rows = cardRows });
+            }
+
+            // 5. En Yüksek Giderler
+            var topRows = reportData.TopExpenses.Select(e => new[] { e.Description, e.Channel, e.Amount.ToString("C2") }).ToList();
+            sections.Add(new ReportSection { Title = "EN YÜKSEK 10 HARCAMA KALEMİ", Headers = new[] { "Açıklama", "Kanal", "Tutar" }, Rows = topRows });
+
+            // 6. Günlük Gider Defteri
+            var ledgerRows = reportData.DailyLedger.Select(e => new[] { e.Date.ToShortDateString(), e.Description, e.Channel, e.Amount.ToString("C2") }).ToList();
+            sections.Add(new ReportSection { Title = "GÜNLÜK GİDER DEFTERİ (DETAYLI)", Headers = new[] { "Tarih", "Açıklama", "Yöntem", "Tutar" }, Rows = ledgerRows });
+
+            var title = $"GİDER RAPORU ({_dateRange.Start?.ToShortDateString()} - {_dateRange.End?.ToShortDateString()})";
+            var pdf = await PdfService.GenerateConsolidatedReportPdfBytesAsync(title, sections);
+            await FileService.SaveAndOpenFileAsync("GiderRaporu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"PDF oluşturulurken hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

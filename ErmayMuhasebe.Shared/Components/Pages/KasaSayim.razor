@@ -1,0 +1,122 @@
+@page "/kasa-sayim"
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Kasa Sayım Fişi</MudText>
+
+<MudPaper Class="pa-4">
+    <MudGrid>
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="fisNo" Label="Fiş No" Variant="Variant.Outlined" ReadOnly="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudDatePicker @bind-Date="sayimTarihi" Label="Sayım Tarihi" Variant="Variant.Outlined" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="kasaAdi" Label="Kasa Adı" Variant="Variant.Outlined" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="sayimYapan" Label="Sayım Yapan" Variant="Variant.Outlined" />
+        </MudItem>
+        
+        <MudItem xs="12">
+            <MudDivider Class="my-2" />
+        </MudItem>
+        
+        <MudItem xs="12" sm="6">
+            <MudNumericField @bind-Value="sistemBakiye" Label="Sistem Bakiyesi (₺)" Variant="Variant.Outlined" ReadOnly="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudNumericField @bind-Value="fizikiBakiye" Label="Fiziki Bakiye (₺)" Variant="Variant.Outlined" OnBlur="HesaplaFark" />
+        </MudItem>
+        
+        <MudItem xs="12">
+            @{
+                var fark = fizikiBakiye - sistemBakiye;
+                var severity = fark == 0 ? Severity.Success : fark > 0 ? Severity.Info : Severity.Warning;
+            }
+            <MudAlert Severity="@severity">
+                <b>Fark:</b> @fark.ToString("C2")
+                @if(fark != 0)
+                {
+                    <span> (@(fark > 0 ? "Fazla" : "Eksik"))</span>
+                }
+            </MudAlert>
+        </MudItem>
+        
+        <MudItem xs="12">
+            <MudTextField @bind-Value="aciklama" Label="Açıklama" Variant="Variant.Outlined" Lines="3" />
+        </MudItem>
+        
+        <MudItem xs="12">
+            <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="Kaydet" FullWidth="true">
+                Kaydet ve Onayla
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+
+@code {
+    private string fisNo = "KS-" + DateTime.Now.Ticks.ToString().Substring(0, 8);
+    private DateTime? sayimTarihi = DateTime.Now;
+    private string kasaAdi = "Ana Kasa";
+    private string sayimYapan = "Admin";
+    private decimal sistemBakiye = 0;
+    private decimal fizikiBakiye = 0;
+    private string aciklama = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hareketler = await DbService.GetKasaHareketleriAsync();
+        // Basit bakiye hesabı
+        foreach(var h in hareketler)
+        {
+            decimal giris = (h.IslemTuru == "Tahsilat" || h.IslemTuru == "Giriş" || h.IslemTuru == "Satis") ? h.Tutar : 0;
+            decimal cikis = (h.IslemTuru == "Ödeme" || h.IslemTuru == "Odeme" || h.IslemTuru == "Çıkış" || h.IslemTuru == "Alis") ? h.Tutar : 0;
+            
+             if (giris == 0 && cikis == 0) cikis = h.Tutar; // Varsayılan
+
+            sistemBakiye += (giris - cikis);
+        }
+    }
+
+    private void HesaplaFark()
+    {
+        StateHasChanged();
+    }
+
+    private async Task Kaydet()
+    {
+        var fi = new KasaSayimFisi
+        {
+            FisNo = fisNo,
+            SayimTarihi = sayimTarihi ?? DateTime.Now,
+            KasaAdi = kasaAdi,
+            SayimYapan = sayimYapan,
+            SistemBakiye = sistemBakiye,
+            FizikiBakiye = fizikiBakiye,
+            Aciklama = aciklama,
+            Onaylandi = true
+        };
+        
+        await DbService.SaveKasaSayimFisiAsync(fi);
+
+        var fark = fizikiBakiye - sistemBakiye;
+        if (Math.Abs(fark) > 0.01m)
+        {
+            // Eğer fark varsa, otomatik düzeltme kaydı atılabilir mi? 
+            // Şimdilik sadece uyarı verelim.
+            Snackbar.Add($"Kasa sayımı kaydedildi. Fark: {fark:C2}", Severity.Warning);
+        }
+        else
+        {
+            Snackbar.Add("Kasa sayımı başarıyla kaydedildi.", Severity.Success);
+        }
+        
+        // Formu temizle veya yönlendir
+        fisNo = "KS-" + DateTime.Now.Ticks.ToString().Substring(0, 8);
+    }
+}

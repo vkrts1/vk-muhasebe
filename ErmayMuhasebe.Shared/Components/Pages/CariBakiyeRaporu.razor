@@ -1,0 +1,225 @@
+@page "/cari-bakiye-raporu"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<style>
+    .rapor-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .rapor-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 20px;
+    }
+
+    .stat-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+    }
+
+    .stat-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 900;
+        color: white;
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+</style>
+
+<div class="rapor-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="rapor-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(96, 165, 250, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Info" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Cari Hesap Bakiye Raporu</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Müşteri ve tedarikçi bazlı finansal durum analizi.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-3">
+                <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Raporlara Dön</MudButton>
+                @if (raporOlusturuldu)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Style="border-radius: 12px; font-weight: 700;" OnClick="PrintReport">Yazdır / PDF</MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. FILTERS *@
+    <div class="glass-card mb-6">
+        <MudGrid Spacing="4">
+            <MudItem xs="12" sm="4">
+                <MudSelect T="string" @bind-Value="raporTuru" Label="Rapor Türü" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Class="bg-dark-select">
+                    <MudSelectItem Value="@("Tumu")">Tümü</MudSelectItem>
+                    <MudSelectItem Value="@("Alacak")">Sadece Alacaklılar</MudSelectItem>
+                    <MudSelectItem Value="@("Borc")">Sadece Borçlular</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="searchString" Label="İsim / Kod Ara" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="bg-dark-input" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Style="height: 50px; border-radius: 12px; font-weight: 800;" OnClick="RaporOlustur">RAPORU HAZIRLA</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @@if (raporOlusturuldu)
+    {
+        @* 3. STATS *@
+        <MudGrid Class="mb-6">
+            <MudItem xs="12" sm="4">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">TOPLAM ALACAK</div>
+                    <div class="stat-value" style="color: #34D399;">@toplamAlacak.ToString("C2")</div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">TOPLAM BORÇ</div>
+                    <div class="stat-value" style="color: #F87171;">@toplamBorc.ToString("C2")</div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">NET BAKİYE</div>
+                    <div class="stat-value" style="color: #60A5FA;">@netBakiye.ToString("C2")</div>
+                </div>
+            </MudItem>
+        </MudGrid>
+
+        @* 4. DATA TABLE *@
+        <div class="glass-card">
+            <MudTable Items="@filteredCariler" Dense="true" Hover="true" Class="compact-table" Style="background: transparent;">
+                <HeaderContent>
+                    <MudTh>CARİ KODU</MudTh>
+                    <MudTh>ÜNVAN / MÜŞTERİ ADI</MudTh>
+                    <MudTh Style="text-align: right;">BAKİYE</MudTh>
+                    <MudTh Style="text-align: center;">DURUM</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Id.ToString("0000")</MudTd>
+                    <MudTd Style="font-weight: 700;">@context.Unvan</MudTd>
+                    <MudTd Style="text-align: right; font-weight: 800; font-size: 15px;">
+                        <span style="color: @(context.Bakiye >= 0 ? "#34D399" : "#F87171")">
+                            @context.Bakiye.ToString("C2")
+                        </span>
+                    </MudTd>
+                    <MudTd Style="text-align: center;">
+                        <span class="status-badge" style="background: @(context.Bakiye >= 0 ? "rgba(52, 211, 153, 0.1)" : "rgba(248, 113, 113, 0.1)"); color: @(context.Bakiye >= 0 ? "#34D399" : "#F87171")">
+                            @(context.Bakiye >= 0 ? "Alacaklıyız" : "Borçluyuz")
+                        </span>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Class="py-8" Align="Align.Center" Style="color: rgba(255,255,255,0.4);">Seçilen filtrelere uygun kayıt bulunamadı.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </div>
+    }
+</div>
+
+@code {
+    private string raporTuru = "Tumu";
+    private string searchString = "";
+    private bool raporOlusturuldu = false;
+    private List<CariKart> cariler = new();
+    
+    private IEnumerable<CariKart> filteredCariler => 
+        string.IsNullOrWhiteSpace(searchString) 
+            ? cariler 
+            : cariler.Where(c => (c.Unvan ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+    private decimal toplamAlacak => cariler.Where(c => c.Bakiye >= 0).Sum(c => c.Bakiye);
+    private decimal toplamBorc => Math.Abs(cariler.Where(c => c.Bakiye < 0).Sum(c => c.Bakiye));
+    private decimal netBakiye => toplamAlacak - toplamBorc;
+
+    private async Task RaporOlustur()
+    {
+        var all = await DbService.GetCarilerAsync();
+        
+        if (raporTuru == "Alacak")
+            cariler = all.Where(c => c.Bakiye >= 0).ToList();
+        else if (raporTuru == "Borc")
+            cariler = all.Where(c => c.Bakiye < 0).ToList();
+        else
+            cariler = all;
+        
+        raporOlusturuldu = true;
+        StateHasChanged();
+    }
+    
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "ID", "Cari Ünvan", "Bakiye", "Durum" };
+            var rows = cariler.Select(c => new string[] 
+            { 
+                c.Id.ToString("0000"), 
+                c.Unvan ?? "", 
+                c.Bakiye.ToString("N2") + " ₺",
+                c.Bakiye > 0 ? "Borçlu" : (c.Bakiye < 0 ? "Alacaklı" : "Dengede")
+            }).ToList();
+            
+            rows.Add(new[] { "", "TOPLAM ALACAK", toplamAlacak.ToString("N2") + " ₺", "" });
+            rows.Add(new[] { "", "TOPLAM BORÇ", toplamBorc.ToString("N2") + " ₺", "" });
+            rows.Add(new[] { "", "NET BAKİYE", netBakiye.ToString("N2") + " ₺", "" });
+
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Cari Bakiye Analiz Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("CariBakiyeRaporu.pdf", pdf, "application/pdf");
+            Snackbar.Add("PDF raporu oluşturuldu.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

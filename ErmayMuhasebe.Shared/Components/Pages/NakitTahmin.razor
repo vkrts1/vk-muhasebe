@@ -1,0 +1,116 @@
+@page "/nakit-tahmin"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<div>
+    <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Nakit Akışı Tahmini (3 Aylık)</MudText>
+
+    <MudPaper Class="pa-4 mb-3">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="TahminOlustur">
+            Tahmin Oluştur
+        </MudButton>
+    </MudPaper>
+
+    @if(tahminOlusturuldu)
+    {
+        <MudGrid>
+            @foreach(var ay in aylikTahminler)
+            {
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.h6">@ay.Ay</MudText>
+                        <MudDivider Class="my-2" />
+                        <MudText Typo="Typo.body2">Beklenen Giriş: @ay.BeklenenGiris.ToString("C2")</MudText>
+                        <MudText Typo="Typo.body2">Beklenen Çıkış: @ay.BeklenenCikis.ToString("C2")</MudText>
+                        <MudText Typo="Typo.h6" Color="@(ay.NetAkis >= 0 ? MudBlazor.Color.Success : MudBlazor.Color.Error)">
+                            Net: @ay.NetAkis.ToString("C2")
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mt-2">Tahmini Bakiye: @ay.TahminiBakiye.ToString("C2")</MudText>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+        
+        <MudPaper Class="pa-4 mt-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Nakit Akış Grafiği</MudText>
+            <div style="height: 200px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center;">
+                <MudText>Grafik için Chart.js eklenebilir</MudText>
+            </div>
+        </MudPaper>
+    }
+</div>
+
+@code {
+    private bool tahminOlusturuldu = false;
+    private List<AylikTahmin> aylikTahminler = new();
+
+    private class AylikTahmin
+    {
+        public string Ay { get; set; } = "";
+        public decimal BeklenenGiris { get; set; }
+        public decimal BeklenenCikis { get; set; }
+        public decimal NetAkis => BeklenenGiris - BeklenenCikis;
+        public decimal TahminiBakiye { get; set; }
+    }
+
+
+    private async Task TahminOlustur()
+    {
+        aylikTahminler = new List<AylikTahmin>();
+        
+        var kasaHareketleri = await DbService.GetKasaHareketleriAsync();
+        decimal kasaBakiye = 0;
+        foreach(var k in kasaHareketleri)
+        {
+             decimal g = (k.IslemTuru == "Tahsilat" || k.IslemTuru == "Giriş" || k.IslemTuru == "Satis") ? k.Tutar : 0;
+             decimal c = (k.IslemTuru == "Ödeme" || k.IslemTuru == "Odeme" || k.IslemTuru == "Çıkış" || k.IslemTuru == "Alis") ? k.Tutar : 0;
+             if(g==0 && c==0) c = k.Tutar;
+             kasaBakiye += (g - c);
+        }
+        
+        var bankaHareketleri = await DbService.GetBankaHareketleriAsync();
+        decimal bankaBakiye = 0;
+        foreach(var b in bankaHareketleri)
+        {
+            if (b.IslemTuru?.Contains("Gelen") == true || b.IslemTuru?.Contains("Tahsilat") == true) bankaBakiye += b.Tutar;
+            else bankaBakiye -= b.Tutar;
+        }
+
+        decimal mevcutBakiye = kasaBakiye + bankaBakiye;
+        var odemePlani = await DbService.GetOdemePlaniAsync();
+        
+        var limitTarih = DateTime.Now.AddDays(-30);
+        decimal aylikOrtalamaNakitGiris = kasaHareketleri.Where(x => x.Tarih >= limitTarih && (x.IslemTuru == "Satis" || x.IslemTuru == "Tahsilat")).Sum(x => x.Tutar);
+        decimal aylikOrtalamaBankaGiris = bankaHareketleri.Where(x => x.Tarih >= limitTarih && x.IslemTuru?.Contains("Gelen") == true).Sum(x => x.Tutar);
+        decimal aylikOrtalamaGider = kasaHareketleri.Where(x => x.Tarih >= limitTarih && (x.IslemTuru != "Satis" && x.IslemTuru != "Tahsilat")).Sum(x => x.Tutar);
+        
+        for (int i = 1; i <= 3; i++)
+        {
+            var hedefAy = DateTime.Now.AddMonths(i);
+            var ayBasi = new DateTime(hedefAy.Year, hedefAy.Month, 1);
+            var aySonu = ayBasi.AddMonths(1).AddDays(-1);
+            
+            var buAyPlan = odemePlani.Where(x => x.Tarih >= ayBasi && x.Tarih <= aySonu).ToList();
+            decimal planliGiris = buAyPlan.Where(x => x.Yon == "Tahsilat").Sum(x => x.Tutar);
+            decimal planliCikis = buAyPlan.Where(x => x.Yon == "Ödeme").Sum(x => x.Tutar);
+            
+            var tahmin = new AylikTahmin
+            {
+                Ay = hedefAy.ToString("MMMM yyyy"),
+                BeklenenGiris = planliGiris + aylikOrtalamaNakitGiris + aylikOrtalamaBankaGiris,
+                BeklenenCikis = planliCikis + aylikOrtalamaGider
+            };
+            
+            tahmin.TahminiBakiye = mevcutBakiye + tahmin.NetAkis;
+            mevcutBakiye = tahmin.TahminiBakiye;
+            aylikTahminler.Add(tahmin);
+        }
+        
+        tahminOlusturuldu = true;
+        Snackbar.Add("Gerçek verilere dayalı tahmin oluşturuldu.", Severity.Success);
+    }
+}

@@ -1,0 +1,112 @@
+<div class="nav-groups">
+    <NavLink class="sidebar-link-premium" href="" Match="NavLinkMatch.All">
+        <MudIcon Icon="@Icons.Material.Filled.Home" />
+        <span class="nav-text">Ana Menü</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="cariler">
+        <MudIcon Icon="@Icons.Material.Filled.People" />
+        <span class="nav-text">Cari Hesaplar</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="stoklar">
+        <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
+        <span class="nav-text">Stok Kartları</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="faturalar">
+        <MudIcon Icon="@Icons.Material.Filled.Description" />
+        <span class="nav-text">Faturalar</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="finans">
+        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
+        <span class="nav-text">Finans</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="vade-takip">
+        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" />
+        <span class="nav-text">Vade Takip</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="raporlar">
+        <MudIcon Icon="@Icons.Material.Filled.BarChart" />
+        <span class="nav-text">Raporlar</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="siparisler">
+        <MudIcon Icon="@Icons.Material.Filled.Assignment" />
+        <span class="nav-text">Siparişler</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="teklifler">
+        <MudIcon Icon="@Icons.Material.Filled.LocalOffer" />
+        <span class="nav-text">Teklifler</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="kanban">
+        <MudIcon Icon="@Icons.Material.Filled.Dashboard" />
+        <span class="nav-text">Görev Panosu</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="maliyet-hesaplama">
+        <MudIcon Icon="@Icons.Material.Filled.Calculate" />
+        <span class="nav-text">Hesap Makinesi</span>
+    </NavLink>
+
+
+
+    <NavLink class="sidebar-link-premium" href="araclar">
+        <MudIcon Icon="@Icons.Material.Filled.Construction" />
+        <span class="nav-text">Araçlar</span>
+    </NavLink>
+
+    <NavLink class="sidebar-link-premium" href="ayarlar">
+        <MudIcon Icon="@Icons.Material.Filled.Settings" />
+        <span class="nav-text">Ayarlar</span>
+    </NavLink>
+
+    <div style="flex-grow: 1;"></div>
+
+    <button class="sidebar-link-premium" @onclick="Logout" style="width: 100%; border: none; background: transparent; cursor: pointer; margin-top: 20px;">
+        <MudIcon Icon="@Icons.Material.Filled.Logout" Style="color: #f43f5e;" />
+        <span class="nav-text" style="color: #f43f5e;">Güvenli Çıkış</span>
+    </button>
+</div>
+
+<style>
+    .nav-groups {
+        padding: 20px 0;
+    }
+
+    /* Selection Indicator Bar removed in favor of pill background */
+    .sidebar-link-premium .mud-icon-root {
+        font-size: 22px;
+        color: inherit;
+    }
+</style>
+
+@code {
+    [Inject] public ErmayMuhasebe.Cloud.Services.ClientAuthService AuthService { get; set; } = default!;
+    [Inject] public NavigationManager Nav { get; set; } = default!;
+
+    private void Logout()
+    {
+        AuthService.Logout();
+        Nav.NavigateTo("login", true);
+    }
+
+    protected override void OnInitialized()
+    {
+        L.OnLanguageChanged += HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        L.OnLanguageChanged -= HandleLanguageChanged;
+    }
+}
+@implements IDisposable
+

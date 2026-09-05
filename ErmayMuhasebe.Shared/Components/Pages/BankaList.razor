@@ -1,0 +1,90 @@
+@page "/banka-listesi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Banka Hesap Kartları</MudText>
+
+<MudTable Items="@bankalar" Hover="true" Striped="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Bankalar</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="AddBanka">Yeni Banka Hesabı</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Banka</MudTh>
+        <MudTh>Şube</MudTh>
+        <MudTh>Hesap No / IBAN</MudTh>
+        <MudTh>Döviz</MudTh>
+        <MudTh>Yetkili</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.BankaAdi</MudTd>
+        <MudTd>@context.SubeAdi / @context.SubeKodu</MudTd>
+        <MudTd>
+            <div>@context.HesapNo</div>
+            <div style="font-size:0.8em; color:gray;">@context.IBAN</div>
+        </MudTd>
+        <MudTd>@context.DovizTuru</MudTd>
+        <MudTd>@context.Yetkili</MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditBanka(context))" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="MudBlazor.Color.Error" OnClick="@(() => DeleteBanka(context))" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<BankaKart> bankalar = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        bankalar = await DbService.GetBankalarAsync();
+    }
+
+    private async Task AddBanka()
+    {
+        var dialog = await DialogService.ShowAsync<BankaDialog>("Yeni Banka Kartı");
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is BankaKart b)
+        {
+            await DbService.SaveBankaAsync(b);
+            await LoadData();
+            Snackbar.Add("Banka kartı eklendi", Severity.Success);
+        }
+    }
+
+    private async Task EditBanka(BankaKart b)
+    {
+        var parameters = new DialogParameters { ["Model"] = b };
+        var dialog = await DialogService.ShowAsync<BankaDialog>("Banka Kartı Düzenle", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is BankaKart updated)
+        {
+            await DbService.SaveBankaAsync(updated);
+            await LoadData();
+            Snackbar.Add("Banka kartı güncellendi", Severity.Success);
+        }
+    }
+
+    private async Task DeleteBanka(BankaKart b)
+    {
+        var confirm = await DialogService.ShowMessageBox("Sil", $"{b.BankaAdi} hesabını silmek istediğinize emin misiniz?", yesText: "Sil", cancelText: "İptal");
+        if (confirm == true)
+        {
+            await DbService.DeleteBankaAsync(b.Id);
+            await LoadData();
+            Snackbar.Add("Banka kartı silindi", Severity.Success);
+        }
+    }
+}

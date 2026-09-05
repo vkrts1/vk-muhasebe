@@ -1,0 +1,88 @@
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Cari Seçimi</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="searchString" Placeholder="Cari Ünvan ile ara..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" Immediate="true" />
+        <MudTable Items="@FilteredCariler" 
+                  Hover="true" 
+                  Dense="true" 
+                  T="CariKart" 
+                  OnRowClick="RowClick" 
+                  SelectedItem="selectedCari"
+                  Loading="@_loading"
+                  LoadingProgressColor="Color.Info"
+                  EmptyLabel="Cari bulunamadı.">
+            <HeaderContent>
+                <MudTh>Ünvan</MudTh>
+                <MudTh>Vergi No</MudTh>
+                <MudTh Style="text-align:right">Bakiye</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Unvan</MudTd>
+                <MudTd>@context.VergiNo</MudTd>
+                <MudTd Style="text-align:right">@context.Bakiye.ToString("N2")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Kapat</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Disabled="@(selectedCari == null)">Seç</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string? GrupFilter { get; set; }
+
+    private List<CariKart> cariler = new();
+    private string searchString = "";
+    private CariKart? selectedCari;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try 
+        {
+            cariler = await DbService.GetCarilerAsync();
+        }
+        finally 
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private IEnumerable<CariKart> FilteredCariler => cariler.Where(x => 
+        !x.IsDeleted &&
+        (string.IsNullOrEmpty(GrupFilter) || (x.Grup != null && x.Grup.Equals(GrupFilter, StringComparison.OrdinalIgnoreCase))) &&
+        (string.IsNullOrEmpty(searchString) || 
+        (x.Unvan != null && x.Unvan.Contains(searchString, StringComparison.OrdinalIgnoreCase)) ||
+        (x.VergiNo != null && x.VergiNo.Contains(searchString, StringComparison.OrdinalIgnoreCase)))
+    );
+
+    private void RowClick(TableRowClickEventArgs<CariKart> args)
+    {
+        selectedCari = args.Item;
+        if (args.MouseEventArgs.Detail == 2)
+        {
+            Submit();
+        }
+    }
+
+    private void Submit()
+    {
+        if (selectedCari != null)
+        {
+            MudDialog.Close(DialogResult.Ok(selectedCari));
+        }
+    }
+    
+    private void Cancel() => MudDialog.Cancel();
+}

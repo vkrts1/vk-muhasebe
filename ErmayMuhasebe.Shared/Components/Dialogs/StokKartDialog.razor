@@ -1,0 +1,146 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<style>
+    .dialog-glass {
+        background: rgba(30, 34, 40, 0.9) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+    }
+
+    .mud-dialog-title {
+        background: rgba(96, 165, 250, 0.1);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .form-section-title {
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(96, 165, 250, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .dialog-btn {
+        border-radius: 12px !important;
+        padding: 8px 25px !important;
+        font-weight: 700 !important;
+    }
+</style>
+
+<MudDialog Class="dialog-glass rounded-xl">
+    <TitleContent>
+        <div class="d-flex align-center gap-3">
+             <MudIcon Icon="@Icons.Material.Filled.Inventory" Color="Color.Info" />
+             <MudText Style="font-weight: 900; color: white;">Stok Kartı Tanımlama</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@isValid">
+            <MudGrid Spacing="4" Class="pa-2">
+                @* 1. GENEL BİLGİLER *@
+                <MudItem xs="12">
+                     <span class="form-section-title">Temel Ürün Bilgileri</span>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-Value="stok.StokKodu" Label="Stok Kodu" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-Value="stok.Barkod" Label="Barkod / EAN" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField T="string" @bind-Value="stok.StokAdi" Label="Ürün Adı" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-Value="stok.Kategori" Label="Kategori / Grup" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="string" @bind-Value="stok.Birim" Label="Ölçü Birimi" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="bg-dark-select">
+                        <MudSelectItem Value="@("Adet")">Adet</MudSelectItem>
+                        <MudSelectItem Value="@("Kg")">Kilogram (Kg)</MudSelectItem>
+                        <MudSelectItem Value="@("Mt")">Metre (Mt)</MudSelectItem>
+                        <MudSelectItem Value="@("Lt")">Litre (Lt)</MudSelectItem>
+                        <MudSelectItem Value="@("Paket")">Paket</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                @* 2. FİYAT VE VERGİ *@
+                <MudItem xs="12">
+                     <span class="form-section-title">Maliyet ve Fiyatlandırma</span>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudNumericField T="decimal" @bind-Value="stok.AlisFiyati" Label="Alış Fiyatı" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Adornment="Adornment.End" AdornmentText="₺" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudNumericField T="decimal" @bind-Value="stok.SatisFiyati" Label="Satış Fiyatı" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Adornment="Adornment.End" AdornmentText="₺" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="int" @bind-Value="stok.KDV" Label="KDV Oranı" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="bg-dark-select">
+                        <MudSelectItem Value="0">%0</MudSelectItem>
+                        <MudSelectItem Value="1">%1</MudSelectItem>
+                        <MudSelectItem Value="10">%10</MudSelectItem>
+                        <MudSelectItem Value="20">%20</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                @* 3. ENVANTER KRİTERLERİ *@
+                <MudItem xs="12">
+                     <span class="form-section-title">Stok ve Limitler</span>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField T="double" @bind-Value="stok.Miktar" Label="Mevcut Stok Miktarı" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Başlangıç bakiyesi" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudNumericField T="double" @bind-Value="stok.MinSeviye" Label="Kritik Stok Uyarısı" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Bu seviyenin altında uyarı verir" Class="bg-dark-input" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Class="dialog-btn" Style="color: rgba(255,255,255,0.6);">Vazgeç</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="Submit" Class="dialog-btn ml-2">Kaydetmeyi Tamamla</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public StokKart stok { get; set; } = new StokKart { StokKodu = "STK-" + DateTime.Now.ToString("HHmmss"), Birim = "Adet", KDV = 20 };
+
+    private MudForm form = null!;
+    private bool isValid;
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            await DbService.SaveStokAsync(stok);
+            
+            if (stok.Miktar != 0)
+            {
+                var hareket = new StokHareket
+                {
+                    StokId = stok.Id,
+                    StokKodu = stok.StokKodu,
+                    StokAdi = stok.StokAdi,
+                    Tarih = DateTime.Now,
+                    IslemTuru = stok.Miktar > 0 ? "GİRİŞ" : "ÇIKIŞ",
+                    Miktar = (decimal)Math.Abs(stok.Miktar),
+                    Aciklama = "Kart Açılış Bakiyesi"
+                };
+                await DbService.SaveStokHareketAsync(hareket);
+            }
+            
+            Snackbar.Add("Ürün başarıyla kaydedildi.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(stok));
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

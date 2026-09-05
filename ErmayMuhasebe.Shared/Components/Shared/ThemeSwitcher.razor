@@ -1,0 +1,234 @@
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="theme-switcher">
+    <MudTooltip Text="Tema Değiştir (Ctrl+Shift+T)">
+        <MudIconButton Icon="@Icons.Material.Filled.Palette" 
+                       Color="Color.Inherit" 
+                       Size="Size.Small"
+                       OnClick="ToggleMenu" />
+    </MudTooltip>
+    
+    @if (showMenu)
+    {
+        <div class="theme-menu" @onclick:stopPropagation="true">
+            <div class="theme-category">Seçilen Tasarımlar</div>
+            <div class="theme-divider"></div>
+
+            <div class="theme-menu-item" @onclick="@(() => SetTheme("modern-saas"))">
+                <MudIcon Icon="@Icons.Material.Filled.LaptopMac" Size="Size.Small" Style="color: #635bff;" />
+                <span>Modern SaaS</span>
+                <span class="shortcut">Tavsiye</span>
+                @if (currentTheme == "modern-saas")
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary" />
+                }
+            </div>
+            
+            <div class="theme-menu-item" @onclick="@(() => SetTheme("dark-pro"))">
+                <MudIcon Icon="@Icons.Material.Filled.Terminal" Size="Size.Small" Style="color: #06b6d4;" />
+                <span>Dark Pro</span>
+                <span class="shortcut">Neon</span>
+                @if (currentTheme == "dark-pro")
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary" />
+                }
+            </div>
+
+            <div class="theme-menu-item" @onclick="@(() => SetTheme("corporate-navy"))">
+                <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" Style="color: #1e3a8a;" />
+                <span>Corporate Navy</span>
+                <span class="shortcut">Kurumsal</span>
+                @if (currentTheme == "corporate-navy")
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary" />
+                }
+            </div>
+
+            <div class="theme-divider"></div>
+            <div class="theme-category">Yerleşim & Yapı</div>
+
+            <div class="theme-menu-item" @onclick="@(() => SetTheme("layout-a"))">
+                <MudIcon Icon="@Icons.Material.Filled.ViewQuilt" Size="Size.Small" Color="Color.Primary" />
+                <span>Tasarım A: Klasik</span>
+                <span class="shortcut">Standart</span>
+                @if (currentTheme == "layout-a")
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary" />
+                }
+            </div>
+
+            <div class="theme-menu-item" @onclick="@(() => SetTheme("layout-e"))">
+                <MudIcon Icon="@Icons.Material.Filled.GridOn" Size="Size.Small" Color="Color.Success" />
+                <span>Tasarım E: Excel</span>
+                <span class="shortcut">Yoğun</span>
+                @if (currentTheme == "layout-e")
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary" />
+                }
+            </div>
+            
+            <div class="theme-divider"></div>
+            <div class="theme-category">Diğer</div>
+            
+            <div class="theme-menu-item" @onclick="@(() => SetTheme("clean-light"))">
+                 <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" />
+                 <span>Eski Varsayılan</span>
+                 @if (currentTheme == "clean-light")
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary" />
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string currentTheme = "clean-light";
+    private bool showMenu = false;
+    private DotNetObjectReference<ThemeSwitcher>? dotNetRef;
+
+    protected override void OnInitialized()
+    {
+        // Başlangıç temasını MainLayout hallediyor
+        currentTheme = "clean-light";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                dotNetRef = DotNetObjectReference.Create(this);
+                
+                // Klavye kısayollarını kaydet (JS fonksiyonu varsa ve WebView2 hazırsa)
+                // Hemen değil, biraz bekleyerek dene (kilitlenmeyi önlemek için)
+                await Task.Delay(2000);
+                
+                try {
+                    await JS.InvokeVoidAsync("registerThemeShortcuts", dotNetRef);
+                } catch { /* Ignore if JS missing */ }
+            }
+            catch { }
+        }
+    }
+
+    private void ToggleMenu()
+    {
+        showMenu = !showMenu;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task SetThemeFromShortcut(string theme)
+    {
+        await SetTheme(theme);
+    }
+
+    private async Task SetTheme(string theme)
+    {
+        currentTheme = theme;
+        showMenu = false;
+        await ApplyTheme(theme);
+        await JS.InvokeVoidAsync("localStorage.setItem", "theme", theme);
+        
+        // Notify MainLayout about theme change
+        await JS.InvokeVoidAsync("notifyThemeChange", theme);
+        
+        StateHasChanged();
+    }
+
+    private async Task ApplyTheme(string theme)
+    {
+        await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme', '{theme}')");
+    }
+
+    public void Dispose()
+    {
+        dotNetRef?.Dispose();
+    }
+}
+
+<style>
+    .theme-switcher {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .theme-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 8px;
+        background: var(--mud-palette-surface);
+        border: 1px solid var(--mud-palette-lines-default);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 250px;
+        z-index: 1000;
+        overflow: hidden;
+    }
+
+    .theme-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .theme-menu-item:hover {
+        background: var(--mud-palette-action-default-hover);
+    }
+
+    .theme-menu-item span:first-of-type {
+        flex: 1;
+    }
+
+    .theme-menu-item .shortcut {
+        font-size: 11px;
+        color: var(--mud-palette-text-secondary);
+        background: var(--mud-palette-background-gray);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+    }
+
+    [data-theme="dark"] .theme-menu {
+        background: #2d2d2d;
+        border-color: #444;
+    }
+
+    [data-theme="dark"] .theme-menu-item:hover {
+        background: #3d3d3d;
+    }
+
+    [data-theme="glass"] .theme-menu {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .theme-category {
+        padding: 8px 16px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--mud-palette-text-secondary);
+        background: var(--mud-palette-background-gray);
+        letter-spacing: 0.5px;
+    }
+
+    [data-theme="dark"] .theme-category {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .theme-divider {
+        height: 1px;
+        background-color: var(--mud-palette-lines-default);
+        margin: 4px 0;
+    }
+</style>

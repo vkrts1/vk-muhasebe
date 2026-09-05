@@ -1,0 +1,30 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div style="padding: 20px; background: #0D1012; min-height: 100vh; color: white;">
+    <div style="background: #1A1D21; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);">
+        <h1 style="color: #60A5FA; margin-bottom: 20px;">Ermay Muhasebe - Test Mode</h1>
+        <div style="background: rgba(96, 165, 250, 0.1); padding: 10px; border-left: 4px solid #60A5FA; margin-bottom: 20px;">
+            <strong>✅ Layout çalışıyor!</strong> Eğer bunu görüyorsanız, sorun MainLayout'ta.
+        </div>
+        @Body
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        System.Diagnostics.Debug.WriteLine("=== SIMPLE LAYOUT INITIALIZED ===");
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            System.Diagnostics.Debug.WriteLine("=== SIMPLE LAYOUT FIRST RENDER COMPLETE ===");
+        }
+    }
+}

@@ -1,0 +1,159 @@
+@page "/nakit-durum"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Banka ve Kasa Nakit Durumu (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+            Yazdır / PDF
+        </MudButton>
+    </MudStack>
+</div>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Kasa Durumu</MudText>
+            <MudTable Items="@kasaBilgileri" Dense="true" Hover="true" Bordered="true">
+                <HeaderContent>
+                    <MudTh>Kasa Adı</MudTh>
+                    <MudTh>Döviz</MudTh>
+                    <MudTh Style="text-align: right;">Bakiye</MudTh>
+                    <MudTh Style="text-align: right;">TL Karşılığı</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Ad</MudTd>
+                    <MudTd>@context.Doviz</MudTd>
+                    <MudTd Style="text-align: right;">@context.Bakiye.ToString("N2")</MudTd>
+                    <MudTd Style="text-align: right;">@context.TLKarsiligi.ToString("N2") ₺</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Banka Bakiyeleri</MudText>
+            <MudTable Items="@bankalar" Dense="true" Hover="true" Bordered="true">
+                <HeaderContent>
+                    <MudTh>Banka Adı</MudTh>
+                    <MudTh>Hesap No</MudTh>
+                    <MudTh>Döviz</MudTh>
+                    <MudTh Style="text-align: right;">Bakiye</MudTh>
+                    <MudTh Style="text-align: right;">TL Karşılığı</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.BankaAdi</MudTd>
+                    <MudTd>@context.HesapNo</MudTd>
+                    <MudTd>@context.DovizTuru</MudTd>
+                    <MudTd Style="text-align: right;">@context.GuncelBakiye.ToString("N2")</MudTd>
+                    <MudTd Style="text-align: right;">@context.GuncelBakiye.ToString("N2") ₺</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Class="pa-6 d-flex justify-space-between align-center mud-theme-primary">
+            <MudText Typo="Typo.h5">TOPLAM NAKİT MEVCUDU (TL)</MudText>
+            <MudText Typo="Typo.h4">@toplamNakit.ToString("N2") ₺</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<BankaKart> bankalar = new();
+    private List<KasaOzet> kasaBilgileri = new();
+    private decimal toplamNakit = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tumKartlar = await DbService.GetBankalarAsync();
+
+        // Kasa kartları: KartTuru = "Kasa" veya boş/null
+        var kasaKartlari = tumKartlar
+            .Where(k => k.KartTuru == "Kasa" || string.IsNullOrEmpty(k.KartTuru))
+            .ToList();
+
+        // Banka kartları: Kasa olmayan ve Kredi Kartı olmayan
+        bankalar = tumKartlar
+            .Where(k => k.KartTuru != "Kasa" && !string.IsNullOrEmpty(k.KartTuru))
+            .ToList();
+
+        // Kasa bakiyeleri BankaKart.GuncelBakiye'den doğrudan gelir
+        kasaBilgileri = kasaKartlari
+            .Select(k => new KasaOzet
+            {
+                Ad = k.BankaAdi ?? "Kasa",
+                Doviz = k.DovizTuru ?? "TL",
+                Bakiye = k.GuncelBakiye,
+                TLKarsiligi = k.GuncelBakiye
+            })
+            .ToList();
+
+        // Eğer hiç kasa kaydı yoksa, toplam kasa hareketlerinden hesapla
+        if (!kasaBilgileri.Any())
+        {
+            var kasaHarekets = await DbService.GetKasaHareketleriAsync_All();
+            decimal kasaBakiye = kasaHarekets.Sum(h => h.Giren - h.Cikan);
+            kasaBilgileri.Add(new KasaOzet
+            {
+                Ad = "Merkez Kasa",
+                Doviz = "TL",
+                Bakiye = kasaBakiye,
+                TLKarsiligi = kasaBakiye
+            });
+        }
+
+        toplamNakit = kasaBilgileri.Sum(k => k.TLKarsiligi) + bankalar.Sum(b => b.GuncelBakiye);
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Hesap Adı", "Tür", "Döviz", "Bakiye" };
+            var rows = new List<string[]>();
+            
+            rows.Add(new[] { "KASA HESAPLARI", "", "", "" });
+            foreach(var k in kasaBilgileri)
+            {
+                rows.Add(new[] { k.Ad, "Kasa", k.Doviz, k.Bakiye.ToString("N2") });
+            }
+
+            rows.Add(new[] { "", "", "", "" });
+            rows.Add(new[] { "BANKA HESAPLARI", "", "", "" });
+            foreach(var b in bankalar)
+            {
+                rows.Add(new[] { b.BankaAdi ?? "", "Banka", b.DovizTuru ?? "", b.GuncelBakiye.ToString("N2") });
+            }
+            
+            rows.Add(new[] { "", "", "", "" });
+            rows.Add(new[] { "TOPLAM MEVCUT", "", "TL", toplamNakit.ToString("N2") });
+
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Banka ve Kasa Nakit Durumu Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("NakitDurumRaporu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class KasaOzet
+    {
+        public string Ad { get; set; } = "";
+        public string Doviz { get; set; } = "";
+        public decimal Bakiye { get; set; }
+        public decimal TLKarsiligi { get; set; }
+    }
+}

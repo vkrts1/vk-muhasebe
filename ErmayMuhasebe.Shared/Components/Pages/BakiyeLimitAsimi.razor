@@ -1,0 +1,119 @@
+@page "/bakiye-limit-asimi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Bakiye Limiti Aşan Müşteriler (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+            Yazdır / PDF
+        </MudButton>
+    </MudStack>
+</div>
+
+<MudAlert Severity="Severity.Warning" Class="mb-4">Bu rapor, cari kartında tanımlanan 'Risk Limiti' değerini aşan borçlu müşterileri listeler.</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudTable Items="@limitResult" Dense="true" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Cari Ünvan</MudTh>
+                <MudTh Style="text-align: right;">Risk Limiti</MudTh>
+                <MudTh Style="text-align: right;">Mevcut Bakiye</MudTh>
+                <MudTh Style="text-align: right;">Aşım Tutarı</MudTh>
+                <MudTh Style="text-align: right;">Durum</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Unvan</MudTd>
+                <MudTd Style="text-align: right;">@context.RiskLimiti.ToString("N2") ₺</MudTd>
+                <MudTd Style="text-align: right;">@context.Bakiye.ToString("N2") ₺</MudTd>
+                <MudTd Style="text-align: right;">
+                    <MudText Color="Color.Error">
+                        <strong>@context.AsimTutari.ToString("N2") ₺</strong>
+                    </MudText>
+                </MudTd>
+                <MudTd Style="text-align: right;">
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.Report">LİMİT AŞILDI</MudChip>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<LimitResult> limitResult = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var cariler = await DbService.GetCarilerAsync();
+        limitResult = cariler
+            .Where(c => c.RiskLimiti > 0)
+            .Select(c => {
+                bool isSupplier = (c.Tur ?? "").Contains("Sat", StringComparison.OrdinalIgnoreCase) || 
+                                 (c.Tur ?? "").Contains("Tedar", StringComparison.OrdinalIgnoreCase);
+                
+                decimal currentRisk = isSupplier ? -c.Bakiye : c.Bakiye;
+                decimal asim = currentRisk - c.RiskLimiti;
+
+                return new { 
+                    Cari = c, 
+                    IsOverLimit = asim > 0,
+                    RiskValue = currentRisk,
+                    AsimVal = asim 
+                };
+            })
+            .Where(x => x.IsOverLimit)
+            .OrderByDescending(x => x.AsimVal)
+            .Select(x => new LimitResult 
+            { 
+                Unvan = x.Cari.Unvan ?? "", 
+                RiskLimiti = x.Cari.RiskLimiti, 
+                Bakiye = x.RiskValue,
+                AsimTutari = x.AsimVal
+            })
+            .ToList();
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Müşteri Ünvan", "Risk Limiti", "Mevcut Bakiye", "Aşım Tutarı" };
+            var rows = limitResult.Select(r => new string[] 
+            { 
+                r.Unvan, 
+                r.RiskLimiti.ToString("C2"), 
+                r.Bakiye.ToString("C2"),
+                r.AsimTutari.ToString("C2")
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Bakiye Limiti Aşan Müşteriler Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("BakiyeLimitAsimi.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class LimitResult
+    {
+        public string Unvan { get; set; } = "";
+        public decimal RiskLimiti { get; set; }
+        public decimal Bakiye { get; set; }
+        public decimal AsimTutari { get; set; }
+    }
+}

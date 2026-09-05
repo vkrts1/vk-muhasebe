@@ -1,0 +1,28 @@
+@page "/debug-test"
+@layout ErmayMuhasebe.Shared.Components.Layout.SimpleLayout
+
+<div style="padding: 50px; font-family: sans-serif;">
+    <h1 style="color: red;">DEBUG MODU AKTİF</h1>
+    <p>Eğer bu sayfayı görüyorsanız, Blazor çekirdeği çalışıyor demektir.</p>
+    <hr/>
+    <ul>
+        <li>Zaman: @DateTime.Now.ToString("HH:mm:ss")</li>
+        <li>İşletim Sistemi: @Environment.OSVersion</li>
+    </ul>
+    <button style="padding: 10px 20px;" @onclick="TestClick">Tıkla ve Test Et</button>
+    <p>@_message</p>
+</div>
+
+@code {
+    private string _message = "Henüz tıklanmadı.";
+    
+    protected override void OnInitialized()
+    {
+        System.Diagnostics.Debug.WriteLine("TestPage Inicialize edildi.");
+    }
+
+    private void TestClick()
+    {
+        _message = $"Butona tıklandı! Saat: {DateTime.Now.ToString("HH:mm:ss")}";
+    }
+}

@@ -1,0 +1,1237 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             x:Class="ErmayMuhasebe.Avalonia.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+    
+    <UserControl.Resources>
+      <conv:SymbolIconConverter x:Key="SymbolIconConverter"/>
+      <conv:ObjectIsNullConverter x:Key="ObjectIsNullConverter" Inverted="False"/>
+      <conv:ObjectIsNullConverter x:Key="ObjectIsNotNullConverter" Inverted="True"/>
+      <conv:StringEqualsConverter x:Key="StringEqualsConverter"/>
+      <conv:BoolToDoubleConverter x:Key="BoolToDoubleConverter" TrueValue="1.0" FalseValue="0.4"/>
+      <conv:BoolToBlueBrushConverter x:Key="BoolToBlueBrushConverter"/>
+      <conv:BoolToRedGreenConverter x:Key="BoolToRedGreenConverter"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto, Auto, *" Margin="10,0,10,10" Background="{DynamicResource BackgroundBrush}">
+        <!-- Header Section -->
+        <Border Grid.Row="0" Margin="10,20,10,20">
+            <Grid ColumnDefinitions="Auto, *">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="25">
+                    <Button Command="{Binding GoBackCommand}" 
+                            IsVisible="{Binding CurrentCategory, Converter={StaticResource ObjectIsNotNullConverter}}"
+                            Classes="SideButton" Background="{DynamicResource SurfaceBrush}" BorderThickness="1.5"
+                            Width="52" Height="52" Padding="0"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                        <ic:SymbolIcon Symbol="ArrowLeft" FontSize="24" Foreground="White" />
+                    </Button>
+                    
+                    <Panel>
+                        <!-- Main Icon -->
+                        <Border Width="60" Height="60" CornerRadius="18" Background="rgba(96, 165, 250, 0.15)"
+                                IsVisible="{Binding CurrentCategory, Converter={StaticResource ObjectIsNullConverter}}">
+                            <ic:SymbolIcon Symbol="Settings" Foreground="#60A5FA" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+                        </Border>
+                        
+                        <!-- Category Icon -->
+                        <Border Width="60" Height="60" CornerRadius="18" Background="{Binding CurrentCategory.Color}" Opacity="0.15"
+                                IsVisible="{Binding CurrentCategory, Converter={StaticResource ObjectIsNotNullConverter}}">
+                            <ic:SymbolIcon Symbol="{Binding CurrentCategory.Icon, Converter={StaticResource SymbolIconConverter}}" 
+                                           Foreground="{Binding CurrentCategory.Color}" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+                        </Border>
+                    </Panel>
+
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="{Binding CurrentCategory.Title, FallbackValue='Uygulama Ayarları'}" 
+                                   FontSize="34" FontWeight="Black" Foreground="White" LetterSpacing="-0.8"/>
+                        <TextBlock Text="{Binding CurrentCategory.Description, FallbackValue='Sistem yapılandırmasını ve kullanıcı tercihlerini buradan yönetebilirsiniz.'}" 
+                                   FontSize="15" Foreground="#94a3b8" FontWeight="Medium"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Status Messages Row -->
+        <StackPanel Grid.Row="1" Margin="20,0,20,15" Spacing="8">
+             <Border Background="rgba(16, 185, 129, 0.15)" BorderBrush="#10b981" BorderThickness="1.5" CornerRadius="12" Padding="20,15"
+                     IsVisible="{Binding SuccessMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <Grid ColumnDefinitions="Auto, *">
+                      <ic:SymbolIcon Grid.Column="0" Symbol="CheckmarkCircle" Foreground="#10b981" FontSize="22" Margin="0,0,15,0" VerticalAlignment="Top"/>
+                      <TextBlock Grid.Column="1" Text="{Binding SuccessMessage}" Foreground="#10b981" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                  </Grid>
+             </Border>
+             <Border Background="rgba(239, 68, 68, 0.15)" BorderBrush="#ef4444" BorderThickness="1.5" CornerRadius="12" Padding="20,15"
+                     IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <Grid ColumnDefinitions="Auto, *">
+                      <ic:SymbolIcon Grid.Column="0" Symbol="ErrorCircle" Foreground="#ef4444" FontSize="22" Margin="0,0,15,0" VerticalAlignment="Top"/>
+                      <TextBlock Grid.Column="1" Text="{Binding ErrorMessage}" Foreground="#ef4444" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                  </Grid>
+             </Border>
+        </StackPanel>
+        
+        <!-- Main Content Area with Scroll Support -->
+        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="10,0,10,20">
+                <!-- 1. Categories Grid (Initial State) -->
+                <Panel IsVisible="{Binding CurrentCategory, Converter={StaticResource ObjectIsNullConverter}}">
+                    <ItemsControl ItemsSource="{Binding Categories}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SettingCategory">
+                                <Button Command="{Binding $parent[UserControl].DataContext.SelectCategoryCommand}" 
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent" BorderThickness="0" Padding="0" 
+                                        MaxWidth="380" Height="200" Margin="0,0,15,15" Theme="{x:Null}"
+                                        HorizontalAlignment="Stretch">
+                                    <Button.Styles>
+                                        <Style Selector="Button">
+                                            <Setter Property="Template">
+                                                <ControlTemplate>
+                                                    <Panel>
+                                                        <ContentPresenter Name="PART_ContentPresenter"
+                                                                          Background="{TemplateBinding Background}"
+                                                                          Content="{TemplateBinding Content}"
+                                                                          Padding="{TemplateBinding Padding}"/>
+                                                    </Panel>
+                                                </ControlTemplate>
+                                            </Setter>
+                                        </Style>
+                                        <Style Selector="Button:pointerover Border#CardBorder">
+                                            <Setter Property="BorderBrush" Value="{Binding Color}"/>
+                                            <Setter Property="RenderTransform" Value="scale(1.03)"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    
+                                    <Border Name="CardBorder" Margin="10" Background="{DynamicResource PanelBrush}" 
+                                            BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" 
+                                            CornerRadius="24" Padding="28">
+                                        <Border.Transitions>
+                                            <Transitions>
+                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25"/>
+                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                                            </Transitions>
+                                        </Border.Transitions>
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <Panel Grid.Column="0" VerticalAlignment="Top">
+                                                <Border Width="56" Height="56" CornerRadius="18" Background="{Binding Color}" Opacity="0.15"/>
+                                                <ic:SymbolIcon Symbol="{Binding Icon, Converter={StaticResource SymbolIconConverter}}" 
+                                                               Foreground="{Binding Color}" FontSize="28" 
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+                                            </Panel>
+                                            
+                                            <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center" Spacing="4">
+                                                <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="Black" Foreground="White" LetterSpacing="-0.3"/>
+                                                <TextBlock Text="{Binding Description}" FontSize="13" Foreground="#94a3b8" TextWrapping="Wrap" MaxLines="3" LineHeight="18"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Panel>
+    
+                <!-- 2. Settings Detail Views -->
+                <Panel IsVisible="{Binding CurrentCategory, Converter={StaticResource ObjectIsNotNullConverter}}">
+                    <StackPanel Spacing="25" Margin="0,0,0,20">
+                        
+                        <!-- Section: System & Backup -->
+                        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="30" IsVisible="{Binding CurrentCategory.Id, Converter={StaticResource StringEqualsConverter}, ConverterParameter='system'}">
+                            <StackPanel Spacing="20" MaxWidth="1000" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <ic:SymbolIcon Symbol="Info" FontSize="24" Foreground="#60a5fa"/> 
+                                    <TextBlock Text="Sistem Bilgileri ve Veritabanı" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                                
+                                <Grid ColumnDefinitions="180, *" RowDefinitions="Auto, Auto, Auto" RowSpacing="15">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Program Sürümü" Foreground="#94a3b8" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AppVersion}" FontWeight="Black" Foreground="#60a5fa" FontSize="18"/>
+                                    
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Veritabanı Yolu" Foreground="#94a3b8" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DatabasePath}" FontSize="12" TextWrapping="Wrap" Opacity="0.8" FontFamily="Netflix Sans, Inter, Roboto, Segoe UI"/>
+                                    
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Son Başarılı Yedek" Foreground="#94a3b8" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LastBackupDate}" FontWeight="Black" Foreground="#10b981" FontSize="18"/>
+                                </Grid>
+                                
+                                <Separator Background="{DynamicResource BorderColor}" Margin="0,10"/>
+    
+                                <Grid ColumnDefinitions="*, *, *" ColumnSpacing="20">
+                                    <Button Grid.Column="0" Command="{Binding ChangeDatabasePathCommand}" 
+                                            Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" 
+                                            Height="54" CornerRadius="12"
+                                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                        <Grid ColumnDefinitions="Auto, Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="FolderOpen" FontSize="20" Foreground="#60a5fa" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="Veritabanı Yolunu Değiştir" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Button>
+                                    
+                                    <Button Grid.Column="1" Command="{Binding CreateBackupCommand}" IsEnabled="{Binding !IsBusy}"
+                                            Classes="Success" BorderThickness="1.5"
+                                            Height="54" CornerRadius="12"
+                                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                        <Grid ColumnDefinitions="Auto, Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="Save" FontSize="20" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="Hızlı Yedek Al" FontWeight="Black" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Grid.Column="2" Command="{Binding RestoreBackupCommand}" IsEnabled="{Binding !IsBusy}"
+                                            Classes="Warning" BorderThickness="1.5"
+                                            Height="54" CornerRadius="12"
+                                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                        <Grid ColumnDefinitions="Auto, Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="History" FontSize="20" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="Yedek Geri Yükle" FontWeight="Black" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Button>
+                                </Grid>
+                                
+                                <Grid ColumnDefinitions="*, *" Margin="0,15,0,0">
+                                    <StackPanel Grid.Column="0" Spacing="12">
+                                        <TextBlock Text="Çevrimdışı Mod" FontSize="14" FontWeight="Bold" Foreground="White"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ToggleSwitch IsChecked="{Binding IsOfflineMode}" OnContent="" OffContent="" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding IsOfflineMode, Converter={StaticResource BoolToRedGreenConverter}}" VerticalAlignment="Center" FontSize="13" Opacity="0.8"/>
+                                        </StackPanel>
+                                        <TextBlock Text="İnternet bağlantısı olmadan yerel verilerle çalışma." FontSize="11" Opacity="0.5"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="1" Spacing="12">
+                                        <TextBlock Text="Bakım Modu" FontSize="14" FontWeight="Bold" Foreground="White"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ToggleSwitch IsChecked="{Binding IsMaintenanceMode}" OnContent="" OffContent="" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding IsMaintenanceMode, Converter={StaticResource BoolToRedGreenConverter}}" VerticalAlignment="Center" FontSize="13" Opacity="0.8"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Sadece yönetici girişi ve bakım işlemleri." FontSize="11" Opacity="0.5"/>
+                                    </StackPanel>
+                                </Grid>
+                                
+                                <TextBlock Text="{Binding BackupStatus}" FontSize="13" Foreground="#9CA3AF" FontWeight="Medium"
+                                           IsVisible="{Binding BackupStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                            </StackPanel>
+                        </Border>
+    
+
+    
+                        <!-- Section: Appearance & Logo -->
+                        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="30" IsVisible="{Binding CurrentCategory.Id, Converter={StaticResource StringEqualsConverter}, ConverterParameter='appearance'}">
+                            <StackPanel Spacing="25" MaxWidth="1000" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <ic:SymbolIcon Symbol="Image" FontSize="24" Foreground="#EC4899"/> 
+                                    <TextBlock Text="Görünüm ve Logo Ayarları" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                                
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Grid.Column="0" Width="240" Height="120" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="16">
+                                       <Panel>
+                                            <Image Source="{Binding LogoBytes, Converter={StaticResource BitmapAssetValueConverter}}" IsVisible="{Binding LogoBytes, Converter={x:Static ObjectConverters.IsNotNull}}" Stretch="Uniform" Margin="15"/>
+                                            <ic:SymbolIcon Symbol="Image" FontSize="32" Opacity="0.4" IsVisible="{Binding LogoBytes, Converter={x:Static ObjectConverters.IsNull}}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                       </Panel>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="15" Margin="30,0,0,0" VerticalAlignment="Center">
+                                        <Button Command="{Binding SelectLogoCommand}" Classes="Info" Width="240" Height="52" CornerRadius="12" Content="Logo Yükle"/>
+                                        <Button Command="{Binding DeleteLogoCommand}" Classes="Danger" Width="240" Height="52" CornerRadius="12" Content="Logoyu Kaldır" IsVisible="{Binding LogoBytes, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                    </StackPanel>
+                                </Grid>
+                                
+                                <Separator Background="{DynamicResource BorderColor}" />
+                                
+                                <StackPanel Spacing="15">
+                                    <TextBlock Text="Belgelerde Logo Gösterimi" FontSize="18" FontWeight="SemiBold" Foreground="#EC4899"/>
+                                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,25,12" Spacing="10" Width="220">
+                                            <ToggleSwitch IsChecked="{Binding LogoFatura}" OnContent="" OffContent="" VerticalAlignment="Center" CornerRadius="6"/>
+                                            <TextBlock Text="Faturalarda Göster" VerticalAlignment="Center" FontSize="14" FontWeight="Medium"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,25,12" Spacing="10" Width="220">
+                                            <ToggleSwitch IsChecked="{Binding LogoSiparis}" OnContent="" OffContent="" VerticalAlignment="Center" CornerRadius="6"/>
+                                            <TextBlock Text="Siparişlerde Göster" VerticalAlignment="Center" FontSize="14" FontWeight="Medium"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,25,12" Spacing="10" Width="220">
+                                            <ToggleSwitch IsChecked="{Binding LogoTeklif}" OnContent="" OffContent="" VerticalAlignment="Center" CornerRadius="6"/>
+                                            <TextBlock Text="Tekliflerde Göster" VerticalAlignment="Center" FontSize="14" FontWeight="Medium"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,25,12" Spacing="10" Width="220">
+                                            <ToggleSwitch IsChecked="{Binding LogoEkstre}" OnContent="" OffContent="" VerticalAlignment="Center" CornerRadius="6"/>
+                                            <TextBlock Text="Ekstrelerde Göster" VerticalAlignment="Center" FontSize="14" FontWeight="Medium"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,25,12" Spacing="10" Width="220">
+                                            <ToggleSwitch IsChecked="{Binding LogoTahsilat}" OnContent="" OffContent="" VerticalAlignment="Center" CornerRadius="6"/>
+                                            <TextBlock Text="Tahsilatlarda Göster" VerticalAlignment="Center" FontSize="14" FontWeight="Medium"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,25,12" Spacing="10" Width="220">
+                                            <ToggleSwitch IsChecked="{Binding LogoOdeme}" OnContent="" OffContent="" VerticalAlignment="Center" CornerRadius="6"/>
+                                            <TextBlock Text="Ödemelerde Göster" VerticalAlignment="Center" FontSize="14" FontWeight="Medium"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,25,12" Spacing="10" Width="220">
+                                            <ToggleSwitch IsChecked="{Binding LogoAcilisBakiye}" OnContent="" OffContent="" VerticalAlignment="Center" CornerRadius="6"/>
+                                            <TextBlock Text="Açılış Bakiyesinde Göster" VerticalAlignment="Center" FontSize="14" FontWeight="Medium"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,25,12" Spacing="10" Width="220">
+                                            <ToggleSwitch IsChecked="{Binding LogoRaporlar}" OnContent="" OffContent="" VerticalAlignment="Center" CornerRadius="6"/>
+                                            <TextBlock Text="Raporlarda Göster" VerticalAlignment="Center" FontSize="14" FontWeight="Medium"/>
+                                        </StackPanel>
+                                    </WrapPanel>
+                                </StackPanel>
+                                
+                                <Separator Background="{DynamicResource BorderColor}" />
+                                
+                                <StackPanel Spacing="15">
+                                    <TextBlock Text="Yazdırma Ayarları" FontSize="18" FontWeight="SemiBold"/>
+                                    <ComboBox ItemsSource="{Binding PrinterList}" SelectedItem="{Binding SelectedPrinter}" HorizontalAlignment="Stretch" Height="45"/>
+                                    <Button Command="{Binding SaveAppearanceSettingsCommand}" Content="Tüm Ayarları Kaydet" Classes="Primary" Height="54" Padding="30,0" CornerRadius="12" HorizontalAlignment="Right"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Section: Security -->
+                        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="30" IsVisible="{Binding CurrentCategory.Id, Converter={StaticResource StringEqualsConverter}, ConverterParameter='security'}">
+                            <StackPanel Spacing="25" MaxWidth="1000" HorizontalAlignment="Left">
+                                
+                                <!-- KART 1: Kişisel Bilgiler & Güvenlik Özeti -->
+                                <Border Background="rgba(255, 255, 255, 0.02)" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="16" Padding="20" Width="800" HorizontalAlignment="Left">
+                                    <Grid ColumnDefinitions="*, Auto">
+                                        <StackPanel Grid.Column="0" Spacing="5" VerticalAlignment="Center">
+                                            <TextBlock Text="Hesap ve Güvenlik Yönetimi" FontSize="18" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="Hesabınızın kullanıcı adı, şifre ve 2FA (Telegram) durumunu kontrol edin." FontSize="12" Foreground="#94a3b8"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <Border Background="rgba(74, 222, 128, 0.12)" CornerRadius="6" Padding="8,4">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <ic:SymbolIcon Symbol="CheckmarkCircle" FontSize="12" Foreground="#4ADE80"/>
+                                                    <TextBlock Text="Telegram 2FA Aktif" Foreground="#4ADE80" FontWeight="Bold" FontSize="11"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Background="rgba(244, 63, 94, 0.12)" CornerRadius="6" Padding="8,4">
+                                                <TextBlock Text="{Binding ActiveUsername, StringFormat='Hesap: {0}'}" Foreground="#F43F5E" FontWeight="Bold" FontSize="11"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Kullanıcı Seçimi Paneli -->
+                                <Border Background="rgba(255, 255, 255, 0.01)" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="16" Padding="20" Width="800" HorizontalAlignment="Left">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Text="İşlem Yapılacak Kullanıcı Hesabı" FontSize="13" FontWeight="Bold" Opacity="0.8"/>
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <ComboBox Grid.Column="0" ItemsSource="{Binding UsersList}" SelectedItem="{Binding SelectedSecurityUser}" HorizontalAlignment="Stretch" Height="45" CornerRadius="10" IsEnabled="{Binding IsAdmin}">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                                            <TextBlock Text="{Binding Username}" FontWeight="Bold"/>
+                                                            <TextBlock Text="{Binding Role, StringFormat='({0})'}" Opacity="0.5" FontSize="11"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                            <!-- Seçili kullanıcının Telegram durumu -->
+                                            <Border Grid.Column="1" Margin="15,0,0,0" CornerRadius="8" Background="rgba(59, 130, 246, 0.12)" IsVisible="{Binding SelectedSecurityUser.TelegramChatId, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" VerticalAlignment="Center" Padding="8,4">
+                                                <TextBlock Text="2FA Aktif" Foreground="#3B82F6" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                            </Border>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- KART 2: Kullanıcı Adı ve Şifre Değiştirme Formları (Yan Yana) -->
+                                <Grid ColumnDefinitions="*, 20, *" Width="800" HorizontalAlignment="Left">
+                                    
+                                    <!-- Sol Sütun: Kullanıcı Adı Değiştirme -->
+                                    <Border Grid.Column="0" Background="rgba(255, 255, 255, 0.01)" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="16" Padding="20">
+                                        <StackPanel Spacing="15">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <Border Width="30" Height="30" CornerRadius="8" Background="rgba(59, 130, 246, 0.15)">
+                                                    <ic:SymbolIcon Symbol="Person" FontSize="15" Foreground="#3B82F6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Text="Kullanıcı Adını Değiştir" FontSize="14" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <Separator Background="{DynamicResource BorderColor}" Margin="0,2"/>
+                                            <StackPanel Spacing="5">
+                                                <TextBlock Text="Yeni Kullanıcı Adı" FontSize="11" Opacity="0.7"/>
+                                                <TextBox Text="{Binding NewUsername}" Watermark="Yeni kullanıcı adı girin" Height="40" CornerRadius="8"/>
+                                            </StackPanel>
+                                            <Button Command="{Binding ChangeUsernameCommand}" Content="Kullanıcı Adını Güncelle" Classes="Primary" Height="40" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Sağ Sütun: Şifre Değiştirme -->
+                                    <Border Grid.Column="2" Background="rgba(255, 255, 255, 0.01)" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="16" Padding="20">
+                                        <Panel>
+                                            <!-- Şifre Giriş Formu -->
+                                            <StackPanel Spacing="15" IsVisible="{Binding !IsWaitingForTelegramApproval}">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <Border Width="30" Height="30" CornerRadius="8" Background="rgba(244, 63, 94, 0.15)">
+                                                        <ic:SymbolIcon Symbol="ShieldLock" FontSize="15" Foreground="#F43F5E" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <TextBlock Text="Şifreyi Güncelle" FontSize="14" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <Separator Background="{DynamicResource BorderColor}" Margin="0,2"/>
+                                                <StackPanel Spacing="5">
+                                                    <TextBlock Text="Eski Şifre" FontSize="11" Opacity="0.7"/>
+                                                    <TextBox PasswordChar="*" Text="{Binding OldPassword}" Watermark="Eski şifrenizi girin" Height="40" CornerRadius="8"/>
+                                                </StackPanel>
+                                                <StackPanel Spacing="5">
+                                                    <TextBlock Text="Yeni Şifre" FontSize="11" Opacity="0.7"/>
+                                                    <TextBox PasswordChar="*" Text="{Binding NewPassword}" Watermark="Yeni şifrenizi girin" Height="40" CornerRadius="8"/>
+                                                </StackPanel>
+                                                <Button Command="{Binding ChangePasswordCommand}" Content="Şifreyi Güncelle" Classes="Danger" Height="40" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Telegram Onay Bekleme Ekranı -->
+                                            <StackPanel Spacing="15" IsVisible="{Binding IsWaitingForTelegramApproval}" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <Border Width="46" Height="46" CornerRadius="23" Background="rgba(59, 130, 246, 0.12)" HorizontalAlignment="Center">
+                                                    <ic:SymbolIcon Symbol="Send" FontSize="20" Foreground="#3B82F6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel Spacing="3" HorizontalAlignment="Center">
+                                                    <TextBlock Text="Telegram Onayı Bekleniyor" FontSize="13" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding TelegramApprovalStatusText}" FontSize="10" Foreground="#94a3b8" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                                </StackPanel>
+                                                <ProgressBar IsIndeterminate="True" Height="2" Foreground="#3B82F6" Width="120" HorizontalAlignment="Center" CornerRadius="1"/>
+                                                <Button Command="{Binding StopTelegramApprovalCommand}" Content="İptal Et" Classes="Warning" Height="30" CornerRadius="6" HorizontalAlignment="Center" Padding="12,0"/>
+                                            </StackPanel>
+                                        </Panel>
+                                    </Border>
+                                </Grid>
+
+                                <!-- KART 3: Şifre Kurtarma Paneli (Expander İçinde) -->
+                                <Expander Header="Şifremi Unuttum / Kurtarma Seçenekleri" Width="800" HorizontalAlignment="Left" CornerRadius="12" BorderBrush="{DynamicResource BorderColor}" Background="rgba(255, 255, 255, 0.01)" Padding="15">
+                                    <StackPanel Spacing="15">
+                                        <TextBlock Text="Kullanıcı adınızı girip E-posta veya Telegram ile 6 haneli doğrulama kodu talep edebilirsiniz." FontSize="12" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                        <TextBox Text="{Binding ResetUsername}" Watermark="Kullanıcı adınızı girin (örn: admin)" Height="45" CornerRadius="10"/>
+                                        
+                                        <Grid ColumnDefinitions="*, 15, *">
+                                            <Button Grid.Column="0" Command="{Binding SendResetCodeCommand}" Content="E-posta ile Gönder" Classes="Primary" Height="42" CornerRadius="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="{Binding !IsBusy}"/>
+                                            <Button Grid.Column="2" Command="{Binding SendResetCodeViaTelegramCommand}" Content="Telegram ile Gönder" Classes="Primary" Height="42" CornerRadius="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="{Binding !IsBusy}"/>
+                                        </Grid>
+
+                                        <!-- Doğrulama Kodu Girişi -->
+                                        <StackPanel Spacing="12" IsVisible="{Binding ShowVerifyResetCodePanel}">
+                                            <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+                                            <TextBox Text="{Binding ResetVerificationCode}" Watermark="6 Haneli Doğrulama Kodu" Height="45" CornerRadius="10"/>
+                                            <Button Command="{Binding VerifyResetCodeCommand}" Content="Kodu Doğrula" Classes="Warning" Height="42" CornerRadius="10" HorizontalAlignment="Right" IsEnabled="{Binding !IsBusy}" Padding="25,0"/>
+                                        </StackPanel>
+
+                                        <!-- Yeni Şifre Girişi -->
+                                        <StackPanel Spacing="12" IsVisible="{Binding IsResetCodeVerified}">
+                                            <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+                                            <TextBox Text="{Binding ResetOneTimePassword}" Watermark="Telegram/E-postadan gelen tek kullanımlık şifre" Height="45" CornerRadius="10"/>
+                                            <TextBox PasswordChar="*" Text="{Binding ResetNewPassword}" Watermark="Yeni Şifre Belirleyin" Height="45" CornerRadius="10"/>
+                                            <Button Command="{Binding ConfirmResetPasswordCommand}" Content="Şifreyi Güncelle ve Bitir" Classes="Danger" Height="42" CornerRadius="10" HorizontalAlignment="Right" IsEnabled="{Binding !IsBusy}" Padding="20,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Expander>
+
+                                <!-- KART 4: Sistem Kullanıcıları ve Yetkilendirme (Yalnızca Admin) -->
+                                <Expander Header="Yönetici Paneli: Sistem Kullanıcıları ve Personel Yetkilendirme" IsVisible="{Binding IsAdmin}" Width="800" HorizontalAlignment="Left" CornerRadius="12" BorderBrush="{DynamicResource BorderColor}" Background="rgba(255, 255, 255, 0.01)" Padding="15">
+                                    <StackPanel Spacing="20">
+                                        <!-- Yeni Kullanıcı Tanımlama Formu -->
+                                        <TextBlock Text="Yeni Kullanıcı Tanımla" FontSize="13" FontWeight="Bold" Opacity="0.8"/>
+                                        <Grid RowDefinitions="Auto, Auto, Auto" ColumnDefinitions="*, *, *" RowSpacing="15" ColumnSpacing="15">
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
+                                                <TextBlock Text="Kullanıcı Adı" FontSize="12" FontWeight="SemiBold" Opacity="0.7"/>
+                                                <TextBox Text="{Binding NewUsername}" Watermark="Örn: muhasebe1" Height="45" CornerRadius="10"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6">
+                                                <TextBlock Text="Şifre" FontSize="12" FontWeight="SemiBold" Opacity="0.7"/>
+                                                <TextBox PasswordChar="*" Text="{Binding NewUserPassword}" Watermark="Şifre belirleyin" Height="45" CornerRadius="10"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="0" Grid.Column="2" Spacing="6">
+                                                <TextBlock Text="Yetki Rolü" FontSize="12" FontWeight="SemiBold" Opacity="0.7"/>
+                                                <ComboBox SelectedItem="{Binding NewUserRole}" Height="45" CornerRadius="10" HorizontalAlignment="Stretch">
+                                                    <ComboBox.Items>
+                                                        <x:String>Yönetici</x:String>
+                                                        <x:String>Operatör</x:String>
+                                                    </ComboBox.Items>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="6">
+                                                <TextBlock Text="E-posta" FontSize="12" FontWeight="SemiBold" Opacity="0.7"/>
+                                                <TextBox Text="{Binding NewUserEmail}" Watermark="kullanici@eposta.com" Height="45" CornerRadius="10"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6">
+                                                <TextBlock Text="Telegram Chat ID" FontSize="12" FontWeight="SemiBold" Opacity="0.7"/>
+                                                <TextBox Text="{Binding NewUserTelegramChatId}" Watermark="Telegram Chat ID" Height="45" CornerRadius="10"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="1" Grid.Column="2" Spacing="6">
+                                                <TextBlock Text="Firebase Auth UID" FontSize="12" FontWeight="SemiBold" Opacity="0.7"/>
+                                                <TextBox Text="{Binding NewUserFirebaseAuthUid}" Watermark="Firebase UID" Height="45" CornerRadius="10"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="0" Spacing="6" IsVisible="{Binding IsManagerSelectionVisible}">
+                                                <TextBlock Text="Bağlı Olacağı Yönetici" FontSize="12" FontWeight="SemiBold" Opacity="0.7"/>
+                                                <ComboBox ItemsSource="{Binding ManagersList}" SelectedItem="{Binding SelectedManagerForOperator}" Height="45" CornerRadius="10" HorizontalAlignment="Stretch">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding Username}"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <Button Grid.Row="2" Grid.Column="2" Command="{Binding AddUserCommand}" Content="Yeni Kullanıcı Ekle" Classes="Primary" Height="45" CornerRadius="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                        </Grid>
+
+                                        <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+
+                                        <!-- Sistemdeki Kullanıcılar Listesi -->
+                                        <TextBlock Text="Kayıtlı Kullanıcılar" FontSize="13" FontWeight="Bold" Opacity="0.8"/>
+                                        <ListBox ItemsSource="{Binding UsersList}" Background="Transparent" BorderThickness="0" MaxHeight="350">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="rgba(255, 255, 255, 0.01)" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Padding="15" Margin="0,0,0,10">
+                                                        <StackPanel Spacing="10">
+                                                            <Grid ColumnDefinitions="*, Auto">
+                                                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                                                                    <TextBlock Text="{Binding Username}" FontWeight="Bold" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                                                    <Border Background="rgba(244, 63, 94, 0.1)" CornerRadius="6" Padding="6,2" VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding Role}" Foreground="#F43F5E" FontWeight="Bold" FontSize="9"/>
+                                                                    </Border>
+                                                                </StackPanel>
+                                                                <Button Grid.Column="1" Command="{Binding $parent[UserControl].DataContext.DeleteUserCommand}" CommandParameter="{Binding}" Classes="Danger" Width="30" Height="30" CornerRadius="6" Padding="0">
+                                                                    <ic:SymbolIcon Symbol="Delete" FontSize="13" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Button>
+                                                            </Grid>
+                                                            <Grid ColumnDefinitions="*, 15, *">
+                                                                <StackPanel Grid.Column="0" Spacing="8">
+                                                                    <TextBox Text="{Binding Email, Mode=TwoWay}" Watermark="E-posta" Height="35" CornerRadius="6" FontSize="12"/>
+                                                                    <TextBox Text="{Binding TelegramChatId, Mode=TwoWay}" Watermark="Telegram Chat ID" Height="35" CornerRadius="6" FontSize="12"/>
+                                                                </StackPanel>
+                                                                <StackPanel Grid.Column="2" Spacing="8">
+                                                                    <TextBox Text="{Binding FirebaseAuthUid, Mode=TwoWay}" Watermark="Firebase UID" Height="35" CornerRadius="6" FontSize="12"/>
+                                                                    <TextBox PasswordChar="*" Text="{Binding TempPassword, Mode=TwoWay}" Watermark="Yeni Şifre" Height="35" CornerRadius="6" FontSize="12"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                            <Grid ColumnDefinitions="*, 15, *">
+                                                                <Button Grid.Column="0" Command="{Binding $parent[UserControl].DataContext.UpdateUserInfoCommand}" CommandParameter="{Binding}" Content="Bilgileri Kaydet" Classes="Primary" Height="35" CornerRadius="6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="11"/>
+                                                                <Button Grid.Column="2" Command="{Binding $parent[UserControl].DataContext.UpdateUserPasswordCommand}" CommandParameter="{Binding}" Content="Şifreyi Güncelle" Classes="Warning" Height="35" CornerRadius="6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="11"/>
+                                                            </Grid>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </StackPanel>
+                                </Expander>
+
+                                <!-- KART 5: Telegram ve Firebase Altyapı Ayarları (Yalnızca Admin) -->
+                                <Expander Header="Yönetici Paneli: Telegram Bot ve Firebase Altyapı Ayarları" IsVisible="{Binding IsAdmin}" Width="800" HorizontalAlignment="Left" CornerRadius="12" BorderBrush="{DynamicResource BorderColor}" Background="rgba(255, 255, 255, 0.01)" Padding="15">
+                                    <StackPanel Spacing="15">
+                                        <!-- Telegram Ayarları -->
+                                        <TextBlock Text="Şifre Sıfırlama Telegram Bot Bilgileri" FontSize="13" FontWeight="Bold" Opacity="0.8"/>
+                                        <Grid ColumnDefinitions="*, 15, *">
+                                            <StackPanel Grid.Column="0" Spacing="5">
+                                                <TextBlock Text="Bot Token" FontSize="11" Opacity="0.7"/>
+                                                <TextBox Text="{Binding TelegramBotToken}" Watermark="Telegram Bot Token" Height="40" CornerRadius="8"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Spacing="5">
+                                                <TextBlock Text="Sistem Chat ID" FontSize="11" Opacity="0.7"/>
+                                                <TextBox Text="{Binding TelegramChatId}" Watermark="Sistem Chat ID" Height="40" CornerRadius="8"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
+                                            <Button Grid.Column="0" Command="{Binding TestTelegramConnectionCommand}" Classes="Info" Height="40" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                                <TextBlock Text="Bot Bağlantı Testi"/>
+                                            </Button>
+                                            <Button Grid.Column="1" Command="{Binding SaveTelegramSettingsCommand}" Content="Telegram Ayarlarını Kaydet" Classes="Primary" Height="40" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                        </Grid>
+
+                                        <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+
+                                        <!-- Firebase Auth Ayarları -->
+                                        <Grid ColumnDefinitions="*, Auto" Margin="0,5">
+                                            <StackPanel Grid.Column="0" Spacing="2">
+                                                <TextBlock Text="Firebase Kimlik Doğrulama (Auth)" FontSize="13" FontWeight="Bold" Opacity="0.8"/>
+                                                <TextBlock Text="Ortak oturum açma altyapısını aktif hale getirin." FontSize="11" Foreground="#94a3b8"/>
+                                            </StackPanel>
+                                            <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsFirebaseAuthEnabled}" OnContent="Aktif" OffContent="Pasif"/>
+                                        </Grid>
+                                        
+                                        <StackPanel Spacing="15" IsVisible="{Binding IsFirebaseAuthEnabled}">
+                                            <Grid ColumnDefinitions="*, 15, *">
+                                                <StackPanel Grid.Column="0" Spacing="5">
+                                                    <TextBlock Text="Firebase Web API Anahtarı" FontSize="11" Opacity="0.7"/>
+                                                    <TextBox Text="{Binding FirebaseAuthApiKey}" Watermark="API Key" Height="40" CornerRadius="8"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Spacing="5">
+                                                    <TextBlock Text="Firebase Auth Domain" FontSize="11" Opacity="0.7"/>
+                                                    <TextBox Text="{Binding FirebaseAuthDomain}" Watermark="domain.firebaseapp.com" Height="40" CornerRadius="8"/>
+                                                </StackPanel>
+                                            </Grid>
+                                            <Button Command="{Binding SaveFirebaseAuthSettingsCommand}" Content="Firebase Ayarlarını Kaydet" Classes="Primary" Height="40" CornerRadius="8" HorizontalAlignment="Right" Padding="25,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Expander>
+
+                                <!-- KART 6: Fabrika Ayarları Sıfırlama (Yalnızca Admin) -->
+                                <Expander Header="Yönetici Paneli: Fabrika Ayarları ve Sıfırlama Yetkisi" IsVisible="{Binding IsAdmin}" Width="800" HorizontalAlignment="Left" CornerRadius="12" BorderBrush="{DynamicResource BorderColor}" Background="rgba(255, 255, 255, 0.01)" Padding="15">
+                                    <StackPanel Spacing="15">
+                                        <TextBlock Text="Sistemi tamamen sıfırlamak için onay şifresini girin:" FontSize="12" Foreground="#94a3b8"/>
+                                        <TextBox PasswordChar="*" Text="{Binding AdminFactoryResetPassword}" Watermark="Onay Şifresi" Height="45" CornerRadius="10"/>
+                                        
+                                        <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
+                                            <Button Grid.Column="0" Command="{Binding ToggleFactoryResetVerificationPanelCommand}" Content="Kurtarma Şifresi Gönder" Classes="Warning" Height="42" CornerRadius="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                            <Button Grid.Column="1" Command="{Binding SaveAdminFactoryResetPasswordCommand}" Content="Onay Şifresini Kaydet" Classes="Primary" Height="42" CornerRadius="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                        </Grid>
+
+                                        <!-- Kurtarma Doğrulama -->
+                                        <StackPanel Spacing="12" IsVisible="{Binding ShowFactoryResetVerificationPanel}">
+                                            <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+                                            <Grid ColumnDefinitions="*, 15, *">
+                                                <Button Grid.Column="0" Command="{Binding SendFactoryResetCodeViaEmailCommand}" Content="E-posta ile Şifre Gönder" Classes="Info" Height="42" CornerRadius="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                                <Button Grid.Column="2" Command="{Binding SendFactoryResetCodeViaTelegramCommand}" Content="Telegram ile Şifre Gönder" Classes="Info" Height="42" CornerRadius="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                            </Grid>
+                                            
+                                            <StackPanel Spacing="12" IsVisible="{Binding IsFactoryResetCodeSent}">
+                                                <TextBox Text="{Binding FactoryResetVerificationCode}" Watermark="Doğrulama Kodu" Height="45" CornerRadius="10"/>
+                                                <Button Command="{Binding ConfirmFactoryResetPasswordResetCommand}" Content="Doğrula ve Şifreyi Sıfırla" Classes="Danger" Height="42" CornerRadius="10" HorizontalAlignment="Right" Padding="20,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Expander>
+
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Section: Cloud & API -->
+                        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="30" IsVisible="{Binding CurrentCategory.Id, Converter={StaticResource StringEqualsConverter}, ConverterParameter='cloud'}">
+                            <StackPanel Spacing="25" MaxWidth="1000" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <ic:SymbolIcon Symbol="Cloud" FontSize="24" Foreground="#F59E0B"/> 
+                                    <TextBlock Text="Bulut Senkronizasyon Ayarları" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                                
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Bulut Veritabanı URL (Firebase)" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                                    <TextBox Text="{Binding CloudUrl}" Watermark="https://your-app.firebaseio.com" Height="50" CornerRadius="12"/>
+                                </StackPanel>
+ 
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Erişim Anahtarı / Token" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                                    <TextBox Text="{Binding CloudSecret}" PasswordChar="*" Watermark="Auth Key" Height="50" CornerRadius="12"/>
+                                </StackPanel>
+                                
+                                <Grid ColumnDefinitions="*, *" ColumnSpacing="20" Margin="0,10,0,0">
+                                    <Button Grid.Column="0" Command="{Binding SyncCloudCommand}" IsEnabled="{Binding !IsBusy}"
+                                            Background="rgba(245, 158, 11, 0.15)" BorderBrush="#F59E0B" BorderThickness="1"
+                                            Height="54" CornerRadius="12"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <ic:SymbolIcon Symbol="ArrowSync" FontSize="20" Foreground="#F59E0B" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Hemen Senkronize Et" FontWeight="SemiBold" Foreground="#F59E0B" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Grid.Column="1" Command="{Binding SaveSettingsCommand}" IsEnabled="{Binding !IsBusy}"
+                                            Background="rgba(245, 158, 11, 0.15)" BorderBrush="#F59E0B" BorderThickness="1"
+                                            Height="54" CornerRadius="12"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <ic:SymbolIcon Symbol="Save" FontSize="20" Foreground="#F59E0B" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Yapılandırmayı Kaydet" FontWeight="SemiBold" Foreground="#F59E0B" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                                
+                                <TextBlock Text="{Binding CloudStatus}" FontSize="13" Foreground="#94a3b8" IsVisible="{Binding CloudStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                            </StackPanel>
+                        </Border>
+ 
+                        <!-- Section: Theme Selection -->
+                        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="30" IsVisible="{Binding CurrentCategory.Id, Converter={StaticResource StringEqualsConverter}, ConverterParameter='theme'}">
+                            <StackPanel Spacing="25" MaxWidth="1000" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <ic:SymbolIcon Symbol="Color" FontSize="24" Foreground="#3b82f6"/> 
+                                    <TextBlock Text="Arayüz Tasarımı ve Temalar" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                                
+                                <TextBlock Text="Uygulama Görünümü Seçin" FontSize="16" FontWeight="SemiBold" Foreground="#9CA3AF" Margin="0,10,0,0"/>
+                                
+                                <Grid ColumnDefinitions="*, *" RowDefinitions="Auto" ColumnSpacing="20">
+                                    <!-- Modern SaaS Theme -->
+                                    <Button Grid.Row="0" Grid.Column="0" Command="{Binding SetThemeCommand}" CommandParameter="ModernSaaS"
+                                            Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Stretch">
+                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{Binding SelectedTheme, Converter={StaticResource StringEqualsConverter}, ConverterParameter='ModernSaaS', Converter={StaticResource BoolToBlueBrushConverter}}" BorderThickness="2" CornerRadius="16" Padding="20">
+                                            <StackPanel Spacing="10" HorizontalAlignment="Center">
+                                                <Border Width="160" Height="80" Background="{DynamicResource BackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+                                                    <Grid ColumnDefinitions="30, *">
+                                                        <Border Grid.Column="0" Background="Transparent" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,1,0"/>
+                                                        <StackPanel Grid.Column="1" Margin="10" Spacing="5">
+                                                            <Border Width="30" Height="5" Background="#0061FF" CornerRadius="2" HorizontalAlignment="Left"/>
+                                                            <Border Height="30" Background="rgba(255,255,255,0.05)" CornerRadius="4"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                                <TextBlock Text="Ermay Premium" FontWeight="Black" FontSize="16" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="Modern ve akıcı cam tasarımı." FontSize="11" Foreground="#94a3b8" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Button>
+ 
+                                    <!-- IDE Professional Theme -->
+                                    <Button Grid.Row="0" Grid.Column="1" Command="{Binding SetThemeCommand}" CommandParameter="IDEProfessional"
+                                            Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Stretch">
+                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{Binding SelectedTheme, Converter={StaticResource StringEqualsConverter}, ConverterParameter='IDEProfessional', Converter={StaticResource BoolToBlueBrushConverter}}" BorderThickness="2" CornerRadius="16" Padding="20">
+                                            <StackPanel Spacing="10" HorizontalAlignment="Center">
+                                                <Border Width="160" Height="80" Background="{DynamicResource BackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+                                                    <Grid ColumnDefinitions="30, *">
+                                                        <Border Grid.Column="0" Background="rgba(255,255,255,0.05)" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,1,0"/>
+                                                        <StackPanel Grid.Column="1" Margin="10" Spacing="5">
+                                                            <Border Width="20" Height="5" Background="#007acc" CornerRadius="1" HorizontalAlignment="Left"/>
+                                                            <Border Height="30" Background="rgba(255,255,255,0.02)" CornerRadius="0"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                                <TextBlock Text="IDE Profesyonel" FontWeight="Black" FontSize="16" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="Teknik ve odaklanmış yapı." FontSize="11" Foreground="#94a3b8" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Button>
+                                </Grid>
+                                
+                                <Border Background="rgba(59, 130, 246, 0.15)" BorderBrush="#3b82f6" BorderThickness="1" CornerRadius="12" Padding="15" Margin="0,10,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <ic:SymbolIcon Symbol="Info" Foreground="#3b82f6" FontSize="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Tema değişikliği tüm pencerelerde anında uygulanır." Foreground="#94a3b8" FontSize="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+ 
+                        <!-- Section: Display Scaling -->
+                        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="30" IsVisible="{Binding CurrentCategory.Id, Converter={StaticResource StringEqualsConverter}, ConverterParameter='display'}">
+                            <StackPanel Spacing="25" MaxWidth="1000" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <ic:SymbolIcon Symbol="Desktop" FontSize="24" Foreground="#10b981"/> 
+                                    <TextBlock Text="Ekran Ölçeklendirme" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                                
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Text="Otomatik Ölçeklendirme" FontSize="16" VerticalAlignment="Center"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsAutoScalingEnabled}" OnContent="" OffContent=""/>
+                                </Grid>
+     
+                                <StackPanel Spacing="15" IsEnabled="{Binding !IsAutoScalingEnabled}" Opacity="{Binding !IsAutoScalingEnabled, Converter={StaticResource BoolToDoubleConverter}}">
+                                    <Slider Value="{Binding CurrentScaling}" Minimum="0.5" Maximum="2.0" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                                    <WrapPanel Orientation="Horizontal">
+                                        <Button Command="{Binding ChangeScalingCommand}" CommandParameter="0.75" Content="75%" Margin="0,0,10,10" Width="90" Height="50" CornerRadius="10" Background="{DynamicResource SurfaceBrush}"/>
+                                        <Button Command="{Binding ChangeScalingCommand}" CommandParameter="1.0" Content="100%" Margin="0,0,10,10" Width="90" Height="50" CornerRadius="10" Background="{DynamicResource SurfaceBrush}"/>
+                                        <Button Command="{Binding ChangeScalingCommand}" CommandParameter="1.25" Content="125%" Margin="0,0,10,10" Width="90" Height="50" CornerRadius="10" Background="{DynamicResource SurfaceBrush}"/>
+                                        <Button Command="{Binding ChangeScalingCommand}" CommandParameter="1.5" Content="150%" Margin="0,0,10,10" Width="90" Height="50" CornerRadius="10" Background="{DynamicResource SurfaceBrush}"/>
+                                        <Button Command="{Binding ChangeScalingCommand}" CommandParameter="2.0" Content="200%" Margin="0,0,10,10" Width="90" Height="50" CornerRadius="10" Background="{DynamicResource SurfaceBrush}"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                                <TextBlock Text="{Binding CurrentScaling, StringFormat='Mevcut Ölçek: {0:P0}'}" FontSize="14" FontWeight="Bold" Foreground="#10b981"/>
+                            </StackPanel>
+                        </Border>
+ 
+                        <!-- Section: Notifications -->
+                        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="30" IsVisible="{Binding CurrentCategory.Id, Converter={StaticResource StringEqualsConverter}, ConverterParameter='notifications'}">
+                            <StackPanel Spacing="30" Width="850" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <ic:SymbolIcon Symbol="Alert" FontSize="24" Foreground="#F59E0B"/> 
+                                    <TextBlock Text="Bildirim Ayarları" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                                
+                                <ScrollViewer MaxHeight="550" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Spacing="20">
+                                        <!-- GROUP 1: FİNANSAL UYARILAR -->
+                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="15" Padding="20">
+                                            <StackPanel Spacing="15">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <ic:SymbolIcon Symbol="Money" FontSize="20" Foreground="#60A5FA"/>
+                                                    <TextBlock Text="Finansal Uyarılar" FontSize="16" FontWeight="Bold" Foreground="#60A5FA"/>
+                                                </StackPanel>
+                                                <Separator Background="{DynamicResource BorderColor}" Height="1"/>
+
+                                                <!-- Vadesi Geçen Alacaklar -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Vadesi Geçen Alacak Uyarılarını Göster" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Ödeme tarihi geçmiş ve ödenmemiş faturaları bildirir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableOverdueAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+
+                                                <!-- Yaklaşan Vade Sınırı -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Vade Yaklaşma Uyarısı Eşik Günü" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Fatura vadesine belirtilen gün kadar kaldığında uyarı üretilir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <NumericUpDown Grid.Column="1" Value="{Binding OverdueDaysThreshold, Mode=TwoWay}" Minimum="0" Maximum="30" Width="130" FormatString="0 Gün" CornerRadius="8"/>
+                                                </Grid>
+
+                                                <!-- Çek / Senet Vade Uyarıları -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Çek ve Senet Vade Hatırlatıcısı" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Vadesine 2 gün kalan portföydeki evraklar için uyarı üretir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableChequeSenetAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+
+                                                <!-- Cari Risk Limiti Aşımları -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Cari Risk Limiti Aşım Uyarıları" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Müşterinin toplam borcu, kartındaki limiti aştığında uyarı verir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableRiskLimitAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+
+                                                <!-- Bakiye Yaşlandırma -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Bakiye Yaşlandırma Bildirimleri" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="30, 60 veya 90 günü aşan vadesi geçmiş borçları raporlar." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableAgingDebtAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+
+                                                <!-- Gün Sonu Giriş Özeti -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Günlük Finansal Durum Özeti (Gün Sonu / Giriş)" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="İlk açılışta veya gün kapanışında toplam ciro, tahsilat ve kasa durumunu bildirir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableDailySummaryAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- GROUP 2: STOK UYARILARI -->
+                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="15" Padding="20">
+                                            <StackPanel Spacing="15">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <ic:SymbolIcon Symbol="Box" FontSize="20" Foreground="#10B981"/>
+                                                    <TextBlock Text="Stok ve Envanter Uyarıları" FontSize="16" FontWeight="Bold" Foreground="#10B981"/>
+                                                </StackPanel>
+                                                <Separator Background="{DynamicResource BorderColor}" Height="1"/>
+
+                                                <!-- Düşük Stok -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Düşük Stok Bildirimlerini Göster" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Kritik seviyenin altına düşen ürünleri haber verir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableLowStockAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+
+                                                <!-- Negatif Stok -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Negatif Stok (Eksi Bakiye) Uyarısı" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Miktarı sıfırın altına düşmüş ürünlerde anlık uyarı üretir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableNegativeStockAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- GROUP 3: SİSTEM UYARILARI -->
+                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="15" Padding="20">
+                                            <StackPanel Spacing="15">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <ic:SymbolIcon Symbol="Desktop" FontSize="20" Foreground="#EC4899"/>
+                                                    <TextBlock Text="Sistem ve Entegrasyon Uyarıları" FontSize="16" FontWeight="Bold" Foreground="#EC4899"/>
+                                                </StackPanel>
+                                                <Separator Background="{DynamicResource BorderColor}" Height="1"/>
+
+                                                <!-- Otomatik Yedekleme -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Yedekleme Durumlarını Bildir" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Günlük otomatik yedekleme başarılı/başarısız olduğunda uyarır." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableBackupAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+
+                                                <!-- Bulut Senkronizasyon -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Bulut Veritabanı ve Ağ Hatası Bildirimleri" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Bağlantı koptuğunda veya eşitlemede hata çıktığında bildirim gönderir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableCloudSyncAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+
+                                                <!-- Windows Toast Uyarısı -->
+                                                <Grid ColumnDefinitions="*, Auto" Margin="0,2">
+                                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="Windows Masaüstü Balon Bildirimleri" FontWeight="Bold" FontSize="13"/>
+                                                        <TextBlock Text="Uygulama arka plandayken bile sağ altta sistem bildirimleri gösterir." FontSize="11" Opacity="0.6"/>
+                                                    </StackPanel>
+                                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableWindowsToastAlert, Mode=TwoWay}" OnContent="Açık" OffContent="Kapalı"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </ScrollViewer>
+                                
+                                <Button Command="{Binding SaveSettingsCommand}" Content="Bildirim Ayarlarını Kaydet" Classes="Primary" Height="54" Padding="50,0" CornerRadius="15" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </Border>
+ 
+                        <!-- Section: Advanced -->
+                        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="30" IsVisible="{Binding CurrentCategory.Id, Converter={StaticResource StringEqualsConverter}, ConverterParameter='advanced'}">
+                            <StackPanel Spacing="30" MaxWidth="1000" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <ic:SymbolIcon Symbol="Wrench" FontSize="24" Foreground="#ef4444"/> 
+                                    <TextBlock Text="Gelişmiş Sistem İşlemleri" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                                
+                                <!-- Factory Reset Box -->
+                                <Border Background="rgba(239, 68, 68, 0.15)" BorderBrush="#ef4444" BorderThickness="1" CornerRadius="15" Padding="25">
+                                    <StackPanel Spacing="15">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ic:SymbolIcon Symbol="Warning" FontSize="28" Foreground="#ef4444"/>
+                                            <TextBlock Text="Fabrika Ayarlarına Dön" FontSize="20" FontWeight="Black" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Bu işlem tüm verileri, kayıtları ve yapılandırmaları kalıcı olarak silecektir! Bu işlemin geri dönüşü mümkün değildir." FontSize="14" Foreground="#ef4444" Opacity="0.9" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Güvenlik sekmesinde belirlediğiniz Onay Şifresini girmelisiniz." FontSize="13" FontWeight="Black" Foreground="#ef4444" Opacity="0.8"/>
+                                        
+                                        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="20">
+                                            <TextBox Grid.Column="0" PasswordChar="*" Watermark="Sıfırlama Onay Şifresini Yazın" Text="{Binding ResetPassword}" Height="55" CornerRadius="12" BorderBrush="#ef4444"/>
+                                            <Button Grid.Column="1" Command="{Binding FactoryResetCommand}" Classes="Danger" Height="55" Padding="40,0" CornerRadius="12">
+                                                <TextBlock Text="SİSTEMİ TAMAMEN SIFIRLA" FontWeight="Black" FontSize="14"/>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Separator Background="{DynamicResource BorderColor}" Margin="0,15"/>
+                                
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <ic:SymbolIcon Symbol="AppsList" FontSize="24" Foreground="#10B981"/> 
+                                    <TextBlock Text="Gelişmiş Araçlar ve Teşhis Merkezi" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                                <TextBlock Text="Sisteminizi optimize etmek ve sorunları tespit etmek için bu araçları kullanabilirsiniz." FontSize="13" Foreground="#94a3b8" Margin="0,-5,0,10"/>
+
+                                <!-- Performans ve Konfigürasyon Toggles -->
+                                <Grid ColumnDefinitions="*, *" ColumnSpacing="20" Margin="0,0,0,15">
+                                    <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Padding="15">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Düşük Donanım (Performans) Modu" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Animasyonları ve görsel efektleri kapatır." FontSize="11" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <ToggleSwitch Grid.Column="1" IsChecked="{Binding LowPerformanceMode, Mode=TwoWay}" OnContent="" OffContent=""/>
+                                        </Grid>
+                                    </Border>
+                                    <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Padding="15">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Bulut Yedekleme Entegrasyonu" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Yedekleri yapılandırılan bulut servisine de kopyalar." FontSize="11" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloudBackupIntegration, Mode=TwoWay}" OnContent="" OffContent=""/>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Otomatik Yedekleme Konumu Belirleme -->
+                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="15" Padding="25" Margin="0,0,0,15" MaxWidth="1000">
+                                    <StackPanel Spacing="15">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ic:SymbolIcon Symbol="Folder" FontSize="24" Foreground="#8b5cf6"/>
+                                            <TextBlock Text="Otomatik Yedekleme Klasörü" FontSize="18" FontWeight="Bold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Sistemin günlük otomatik yedekleri kaydedeceği klasörü belirleyin. Boş bırakılırsa varsayılan AppData klasörü kullanılır." FontSize="13" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10" Margin="0,5,0,0">
+                                            <TextBox Grid.Column="0" Text="{Binding BackupFolderPath}" Watermark="Varsayılan yedekleme klasörü aktif..." IsReadOnly="True" CornerRadius="10" Height="45"/>
+                                            <Button Grid.Column="1" Command="{Binding SelectBackupFolderCommand}" Content="Klasör Seç" Classes="Primary" CornerRadius="10" Height="45"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <WrapPanel Margin="0,0,0,0" MaxWidth="1000">
+                                    <Button Command="{Binding RunDiagnosticCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="Stethoscope" FontSize="28" Foreground="#10b981" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Dosya Bütünlük Testi" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Sistem ve veritabanı sağlık taraması" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Command="{Binding OpenRecycleBinCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="Delete" FontSize="28" Foreground="#f59e0b" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Silinmiş Kayıtlar Yöneticisi" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Çöp kutusuna alınan kayıtları kurtarın" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Command="{Binding OpenAutoBackupCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="Timer" FontSize="28" Foreground="#8b5cf6" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Otomatik Yedekleme" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Zamanlanmış arka plan yedeklemeleri" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Command="{Binding OpenCronManagerCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="CalendarClock" FontSize="28" Foreground="#6366f1" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Zamanlanmış Görevler" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Cron işlerini ve tetikleyicileri ayarlayın" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Command="{Binding RunYearEndSimulatorCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="Beaker" FontSize="28" Foreground="#14b8a6" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Yıl Sonu Devir Simülatörü" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Devir işlemini sanal olarak test edin" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Command="{Binding RunDocNumberDiagnosticsCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="DocumentSearch" FontSize="28" Foreground="#f97316" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Evrak Numarası Teşhisi" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Atlanmış/mükerrer fatura no kontrolü" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Command="{Binding RunNetworkDiagnosticCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="Globe" FontSize="28" Foreground="#06b6d4" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Ağ ve Bağlantı Hız Testi" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Sunucu gecikme ve bağlantı analizi" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Command="{Binding OpenSmtpSettingsCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="Mail" FontSize="28" Foreground="#a855f7" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="E-Posta (SMTP) Ayarları" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="E-posta gönderim sunucusu ve hesap ayarları" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Command="{Binding OpenShortcutsManagerCommand}" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Width="300" Height="80" Margin="0,0,15,15" Padding="15">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <ic:SymbolIcon Grid.Column="0" Symbol="Keyboard" FontSize="28" Foreground="#ec4899" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Özel Klavye Kısayolları" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Sık kullanılan işlemler için kısayollar" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </WrapPanel>
+
+                                <!-- SMTP E-posta Ayarları Paneli -->
+                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="15" Padding="25" Margin="0,10,0,0" IsVisible="{Binding ShowSmtpSettings}">
+                                    <StackPanel Spacing="15">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ic:SymbolIcon Symbol="Mail" FontSize="24" Foreground="#a855f7"/>
+                                            <TextBlock Text="E-Posta (SMTP) Sunucu Ayarları" FontSize="18" FontWeight="Bold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Fatura ve ekstreleri e-posta ile gönderebilmek için SMTP posta sunucunuzu tanımlayın." FontSize="13" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                        
+                                        <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+                                        
+                                        <Grid RowDefinitions="Auto, Auto, Auto" ColumnDefinitions="*, *" RowSpacing="15" ColumnSpacing="15">
+                                            <!-- SMTP Host -->
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="5">
+                                                <TextBlock Text="SMTP Sunucu Adresi (Host)" FontSize="12" Foreground="#94a3b8"/>
+                                                <TextBox Text="{Binding SmtpHost}" Watermark="Örn: smtp.gmail.com" CornerRadius="8" Height="40"/>
+                                            </StackPanel>
+                                            
+                                            <!-- SMTP Port -->
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="5">
+                                                <TextBlock Text="SMTP Port" FontSize="12" Foreground="#94a3b8"/>
+                                                <TextBox Text="{Binding SmtpPort}" Watermark="Örn: 587" CornerRadius="8" Height="40"/>
+                                            </StackPanel>
+                                            
+                                            <!-- SMTP User -->
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="5">
+                                                <TextBlock Text="E-posta Kullanıcı Adı (Username)" FontSize="12" Foreground="#94a3b8"/>
+                                                <TextBox Text="{Binding SmtpUser}" Watermark="Örn: eposta@adresiniz.com" CornerRadius="8" Height="40"/>
+                                            </StackPanel>
+                                            
+                                            <!-- SMTP Password -->
+                                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="5">
+                                                <TextBlock Text="Şifre (Password)" FontSize="12" Foreground="#94a3b8"/>
+                                                <TextBox Text="{Binding SmtpPass}" PasswordChar="*" Watermark="E-posta şifreniz" CornerRadius="8" Height="40"/>
+                                            </StackPanel>
+
+                                            <!-- SMTP SSL & Test Button -->
+                                            <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                                    <TextBlock Text="SSL / TLS Güvenli Bağlantı" FontSize="13" VerticalAlignment="Center"/>
+                                                    <ToggleSwitch IsChecked="{Binding SmtpSsl}" OnContent="" OffContent="" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="2" Command="{Binding SendTestEmailCommand}" Content="Test E-postası Gönder" Classes="Secondary" CornerRadius="8" Height="40" Padding="15,0"/>
+                                            </Grid>
+                                        </Grid>
+
+                                        <!-- IMAP Sunucu Ayarları Separator -->
+                                        <Separator Background="{DynamicResource BorderColor}" Margin="0,15"/>
+                                        
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ic:SymbolIcon Symbol="FolderArrowRight" FontSize="24" Foreground="#ec4899"/>
+                                            <TextBlock Text="Gönderilen Kutusu Arşivleme Ayarları (IMAP)" FontSize="18" FontWeight="Bold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Gönderdiğiniz fatura ve ekstrelerin e-posta kutunuzun 'Gönderilenler' (Sent) klasörüne kaydedilmesi için IMAP ayarlarını yapın." FontSize="13" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                        
+                                        <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, *" RowSpacing="15" ColumnSpacing="15">
+                                            <!-- IMAP Host -->
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="5">
+                                                <TextBlock Text="IMAP Sunucu Adresi (Host)" FontSize="12" Foreground="#94a3b8"/>
+                                                <TextBox Text="{Binding ImapHost}" Watermark="Örn: imap.gmail.com" CornerRadius="8" Height="40"/>
+                                            </StackPanel>
+                                            
+                                            <!-- IMAP Port -->
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="5">
+                                                <TextBlock Text="IMAP Port" FontSize="12" Foreground="#94a3b8"/>
+                                                <TextBox Text="{Binding ImapPort}" Watermark="Örn: 993" CornerRadius="8" Height="40"/>
+                                            </StackPanel>
+
+                                            <!-- IMAP SSL -->
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,10,0,0">
+                                                <TextBlock Text="SSL / TLS Güvenli Bağlantı" FontSize="13" VerticalAlignment="Center"/>
+                                                <ToggleSwitch IsChecked="{Binding ImapSsl}" OnContent="" OffContent="" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Recycle Bin Panel -->
+                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="15" Padding="25" Margin="0,10,0,0" IsVisible="{Binding ShowRecycleBin}">
+                                    <StackPanel Spacing="15">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ic:SymbolIcon Symbol="Delete" FontSize="24" Foreground="#f59e0b"/>
+                                            <TextBlock Text="Silinmiş Kayıtlar Yöneticisi" FontSize="18" FontWeight="Bold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Silinen kayıtlarınız tamamen yok olmaz, çöp kutusunda tutulur." FontSize="13" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                        
+                                        <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+                                        
+                                        <ListBox ItemsSource="{Binding DeletedItems}" Background="Transparent" MaxHeight="200" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}" Foreground="#f59e0b" FontWeight="SemiBold"/>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                        
+                                        <Button Command="{Binding RestoreDeletedItemsCommand}" Content="Tümünü Kurtar" Classes="Warning" CornerRadius="10" HorizontalAlignment="Right" IsEnabled="{Binding !IsBusy}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Cron Manager Panel -->
+                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="15" Padding="25" Margin="0,10,0,0" IsVisible="{Binding ShowCronManager}">
+                                    <StackPanel Spacing="15">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ic:SymbolIcon Symbol="CalendarClock" FontSize="24" Foreground="#6366f1"/>
+                                            <TextBlock Text="Zamanlanmış Görevler (Cron)" FontSize="18" FontWeight="Bold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Arka planda çalışan periyodik işlemleri buradan görebilirsiniz." FontSize="13" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                        
+                                        <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+                                        
+                                        <Grid ColumnDefinitions="*, Auto, Auto" Margin="0,5">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Otomatik Günlük Yedekleme" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Her gün saat 18:00'da tetiklenir." FontSize="12" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="18:00" Foreground="#6366f1" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                                            <ToggleSwitch Grid.Column="2" IsChecked="True" IsEnabled="False" OnContent="Aktif" OffContent="Pasif"/>
+                                        </Grid>
+                                        
+                                        <Grid ColumnDefinitions="*, Auto, Auto" Margin="0,5">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Düşük Stok Kontrolü" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Uygulama açıldığında çalışır." FontSize="12" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="Açılışta" Foreground="#10b981" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                                            <ToggleSwitch Grid.Column="2" IsChecked="True" IsEnabled="False" OnContent="Aktif" OffContent="Pasif"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Shortcuts Manager Panel -->
+                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="15" Padding="25" Margin="0,10,0,0" IsVisible="{Binding ShowShortcutsManager}">
+                                    <StackPanel Spacing="15">
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <ic:SymbolIcon Symbol="Keyboard" FontSize="24" Foreground="#ec4899"/>
+                                            <TextBlock Text="Özel Klavye Kısayolları" FontSize="18" FontWeight="Bold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Sık kullandığınız pencerelere global olarak hangi tuşlarla ulaşabileceğinizi ayarlayın." FontSize="13" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                        
+                                        <Separator Background="{DynamicResource BorderColor}" Margin="0,5"/>
+                                        
+                                        <Grid ColumnDefinitions="*, 200" Margin="0,5">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Yeni Satış Faturası Ekle" FontWeight="Bold" FontSize="14"/>
+                                            </StackPanel>
+                                            <ComboBox Grid.Column="1" ItemsSource="{Binding ShortcutKeysList}" SelectedItem="{Binding ShortcutNewInvoice, Mode=TwoWay}" HorizontalAlignment="Stretch" CornerRadius="8"/>
+                                        </Grid>
+                                        
+                                        <Grid ColumnDefinitions="*, 200" Margin="0,5">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Yeni Cari Kart Ekle" FontWeight="Bold" FontSize="14"/>
+                                            </StackPanel>
+                                            <ComboBox Grid.Column="1" ItemsSource="{Binding ShortcutKeysList}" SelectedItem="{Binding ShortcutNewCari, Mode=TwoWay}" HorizontalAlignment="Stretch" CornerRadius="8"/>
+                                        </Grid>
+
+                                        <Grid ColumnDefinitions="*, 200" Margin="0,5">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Yeni Stok Kartı Ekle" FontWeight="Bold" FontSize="14"/>
+                                            </StackPanel>
+                                            <ComboBox Grid.Column="1" ItemsSource="{Binding ShortcutKeysList}" SelectedItem="{Binding ShortcutNewStok, Mode=TwoWay}" HorizontalAlignment="Stretch" CornerRadius="8"/>
+                                        </Grid>
+
+                                        <Grid ColumnDefinitions="*, 200" Margin="0,5">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Faturalar Listesini Aç" FontWeight="Bold" FontSize="14"/>
+                                            </StackPanel>
+                                            <ComboBox Grid.Column="1" ItemsSource="{Binding ShortcutKeysList}" SelectedItem="{Binding ShortcutOpenFaturalar, Mode=TwoWay}" HorizontalAlignment="Stretch" CornerRadius="8"/>
+                                        </Grid>
+
+                                        <Grid ColumnDefinitions="*, 200" Margin="0,5">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Cari Hesaplar Listesini Aç" FontWeight="Bold" FontSize="14"/>
+                                            </StackPanel>
+                                            <ComboBox Grid.Column="1" ItemsSource="{Binding ShortcutKeysList}" SelectedItem="{Binding ShortcutOpenCariler, Mode=TwoWay}" HorizontalAlignment="Stretch" CornerRadius="8"/>
+                                        </Grid>
+
+                                        <Grid ColumnDefinitions="*, 200" Margin="0,5">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Raporlar Ekranını Aç" FontWeight="Bold" FontSize="14"/>
+                                            </StackPanel>
+                                             <ComboBox Grid.Column="1" ItemsSource="{Binding ShortcutKeysList}" SelectedItem="{Binding ShortcutOpenRaporlar, Mode=TwoWay}" HorizontalAlignment="Stretch" CornerRadius="8"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+    
+                    </StackPanel>
+                </Panel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.DbBakimView"
+             x:DataType="vm:DbBakimViewModel">
+  <Grid RowDefinitions="Auto, Auto, *" Margin="30">
+    <!-- Header -->
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#2610B981">
+          <ic:SymbolIcon Symbol="Pulse" Foreground="#10B981" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Sistem Sağlığı ve Veritabanı Bakımı" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Sistem kaynaklarını izleyin ve veritabanı performansını optimize edin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, *, *" Margin="0,0,0,25" ColumnSpacing="15">
+        <!-- CPU -->
+        <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="20" BorderBrush="#22FFFFFF" BorderThickness="1">
+           <StackPanel Spacing="10">
+              <TextBlock Text="CPU KULLANIMI" FontSize="11" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+              <TextBlock Text="{Binding CpuUsage, StringFormat={}{0}%}" FontSize="24" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Center"/>
+              <ProgressBar Value="{Binding CpuUsage}" Height="2" CornerRadius="1" Background="#15FFFFFF" Foreground="#60A5FA"/>
+           </StackPanel>
+        </Border>
+
+        <!-- RAM -->
+        <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="20" BorderBrush="#22FFFFFF" BorderThickness="1">
+           <StackPanel Spacing="10">
+              <TextBlock Text="BELLEK (RAM)" FontSize="11" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+              <TextBlock Text="{Binding RamUsage, StringFormat={}{0} MB}" FontSize="24" FontWeight="Bold" Foreground="#8B5CF6" HorizontalAlignment="Center"/>
+              <TextBlock Text="Durum: Kararlı" FontSize="9" Foreground="#10B981" HorizontalAlignment="Center"/>
+           </StackPanel>
+        </Border>
+
+        <!-- Uptime -->
+        <Border Grid.Column="2" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="20" BorderBrush="#22FFFFFF" BorderThickness="1">
+           <StackPanel Spacing="10">
+              <TextBlock Text="ÇALIŞMA SÜRESİ" FontSize="11" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+              <TextBlock Text="{Binding Uptime}" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+              <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                 <Ellipse Width="6" Height="6" Fill="#10B981"/>
+                 <TextBlock Text="ÇEVRİMİÇİ" FontSize="9" Foreground="#10B981"/>
+              </StackPanel>
+           </StackPanel>
+        </Border>
+    </Grid>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*, *" ColumnSpacing="20">
+      <!-- Info & Status -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+        <StackPanel Spacing="30">
+          <TextBlock Text="Sistem Bilgileri" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+          
+          <Grid RowDefinitions="Auto, Auto, Auto" ColumnDefinitions="Auto, *" RowSpacing="15" ColumnSpacing="15">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Dosya Yolu:" Foreground="#9CA3AF"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding DbPath}" Foreground="White" TextWrapping="Wrap"/>
+            
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Mevcut Boyut:" Foreground="#9CA3AF"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DbSize}" Foreground="#10B981" FontWeight="Bold"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Durum:" Foreground="#9CA3AF"/>
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Status}" Foreground="White" FontWeight="SemiBold" TextWrapping="Wrap"/>
+          </Grid>
+
+          <ProgressBar Value="{Binding Progress}" Height="10" CornerRadius="5" Background="#15FFFFFF" Foreground="#EF4444"/>
+
+          <Border Background="#10EF4444" CornerRadius="12" Padding="15">
+            <StackPanel Spacing="5">
+               <TextBlock Text="İpucu:" FontWeight="Bold" Foreground="#EF4444"/>
+               <TextBlock Text="Optimize işlemi sırasında veritabanına erişim kısa süreliğine kısıtlanabilir. Yoğun kullanımın olmadığı zamanlarda yapılması önerilir." 
+                          FontSize="12" Foreground="#9CA3AF" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <!-- Actions -->
+      <StackPanel Grid.Column="1" Spacing="20">
+        <!-- Optimize Card -->
+        <Border Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <StackPanel Spacing="15">
+             <TextBlock Text="Performans Optimizasyonu" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+             <TextBlock Text="Veritabanındaki boşlukları temizler (VACUUM) ve sorgu planlarını günceller (ANALYZE). Bu işlem hızı artırır." 
+                        FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap"/>
+             <Button Command="{Binding BakimYapCommand}" Classes="SideButton Info" Height="50" HorizontalAlignment="Stretch" Background="#EF4444">
+                <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                   <ic:SymbolIcon Symbol="Wrench" FontSize="20" VerticalAlignment="Center"/> 
+                   <TextBlock Text="ŞİMDİ OPTİMİZE ET" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+             </Button>
+          </StackPanel>
+        </Border>
+
+        <!-- Backup Card -->
+        <Border Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <StackPanel Spacing="15">
+             <TextBlock Text="Veritabanı Yedekleme" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+             <TextBlock Text="Web ve Masaüstü arasında veri transferi veya genel yedekleme seçenekleri:" 
+                        FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap"/>
+             
+             <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10">
+                <Button Grid.Column="0" Command="{Binding SqlYedekAlCommand}" Classes="SideButton Info" Height="50" Background="#3B82F6" ToolTip.Tip="Tam DB Yedek Al (.db3)">
+                   <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <ic:SymbolIcon Symbol="Database" FontSize="18" VerticalAlignment="Center"/> 
+                      <TextBlock Text="SQL" FontWeight="Bold" VerticalAlignment="Center"/>
+                   </StackPanel>
+                </Button>
+                
+                <Button Grid.Column="1" Command="{Binding JsonYedekAlCommand}" Classes="SideButton Success" Height="50" Background="#10B981" ToolTip.Tip="JSON Veri Yedek Al (.json)">
+                   <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <ic:SymbolIcon Symbol="Save" FontSize="18" VerticalAlignment="Center"/> 
+                      <TextBlock Text="YEDEK" FontWeight="Bold" VerticalAlignment="Center"/>
+                   </StackPanel>
+                </Button>
+
+                <Button Grid.Column="2" Command="{Binding YedekYukleCommand}" Classes="SideButton Warning" Height="50" Background="#F59E0B" ToolTip.Tip="JSON Yedeğini Geri Yükle">
+                   <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <ic:SymbolIcon Symbol="ArrowUpload" FontSize="18" VerticalAlignment="Center"/> 
+                      <TextBlock Text="YÜKLE" FontWeight="Bold" VerticalAlignment="Center"/>
+                   </StackPanel>
+                </Button>
+             </Grid>
+             
+             <TextBlock Text="* SQL: Tam sistem yedeğidir.&#x0a;* YEDEK/YÜKLE: Platformlar arası veri taşıma (JSON) formatıdır." 
+                        FontSize="11" Foreground="#6B7280" TextWrapping="Wrap" Margin="0,5,0,0"/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Grid>
+  </Grid>
+</UserControl>

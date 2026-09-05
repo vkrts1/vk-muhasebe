@@ -1,0 +1,30 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Model.Ad" Label="Ad" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Soyad" Label="Soyad" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Unvan" Label="Görevi" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Telefon" Label="Telefon" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Email" Label="E-Posta" Variant="Variant.Outlined" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public Personel Model { get; set; } = new();
+
+    void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Ad) || string.IsNullOrWhiteSpace(Model.Soyad)) return;
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}

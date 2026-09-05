@@ -1,0 +1,151 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IDialogService DialogService
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<MudDialog Class="custom-dark-dialog" Options="@(new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true })">
+    <TitleContent>
+        <div style="background: #1a252f; color: white; padding: 16px; margin: -24px -24px 0 -24px; border-bottom: 2px solid #34495e;">
+            <MudText Typo="Typo.h6" Style="font-weight: bold; letter-spacing: 1px;">İşlem Detayı</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div style="background: #1a252f; color: white; margin: -16px -24px -24px -24px; padding: 24px;" tabindex="0" @onkeydown="HandleKeyDown">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudText Color="Color.Secondary" Typo="Typo.caption" Style="text-transform: uppercase;">Cari Bilgisi</MudText>
+                    <MudText Typo="Typo.h6">@CariUnvan</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@CariYetkili</MudText>
+                </MudItem>
+                <MudItem xs="12" md="6" Style="text-align: right;">
+                    <MudText Color="Color.Secondary" Typo="Typo.caption" Style="text-transform: uppercase;">İşlem Türü</MudText>
+                    <MudText Typo="Typo.h6" Color="@((Model.IslemTuru ?? "").Contains("Satis") || Model.IslemTuru == "Ödeme" ? Color.Error : Color.Success)">
+                        @Model.IslemTuru
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Evrak No: @(string.IsNullOrEmpty(Model.EvrakNo) || Model.EvrakNo == "-" ? "Manuel Giriş" : Model.EvrakNo)</MudText>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider Style="background: #34495e; margin: 16px 0;" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudText Color="Color.Secondary" Typo="Typo.caption" Style="text-transform: uppercase;">Tarih</MudText>
+                    <MudText Typo="Typo.body1">@Model.Tarih.ToString("dd.MM.yyyy")</MudText>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudText Color="Color.Secondary" Typo="Typo.caption" Style="text-transform: uppercase;">Vade</MudText>
+                    <MudText Typo="Typo.body1">@(Model.Vade?.ToString("dd.MM.yyyy") ?? "-")</MudText>
+                </MudItem>
+                <MudItem xs="4" Style="text-align: right;">
+                    <MudText Color="Color.Secondary" Typo="Typo.caption" Style="text-transform: uppercase;">Tutar</MudText>
+                    <MudText Typo="Typo.h5" Style="font-weight: bold;">
+                        @((Model.Borc > 0 ? Model.Borc : Model.Alacak).ToString("N2")) ₺
+                    </MudText>
+                </MudItem>
+
+                <MudItem xs="12" Class="mt-4">
+                    <MudText Color="Color.Secondary" Typo="Typo.caption" Style="text-transform: uppercase;">Açıklama</MudText>
+                    <MudPaper Class="pa-4 mt-1" Style="background: #2c3e50; color: white; min-height: 100px;">
+                        <MudText Typo="Typo.body1">@Model.Aciklama</MudText>
+                    </MudPaper>
+                </MudItem>
+
+                @if (!string.IsNullOrEmpty(Model.SlipImage))
+                {
+                    <MudItem xs="12" Class="mt-4">
+                        <MudText Color="Color.Secondary" Typo="Typo.caption" Style="text-transform: uppercase;">Kredi Kartı Slip Görseli</MudText>
+                        <MudPaper Class="pa-2 mt-1 d-flex justify-center" Style="background: #2c3e50;">
+                            <img src="@Model.SlipImage" style="max-width: 100%; max-height: 400px; border-radius: 4px; cursor: zoom-in;" 
+                                 @onclick="ShowFullImage" />
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div style="background: #1a252f; width: 100%; margin: -40px -24px -24px -24px; padding: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <MudStack Row="true">
+                <MudButton StartIcon="@Icons.Material.Filled.PictureAsPdf" Variant="Variant.Filled" Color="Color.Info" OnClick="PreviewPdf">PDF Görüntüle</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Print" Variant="Variant.Filled" Color="Color.Secondary" OnClick="Print">Yazdır</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Download" Variant="Variant.Outlined" Color="Color.Primary" OnClick="Download">İndir</MudButton>
+            </MudStack>
+            <MudButton OnClick="Close" Variant="Variant.Text" Style="background: #34495e; color: white;">KAPAT</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public CariHareket Model { get; set; } = new();
+    [Parameter] public string CariUnvan { get; set; } = "";
+    [Parameter] public string CariYetkili { get; set; } = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Focus for ESC key support
+            await JS.InvokeVoidAsync("eval", "document.querySelector('[tabindex=\"0\"]')?.focus()");
+        }
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Close();
+        }
+    }
+
+    void Close() => MudDialog.Close();
+
+    private async Task PreviewPdf()
+    {
+        try
+        {
+            var tutar = Model.Borc > 0 ? Model.Borc : Model.Alacak;
+            var pdfBytes = await PdfService.GenerateMakbuzPdfBytesAsync(Model.IslemTuru, CariUnvan, Model.Tarih, tutar, Model.Aciklama);
+            var fileName = $"Islem_{Model.Id}_{DateTime.Now:yyyyMMdd}.pdf";
+            await FileService.SaveAndOpenFileAsync(fileName, pdfBytes, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task Download()
+    {
+        try
+        {
+             var tutar = Model.Borc > 0 ? Model.Borc : Model.Alacak;
+             var pdfBytes = await PdfService.GenerateMakbuzPdfBytesAsync(Model.IslemTuru, CariUnvan, Model.Tarih, tutar, Model.Aciklama);
+             var fileName = $"Islem_{Model.Id}_{DateTime.Now:yyyyMMdd}.pdf";
+             await FileService.SaveAndOpenFileAsync(fileName, pdfBytes, "application/pdf");
+             Snackbar.Add("Dosya kaydedildi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ShowFullImage()
+    {
+        var parameters = new DialogParameters { ["ImageUrl"] = Model.SlipImage };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium };
+        await DialogService.ShowAsync<ImagePreviewDialog>("Slip Görseli", parameters, options);
+    }
+
+    private async Task Print()
+    {
+        await PreviewPdf();
+    }
+}

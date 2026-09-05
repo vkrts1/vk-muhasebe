@@ -1,0 +1,275 @@
+@page "/maliyet-hesaplama"
+@using System.Globalization
+@using ErmayMuhasebe.Cloud.Services
+@inject UiService UiService
+@inject NavigationManager Nav
+@implements IDisposable
+
+<div class="maliyet-container" @onkeydown="HandleKeyDown" tabindex="0">
+    <h1 class="maliyet-main-title">Maliyet Hesaplama</h1>
+
+    <div class="maliyet-grid">
+        <!-- 1. Toplam KG Hesaplama -->
+        <div class="maliyet-card">
+            <h3 class="card-title">Toplam KG Hesaplama</h3>
+            <div class="input-group">
+                <label>Gramaj (gr):</label>
+                <input type="text" class="maliyet-input" @bind="gr" />
+            </div>
+            <div class="input-group">
+                <label>En (cm):</label>
+                <input type="text" class="maliyet-input" @bind="en" />
+            </div>
+            <div class="input-group">
+                <label>Sarım (metre):</label>
+                <input type="text" class="maliyet-input" @bind="sarim" @oninput="(e) => OnSarimChanged(e.Value?.ToString() ?? string.Empty)" />
+            </div>
+            <button class="maliyet-btn" @onclick="HesaplaKg">Hesapla</button>
+            <div class="maliyet-result">@toplamKgSonuc</div>
+        </div>
+
+        <!-- 2. Top Fiyatı Hesaplama -->
+        <div class="maliyet-card">
+            <h3 class="card-title">Top Fiyatı Hesaplama</h3>
+            <div class="input-group">
+                <label>Toplam KG:</label>
+                <input type="text" class="maliyet-input" @bind="toplamKg" />
+            </div>
+            <div class="input-group">
+                <label>KG Fiyatı ($):</label>
+                <input type="text" class="maliyet-input" @bind="kgFiyati" />
+            </div>
+            <div class="spacer-sm"></div>
+            <button class="maliyet-btn" @onclick="HesaplaTopFiyati">Hesapla</button>
+            <div class="maliyet-result">@topFiyatiSonuc</div>
+        </div>
+
+        <!-- 3. Metrekare Hesaplama -->
+        <div class="maliyet-card">
+            <h3 class="card-title">Metrekare Hesaplama (160cm en için)</h3>
+            <div class="input-group">
+                <label>Top Boy (metre):</label>
+                <input type="text" class="maliyet-input" @bind="topBoy" />
+            </div>
+            <div class="spacer-lg"></div>
+            <button class="maliyet-btn" @onclick="HesaplaMetrekare">Hesapla</button>
+            <div class="maliyet-result">@metrekareSonuc</div>
+        </div>
+
+        <!-- 4. Birim Metrekare Maliyeti Hesaplama -->
+        <div class="maliyet-card">
+            <h3 class="card-title">Birim Metrekare Maliyeti Hesaplama</h3>
+            <div class="input-group">
+                <label>Toplam Metrekare:</label>
+                <input type="text" class="maliyet-input" @bind="toplamMetrekare" />
+            </div>
+            <div class="input-group">
+                <label>Top Fiyatı ($):</label>
+                <input type="text" class="maliyet-input" @bind="topFiyatiInput" />
+            </div>
+            <div class="spacer-sm"></div>
+            <button class="maliyet-btn" @onclick="HesaplaBirimMaliyet">Hesapla</button>
+            <div class="maliyet-result">@birimMaliyetSonuc</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .maliyet-container {
+        padding: 10px 40px 10px 60px !important;
+        background-color: #0B0D12;
+        min-height: 100vh;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden; /* Prevent container scroll */
+    }
+
+    .maliyet-main-title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .maliyet-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 320px);
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .maliyet-card {
+        background-color: #121212;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 12px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .card-title {
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 2px;
+        color: white;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .input-group label {
+        font-size: 10px;
+        color: #888;
+    }
+
+    .maliyet-input {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 4px;
+        height: 28px;
+        padding: 0 8px;
+        color: white;
+        font-size: 12px;
+        outline: none;
+    }
+
+    .maliyet-input:focus {
+        border-color: #60A5FA;
+    }
+
+    .maliyet-btn {
+        background-color: #60A5FA;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        height: 30px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        margin-top: 4px;
+        transition: filter 0.2s;
+    }
+
+    .maliyet-btn:hover {
+        filter: brightness(1.1);
+    }
+
+    .maliyet-result {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 800;
+        color: #60A5FA;
+        margin-top: 4px;
+    }
+
+    .spacer-sm { height: 40px; }
+    .spacer-lg { height: 80px; }
+
+    @@media (max-width: 900px) {
+        .maliyet-grid {
+            grid-template-columns: 1fr;
+            max-width: 350px;
+        }
+    }
+</style>
+
+@code {
+    private string gr = "0";
+    private string en = "160";
+    private string sarim = "0";
+    private string toplamKgSonuc = "0,00 KG";
+
+    private string toplamKg = "0";
+    private string kgFiyati = "0";
+    private string topFiyatiSonuc = "0,00 $";
+
+    private string topBoy = "0";
+    private string metrekareSonuc = "0,00 m²";
+
+    private string toplamMetrekare = "0";
+    private string topFiyatiInput = "0";
+    private string birimMaliyetSonuc = "0,00 $";
+
+    private double Parse(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return 0;
+        value = value.Replace(",", ".");
+        if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+            return result;
+        return 0;
+    }
+
+    private void HesaplaKg()
+    {
+        double g = Parse(gr);
+        double e = Parse(en);
+        double s = Parse(sarim);
+
+        double sonuc = (g * e * s) / 100000.0;
+        toplamKgSonuc = $"{sonuc:N2} KG";
+        toplamKg = sonuc.ToString("N2", CultureInfo.CurrentCulture);
+    }
+
+    private void OnSarimChanged(string value)
+    {
+        topBoy = value;
+    }
+
+    private void HesaplaTopFiyati()
+    {
+        double kg = Parse(toplamKg);
+        double f = Parse(kgFiyati);
+
+        double sonuc = kg * f;
+        topFiyatiSonuc = $"{sonuc:N2} $";
+        topFiyatiInput = sonuc.ToString("N2", CultureInfo.CurrentCulture);
+    }
+
+    private void HesaplaMetrekare()
+    {
+        double boy = Parse(topBoy);
+        double sonuc = boy * 1.6;
+        metrekareSonuc = $"{sonuc:N2} m²";
+        toplamMetrekare = sonuc.ToString("N2", CultureInfo.CurrentCulture);
+    }
+
+    private void HesaplaBirimMaliyet()
+    {
+        double m2 = Parse(toplamMetrekare);
+        double f = Parse(topFiyatiInput);
+
+        if (m2 == 0) 
+        {
+            birimMaliyetSonuc = "0,00 $";
+            return;
+        }
+
+        double sonuc = f / m2;
+        birimMaliyetSonuc = $"{sonuc:N2} $";
+    }
+    protected override void OnInitialized()
+    {
+        UiService.OnEscapePressed += HandleEscape;
+    }
+
+    private Task<bool> HandleEscape()
+    {
+        return Task.FromResult(false);
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        // Add if needed
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+}

@@ -1,0 +1,216 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MudBlazor
+@inject IDialogService DialogService
+
+<style>
+    .dialog-glass {
+        background: rgba(30, 34, 40, 0.9) !important;
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+    }
+
+    .form-section {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 20px;
+    }
+
+    .price-summary-box {
+        background: rgba(96, 165, 250, 0.1);
+        border: 1px solid rgba(96, 165, 250, 0.2);
+        border-radius: 12px;
+        padding: 15px;
+        text-align: right;
+    }
+
+    .summary-label {
+        font-size: 10px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .summary-value {
+        font-size: 18px;
+        font-weight: 900;
+        color: white;
+    }
+
+    .dialog-btn {
+        border-radius: 12px !important;
+        padding: 10px 25px !important;
+        font-weight: 700 !important;
+    }
+</style>
+
+<MudDialog Class="dialog-glass rounded-xl" Style="min-width: 800px;">
+    <TitleContent>
+        <div class="d-flex align-center gap-3">
+             <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Color="Color.Info" />
+             <MudText Style="font-weight: 900; color: white;">@(ExistingItem != null ? "Satır Düzenle" : "Faturaya Ürün Ekle")</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div class="pa-2">
+            <MudGrid Spacing="3">
+                @* 1. ÜRÜN SEÇİMİ *@
+                <MudItem xs="12">
+                     <div class="form-section">
+                         <MudGrid>
+                             <MudItem xs="12" md="8">
+                                 <MudTextField @bind-Value="urunAdi" Label="Ürün Hizmet Adı" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                               Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" OnAdornmentClick="StokBul" Class="bg-dark-input" />
+                             </MudItem>
+                             <MudItem xs="12" md="4">
+                                  <MudButton Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Material.Filled.Dns" FullWidth="true" OnClick="StokBul" Style="height: 40px; border-radius: 8px;">Stoktan Seç</MudButton>
+                             </MudItem>
+                             <MudItem xs="12">
+                                  <MudTextField @bind-Value="aciklama" Label="Satır Açıklaması" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" Placeholder="Ek açıklama girmek için..." />
+                             </MudItem>
+                         </MudGrid>
+                     </div>
+                </MudItem>
+
+                @* 2. MİKTAR VE BİRİM *@
+                <MudItem xs="12" md="4">
+                     <div class="form-section h-100">
+                         <MudStack Spacing="3">
+                            <MudNumericField @bind-Value="miktar" Label="Miktar" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" Min="1" />
+                            <MudSelect @bind-Value="birim" Label="Birim" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="bg-dark-select">
+                                <MudSelectItem Value="@("Adet")">Adet</MudSelectItem>
+                                <MudSelectItem Value="@("Kg")">Kg</MudSelectItem>
+                                <MudSelectItem Value="@("Lt")">Lt</MudSelectItem>
+                                <MudSelectItem Value="@("Mt")">Mt</MudSelectItem>
+                                <MudSelectItem Value="@("Paket")">Paket</MudSelectItem>
+                            </MudSelect>
+                         </MudStack>
+                     </div>
+                </MudItem>
+
+                @* 3. FİYAT VE KDV *@
+                <MudItem xs="12" md="4">
+                     <div class="form-section h-100">
+                         <MudStack Spacing="3">
+                            <MudNumericField @bind-Value="birimFiyat" Label="Birim Fiyat" Variant="Variant.Outlined" Margin="Margin.Dense" Format="N2" Adornment="Adornment.End" AdornmentText="₺" Class="bg-dark-input" />
+                            <MudSelect @bind-Value="kdvOrani" Label="KDV (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="bg-dark-select">
+                                <MudSelectItem T="decimal" Value="0">%0</MudSelectItem>
+                                <MudSelectItem T="decimal" Value="1">%1</MudSelectItem>
+                                <MudSelectItem T="decimal" Value="10">%10</MudSelectItem>
+                                <MudSelectItem T="decimal" Value="20">%20</MudSelectItem>
+                            </MudSelect>
+                         </MudStack>
+                     </div>
+                </MudItem>
+
+                @* 4. ÖZET GÖRÜNÜM *@
+                <MudItem xs="12" md="4">
+                     <div class="form-section h-100 d-flex flex-column justify-center gap-3">
+                         <div class="price-summary-box">
+                             <div class="summary-label">ARA TOPLAM</div>
+                             <div class="summary-value">@toplam.ToString("C2")</div>
+                         </div>
+                         <div class="price-summary-box" style="background: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.2);">
+                             <div class="summary-label" style="color: rgba(52, 211, 153, 0.7);">GENEL TOPLAM (KDV DAHİL)</div>
+                             <div class="summary-value" style="color: #34D399;">@genelToplam.ToString("C2")</div>
+                         </div>
+                     </div>
+                </MudItem>
+            </MudGrid>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Class="dialog-btn" Style="color: rgba(255,255,255,0.6);">Vazgeç</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@(ExistingItem != null ? Icons.Material.Filled.Save : Icons.Material.Filled.Check)" Class="dialog-btn ml-3" OnClick="Ekle">@(ExistingItem != null ? "Güncellemeyi Onayla" : "Faturaya Ekle")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    private int? stokId;
+    private string urunAdi = "";
+    private string aciklama = "";
+    private string topMiktari = "";
+    private string birim = "Adet";
+    private decimal birimFiyat = 0;
+    private int miktar = 1;
+    private decimal kdvOrani = 20;
+    
+    private decimal toplam => miktar * birimFiyat;
+    private decimal kdvtutari => toplam * (kdvOrani / 100);
+    private decimal genelToplam => toplam + kdvtutari;
+
+    [Parameter] public StokKart? Stok { get; set; }
+    [Parameter] public bool IsSatis { get; set; } = true;
+    [Parameter] public ErmayMuhasebe.Shared.Components.Shared.FaturaDialog.FaturaKalemi? ExistingItem { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (ExistingItem != null)
+        {
+            stokId = ExistingItem.StokId;
+            urunAdi = ExistingItem.UrunAdi ?? "";
+            aciklama = ExistingItem.Aciklama ?? "";
+            topMiktari = ExistingItem.TopMiktari ?? "";
+            birim = ExistingItem.Birim ?? "Adet";
+            birimFiyat = ExistingItem.BirimFiyat;
+            miktar = ExistingItem.Miktar;
+            kdvOrani = ExistingItem.KDVOrani;
+        }
+        else if (Stok != null)
+        {
+            stokId = Stok.Id;
+            urunAdi = Stok.StokAdi ?? "";
+            birim = Stok.Birim ?? "Adet";
+            birimFiyat = IsSatis ? Stok.SatisFiyati : Stok.AlisFiyati;
+            kdvOrani = Stok.KDV;
+        }
+    }
+
+    private async Task StokBul()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.StokSecDialog>("Stok Seç", options);
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is StokKart secilenStok)
+        {
+            stokId = secilenStok.Id;
+            urunAdi = secilenStok.StokAdi ?? "";
+            birim = secilenStok.Birim ?? "Adet";
+            birimFiyat = IsSatis ? secilenStok.SatisFiyati : secilenStok.AlisFiyati;
+            kdvOrani = secilenStok.KDV;
+            StateHasChanged();
+        }
+    }
+    
+    private void Ekle()
+    {
+        if (string.IsNullOrWhiteSpace(urunAdi)) { Snackbar.Add("Lütfen ürün seçiniz.", Severity.Warning); return; }
+
+        var resultData = new ErmayMuhasebe.Shared.Components.Shared.FaturaDialog.FaturaKalemi
+        {
+            StokId = stokId ?? 0,
+            UrunAdi = urunAdi,
+            Aciklama = aciklama,
+            TopMiktari = topMiktari,
+            Birim = birim,
+            BirimFiyat = birimFiyat,
+            Miktar = miktar,
+            KDVOrani = kdvOrani,
+            Toplam = toplam,
+            KDVTutari = kdvtutari,
+            GenelToplam = genelToplam
+        };
+        
+        MudDialog.Close(DialogResult.Ok(resultData));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    [Inject] ISnackbar Snackbar { get; set; } = null!;
+}

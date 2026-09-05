@@ -1,0 +1,133 @@
+@page "/musteri-abc"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Müşteri ABC Analizi (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+            Yazdır / PDF
+        </MudButton>
+    </MudStack>
+</div>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    ABC Analizi, toplam cironun %80'ini getiren 'A' Grubu, %15'ini getiren 'B' Grubu ve %5'ini getiren 'C' Grubu müşterilerinizi belirler.
+</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudTable Items="@abcData" Dense="true" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Grup</MudTh>
+                <MudTh>Cari Ünvan</MudTh>
+                <MudTh Style="text-align: right;">Ciro (TL)</MudTh>
+                <MudTh Style="text-align: right;">Pay (%)</MudTh>
+                <MudTh Style="text-align: right;">Kümülatif Pay (%)</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudChip T="string" Color="@GetGroupColor(context.Grup)" Size="Size.Small">@context.Grup</MudChip>
+                </MudTd>
+                <MudTd>@context.Unvan</MudTd>
+                <MudTd Style="text-align: right;">@context.Ciro.ToString("N2") ₺</MudTd>
+                <MudTd Style="text-align: right;">% @context.Pay.ToString("N1")</MudTd>
+                <MudTd Style="text-align: right;">% @context.KumulatifPay.ToString("N1")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<ABCResult> abcData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var cariler = await DbService.GetCarilerAsync();
+        var faturalar = await DbService.GetFaturalarAsync();
+        var satisFaturalari = faturalar.Where(f => f.Tur == "Satis" || f.Tur == "Satış").ToList();
+
+        var cariCirolar = new List<ABCResult>();
+        foreach(var c in cariler)
+        {
+            decimal ciro = satisFaturalari.Where(f => f.CariId == c.Id).Sum(f => f.GenelToplam);
+            if (ciro > 0)
+            {
+                cariCirolar.Add(new ABCResult { Unvan = c.Unvan ?? "Bilinmeyen", Ciro = ciro });
+            }
+        }
+
+        decimal totalCiro = cariCirolar.Sum(x => x.Ciro);
+        if (totalCiro == 0) return;
+
+        // Ciroya göre azalan sırala
+        var sorted = cariCirolar.OrderByDescending(x => x.Ciro).ToList();
+        
+        decimal currentKumulatif = 0;
+        foreach(var s in sorted)
+        {
+            s.Pay = (double)(s.Ciro / totalCiro * 100);
+            currentKumulatif += (decimal)s.Pay;
+            s.KumulatifPay = (double)currentKumulatif;
+
+            if (s.KumulatifPay <= 80.5) s.Grup = "A";
+            else if (s.KumulatifPay <= 95.5) s.Grup = "B";
+            else s.Grup = "C";
+        }
+
+        abcData = sorted;
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Grup", "Müşteri Ünvan", "Ciro", "Pay (%)", "Küm. Pay" };
+            var rows = abcData.Select(a => new[] 
+            { 
+                a.Grup, 
+                a.Unvan, 
+                a.Ciro.ToString("C2"),
+                "%" + a.Pay.ToString("N1"),
+                "%" + a.KumulatifPay.ToString("N1")
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Müşteri ABC Analiz Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("MusteriABC.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Color GetGroupColor(string grup) => grup switch
+    {
+        "A" => Color.Success,
+        "B" => Color.Warning,
+        "C" => Color.Info,
+        _ => Color.Default
+    };
+
+    public class ABCResult
+    {
+        public string Unvan { get; set; } = "";
+        public decimal Ciro { get; set; }
+        public double Pay { get; set; }
+        public double KumulatifPay { get; set; }
+        public string Grup { get; set; } = "";
+    }
+}

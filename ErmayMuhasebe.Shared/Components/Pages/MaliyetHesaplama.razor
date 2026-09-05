@@ -1,0 +1,197 @@
+@page "/maliyet-hesaplama"
+@using MudBlazor
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4 mt-4">
+    <div class="d-flex align-center gap-2 mb-6 justify-center">
+        <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Large" Color="Color.Primary" />
+        <MudText Typo="Typo.h4" Align="Align.Center">Maliyet Hesaplama</MudText>
+    </div>
+
+    <MudGrid>
+        <!-- 1. Toplam KG Hesaplama -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="3" Style="height: 100%; border-radius: 8px;">
+                <MudText Typo="Typo.h6" Class="mb-4">Toplam KG Hesaplama</MudText>
+                
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption">Gramaj (gr):</MudText>
+                        <MudTextField @bind-Value="gramaj" Variant="Variant.Outlined" Placeholder="Gramaj girin" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12">
+                         <MudText Typo="Typo.caption">En (cm):</MudText>
+                        <MudTextField @bind-Value="en" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                     <MudItem xs="12">
+                         <MudText Typo="Typo.caption">Sarım (metre):</MudText>
+                        <MudTextField @bind-Value="sarim" Variant="Variant.Outlined" Placeholder="Sarım girin" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true" OnClick="HesaplaKG" Class="mt-2 text-white" Style="background-color: #42a5f5;">Hesapla</MudButton>
+                    </MudItem>
+                    
+                    @if(sonucKG > 0)
+                    {
+                        <MudItem xs="12" Class="mt-2">
+                             <MudAlert Severity="Severity.Success" Variant="Variant.Filled" NoIcon="true" Class="justify-center d-flex">
+                                 <MudText Typo="Typo.h6">@sonucKG.ToString("N2") KG</MudText>
+                             </MudAlert>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- 2. Top Fiyatı Hesaplama -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="3" Style="height: 100%; border-radius: 8px;">
+                <MudText Typo="Typo.h6" Class="mb-4">Top Fiyatı Hesaplama</MudText>
+                
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption">Toplam KG:</MudText>
+                        <MudTextField @bind-Value="toplamKG_Fiyaticin" Variant="Variant.Outlined" Placeholder="Toplam KG girin" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12">
+                         <MudText Typo="Typo.caption">KG Fiyatı ($):</MudText>
+                        <MudTextField @bind-Value="kgFiyati" Variant="Variant.Outlined" Placeholder="KG fiyatı girin" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" Class="mt-auto"> <!-- Spacing filler if needed -->
+                    </MudItem>
+                    <MudItem xs="12" Style="margin-top: 56px;"> <!-- Adjust spacing to match left card approximately -->
+                        <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true" OnClick="HesaplaTopFiyat" Class="mt-2 text-white" Style="background-color: #42a5f5;">Hesapla</MudButton>
+                    </MudItem>
+
+                    @if(sonucTopFiyat > 0)
+                    {
+                        <MudItem xs="12" Class="mt-2">
+                             <MudAlert Severity="Severity.Success" Variant="Variant.Filled" NoIcon="true" Class="justify-center d-flex">
+                                 <MudText Typo="Typo.h6">$@sonucTopFiyat.ToString("N2")</MudText>
+                             </MudAlert>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- 3. Metrekare Hesaplama -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="3" Style="height: 100%; border-radius: 8px;">
+                <MudText Typo="Typo.h6" Class="mb-4">Metrekare Hesaplama (160cm en için)</MudText>
+                
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption">Top Boy (metre):</MudText>
+                        <MudTextField @bind-Value="topBoy" Variant="Variant.Outlined" Placeholder="Top boy girin" Margin="Margin.Dense" />
+                    </MudItem>
+                    
+                     <MudItem xs="12" Style="margin-top: 56px;"> <!-- Filler to align buttons height visually -->
+                        <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true" OnClick="HesaplaMetrekare" Class="mt-2 text-white" Style="background-color: #42a5f5;">Hesapla</MudButton>
+                    </MudItem>
+
+                    @if(sonucM2 > 0)
+                    {
+                        <MudItem xs="12" Class="mt-2">
+                             <MudAlert Severity="Severity.Success" Variant="Variant.Filled" NoIcon="true" Class="justify-center d-flex">
+                                 <MudText Typo="Typo.h6">@sonucM2.ToString("N2") m²</MudText>
+                             </MudAlert>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- 4. Birim Metrekare Maliyeti -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="3" Style="height: 100%; border-radius: 8px;">
+                <MudText Typo="Typo.h6" Class="mb-4">Birim Metrekare Maliyeti Hesaplama</MudText>
+                
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption">Toplam Metrekare:</MudText>
+                        <MudTextField @bind-Value="toplamM2_MaliyetIcin" Variant="Variant.Outlined" Placeholder="Toplam metrekare girin" Margin="Margin.Dense" />
+                    </MudItem>
+                     <MudItem xs="12">
+                        <MudText Typo="Typo.caption">Top Fiyatı ($):</MudText>
+                        <MudTextField @bind-Value="topFiyati_MaliyetIcin" Variant="Variant.Outlined" Placeholder="Top fiyatı girin" Margin="Margin.Dense" />
+                    </MudItem>
+                    
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true" OnClick="HesaplaBirimMaliyet" Class="mt-2 text-white" Style="background-color: #42a5f5;">Hesapla</MudButton>
+                    </MudItem>
+
+                    @if(sonucBirimMaliyet > 0)
+                    {
+                        <MudItem xs="12" Class="mt-2">
+                             <MudAlert Severity="Severity.Success" Variant="Variant.Filled" NoIcon="true" Class="justify-center d-flex">
+                                 <MudText Typo="Typo.h6">$@sonucBirimMaliyet.ToString("N4") / m²</MudText>
+                             </MudAlert>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    // 1. KG Hesaplama Variables
+    private double gramaj;
+    private double en = 160;
+    private double sarim;
+    private double sonucKG;
+
+    // 2. Top Fiyatı Variables
+    private double toplamKG_Fiyaticin;
+    private double kgFiyati;
+    private double sonucTopFiyat;
+
+    // 3. Metrekare Variables
+    private double topBoy;
+    private double sonucM2;
+
+    // 4. Birim Maliyet Variables
+    private double toplamM2_MaliyetIcin;
+    private double topFiyati_MaliyetIcin;
+    private double sonucBirimMaliyet;
+
+
+    private void HesaplaKG()
+    {
+        // Formula: (Gramaj * En * Sarim) / 100000 
+        // 100 gr * 160 cm * 100 m / 100000 = 16 kg
+        sonucKG = (gramaj * en * sarim) / 100000;
+        
+        // Bu sonucu diğer kutucuklara da aktarabiliriz kullanım kolaylığı için
+        toplamKG_Fiyaticin = sonucKG;
+    }
+
+    private void HesaplaTopFiyat()
+    {
+        sonucTopFiyat = toplamKG_Fiyaticin * kgFiyati;
+        
+        // Sonucu diğer kutucuğa aktar
+        topFiyati_MaliyetIcin = sonucTopFiyat;
+    }
+    
+    private void HesaplaMetrekare()
+    {
+        // 160cm en için (1.6m)
+        sonucM2 = topBoy * 1.6;
+        
+        // Sonucu diğer kutucuğa aktar
+        toplamM2_MaliyetIcin = sonucM2;
+    }
+
+    private void HesaplaBirimMaliyet()
+    {
+        if (toplamM2_MaliyetIcin > 0)
+        {
+            sonucBirimMaliyet = topFiyati_MaliyetIcin / toplamM2_MaliyetIcin;
+        }
+        else
+        {
+            sonucBirimMaliyet = 0;
+        }
+    }
+}

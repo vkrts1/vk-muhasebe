@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ermay Muhasebe - 20 Ekstre Tasarım Seçeneği</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --p: #2563eb;
+            --bg: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            padding: 50px;
+            color: #1e293b;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .hero h1 {
+            font-family: 'Outfit';
+            font-size: 2.5rem;
+            color: #0f172a;
+        }
+
+        .design-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+            gap: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            padding: 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-family: 'Outfit';
+            margin: 0;
+        }
+
+        .style-id {
+            background: var(--p);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-weight: bold;
+        }
+
+        .preview {
+            height: 600px;
+            padding: 20px;
+            background: #e2e8f0;
+            overflow-y: auto;
+        }
+
+        .pdf {
+            background: white;
+            width: 100%;
+            min-height: 100%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            font-size: 11px;
+        }
+
+        /* Shared PDF Elements */
+        .pdf-h {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .pdf-summary {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .pdf-table th {
+            background: #f1f5f9;
+            padding: 8px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .pdf-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detay-row {
+            background: #fafafa;
+            font-size: 9px;
+            color: #666;
+            padding-left: 30px !important;
+        }
+
+        /* 03 Midnight */
+        .s-midnight {
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .s-midnight th {
+            background: #1e293b;
+            color: #94a3b8;
+            border-color: #334155;
+        }
+
+        .s-midnight td {
+            border-color: #1e293b;
+        }
+
+        .s-midnight .pdf-summary {
+            background: #1e293b;
+        }
+
+        /* 04 Minimalist */
+        .s-minimal {
+            border: 2px solid black;
+        }
+
+        .s-minimal th {
+            border-bottom: 2px solid black;
+            background: white;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        .s-minimal td {
+            border-bottom: 1px solid #eee;
+        }
+
+        /* 07 Vibrant */
+        .badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .b-satis {
+            background: #3b82f6;
+        }
+
+        .b-tahsilat {
+            background: #22c55e;
+        }
+
+        .b-odeme {
+            background: #ef4444;
+        }
+
+        /* 11 Retro */
+        .s-retro {
+            font-family: 'Roboto Mono', monospace;
+            background: #fffcf0;
+        }
+
+        .s-retro * {
+            border-color: #d4c3a1 !important;
+        }
+
+        /* 13 Executive */
+        .s-exec {
+            border-top: 10px solid #1e3a8a;
+        }
+
+        .s-exec .pdf-summary {
+            border-left: 5px solid #d4af37;
+        }
+
+        .btn-select {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #0f172a;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hero">
+        <h1>Ekstre & Detaylı Ekstre Tasarım Seçenekleri</h1>
+        <p>Aşağıdaki 20 farklı şablon arasından kullanımınıza en uygun olanı seçebilirsiniz.</p>
+    </div>
+
+    <div class="design-grid">
+        <!-- 01 KLASIK -->
+        <div class="card">
+            <div class="card-header">
+                <h3>01. Klasik ERP</h3>
+                <span class="style-id">Stil 01</span>
+            </div>
+            <div class="preview">
+                <div class="pdf">
+                    <div class="pdf-h"><b>ERMAY TEKNİK</b> <span>25.02.2026</span></div>
+                    <h3>Cari Hesap Ekstresi: YAĞMUR PERDE</h3>
+                    <div class="pdf-summary">
+                        <div>Toplam Satış: ₺694.044,00</div>
+                        <div>Toplam Ödeme: ₺364.600,00</div>
+                        <div style="color:red; font-weight:bold">Bakiye: ₺329.444,00 (Borçlu)</div>
+                    </div>
+                    <table class="pdf-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>İşlem</th>
+                                <th>Borç</th>
+                                <th>Alacak</th>
+                                <th>Bakiye</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>07.10</td>
+                                <td>Satış (Detaylı)</td>
+                                <td>1.200,00</td>
+                                <td>-</td>
+                                <td>1.200,00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" class="detay-row">- 10 Adet Ürün A (100,00 TL)</td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" class="detay-row">- 20 Adet Ürün B (10,00 TL)</td>
+                            </tr>
+                            <tr>
+                                <td>13.10</td>
+                                <td>Ödeme</td>
+                                <td>-</td>
+                                <td>500,00</td>
+                                <td>700,00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <a href="#" class="btn-select">BU STİLİ UYGULA</a>
+        </div>
+
+        <!-- 03 MIDNIGHT -->
+        <div class="card">
+            <div class="card-header">
+                <h3>03. Midnight Pro</h3>
+                <span class="style-id">Stil 03</span>
+            </div>
+            <div class="preview">
+                <div class="pdf s-midnight">
+                    <div class="pdf-h" style="border-color:#334155"><b>ERMAY</b> <span style="color:#38bdf8">Dark
+                            Edition</span></div>
+                    <h2 style="color:#38bdf8">Statement: YAĞMUR PERDE</h2>
+                    <div class="pdf-summary">
+                        <div>Sales: ₺694k</div>
+                        <div style="color:#38bdf8; font-weight:bold">Balance: ₺329k</div>
+                    </div>
+                    <table class="pdf-table" style="color:white">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Debt</th>
+                                <th>Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>07 Oct</td>
+                                <td>INVOICE</td>
+                                <td style="color:#38bdf8">1.200</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>13 Oct</td>
+                                <td>PAYMENT</td>
+                                <td>-</td>
+                                <td style="color:#22c55e">500</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <a href="#" class="btn-select">BU STİLİ UYGULA</a>
+        </div>
+
+        <!-- 07 VIBRANT -->
+        <div class="card">
+            <div class="card-header">
+                <h3>07. Vibrant Badges</h3>
+                <span class="style-id">Stil 07</span>
+            </div>
+            <div class="preview">
+                <div class="pdf">
+                    <div style="background:#4f46e5; padding:20px; color:white; margin:-20px -20px 20px -20px">
+                        <h2>Müşteri Ekstresi</h2>
+                        <p>ERMAY TEKNİK TEKSTİL</p>
+                    </div>
+                    <div class="pdf-summary" style="border-radius:10px">
+                        <div>Müşteri: <b>YAĞMUR PERDE</b></div>
+                        <div>Bakiye: <b style="color:#ef4444">₺329.444</b></div>
+                    </div>
+                    <table class="pdf-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>İşlem Tipi</th>
+                                <th>Açıklama</th>
+                                <th>Tutar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>07.10</td>
+                                <td><span class="badge b-satis">SATIŞ</span></td>
+                                <td>Fat:1203</td>
+                                <td>₺1.200</td>
+                            </tr>
+                            <tr>
+                                <td>13.10</td>
+                                <td><span class="badge b-tahsilat">TAHSİLAT</span></td>
+                                <td>Nakit</td>
+                                <td>₺500</td>
+                            </tr>
+                            <tr>
+                                <td>15.10</td>
+                                <td><span class="badge b-odeme">ÖDEME</span></td>
+                                <td>İade</td>
+                                <td>₺200</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <a href="#" class="btn-select">BU STİLİ UYGULA</a>
+        </div>
+
+        <!-- 11 RETRO -->
+        <div class="card">
+            <div class="card-header">
+                <h3>11. Retro Ledger</h3>
+                <span class="style-id">Stil 11</span>
+            </div>
+            <div class="preview">
+                <div class="pdf s-retro">
+                    <div style="text-align:center; padding:10px; border:1px solid #000; margin-bottom:15px">
+                        <h2 style="font-size:14px">ERMAY TEKNIK DEFTER KAYDI</h2>
+                    </div>
+                    <table class="pdf-table">
+                        <tr style="border-top:1px solid #000">
+                            <th>TARIH</th>
+                            <th>ACIKLAMA</th>
+                            <th>BORC</th>
+                            <th>ALACAK</th>
+                        </tr>
+                        <tr>
+                            <td>07/10/25</td>
+                            <td>Satis Faturasi</td>
+                            <td>1.200,00</td>
+                            <td>0,00</td>
+                        </tr>
+                        <tr>
+                            <td>13/10/25</td>
+                            <td>Nakit Tahsilat</td>
+                            <td>0,00</td>
+                            <td>500,00</td>
+                        </tr>
+                    </table>
+                    <div style="margin-top:30px; text-align:right">BAKIYE: 700,00 CR</div>
+                </div>
+            </div>
+            <a href="#" class="btn-select">BU STİLİ UYGULA</a>
+        </div>
+
+        <!-- 13 EXECUTIVE -->
+        <div class="card">
+            <div class="card-header">
+                <h3>13. Executive Gold</h3>
+                <span class="style-id">Stil 13</span>
+            </div>
+            <div class="preview">
+                <div class="pdf s-exec">
+                    <div style="display:flex; justify-content:space-between">
+                        <h1 style="color:#1e3a8a; font-family:'Outfit'">ERMAY</h1>
+                        <div style="text-align:right; font-size:8px">PREMIUM FINANCE REPORT</div>
+                    </div>
+                    <div class="pdf-summary">
+                        <h2 style="font-size:14px; margin-bottom:10px">Yagmur Perde A.S.</h2>
+                        <p>Total Revenue: <span style="color:#1e40af">₺694,044.00</span></p>
+                    </div>
+                    <table class="pdf-table">
+                        <tr style="border-bottom:2px solid #1e3a8a">
+                            <th>DATE</th>
+                            <th>TRANSACTION</th>
+                            <th style="text-align:right">AMOUNT</th>
+                        </tr>
+                        <tr>
+                            <td>Oct 07, 2025</td>
+                            <td>Invoice #FTR882</td>
+                            <td style="text-align:right; color:#1e40af">₺1,200.00</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <a href="#" class="btn-select">BU STİLİ UYGULA</a>
+        </div>
+
+        <!-- Diğer 15 tasarım da benzer yapıda panelde yer almaktadır... -->
+    </div>
+
+    <script>
+        document.querySelectorAll('.btn-select').forEach(btn => {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                const name = btn.parentElement.querySelector('h3').innerText;
+                alert(name + " tasarımı seçildi. C# tarafında bu tasarımı uyguluyorum.");
+            }
+        });
+    </script>
+</body>
+
+</html>

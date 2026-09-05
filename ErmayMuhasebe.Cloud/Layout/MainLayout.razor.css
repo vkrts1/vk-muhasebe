@@ -1,0 +1,76 @@
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.sidebar {
+    background: #050607;
+    border-right: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.top-row {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    justify-content: flex-end;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px !important;
+}
+
+    .top-row ::deep a, .top-row ::deep .btn-link {
+        white-space: nowrap;
+        margin-left: 1.5rem;
+        text-decoration: none;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
+        color: white;
+    }
+
+@media (max-width: 640.98px) {
+    .top-row {
+        justify-content: space-between;
+    }
+
+    .top-row ::deep a, .top-row ::deep .btn-link {
+        margin-left: 0;
+    }
+}
+
+@media (min-width: 641px) {
+    .page {
+        flex-direction: row;
+    }
+
+    .sidebar {
+        width: 250px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .top-row {
+        position: sticky;
+        top: 0;
+        z-index: 999;
+    }
+
+    .top-row.auth ::deep a:first-child {
+        flex: 1;
+        text-align: right;
+        width: 0;
+    }
+
+    article {
+        padding: 24px;
+    }
+}

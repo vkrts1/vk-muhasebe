@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.StokGrupDuzenleView"
+             x:DataType="vm:StokGrupDuzenleViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#268B5CF6">
+          <!-- <ic:SymbolIcon Symbol="Layout" Foreground="#8B5CF6" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> --> 
+        </Border>
+        <TextBlock Text="Toplu Grup ve Kategori Düzenleyici" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Stok kartlarının gruplarını toplu olarak hızlıca değiştirin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="350, *">
+      <!-- Actions Panel -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="25" BorderBrush="#22FFFFFF" BorderThickness="1" Margin="0,0,20,0" VerticalAlignment="Top">
+        <StackPanel Spacing="25">
+           <TextBlock Text="Toplu İşlem Ayarları" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+           
+           <StackPanel Spacing="8">
+             <TextBlock Text="Yeni Grup Adı" Foreground="#9CA3AF" FontSize="13"/>
+             <ComboBox ItemsSource="{Binding Gruplar}" SelectedItem="{Binding HedefGrup}" HorizontalAlignment="Stretch" IsEditable="True"/>
+           </StackPanel>
+
+           <Border Background="#108B5CF6" CornerRadius="12" Padding="15">
+             <TextBlock Text="Not: Sağdaki listeden seçim yaptıktan sonra 'Uygula' butonuna basın." 
+                        FontSize="11" Foreground="#8B5CF6" TextWrapping="Wrap"/>
+           </Border>
+
+           <Button Command="{Binding UygulaCommand}" Classes="SideButton Info" Height="55" HorizontalAlignment="Stretch" Background="#8B5CF6">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ic:SymbolIcon Symbol="CheckmarkCircle" FontSize="20"/> 
+                    <TextBlock Text="GRUP DEĞİŞİMİNİ UYGULA" FontWeight="Bold"/>
+                </StackPanel>
+           </Button>
+
+           <TextBlock Text="{Binding StatusMessage}" Foreground="White" FontSize="12" TextAlignment="Center" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Selection List -->
+      <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="10" BorderBrush="#22FFFFFF" BorderThickness="1">
+         <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected}" Width="50"/>
+                <DataGridTextColumn Header="Stok Kodu" Binding="{Binding Stok.StokKodu}" Width="120"/>
+                <DataGridTextColumn Header="Stok Adı" Binding="{Binding Stok.StokAdi}" Width="*"/>
+                <DataGridTextColumn Header="Mevcut Grup" Binding="{Binding Stok.Grup}" Width="150"/>
+            </DataGrid.Columns>
+         </DataGrid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

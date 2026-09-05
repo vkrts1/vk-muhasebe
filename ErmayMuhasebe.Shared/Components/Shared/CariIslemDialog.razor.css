@@ -1,0 +1,41 @@
+/* Dark-mode overrides for CariIslemDialog */
+[data-theme="dark"] .legacy-light .mud-dialog-surface,
+[data-theme="modern-saas"] .legacy-light .mud-dialog-surface,
+[data-theme="dark"] .legacy-light,
+[data-theme="modern-saas"] .legacy-light,
+[data-theme="dark"] .legacy-light *,
+[data-theme="modern-saas"] .legacy-light * {
+  color: var(--bilsoft-text) !important;
+}
+
+[data-theme="dark"] .legacy-light [style*="background: white"],
+[data-theme="modern-saas"] .legacy-light [style*="background: white"],
+[data-theme="dark"] .legacy-light [style*="background:white"],
+[data-theme="modern-saas"] .legacy-light [style*="background:white"],
+[data-theme="dark"] .legacy-light [style*="background: #fff"],
+[data-theme="modern-saas"] .legacy-light [style*="background: #fff"],
+[data-theme="dark"] .legacy-light [style*="background:#fff"],
+[data-theme="modern-saas"] .legacy-light [style*="background:#fff"],
+[data-theme="dark"] .legacy-light [style*="background: #f0f0f0"],
+[data-theme="modern-saas"] .legacy-light [style*="background: #f0f0f0"],
+[data-theme="dark"] .legacy-light [style*="background:#f0f0f0"],
+[data-theme="modern-saas"] .legacy-light [style*="background:#f0f0f0"],
+[data-theme="dark"] .legacy-light [style*="background: #fafafa"],
+[data-theme="modern-saas"] .legacy-light [style*="background: #fafafa"],
+[data-theme="dark"] .legacy-light [style*="background:#fafafa"],
+[data-theme="modern-saas"] .legacy-light [style*="background:#fafafa"],
+[data-theme="dark"] .legacy-light [style*="background: #e0e0e0"],
+[data-theme="modern-saas"] .legacy-light [style*="background: #e0e0e0"],
+[data-theme="dark"] .legacy-light [style*="background:#e0e0e0"],
+[data-theme="modern-saas"] .legacy-light [style*="background:#e0e0e0"] {
+  background-color: var(--bilsoft-white) !important;
+}
+
+[data-theme="dark"] .legacy-light [style*="border: 1px solid #ccc"],
+[data-theme="dark"] .legacy-light [style*="border:1px solid #ccc"],
+[data-theme="dark"] .legacy-light [style*="border-bottom: 1px solid #ccc"],
+[data-theme="dark"] .legacy-light [style*="border-top: 1px solid #ccc"],
+[data-theme="dark"] .legacy-light [style*="border-left: 1px solid #ccc"],
+[data-theme="dark"] .legacy-light [style*="border-right: 1px solid #ccc"] {
+  border-color: var(--bilsoft-border) !important;
+}

@@ -1,0 +1,106 @@
+@page "/karsilastirmali-bilanco"
+@using MudBlazor
+
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">Yıllık Karşılaştırmalı Bilanço</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" md="3">
+            <MudSelect T="int" Label="Karşılaştırılacak Yıl 1" Variant="Variant.Outlined" @bind-Value="yil1">
+                <MudSelectItem Value="2024">2024</MudSelectItem>
+                <MudSelectItem Value="2023">2023</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="int" Label="Karşılaştırılacak Yıl 2" Variant="Variant.Outlined" @bind-Value="yil2">
+                <MudSelectItem Value="2025">2025</MudSelectItem>
+                <MudSelectItem Value="2024">2024</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="6" Class="d-flex align-end pb-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Compare" OnClick="Raporla">Raporu Hazırla</MudButton>
+            <MudSpacer />
+            <MudTooltip Text="PDF İndir">
+                <MudIconButton Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Secondary" />
+            </MudTooltip>
+            <MudTooltip Text="Excel İndir">
+                <MudIconButton Icon="@Icons.Material.Filled.TableView" Color="Color.Success" />
+            </MudTooltip>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Varlıklar Karşılaştırması</MudText>
+            <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@Labels" Width="100%" Height="300px" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Fark Analizi (%)</MudText>
+            <MudSimpleTable Bordered="true" Striped="true" Dense="true">
+                <thead>
+                    <tr>
+                        <th>Kalem</th>
+                        <th>@yil1 (Bin TL)</th>
+                        <th>@yil2 (Bin TL)</th>
+                        <th>Değişim (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Dönen Varlıklar</td>
+                        <td>450,0</td>
+                        <td>520,0</td>
+                        <td><MudText Color="Color.Success">+15,5%</MudText></td>
+                    </tr>
+                    <tr>
+                        <td>Duran Varlıklar</td>
+                        <td>880,0</td>
+                        <td>910,0</td>
+                        <td><MudText Color="Color.Success">+3,4%</MudText></td>
+                    </tr>
+                    <tr>
+                        <td>Kısa Vadeli Yabancı Kaynaklar</td>
+                        <td>210,0</td>
+                        <td>190,0</td>
+                        <td><MudText Color="Color.Success">-9,5%</MudText></td>
+                    </tr>
+                    <tr>
+                        <td>Uzun Vadeli Yabancı Kaynaklar</td>
+                        <td>340,0</td>
+                        <td>380,0</td>
+                        <td><MudText Color="Color.Error">+11,7%</MudText></td>
+                    </tr>
+                    <tr class="mud-theme-info">
+                        <td><b>Özkaynaklar (Net Değer)</b></td>
+                        <td><b>780,0</b></td>
+                        <td><b>860,0</b></td>
+                        <td><b>+10,2%</b></td>
+                    </tr>
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private int yil1 = 2024;
+    private int yil2 = 2025;
+
+    public List<ChartSeries> Series = new List<ChartSeries>()
+    {
+        new ChartSeries() { Name = "2024", Data = new double[] { 450, 880, 210, 340 } },
+        new ChartSeries() { Name = "2025", Data = new double[] { 520, 910, 190, 380 } },
+    };
+    public string[] Labels = { "Dönen", "Duran", "K.V. Borç", "U.V. Borç" };
+
+    private void Raporla()
+    {
+        // Re-calculate series based on actual DB data or mock logic
+        StateHasChanged();
+    }
+}

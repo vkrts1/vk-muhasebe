@@ -1,0 +1,167 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@using MudBlazor
+@inject IDialogService DialogService
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudDialog Style="min-width: 900px; min-height: 600px;">
+    <DialogContent>
+        <MudGrid>
+            <!-- Header Info -->
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="Model.TeklifNo" Label="Teklif No" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudDatePicker Label="Tarih" @bind-Date="tarih" Variant="Variant.Outlined" />
+            </MudItem>
+             <MudItem xs="6" md="3">
+                <MudSelect T="string" Label="Durum" @bind-Value="Model.Durum" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("Hazırlanıyor")">Hazırlanıyor</MudSelectItem>
+                    <MudSelectItem Value="@("Gönderildi")">Gönderildi</MudSelectItem>
+                    <MudSelectItem Value="@("Onaylandı")">Onaylandı</MudSelectItem>
+                    <MudSelectItem Value="@("Reddedildi")">Reddedildi</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudTextField @bind-Value="Model.CariUnvan" Label="Müşteri/Aday" Variant="Variant.Outlined" ReadOnly="true"/>
+                    <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="CariSec" Variant="Variant.Filled" Color="Color.Primary" />
+                </MudStack>
+            </MudItem>
+            
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Model.Aciklama" Label="Açıklama / Notlar" Variant="Variant.Outlined"/>
+            </MudItem>
+
+            <!-- Detail Lines -->
+            <MudItem xs="12">
+                <MudTable Items="@Detaylar" Dense="true" Hover="true" Striped="true">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Ürünler / Hizmetler</MudText>
+                        <MudSpacer />
+                        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Success" OnClick="UrunEkle">Ekle</MudButton>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Stok Adı</MudTh>
+                        <MudTh>Açıklama</MudTh>
+                        <MudTh>Miktar</MudTh>
+                        <MudTh>Birim Fiyat</MudTh>
+                        <MudTh>Tutar</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.StokAdi</MudTd>
+                        <MudTd>@context.Aciklama</MudTd>
+                        <MudTd>@context.Miktar</MudTd>
+                        <MudTd>@context.BirimFiyat.ToString("C2")</MudTd>
+                        <MudTd>@context.Tutar.ToString("C2")</MudTd>
+                        <MudTd>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => RemoveItem(context))" />
+                        </MudTd>
+                    </RowTemplate>
+                     <FooterContent>
+                        <MudTd colspan="3" Style="text-align:right"><b>Toplam:</b></MudTd>
+                        <MudTd><b>@Detaylar.Sum(x => x.Tutar).ToString("C2")</b></MudTd>
+                        <MudTd></MudTd>
+                    </FooterContent>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public Teklif Model { get; set; } = new();
+    
+    public List<TeklifDetay> Detaylar { get; set; } = new();
+
+    private DateTime? tarih;
+
+    protected override void OnInitialized()
+    {
+        if (Model.Tarih == default) Model.Tarih = DateTime.Now;
+        tarih = Model.Tarih;
+        if (string.IsNullOrEmpty(Model.TeklifNo)) Model.TeklifNo = "TKL-" + DateTime.Now.ToString("yyyyMMddHHmmss");
+    }
+
+    private async Task CariSec()
+    {
+        var dialog = await DialogService.ShowAsync<CariSecDialog>("Cari Seç");
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is CariKart cari)
+        {
+            Model.CariId = cari.Id;
+            Model.CariUnvan = cari.Unvan;
+        }
+    }
+
+    private async Task UrunEkle()
+    {
+        var dialog = await DialogService.ShowAsync<StokSecDialog>("Ürün/Hizmet Seç");
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is StokKart stok)
+        {
+            var parameters = new DialogParameters 
+            {
+                ["Stok"] = stok,
+                ["IsSatis"] = true // Teklif genelde satış fiyatı üzerindendir
+            };
+            
+            var detailDialog = await DialogService.ShowAsync<UrunDetayDialog>("Detay", parameters);
+            var detailResult = await detailDialog.Result;
+            
+            if(detailResult != null && !detailResult.Canceled && detailResult.Data is ErmayMuhasebe.Shared.Components.Shared.FaturaDialog.FaturaKalemi fDetay) {
+                 Detaylar.Add(new TeklifDetay 
+                 {
+                     StokId = stok.Id,
+                     StokAdi = fDetay.UrunAdi,
+                     Aciklama = fDetay.Aciklama,
+                     TopMiktari = double.TryParse(fDetay.TopMiktari, out var tm) ? tm : 0,
+                     Miktar = (double)fDetay.Miktar,
+                     BirimFiyat = fDetay.BirimFiyat
+                 });
+            }
+        }
+    }
+
+    private void RemoveItem(TeklifDetay item)
+    {
+        Detaylar.Remove(item);
+    }
+
+    void Submit()
+    {
+        if (Model.CariId == 0) 
+        {
+            Snackbar.Add("Lütfen cari seçiniz!", Severity.Warning);
+            return;
+        }
+        if (Detaylar.Count == 0)
+        {
+            Snackbar.Add("En az bir kalem ekleyiniz!", Severity.Warning);
+            return;
+        }
+
+        if (tarih.HasValue) Model.Tarih = tarih.Value;
+        Model.GenelToplam = Detaylar.Sum(x => x.Tutar);
+        
+        MudDialog.Close(DialogResult.Ok(new TeklifData { Teklif = Model, Detaylar = Detaylar }));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+    
+    public class TeklifData 
+    {
+        public Teklif Teklif { get; set; } = new();
+        public List<TeklifDetay> Detaylar { get; set; } = new();
+    }
+}

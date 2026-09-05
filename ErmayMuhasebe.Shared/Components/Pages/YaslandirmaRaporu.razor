@@ -1,0 +1,219 @@
+@page "/yaslandirma-raporu"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@using MudBlazor
+
+<div>
+    <div class="d-flex justify-space-between align-center mb-4">
+        <MudText Typo="Typo.h5" Color="Color.Primary">Cari Yaşlandırma Raporu</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport" Disabled="@(_loading || !raporListesi.Any())">Yazdır / PDF</MudButton>
+        </MudStack>
+    </div>
+
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="4">
+                <MudSelect T="string" Value="@_filterType" ValueChanged="OnFilterChanged" Label="Rapor Türü" Variant="Variant.Outlined" Dense="true">
+                    <MudSelectItem Value="@("Borclu")">Borçlu Cariler (Alacaklarımız)</MudSelectItem>
+                    <MudSelectItem Value="@("Alacakli")">Alacaklı Cariler (Borçlarımız)</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="8" Class="d-flex align-center">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    * Bakiyesi olan tüm cariler hareket tarihlerine göre yaşlandırılır.
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (_loading)
+    {
+        <div class="d-flex justify-center pa-10">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </div>
+    }
+    else if (!raporListesi.Any())
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">
+            Seçilen kritere uygun bakiyeli cari hesap bulunamadı.
+        </MudAlert>
+    }
+    else
+    {
+        <MudTable Items="@raporListesi" Dense="true" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Cari Ünvan</MudTh>
+                <MudTh Style="text-align:right">Toplam Bakiye</MudTh>
+                <MudTh Style="text-align:right">0-30 Gün</MudTh>
+                <MudTh Style="text-align:right">30-60 Gün</MudTh>
+                <MudTh Style="text-align:right">60-90 Gün</MudTh>
+                <MudTh Style="text-align:right">90+ Gün</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.CariUnvan</MudTd>
+                <MudTd Style="text-align:right">
+                    <strong>@context.ToplamBakiye.ToString("N2")</strong>
+                </MudTd>
+                <MudTd Style="text-align:right">@context.Gun0_30.ToString("N2")</MudTd>
+                <MudTd Style="text-align:right">@context.Gun30_60.ToString("N2")</MudTd>
+                <MudTd Style="text-align:right">@context.Gun60_90.ToString("N2")</MudTd>
+                <MudTd Style="text-align:right">@context.Gun90Plus.ToString("N2")</MudTd>
+            </RowTemplate>
+            <FooterContent>
+                <MudTFootRow>
+                    <MudTd><strong>TOPLAM</strong></MudTd>
+                    <MudTd Style="text-align:right"><strong>@raporListesi.Sum(x => x.ToplamBakiye).ToString("N2")</strong></MudTd>
+                    <MudTd Style="text-align:right"><strong>@raporListesi.Sum(x => x.Gun0_30).ToString("N2")</strong></MudTd>
+                    <MudTd Style="text-align:right"><strong>@raporListesi.Sum(x => x.Gun30_60).ToString("N2")</strong></MudTd>
+                    <MudTd Style="text-align:right"><strong>@raporListesi.Sum(x => x.Gun60_90).ToString("N2")</strong></MudTd>
+                    <MudTd Style="text-align:right"><strong>@raporListesi.Sum(x => x.Gun90Plus).ToString("N2")</strong></MudTd>
+                </MudTFootRow>
+            </FooterContent>
+        </MudTable>
+    }
+</div>
+
+@code {
+    public class YaslandirmaSatiri
+    {
+        public string CariUnvan { get; set; } = "";
+        public decimal ToplamBakiye { get; set; }
+        public decimal Gun0_30 { get; set; }
+        public decimal Gun30_60 { get; set; }
+        public decimal Gun60_90 { get; set; }
+        public decimal Gun90Plus { get; set; }
+    }
+
+    private List<YaslandirmaSatiri> raporListesi = new();
+    private bool _loading = true;
+    private string _filterType = "Borclu";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await HesaplaYaslandirma();
+    }
+
+    private async Task OnFilterChanged(string newValue)
+    {
+        _filterType = newValue;
+        await HesaplaYaslandirma();
+    }
+
+    private async Task HesaplaYaslandirma()
+    {
+        _loading = true;
+        StateHasChanged();
+        
+        try 
+        {
+            raporListesi.Clear();
+            var cariler = await DbService.GetCarilerAsync();
+            
+            // Borclu (Bize borcu olanlar) veya Alacakli (Bizim borcumuz olanlar)
+            var filteredCaris = _filterType == "Borclu" 
+                ? cariler.Where(c => c.Bakiye > 0.01m).ToList()
+                : cariler.Where(c => c.Bakiye < -0.01m).ToList();
+
+            foreach (var cari in filteredCaris)
+            {
+                var satir = await HesaplaCariYaslandirma(cari);
+                raporListesi.Add(satir);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Rapor hesaplanırken hata oluştu: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<YaslandirmaSatiri> HesaplaCariYaslandirma(CariKart cari)
+    {
+        var hareketler = await DbService.GetCariHareketleriAsync(cari.Id);
+        
+        // Borclu isek borçları (bakiye artıranları), Alacaklı isek alacakları (bakiye azaltanları - mutlak değer) yaşlandırıyoruz
+        var relevantMovements = _filterType == "Borclu" 
+            ? hareketler.Where(h => h.Borc > 0).OrderByDescending(h => h.Tarih).ToList()
+            : hareketler.Where(h => h.Alacak > 0).OrderByDescending(h => h.Tarih).ToList();
+        
+        decimal bakiye = _filterType == "Borclu" ? cari.Bakiye : Math.Abs(cari.Bakiye);
+        decimal kalanBakiye = bakiye;
+        
+        var satir = new YaslandirmaSatiri { 
+            CariUnvan = cari.Unvan ?? "İsimsiz", 
+            ToplamBakiye = bakiye 
+        };
+        
+        DateTime today = DateTime.Now;
+
+        foreach (var h in relevantMovements)
+        {
+            if (kalanBakiye <= 0) break;
+
+            decimal islemTutari = _filterType == "Borclu" ? h.Borc : h.Alacak;
+            decimal kullanilanTutar = Math.Min(kalanBakiye, islemTutari);
+
+            int gunFarki = (today - h.Tarih).Days;
+
+            if (gunFarki <= 30) satir.Gun0_30 += kullanilanTutar;
+            else if (gunFarki <= 60) satir.Gun30_60 += kullanilanTutar;
+            else if (gunFarki <= 90) satir.Gun60_90 += kullanilanTutar;
+            else satir.Gun90Plus += kullanilanTutar;
+
+            kalanBakiye -= kullanilanTutar;
+        }
+        
+        // Hareketlerden düşülemiyorsa (örn: devir bakiyesi) en eski periyoda ekle
+        if (kalanBakiye > 0)
+        {
+            satir.Gun90Plus += kalanBakiye;
+        }
+
+        return satir;
+    }
+    
+    private async Task PrintReport()
+    {
+        try
+        {
+            var title = _filterType == "Borclu" ? "Cari Yaşlandırma (Alacaklarımız)" : "Cari Yaşlandırma (Borçlarımız)";
+            var headers = new[] { "Cari Ünvan", "Toplam Bakiye", "0-30 Gün", "30-60 Gün", "60-90 Gün", "90+ Gün" };
+            var rows = raporListesi.Select(r => new[] 
+            { 
+                r.CariUnvan,
+                r.ToplamBakiye.ToString("N2"),
+                r.Gun0_30.ToString("N2"),
+                r.Gun30_60.ToString("N2"),
+                r.Gun60_90.ToString("N2"),
+                r.Gun90Plus.ToString("N2")
+            }).ToList();
+            
+            rows.Add(new[] { 
+                "TOPLAM", 
+                raporListesi.Sum(x => x.ToplamBakiye).ToString("N2"),
+                raporListesi.Sum(x => x.Gun0_30).ToString("N2"),
+                raporListesi.Sum(x => x.Gun30_60).ToString("N2"),
+                raporListesi.Sum(x => x.Gun60_90).ToString("N2"),
+                raporListesi.Sum(x => x.Gun90Plus).ToString("N2")
+            });
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync(title, headers, rows);
+            await FileService.SaveAndOpenFileAsync("YaslandirmaRaporu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"PDF hatası: {ex.Message}", Severity.Error);
+        }
+    }
+}

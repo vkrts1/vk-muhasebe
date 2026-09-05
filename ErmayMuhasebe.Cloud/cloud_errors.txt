@@ -1,0 +1,10 @@
+﻿D:\2\ermaymuhasebe\ErmayMuhasebe.Cloud\ViewModels\KanbanViewModel.cs(36,38): error CS1061: 'ClientDatabaseService' bir 'GetKanbanDataAsync' tan─▒m─▒ i├ğermiyor ve 'ClientDatabaseService' t├╝r├╝nde bir ilk ba─ş─▒ms─▒z de─şi┼şken kabul eden hi├ğbir eri┼şilebilir 'GetKanbanDataAsync' geni┼şletme y├Ântemi bulunamad─▒ (bir kullanma y├Ânergeniz veya derleme ba┼şvurunuz eksik olabilir mi?) [D:\2\ermaymuhasebe\ErmayMuhasebe.Cloud\ErmayMuhasebe.Cloud.csproj]
+D:\2\ermaymuhasebe\ErmayMuhasebe.Cloud\ViewModels\KanbanViewModel.cs(53,23): error CS1061: 'ClientDatabaseService' bir 'SaveKanbanDataAsync' tan─▒m─▒ i├ğermiyor ve 'ClientDatabaseService' t├╝r├╝nde bir ilk ba─ş─▒ms─▒z de─şi┼şken kabul eden hi├ğbir eri┼şilebilir 'SaveKanbanDataAsync' geni┼şletme y├Ântemi bulunamad─▒ (bir kullanma y├Ânergeniz veya derleme ba┼şvurunuz eksik olabilir mi?) [D:\2\ermaymuhasebe\ErmayMuhasebe.Cloud\ErmayMuhasebe.Cloud.csproj]
+
+Olu┼şturma BA┼ŞARISIZ OLDU.
+    15 Uyar─▒
+    2 Hata
+
+Ge├ğen S├╝re 00:00:02.55
+
+─░┼ş y├╝k├╝ g├╝ncelle┼ştirmeleri var. Daha fazla bilgi i├ğin `dotnet workload list` ├ğal─▒┼şt─▒r─▒n.

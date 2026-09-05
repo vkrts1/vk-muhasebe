@@ -1,0 +1,77 @@
+@page "/odeme-takibi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<div>
+    <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Ödeme Takibi</MudText>
+
+    <MudTable Items="@odemeler" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Vade Tarihi</MudTh>
+            <MudTh>Tür</MudTh>
+            <MudTh>Yön</MudTh>
+            <MudTh>Açıklama</MudTh>
+            <MudTh>Tutar</MudTh>
+            <MudTh>İşlem</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Tarih.ToShortDateString()</MudTd>
+            <MudTd>@context.Tur</MudTd>
+            <MudTd>
+                 @if(context.Yon == "Tahsilat") 
+                 { 
+                     <MudChip T="string" Color="MudBlazor.Color.Success" Size="Size.Small">Tahsilat</MudChip> 
+                 }
+                 else 
+                 { 
+                     <MudChip T="string" Color="MudBlazor.Color.Error" Size="Size.Small">Ödeme</MudChip> 
+                 }
+            </MudTd>
+            <MudTd>@context.Aciklama</MudTd>
+            <MudTd>@context.Tutar.ToString("C2")</MudTd>
+            <MudTd>
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="@(context.Yon == "Tahsilat" ? Color.Success : Color.Error)" OnClick="@(() => IslemYap(context))">
+                    @(context.Yon == "Tahsilat" ? "Tahsil Et" : "Öde")
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</div>
+
+@code {
+    private List<OdemePlanView> odemeler = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+
+    private async Task LoadData()
+    {
+        odemeler = await DbService.GetOdemePlaniAsync();
+        odemeler = odemeler.Where(x => x.Tarih >= DateTime.Today).OrderBy(x => x.Tarih).ToList();
+    }
+
+    private async Task IslemYap(OdemePlanView item)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Onay",
+            $"{item.Tutar:C2} tutarındaki {(item.Yon == "Tahsilat" ? "tahsilatı" : "ödemeyi")} gerçekleştirmek istiyor musunuz?",
+            yesText: "Evet", cancelText: "Hayır");
+
+        if (result == true)
+        {
+            string newStatus = item.Yon == "Tahsilat" ? "Tahsil" : "Odendi";
+            await DbService.UpdateOdemeStatusAsync(item.Id, item.SourceType ?? "", newStatus);
+            
+            Snackbar.Add("İşlem başarılı.", Severity.Success);
+            await LoadData();
+        }
+    }
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>PDF Test</title>
+</head>
+
+<body>
+    <h1>PDF Download Test</h1>
+    <button onclick="testPdf()">Test PDF Download</button>
+    <button onclick="testPdfOpen()">Test PDF Open</button>
+
+    <script>
+        window.downloadFile = (fileName, contentType, content) => {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const anchorElement = document.createElement('a');
+            anchorElement.href = url;
+            anchorElement.download = fileName ?? '';
+            anchorElement.click();
+            anchorElement.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        window.openPdf = (content) => {
+            const blob = new Blob([content], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        function testPdf() {
+            // Create a simple PDF (just some bytes)
+            const testContent = new Uint8Array([37, 80, 68, 70]); // "%PDF" header
+            downloadFile('test.pdf', 'application/pdf', testContent);
+        }
+
+        function testPdfOpen() {
+            const testContent = new Uint8Array([37, 80, 68, 70]);
+            openPdf(testContent);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,14 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <div class="d-flex justify-center">
+            <img src="@ImageUrl" style="max-width: 100%; max-height: 80vh; object-fit: contain;" />
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string ImageUrl { get; set; } = "";
+}

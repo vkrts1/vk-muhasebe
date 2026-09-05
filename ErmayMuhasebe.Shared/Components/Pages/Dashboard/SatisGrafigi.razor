@@ -1,0 +1,49 @@
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h6">Satış Analizi (Son 6 Ay)</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="LoadData" />
+    </MudStack>
+    <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="300px" />
+</MudPaper>
+
+@code {
+    public List<ChartSeries> Series = new List<ChartSeries>();
+    public string[] XAxisLabels = { };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        // Dummy data structure for now, replace with actual logic to group invoices by month
+        var invoices = await DbService.GetFaturalarAsync();
+        var sales = invoices.Where(f => f.Tur == "Satis" || f.Tur == "Satış")
+                            .GroupBy(f => f.Tarih.ToString("MMM"))
+                            .Select(g => new { Month = g.Key, Total = (double)g.Sum(f => f.GenelToplam) })
+                            .Take(6)
+                            .ToList();
+
+        // If no data, show dummy empty chart or last 6 months zero
+        if (!sales.Any())
+        {
+             XAxisLabels = new[] { "Oca", "Şub", "Mar", "Nis", "May", "Haz" };
+             Series = new List<ChartSeries>() 
+             { 
+                 new ChartSeries() { Name = "Satışlar", Data = new double[] { 0, 0, 0, 0, 0, 0 } } 
+             };
+        }
+        else 
+        {
+            XAxisLabels = sales.Select(s => s.Month).ToArray();
+            Series = new List<ChartSeries>()
+            {
+                new ChartSeries() { Name = "Satışlar", Data = sales.Select(s => s.Total).ToArray() }
+            };
+        }
+    }
+}

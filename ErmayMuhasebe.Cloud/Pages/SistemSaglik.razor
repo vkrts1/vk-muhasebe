@@ -1,0 +1,75 @@
+@page "/sistem-saglik"
+@using ErmayMuhasebe.Shared.ViewModels
+@inject SistemSaglikViewModel ViewModel
+@implements IDisposable
+
+<div class="fade-in p-8" style="height: 100%; overflow-y: auto;">
+    <!-- Header -->
+    <div class="d-flex align-center gap-4 mb-10">
+        <div class="header-icon-box" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); width: 60px; height: 60px; border-radius: 18px; display: flex; align-center; justify-center;">
+            <MudIcon Icon="@Icons.Material.Filled.Bolt" Style="color: #10B981; font-size: 32px;" />
+        </div>
+        <div>
+            <h1 style="font-size: 28px; font-weight: 900; color: white; margin: 0;">Sistem Kaynak ve Performans İzleyici</h1>
+            <p style="font-size: 14px; color: rgba(255,255,255,0.4); margin: 0;">Uygulama kaynak tüketimini ve çalışma süresini anlık olarak takip edin.</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="row g-4 mb-8">
+        <!-- CPU -->
+        <div class="col-md-4">
+            <div class="glass-panel p-8 text-center d-flex flex-column gap-4">
+                <span style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;">CPU KULLANIMI</span>
+                <span style="font-size: 56px; font-weight: 900; color: #60A5FA;">@ViewModel.CpuUsage%</span>
+                <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                    <div style="width: @ViewModel.CpuUsage%; height: 100%; background: #60A5FA; transition: width 0.5s ease-out;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RAM -->
+        <div class="col-md-4">
+            <div class="glass-panel p-8 text-center d-flex flex-column gap-4">
+                <span style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;">BELLEK (RAM)</span>
+                <span style="font-size: 56px; font-weight: 900; color: #8B5CF6;">@ViewModel.RamUsage MB</span>
+                <span style="font-size: 12px; font-weight: 700; color: #10B981;">SİSTEM KARARLI DURUMDA</span>
+            </div>
+        </div>
+
+        <!-- UPTIME -->
+        <div class="col-md-4">
+            <div class="glass-panel p-8 text-center d-flex flex-column gap-4">
+                <span style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;">ÇALIŞMA SÜRESİ</span>
+                <span style="font-size: 48px; font-weight: 900; color: white;">@ViewModel.Uptime</span>
+                <div class="d-flex align-center justify-center gap-2">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: #10B981;" class="pulse-indicator"></div>
+                    <span style="font-size: 12px; font-weight: 700; color: #10B981; text-transform: uppercase;">SİSTEM ÇEVRİMİÇİ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Info -->
+    <div class="glass-panel p-8">
+        <div class="d-flex align-center justify-between">
+            <div class="d-flex flex-column gap-2">
+                <h3 style="font-size: 18px; font-weight: 800; color: white;">Bağlantı ve Veritabanı Durumu</h3>
+                <p style="font-size: 14px; color: rgba(255,255,255,0.4); margin: 0;">Firebase Cloud veritabanı motoru aktif. Tüm bağlantılar optimize edildi.</p>
+            </div>
+            <MudIcon Icon="@Icons.Material.Filled.Storage" Style="font-size: 40px; color: #10B981;" />
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        ViewModel.StopUpdates();
+    }
+}

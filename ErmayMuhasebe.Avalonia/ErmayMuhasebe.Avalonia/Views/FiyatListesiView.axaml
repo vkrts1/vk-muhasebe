@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.FiyatListesiView"
+             x:DataType="vm:FiyatListesiViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#266366F1">
+          <ic:SymbolIcon Symbol="Book" Foreground="#6366F1" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Dijital Ürün Kataloğu Tasarımcısı" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Ürünlerinizi profesyonel bir katalog veya fiyat listesi haline getirin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="350, *" ColumnSpacing="25">
+       <!-- Settings -->
+       <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="25" BorderBrush="#22FFFFFF" BorderThickness="1" VerticalAlignment="Top">
+          <StackPanel Spacing="25">
+             <TextBlock Text="Tasarım Ayarları" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+             
+             <StackPanel Spacing="8">
+                <TextBlock Text="Katalog Başlığı" Foreground="#9CA3AF" FontSize="12"/>
+                <TextBox Text="{Binding KatalogBasligi}"/>
+             </StackPanel>
+
+             <StackPanel Spacing="8">
+                <TextBlock Text="Görsel Tema" Foreground="#9CA3AF" FontSize="12"/>
+                <ComboBox ItemsSource="{Binding Temalar}" SelectedItem="{Binding SeciliTema}" HorizontalAlignment="Stretch">
+                   <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                         <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="16" Height="16" CornerRadius="8" Background="{Binding PrimaryColor}"/>
+                            <TextBlock Text="{Binding Isim}"/>
+                         </StackPanel>
+                      </DataTemplate>
+                   </ComboBox.ItemTemplate>
+                </ComboBox>
+             </StackPanel>
+
+             <CheckBox IsChecked="{Binding ShowPrices}" Content="Fiyatları Katalogda Göster" Foreground="White"/>
+
+             <Button Command="{Binding KatalogOlusturCommand}" Classes="SideButton Info" Height="50" HorizontalAlignment="Stretch" Background="#6366F1">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                   <ic:SymbolIcon Symbol="DocumentPdf" FontSize="20"/> 
+                   <TextBlock Text="PDF KATALOG OLUŞTUR" FontWeight="Bold"/>
+                </StackPanel>
+             </Button>
+          </StackPanel>
+       </Border>
+
+       <!-- Preview Canvas -->
+       <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="0" ClipToBounds="True">
+          <Grid>
+             <Rectangle Fill="{Binding SeciliTema.PrimaryColor}" Height="150" VerticalAlignment="Top"/>
+             <StackPanel VerticalAlignment="Top" Margin="40,60" Spacing="5">
+                <TextBlock Text="ERMAY ÜRÜN REHBERİ" Foreground="White" Opacity="0.8" FontSize="14"/>
+                <TextBlock Text="{Binding KatalogBasligi}" Foreground="White" FontSize="32" FontWeight="Black"/>
+             </StackPanel>
+             
+             <UniformGrid Columns="2" Margin="40,170,40,40">
+                <Border BorderBrush="#EEE" BorderThickness="1" Margin="10" Padding="15">
+                   <StackPanel Spacing="10">
+                      <Border Height="120" Background="#F9F9F9">
+                         <ic:SymbolIcon Symbol="Image" FontSize="40" Foreground="#CCC" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+                      </Border>
+                      <TextBlock Text="Örnek Ürün 1" Foreground="Black" FontWeight="Bold"/>
+                      <TextBlock Text="149.99 TL" Foreground="{Binding SeciliTema.PrimaryColor}" FontWeight="Black" IsVisible="{Binding ShowPrices}"/>
+                   </StackPanel>
+                </Border>
+                <Border BorderBrush="#EEE" BorderThickness="1" Margin="10" Padding="15">
+                   <StackPanel Spacing="10">
+                      <Border Height="120" Background="#F9F9F9">
+                         <ic:SymbolIcon Symbol="Image" FontSize="40" Foreground="#CCC" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+                      </Border>
+                      <TextBlock Text="Örnek Ürün 2" Foreground="Black" FontWeight="Bold"/>
+                      <TextBlock Text="299.90 TL" Foreground="{Binding SeciliTema.PrimaryColor}" FontWeight="Black" IsVisible="{Binding ShowPrices}"/>
+                   </StackPanel>
+                </Border>
+             </UniformGrid>
+          </Grid>
+       </Border>
+    </Grid>
+  </Grid>
+</UserControl>

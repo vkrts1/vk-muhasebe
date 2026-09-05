@@ -1,0 +1,131 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+
+<MudDialog Class="custom-dark-dialog" Options="@(new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <div style="background: #111417; color: white; padding: 24px; margin: -24px -24px 0 -24px;">
+            <MudText Typo="Typo.h6" Style="font-weight: 800; font-size: 18px;">@(Model.KartTuru == "Kasa" ? "Yeni Kasa Tanımla" : "Yeni Banka/Kart Kaydı")</MudText>
+            <MudText Typo="Typo.body2" Style="color: #6b7280; font-size: 13px; margin-top: 4px;">@(Model.KartTuru == "Kasa" ? "Kasa hesaplarını ve açılış bakiyelerini yönetin" : "Banka ve kart hesaplarınızı yönetin")</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div style="background: #111417; color: white; margin: -16px -24px -24px -24px; padding: 24px;">
+            <style>
+                .custom-dark-dialog .mud-dialog-title { display: none; }
+                .custom-dark-dialog .mud-dialog-content { padding: 0 !important; }
+                .custom-dark-dialog .mud-dialog-actions { padding: 0 !important; }
+                
+                .form-label { display: block; color: #6b7280; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+                .dark-input { width: 100%; background: #111417; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; font-size: 14px; outline: none; transition: border-color 0.2s; }
+                .dark-input:focus { border-color: #60A5FA; }
+                
+                .select-wrapper { position: relative; }
+                .select-wrapper select { appearance: none; cursor: pointer; }
+                .select-arrow { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #6b7280; }
+                
+                .action-btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 30px; padding: 12px 24px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+                .action-btn-outline:hover { border-color: white; }
+                
+                .action-btn-filled { background: linear-gradient(135deg, #0D2D3E 0%, #0084A5 100%); border: 1px solid #00C2FF; border-radius: 30px; padding: 12px 24px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 194, 255, 0.25); transition: all 0.2s; }
+                .action-btn-filled:hover { filter: brightness(1.1); transform: translateY(-1px); }
+            </style>
+            
+            @if (Model.KartTuru == "Kasa")
+            {
+                <div class="mb-4">
+                    <label class="form-label">KASA ADI</label>
+                    <input type="text" @bind="Model.BankaAdi" class="dark-input" placeholder="Örn: Merkez Kasa, Mağaza Kasası..." />
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                    <div>
+                        <label class="form-label">DÖVİZ TÜRÜ</label>
+                        <div class="select-wrapper">
+                            <select @bind="Model.DovizTuru" class="dark-input">
+                                <option value="TL">TL</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                            <div class="select-arrow">▼</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">AÇILIŞ BAKİYESİ</label>
+                        <input type="number" @bind="Model.AcilisBakiyesi" class="dark-input" placeholder="0,00" />
+                    </div>
+                </div>
+                
+                <div class="mb-2">
+                    <label class="form-label">YETKİLİ KİŞİ</label>
+                    <input type="text" @bind="Model.SubeAdi" class="dark-input" placeholder="Kasa sorumlusunun adı..." />
+                </div>
+            }
+            else
+            {
+                <div class="mb-4">
+                    <label class="form-label">KART TÜRÜ</label>
+                    <div class="select-wrapper">
+                        <select @bind="Model.KartTuru" class="dark-input">
+                            <option value="Mevduat">Banka Mevduat Hesabı</option>
+                            <option value="Kredi Kartı">Kredi Kartı</option>
+                        </select>
+                        <div class="select-arrow">▼</div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">BANKA ADI</label>
+                    <input type="text" @bind="Model.BankaAdi" class="dark-input" />
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                    <div>
+                        <label class="form-label">ŞUBE</label>
+                        <input type="text" @bind="Model.SubeAdi" class="dark-input" />
+                    </div>
+                    <div>
+                        <label class="form-label">HESAP NO</label>
+                        <input type="text" @bind="Model.HesapNo" class="dark-input" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">IBAN</label>
+                    <input type="text" @bind="Model.IBAN" class="dark-input" />
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label class="form-label">AÇILIŞ BAKİYESİ</label>
+                        <input type="number" @bind="Model.AcilisBakiyesi" class="dark-input" />
+                    </div>
+                    <div>
+                        <label class="form-label">DÖVİZ</label>
+                        <div class="select-wrapper">
+                            <select @bind="Model.DovizTuru" class="dark-input">
+                                <option value="TL">TL</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                            <div class="select-arrow">▼</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div style="background: #111417; width: 100%; margin: -40px -24px -24px -24px; padding: 24px; display: flex; justify-content: space-between; gap: 20px;">
+            <button @onclick="Cancel" class="action-btn-outline" style="flex: 1;">İptal</button>
+            <button @onclick="Submit" class="action-btn-filled" style="flex: 1;">Kaydet</button>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public BankaKart Model { get; set; } = new();
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(Model));
+    void Cancel() => MudDialog.Cancel();
+}

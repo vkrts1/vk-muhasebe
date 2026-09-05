@@ -1,0 +1,331 @@
+@page "/gelir-tablosu"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@using MudBlazor
+
+<style>
+    .rapor-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .rapor-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 30px;
+    }
+
+    .income-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        transition: background 0.2s ease;
+    }
+
+    .income-row:hover {
+        background: rgba(255,255,255,0.02);
+    }
+
+    .row-label {
+        font-size: 14px;
+        color: rgba(255,255,255,0.7);
+        font-weight: 500;
+    }
+
+    .row-value {
+        font-size: 16px;
+        font-weight: 800;
+        color: white;
+    }
+
+    .section-title {
+        font-size: 11px;
+        font-weight: 900;
+        color: rgba(255,255,255,0.3);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 20px 0 10px 20px;
+    }
+
+    .total-highlight {
+        background: rgba(96, 165, 250, 0.1);
+        border-radius: 12px;
+        margin: 10px 0;
+        border: 1px solid rgba(96, 165, 250, 0.1);
+    }
+
+    .profit-card {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+    }
+
+    .loss-card {
+        background: rgba(248, 113, 113, 0.1);
+        border: 1px solid rgba(248, 113, 113, 0.2);
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+    }
+
+    .margin-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 15px;
+        text-align: center;
+    }
+</style>
+
+<div class="rapor-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="rapor-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(52, 211, 153, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.PieChart" Color="Color.Success" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Gelir Tablosu</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Dönemsel Kar / Zarar ve marj analizi.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-3">
+                <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Raporlara Dön</MudButton>
+                @if (raporOlusturuldu)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Style="border-radius: 12px; font-weight: 700;" OnClick="PrintReport">PDF İndir</MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. FILTERS *@
+    <div class="glass-card mb-6">
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="8">
+                <MudDateRangePicker Label="Analiz Periyodu" @bind-DateRange="_dateRange" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Style="height: 50px; border-radius: 12px; font-weight: 800;" OnClick="RaporOlustur">ANALİZİ ÇALIŞTIR</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @if (raporOlusturuldu)
+    {
+        <MudGrid Spacing="6">
+            @* 3. MAIN STATEMENT *@
+            <MudItem xs="12" lg="8">
+                <div class="glass-card">
+                    <div class="section-title">GELİR KALEMLERİ</div>
+                    <div class="income-row">
+                        <span class="row-label">Brüt Satış Gelirleri</span>
+                        <span class="row-value" style="color: #34D399;">@satisGeliri.ToString("C2")</span>
+                    </div>
+                    <div class="income-row">
+                        <span class="row-label">Diğer Faaliyet Gelirleri</span>
+                        <span class="row-value">@digerGelir.ToString("C2")</span>
+                    </div>
+                    <div class="income-row total-highlight">
+                        <span class="row-label" style="color: #60A5FA; font-weight: 800;">TOPLAM BRÜT GELİR</span>
+                        <span class="row-value" style="color: #60A5FA; font-size: 18px;">@brutKar.ToString("C2")</span>
+                    </div>
+
+                    <div class="section-title">GİDER KALEMLERİ</div>
+                    <div class="income-row">
+                        <span class="row-label">Satılan Malın Maliyeti (SMM)</span>
+                        <span class="row-value" style="color: #F87171;">- @maliyet.ToString("C2")</span>
+                    </div>
+                    <div class="income-row">
+                        <span class="row-label">Genel Yönetim Giderleri</span>
+                        <span class="row-value">- @genelGider.ToString("C2")</span>
+                    </div>
+                    <div class="income-row">
+                        <span class="row-label">Pazarlama ve Satış Giderleri</span>
+                        <span class="row-value">- @pazarlamaGider.ToString("C2")</span>
+                    </div>
+                    <div class="income-row" style="border-bottom: none; background: rgba(248, 113, 113, 0.05); border-radius: 12px;">
+                        <span class="row-label" style="color: #F87171; font-weight: 800;">TOPLAM OPERASYONEL GİDER</span>
+                        <span class="row-value" style="color: #F87171;">@toplamGider.ToString("C2")</span>
+                    </div>
+                </div>
+            </MudItem>
+
+            @* 4. SUMMARY & MARGINS *@
+            <MudItem xs="12" lg="4">
+                <MudStack Spacing="6">
+                    <div class="@(netKar >= 0 ? "profit-card" : "loss-card")">
+                        <MudText Style="font-size: 14px; font-weight: 700; opacity: 0.8; text-transform: uppercase;">@(netKar >= 0 ? "NET DÖNEM KARI" : "NET DÖNEM ZARARI")</MudText>
+                        <MudText Style="font-size: 32px; font-weight: 900; margin: 10px 0;">@netKar.ToString("C2")</MudText>
+                        <MudIcon Icon="@(netKar >= 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown)" Size="Size.Large" />
+                    </div>
+
+                    <div class="glass-card">
+                        <MudText Typo="Typo.h6" Align="Align.Center" Style="color: white; font-weight: 800; margin-bottom: 20px;">Karlılık Rasyoları</MudText>
+                        <MudGrid Spacing="2">
+                            <MudItem xs="6">
+                                <div class="margin-card">
+                                    <div class="stat-label" style="font-size: 9px;">BRÜT MARJ</div>
+                                    <div style="font-size: 18px; font-weight: 900; color: #60A5FA;">%@brutKarMarji.ToString("N1")</div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <div class="margin-card">
+                                    <div class="stat-label" style="font-size: 9px;">NET MARJ</div>
+                                    <div style="font-size: 18px; font-weight: 900; color: #34D399;">%@netKarMarji.ToString("N1")</div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <div class="margin-card">
+                                    <div class="stat-label" style="font-size: 9px;">GİDER / GELİR ORANI</div>
+                                    <div style="font-size: 18px; font-weight: 900; color: #FBBF24;">%@((brutKar > 0 ? (toplamGider / brutKar * 100) : 0).ToString("N1"))</div>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    }
+</div>
+
+@code {
+    private DateRange _dateRange = new DateRange(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTime.Now);
+    private bool raporOlusturuldu = false;
+
+    private decimal satisGeliri = 0;
+    private decimal digerGelir = 0;
+    private decimal maliyet = 0;
+    private decimal genelGider = 0;
+    private decimal pazarlamaGider = 0;
+
+    private decimal brutKar => satisGeliri + digerGelir;
+    private decimal toplamGider => maliyet + genelGider + pazarlamaGider;
+    private decimal netKar => brutKar - toplamGider;
+    
+    private decimal brutKarMarji => satisGeliri > 0 ? ((satisGeliri - maliyet) / satisGeliri) * 100 : 0;
+    private decimal netKarMarji => satisGeliri > 0 ? (netKar / satisGeliri) * 100 : 0;
+
+    private async Task RaporOlustur()
+    {
+        satisGeliri = 0; digerGelir = 0; maliyet = 0;
+        genelGider = 0; pazarlamaGider = 0;
+
+        var faturalar = await DbService.GetFaturalarAsync();
+        var stoklar = await DbService.GetStoklarAsync();
+        
+        var donemFaturalari = faturalar
+            .Where(f => (_dateRange.Start == null || f.Tarih.Date >= _dateRange.Start.Value.Date) && 
+                        (_dateRange.End == null || f.Tarih.Date <= _dateRange.End.Value.Date) && 
+                        ((f.Tur ?? "").Contains("Satis") || (f.Tur ?? "").Contains("Satış")))
+            .ToList();
+
+        foreach(var f in donemFaturalari)
+        {
+            satisGeliri += f.GenelToplam;
+            var detaylar = await DbService.GetFaturaDetaylarAsync(f.Id);
+            foreach(var d in detaylar)
+            {
+                var stok = stoklar.FirstOrDefault(s => s.Id == d.StokId);
+                if (stok != null)
+                {
+                    maliyet += (stok.AlisFiyati * (decimal)d.Miktar);
+                }
+            }
+        }
+
+        var kasaHareketleri = await DbService.GetKasaHareketleriAsync_All();
+        var bankaHareketleri = await DbService.GetBankaHareketleriAsync_All();
+
+        var donemGiderleriKasa = kasaHareketleri
+            .Where(k => (_dateRange.Start == null || k.Tarih.Date >= _dateRange.Start.Value.Date) && 
+                        (_dateRange.End == null || k.Tarih.Date <= _dateRange.End.Value.Date) && 
+                        (k.IslemTuru == "Ödeme" || k.IslemTuru == "Odeme" || k.IslemTuru == "Çıkış"))
+            .ToList();
+            
+        var donemGiderleriBanka = bankaHareketleri
+            .Where(b => (_dateRange.Start == null || b.Tarih.Date >= _dateRange.Start.Value.Date) && 
+                        (_dateRange.End == null || b.Tarih.Date <= _dateRange.End.Value.Date) && 
+                        ((b.IslemTuru ?? "").Contains("Giden") || (b.IslemTuru ?? "").Contains("Ödeme")))
+            .ToList();
+
+        ProcessGiderler(donemGiderleriKasa.Select(k => (k.Aciklama, k.Tutar)));
+        ProcessGiderler(donemGiderleriBanka.Select(b => (b.Aciklama, b.Tutar)));
+
+        raporOlusturuldu = true;
+        Snackbar.Add("Gelir tablosu analizi tamamlandı.", Severity.Success);
+    }
+
+    private void ProcessGiderler(IEnumerable<(string? Aciklama, decimal Tutar)> giderler)
+    {
+        foreach(var g in giderler)
+        {
+            var aciklama = g.Aciklama ?? "";
+            if (aciklama.Contains("Pazarlama", StringComparison.OrdinalIgnoreCase) || aciklama.Contains("Reklam"))
+            {
+                pazarlamaGider += g.Tutar;
+            }
+            else if (!aciklama.Contains("Fatura") && !aciklama.Contains("Cari"))
+            {
+                genelGider += g.Tutar;
+            }
+        }
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Kalem", "Tutar (TL)" };
+            var rows = new List<string[]>();
+            
+            rows.Add(new[] { "GELİRLER", "" });
+            rows.Add(new[] { "  Satış Gelirleri", satisGeliri.ToString("N2") });
+            rows.Add(new[] { "  Diğer Gelirler", digerGelir.ToString("N2") });
+            rows.Add(new[] { "TOPLAM BRÜT GELİR", brutKar.ToString("N2") });
+            
+            rows.Add(new[] { "GİDERLER", "" });
+            rows.Add(new[] { "  Satılan Malın Maliyeti", maliyet.ToString("N2") });
+            rows.Add(new[] { "  Genel Yönetim Giderleri", genelGider.ToString("N2") });
+            rows.Add(new[] { "  Pazarlama Giderleri", pazarlamaGider.ToString("N2") });
+            rows.Add(new[] { "TOPLAM GİDERLER", toplamGider.ToString("N2") });
+            
+            rows.Add(new[] { "NET KAR/ZARAR", netKar.ToString("N2") });
+            
+            rows.Add(new[] { "KAR MARJLARI", "" });
+            rows.Add(new[] { "  Brüt Kar Marjı", "%" + brutKarMarji.ToString("N2") });
+            rows.Add(new[] { "  Net Kar Marjı", "%" + netKarMarji.ToString("N2") });
+
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync($"Gelir Tablosu ({_dateRange.Start?.ToShortDateString()} - {_dateRange.End?.ToShortDateString()})", headers, rows);
+            await FileService.SaveAndOpenFileAsync($"Gelir_Tablosu_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
+            Snackbar.Add("Gelir tablosu PDF olarak oluşturuldu.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

@@ -1,0 +1,178 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:converters="using:ErmayMuhasebe.Avalonia.Converters"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.VadeTakipView"
+             x:DataType="vm:VadeTakipViewModel"
+             x:Name="Root">
+ 
+    <UserControl.Resources>
+       <converters:BakiyeToColorConverter x:Key="BakiyeToColorConverter"/>
+       <converters:BoolToRedGreenConverter x:Key="BoolToRedGreenConverter"/>
+    </UserControl.Resources>
+
+  <Grid RowDefinitions="Auto, Auto, *" Margin="25">
+    
+    <StackPanel Grid.Row="0" Spacing="25">
+      <!-- Header -->
+      <Grid ColumnDefinitions="Auto, *, Auto">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+              <Border Background="#2660A5FA" Width="48" Height="48" CornerRadius="12">
+                  <ic:SymbolIcon Symbol="CalendarClock" Foreground="#60A5FA" FontSize="24" HorizontalAlignment="Center"/> 
+              </Border>
+              <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="Vade Takip ve Finansal Planlama" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                  <TextBlock Text="Gelecek ödemeler ve beklenen tahsilatların merkezi takibi" FontSize="12" Foreground="#88FFFFFF"/>
+              </StackPanel>
+          </StackPanel>
+          
+          <Button Grid.Column="2" Command="{Binding LoadVadelerCommand}" Classes="SideButton Info" Width="140">
+                <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ic:SymbolIcon Symbol="ArrowSync" FontSize="18" VerticalAlignment="Center"/> 
+                    <TextBlock Text="Yenile" VerticalAlignment="Center"/>
+                </StackPanel>
+          </Button>
+      </Grid>
+ 
+      <!-- KPI Cards -->
+      <Grid ColumnDefinitions="*, 20, *, 20, *">
+          <Border Grid.Column="0" Background="#1A10B981" BorderBrush="#3310B981" BorderThickness="1" CornerRadius="16" Padding="20">
+              <StackPanel Spacing="5">
+                  <TextBlock Text="BEKLENEN TAHSİLAT" FontSize="10" FontWeight="Bold" Foreground="#10B981" Opacity="0.8"/>
+                  <TextBlock Text="{Binding ToplamAlacak, StringFormat='{}{0:N2} ₺'}" FontSize="24" FontWeight="Black" Foreground="White"/>
+              </StackPanel>
+          </Border>
+ 
+          <Border Grid.Column="2" Background="#1AFB7185" BorderBrush="#33FB7185" BorderThickness="1" CornerRadius="16" Padding="20">
+              <StackPanel Spacing="5">
+                  <TextBlock Text="GELECEK ÖDEMELER" FontSize="10" FontWeight="Bold" Foreground="#FB7185" Opacity="0.8"/>
+                  <TextBlock Text="{Binding ToplamBorc, StringFormat='{}{0:N2} ₺'}" FontSize="24" FontWeight="Black" Foreground="White"/>
+              </StackPanel>
+          </Border>
+ 
+          <Border Grid.Column="4" Background="#1AF59E0B" BorderBrush="#33F59E0B" BorderThickness="1" CornerRadius="16" Padding="20">
+              <StackPanel Spacing="5">
+                  <TextBlock Text="GECİKMİŞ VADELER" FontSize="10" FontWeight="Bold" Foreground="#F59E0B" Opacity="0.8"/>
+                  <TextBlock Text="{Binding GecikmisAdet, StringFormat='{}{0} Adet'}" FontSize="24" FontWeight="Black" Foreground="White"/>
+              </StackPanel>
+          </Border>
+      </Grid>
+    </StackPanel>
+
+    <!-- Action Bar -->
+    <Grid Grid.Row="1" ColumnDefinitions="*, Auto, Auto, Auto" Margin="0,20,0,0">
+        <TextBox Grid.Column="0" Text="{Binding SearchText}" Watermark="Cari veya Tür Ara..." 
+                 Height="42" Margin="0,0,10,0" VerticalContentAlignment="Center" Padding="45,0,15,0">
+            <TextBox.InnerLeftContent>
+                <ic:SymbolIcon Symbol="Search" Margin="15,0" Opacity="0.5" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+            </TextBox.InnerLeftContent>
+        </TextBox>
+        
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" 
+                  Width="150" Height="42" Margin="0,0,10,0"/>
+
+        <Button Grid.Column="2" Command="{Binding ExportToExcelCommand}" Classes="SideButton Warning" Width="120" Margin="0,0,10,0" Height="42">
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ic:SymbolIcon Symbol="ArrowDownload" FontSize="18" VerticalAlignment="Center"/>
+                <TextBlock Text="Excel" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
+
+        <Button Grid.Column="3" Command="{Binding PrintCommand}" Classes="SideButton Info" Width="100" Height="42">
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ic:SymbolIcon Symbol="Print" FontSize="18" VerticalAlignment="Center"/>
+                <TextBlock Text="Yazdır" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
+    </Grid>
+ 
+    <!-- Data List -->
+    <Border Grid.Row="2" Background="{DynamicResource PanelBrush}" CornerRadius="16" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" Margin="0,15,0,0">
+      <DataGrid ItemsSource="{Binding Vadeler}" AutoGenerateColumns="False" IsReadOnly="False" 
+                GridLinesVisibility="Horizontal" Background="Transparent" BorderThickness="0">
+        <DataGrid.Columns>
+          <DataGridCheckBoxColumn Header="" Binding="{Binding IsChecked}" Width="50"/>
+
+          <DataGridTemplateColumn Header="Tür" Width="140" IsReadOnly="True">
+              <DataTemplate>
+                  <Border Padding="8,4" CornerRadius="6" HorizontalAlignment="Left" Margin="10,0,0,0"
+                          Background="{Binding IsIncoming, Converter={StaticResource BakiyeToColorConverter}, ConverterParameter='bg'}">
+                      <TextBlock Text="{Binding Tur}" FontSize="11" FontWeight="SemiBold" 
+                                 Foreground="{Binding IsIncoming, Converter={StaticResource BakiyeToColorConverter}}"/>
+                  </Border>
+              </DataTemplate>
+          </DataGridTemplateColumn>
+          
+          <DataGridTemplateColumn Header="Cari / Muhatap" Width="*" IsReadOnly="True">
+              <DataTemplate>
+                  <Button Content="{Binding CariAdi}" HorizontalAlignment="Left" 
+                          Background="Transparent" BorderThickness="0" Padding="0"
+                          Command="{Binding ((vm:VadeTakipViewModel)DataContext).GoToCariCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                          CommandParameter="{Binding}"
+                          Foreground="#60A5FA" FontWeight="SemiBold"
+                          ToolTip.Tip="Cari Kartına Git"/>
+              </DataTemplate>
+          </DataGridTemplateColumn>
+          
+          <DataGridTextColumn Header="Vade Tarihi" Binding="{Binding VadeTarihi, StringFormat='dd.MM.yyyy'}" Width="120" IsReadOnly="True"/>
+          
+          <DataGridTemplateColumn Header="Tutar" Width="150" IsReadOnly="True">
+              <DataTemplate>
+                  <TextBlock Text="{Binding Tutar, StringFormat='{}{0:N2} ₺'}" 
+                             VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,20,0"
+                             FontWeight="Bold" Foreground="White"
+                             ToolTip.Tip="Kalan Ödeme / Tahsilat Tutarı"/>
+              </DataTemplate>
+          </DataGridTemplateColumn>
+          
+          <DataGridTemplateColumn Header="Durum" Width="150" IsReadOnly="True">
+              <DataTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                      <Ellipse Width="8" Height="8" Fill="{Binding RenkliUyari, Converter={StaticResource BoolToRedGreenConverter}}"/>
+                      <TextBlock Text="{Binding KalanGunText}" 
+                                 VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"
+                                 Foreground="{Binding RenkliUyari, Converter={StaticResource BoolToRedGreenConverter}}"/>
+                  </StackPanel>
+              </DataTemplate>
+          </DataGridTemplateColumn>
+
+          <DataGridTemplateColumn Header="İşlem" Width="80">
+              <DataTemplate>
+                  <Button Classes="SideButton Warning" Height="28" Width="36" Padding="0"
+                          ToolTip.Tip="Vade Tarihini Değiştir">
+                      <Button.Flyout>
+                          <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Background="{DynamicResource PanelBrush}" CornerRadius="12" Padding="15" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+                                   <StackPanel Spacing="15" Width="300">
+                                       <StackPanel Orientation="Horizontal" Spacing="10" Margin="5,0">
+                                           <ic:SymbolIcon Symbol="Calendar" Foreground="#F59E0B" FontSize="20"/>
+                                           <TextBlock Text="Vade Tarihini Güncelle" FontWeight="Bold" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                       </StackPanel>
+                                       
+                                       <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="10" Padding="5">
+                                           <Calendar x:Name="PostponeCalendar" SelectedDate="{Binding VadeTarihi, Mode=TwoWay}"
+                                                     Background="Transparent" BorderThickness="0"
+                                                     HeaderBackground="Transparent"
+                                                     HorizontalAlignment="Center"
+                                                     Width="280"/>
+                                       </Border>
+
+                                       <Button Content="Tarihi Kaydet" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                               Classes="SideButton Warning" Height="40"
+                                               Command="{Binding $parent[UserControl].((vm:VadeTakipViewModel)DataContext).SavePostponeCommand}"
+                                               CommandParameter="{Binding}"/>
+                                   </StackPanel>
+                                </Border>
+                          </Flyout>
+                      </Button.Flyout>
+                      <ic:SymbolIcon Symbol="ArrowRight" FontSize="16"/>
+                  </Button>
+              </DataTemplate>
+          </DataGridTemplateColumn>
+
+        </DataGrid.Columns>
+      </DataGrid>
+    </Border>
+  </Grid>
+</UserControl>

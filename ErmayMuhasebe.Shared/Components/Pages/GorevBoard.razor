@@ -1,0 +1,127 @@
+@page "/gorev"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">İş Takibi (Görevler)</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="p-3 mud-theme-warning">
+            <MudText Typo="Typo.h6" Align="Align.Center">YAPILACAK</MudText>
+            <MudDivider Class="my-2"/>
+            @foreach(var g in GetTasks("Yapilacak"))
+            {
+               <MudCard Class="mb-2">
+                   <MudCardContent>
+                       <MudText Typo="Typo.subtitle1">@g.Baslik</MudText>
+                       <MudText Typo="Typo.caption">@g.Aciklama</MudText>
+                       <MudChip T="string" Size="Size.Small">@g.AtananPersonelAd</MudChip>
+                   </MudCardContent>
+                   <MudCardActions>
+                       <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" OnClick="@(() => MoveTask(g, "Suruyor"))"/>
+                   </MudCardActions>
+               </MudCard>
+            }
+            <MudButton FullWidth="true" Variant="Variant.Outlined" OnClick="OpenNewTaskDialog">Yeni Görev</MudButton>
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="12" md="4">
+        <MudPaper Class="p-3" Style="background-color:#e3f2fd;">
+            <MudText Typo="Typo.h6" Align="Align.Center">SÜRÜYOR</MudText>
+            <MudDivider Class="my-2"/>
+            @foreach(var g in GetTasks("Suruyor"))
+            {
+               <MudCard Class="mb-2">
+                   <MudCardContent>
+                       <MudText Typo="Typo.subtitle1">@g.Baslik</MudText>
+                       <MudChip T="string" Size="Size.Small" Color="MudBlazor.Color.Info">@g.AtananPersonelAd</MudChip>
+                   </MudCardContent>
+                   <MudCardActions>
+                       <MudIconButton Icon="@Icons.Material.Filled.Check" Color="MudBlazor.Color.Success" OnClick="@(() => MoveTask(g, "Tamamlandi"))"/>
+                   </MudCardActions>
+               </MudCard>
+            }
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="12" md="4">
+        <MudPaper Class="p-3 mud-theme-success">
+            <MudText Typo="Typo.h6" Align="Align.Center" Style="color:white;">TAMAMLANDI</MudText>
+            <MudDivider Class="my-2"/>
+            @foreach(var g in GetTasks("Tamamlandi"))
+            {
+               <MudCard Class="mb-2">
+                   <MudCardContent>
+                       <MudText Typo="Typo.subtitle1" Style="text-decoration: line-through">@g.Baslik</MudText>
+                   </MudCardContent>
+                   <MudCardActions>
+                       <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="MudBlazor.Color.Error" OnClick="@(() => DeleteTask(g))"/>
+                   </MudCardActions>
+               </MudCard>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<Gorev> allTasks = new();
+    private List<Personel> personeller = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        allTasks = await DbService.GetGorevlerAsync();
+        personeller = await DbService.GetPersonelListAsync();
+    }
+    
+    private IEnumerable<Gorev> GetTasks(string status) => allTasks.Where(t => t.Durum == status);
+
+    private async Task MoveTask(Gorev g, string newStatus)
+    {
+        g.Durum = newStatus;
+        await DbService.SaveGorevAsync(g);
+        await LoadData();
+    }
+
+    private async Task DeleteTask(Gorev g)
+    {
+        await DbService.DeleteGorevAsync(g.Id);
+        await LoadData();
+    }
+
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@inject IDialogService DialogService
+
+    private async Task OpenNewTaskDialog()
+    {
+        var yeniGorev = new Gorev 
+        { 
+             Durum = "Yapilacak",
+             Oncelik = "Orta",
+             OlusturmaTarihi = DateTime.Now
+        };
+        
+        var parameters = new DialogParameters 
+        { 
+            ["Model"] = yeniGorev,
+            ["Personeller"] = personeller
+        };
+        
+        var dialog = await DialogService.ShowAsync<GorevDialog>("Yeni Görev Ekle", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is Gorev g)
+        {
+            await DbService.SaveGorevAsync(g);
+            Snackbar.Add("Görev eklendi", Severity.Success);
+            await LoadData();
+        }
+    }
+}

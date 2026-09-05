@@ -1,0 +1,147 @@
+@inherits LayoutComponentBase
+@using MudBlazor
+
+<MudThemeProvider DefaultTheme="_currentTheme" IsDarkMode="true" />
+<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.ExtraLarge" CloseButton="true" DisableBackdropClick="false" NoHeader="false" Position="DialogPosition.Center" CloseOnEscapeKey="true" />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<style>
+    :root {
+        --surface: rgba(30, 34, 40, 0.7);
+        --bg-primary: #0f172a;
+        --border-color: rgba(255, 255, 255, 0.08);
+        --accent-primary: #60A5FA;
+        --accent-glow: rgba(96, 165, 250, 0.3);
+    }
+
+    .mud-layout {
+        background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%) !important;
+    }
+
+    .mud-appbar {
+        background: rgba(15, 23, 42, 0.8) !important;
+        backdrop-filter: blur(20px) !important;
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+
+    .mud-drawer {
+        background: rgba(15, 23, 42, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        border-right: 1px solid var(--border-color) !important;
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    .animate-slide-in {
+        animation: slideIn 0.5s ease-out forwards;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes slideIn {
+        from { transform: translateX(20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    .panel-header {
+        padding: 16px 24px;
+        background: rgba(255,255,255,0.03);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+    }
+
+    .panel-title {
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        font-size: 13px;
+        color: rgba(255,255,255,0.6);
+        text-transform: uppercase;
+    }
+
+    .bg-dark-input .mud-input-control {
+        background: rgba(255,255,255,0.03) !important;
+        border-radius: 12px;
+    }
+
+    .compact-table .mud-table-head {
+        background: rgba(255,255,255,0.02) !important;
+    }
+
+    .compact-table .mud-table-row:hover {
+        background: rgba(96, 165, 250, 0.05) !important;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(96, 165, 250, 0.3); }
+</style>
+
+<MudLayout>
+    <MudAppBar Elevation="0">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <div class="d-flex align-center ml-4">
+             <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #60A5FA, #3B82F6); border-radius: 8px; margin-right: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(96, 165, 250, 0.4);">
+                <MudIcon Icon="@Icons.Material.Filled.Shield" Color="Color.Surface" Size="Size.Small" />
+             </div>
+             <MudText Typo="Typo.h6" Style="font-weight: 900; letter-spacing: 1px; color: white;">ERMAY <span style="color: #60A5FA;">MUHASEBE</span></MudText>
+        </div>
+        <MudSpacer />
+        <MudStack Row="true" Spacing="2">
+             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Inherit" Size="Size.Small" />
+             <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" Size="Size.Small" />
+             <MudAvatar Color="Color.Info" Size="Size.Small" Class="ml-2">E</MudAvatar>
+        </MudStack>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" ClipMode="DrawerClipMode.Always" Variant="@DrawerVariant.Responsive" OpenMiniOnHover="true">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("DEBUG: MainLayout (Shared) OnInitialized - Executing");
+    }
+
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private MudTheme _currentTheme = new MudTheme()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#60A5FA",
+            Secondary = "#34D399",
+            Tertiary = "#FBBF24",
+            AppbarBackground = "#0f172a",
+            Background = "#0f172a",
+            Surface = "#1e293b",
+            DrawerBackground = "#0f172a",
+            DrawerText = "#94a3b8",
+            TextPrimary = "#f8fafc",
+            TextSecondary = "#94a3b8",
+            ActionDefault = "#94a3b8",
+            Divider = "rgba(255,255,255, 0.08)",
+            LinesDefault = "rgba(255,255,255, 0.08)"
+        },
+        Typography = new Typography()
+        {
+        }
+    };
+}

@@ -1,0 +1,366 @@
+@page "/ceksenet"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@inject CekSenetListViewModel ViewModel
+@inject ISnackbar Snackbar
+@inject UiService UiService
+@implements IDisposable
+
+<div class="premium-container fade-in">
+    <div class="row g-4">
+        <!-- Main Content (Check Table) -->
+        <div class="col-xl-9 col-lg-8">
+            <div class="premium-panel glass-morphism mb-4 p-0 overflow-hidden">
+                <div class="premium-panel-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="premium-icon-box primary">
+                            <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
+                        </div>
+                        <h2 class="premium-panel-title">Çek & Senet Portföyü</h2>
+                    </div>
+
+                    <!-- FILTER BAR -->
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="filter-item">
+                            <label class="form-label mb-0" style="font-size: 10px; color: rgba(255,255,255,0.5);">Başlangıç</label>
+                            <input type="date" @bind="ViewModel.FilterBaslangicTarihi" class="dark-input-small" />
+                        </div>
+                        <div class="filter-item">
+                            <label class="form-label mb-0" style="font-size: 10px; color: rgba(255,255,255,0.5);">Bitiş</label>
+                            <input type="date" @bind="ViewModel.FilterBitisTarihi" class="dark-input-small" />
+                        </div>
+                        <div class="filter-item">
+                            <label class="form-label mb-0" style="font-size: 10px; color: rgba(255,255,255,0.5);">Durum</label>
+                            <select @bind="ViewModel.FilterDurum" class="dark-input-small">
+                                <option value="Hepsi">Tümü</option>
+                                <option value="Portföyde">Portföyde</option>
+                                <option value="Tahsil Edildi">Tahsil Edildi</option>
+                                <option value="Karşılıksız">Karşılıksız</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label class="form-label mb-0" style="font-size: 10px; color: rgba(255,255,255,0.5);">Arama</label>
+                            <input type="text" @bind="ViewModel.FilterText" @bind:event="oninput" placeholder="Borçlu, No..." class="dark-input-small" style="width: 150px;" />
+                        </div>
+                        <button class="premium-button info px-4" style="height: 38px; font-size: 12px; margin-top: 15px;" @onclick="ViewModel.GenerateFilteredReportCommand.ExecuteAsync">
+                            <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Size="Size.Small" Class="me-2" />
+                            Rapor Al (PDF)
+                        </button>
+                    </div>
+
+                    <button class="premium-button success shine-effect" @onclick="ViewModel.OpenNewCekForm">
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="me-2" />
+                        Yeni Çek Kaydı
+                    </button>
+                </div>
+                
+                <div class="table-responsive" style="max-height: 500px;">
+                    <table class="premium-table">
+                        <thead class="sticky-top">
+                            <tr>
+                                <th style="width: 100px;">Portföy No</th>
+                                <th style="width: 100px;">Vade</th>
+                                <th>Borçlu / Cari</th>
+                                <th style="width: 150px;">Banka / Seri</th>
+                                <th class="text-end" style="width: 120px;">Tutar</th>
+                                <th class="text-center" style="width: 120px;">Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cek in ViewModel.Cekler)
+                            {
+                                <tr class="premium-row clickable @(ViewModel.SelectedCek?.Id == cek.Id ? "selected" : "")" 
+                                    @onclick="() => ViewModel.SelectedCek = cek"
+                                    @ondblclick="() => ViewModel.OpenEditCekForm(cek)">
+                                    <td class="small opacity-70">#@cek.PortfoyNo</td>
+                                    <td>@cek.VadeTarihi.ToString("dd.MM.yyyy")</td>
+                                    <td>
+                                        <div class="fw-bold">@cek.AsilBorclu</div>
+                                        <div class="small opacity-50">@cek.CariUnvan</div>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-medium">@cek.Banka</div>
+                                        <div class="small opacity-50">@cek.SeriNo</div>
+                                    </td>
+                                    <td class="text-end fw-bold text-primary-accent">@cek.Tutar.ToString("N2") ₺</td>
+                                    <td class="text-center">
+                                        <span class="premium-badge @GetDurumClass(cek.Durum) w-100">@cek.Durum</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Totals & Info -->
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="premium-panel glass-morphism p-4 text-center">
+                        <div class="small opacity-50 uppercase mb-1">PORTFÖY BÜYÜKLÜĞÜ</div>
+                        <div class="h3 fw-bold m-0 text-primary-accent">@ViewModel.TotalCekTutari.ToString("N2") <small>₺</small></div>
+                    </div>
+                </div>
+                <!-- Add more stat cards if needed -->
+            </div>
+        </div>
+
+        <!-- Sidebar Actions -->
+        <div class="col-xl-3 col-lg-4">
+            <div class="premium-panel glass-morphism d-flex flex-column gap-3">
+                <div class="premium-section-title mb-1">EVRAK İŞLEMLERİ</div>
+
+                <button class="premium-button success w-100 @(ViewModel.SelectedCek == null ? "disabled" : "")" 
+                        @onclick='() => ViewModel.UpdateCekDurumAsync("Tahsil")' disabled="@(ViewModel.SelectedCek == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="me-2" />
+                    Tahsil Edildi İşaretle
+                </button>
+
+                <button class="premium-button info w-100 @(ViewModel.SelectedCek == null ? "disabled" : "")" 
+                        @onclick="() => ViewModel.OpenEditCekForm(null)" disabled="@(ViewModel.SelectedCek == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="me-2" />
+                    Düzenle
+                </button>
+
+                <button class="premium-button secondary w-100 @(ViewModel.SelectedCek == null ? "disabled" : "")" 
+                        @onclick="() => ViewModel.ViewCekPdfAsync(null)" disabled="@(ViewModel.SelectedCek == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Size="Size.Small" Class="me-2" />
+                    Çek Kayıt Formu (PDF)
+                </button>
+
+                <button class="premium-button danger w-100 @(ViewModel.SelectedCek == null ? "disabled" : "")" 
+                        @onclick='() => ViewModel.UpdateCekDurumAsync("Karsiliksiz")' disabled="@(ViewModel.SelectedCek == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Small" Class="me-2" />
+                    Karşılıksız İşaretle
+                </button>
+
+                <div class="premium-divider mt-2"></div>
+
+                <button class="premium-button danger w-100 @(ViewModel.SelectedCek == null ? "disabled" : "")" 
+                        @onclick="ConfirmDelete" disabled="@(ViewModel.SelectedCek == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Class="me-2" />
+                    Kaydı Sil
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Dialog -->
+@if (ViewModel.IsEditFormVisible)
+{
+    <div class="premium-dialog-overlay fade-in">
+        <div class="premium-dialog glass-morphism p-0 shadow-2xl" style="width: 900px; max-height: 85vh;">
+            <div class="premium-dialog-header d-flex align-items-center justify-content-between p-4 bg-white-5">
+                <div class="d-flex align-items-center gap-3">
+                    <MudIcon Icon="@Icons.Material.Filled.HistoryEdu" Size="Size.Medium" Class="text-primary-accent" />
+                    <h3 class="m-0 fw-bold">@ViewModel.EditTitle</h3>
+                </div>
+                <button class="btn-close-premium" @onclick="ViewModel.CloseEditForm">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" />
+                </button>
+            </div>
+            
+            <div class="premium-dialog-content p-4 overflow-auto">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="premium-section-title mb-3">Evrak Bilgileri</div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="premium-input-group">
+                                    <label>Portföy No</label>
+                                    <input type="text" @bind="ViewModel.EditPortfoyNo" readonly />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="premium-input-group">
+                                    <label>Evrak Türü</label>
+                                    <select @bind="ViewModel.EditCekTuru">
+                                        <option value="Alınan">Alınan Çek</option>
+                                        <option value="Verilen">Verilen Çek</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="premium-input-group">
+                                    <label>Cari Hesap</label>
+                                    <div class="d-flex gap-2">
+                                        <input type="text" @bind="ViewModel.EditCariUnvan" readonly placeholder="Seçmek için sağdaki butona basın" />
+                                        <button class="premium-button secondary p-2" @onclick="ViewModel.OpenCariSecim">
+                                            <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="premium-input-group">
+                                    <label>Asıl Borçlu</label>
+                                    <input type="text" @bind="ViewModel.EditAsilBorclu" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="premium-input-group">
+                                    <label>Vade Tarihi</label>
+                                    <input type="text" @bind="ViewModel.EditVadeTarihiStr" placeholder="GG.AA.YYYY" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="premium-input-group">
+                                    <label>Tutar</label>
+                                    <input type="number" @bind="ViewModel.EditTutar" class="h5 fw-bold" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 border-start border-white-10 ps-4">
+                        <div class="premium-section-title mb-3">Banka & Detay</div>
+                        <div class="premium-input-group mb-3">
+                            <label>Banka Adı</label>
+                            <input type="text" @bind="ViewModel.EditBanka" />
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="premium-input-group">
+                                    <label>Şube</label>
+                                    <input type="text" @bind="ViewModel.EditSube" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="premium-input-group">
+                                    <label>Seri No</label>
+                                    <input type="text" @bind="ViewModel.EditSeriNo" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="premium-input-group mt-3">
+                            <label>Açıklama</label>
+                            <textarea @bind="ViewModel.EditAciklama" rows="3"></textarea>
+                        </div>
+                        
+                        <!-- Visual Placeholders for images since web upload is platform-specific -->
+                        <div class="mt-4 p-3 rounded-3 bg-white-5 border border-white-10 text-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Image" Size="Size.Small" Class="opacity-30 mb-2" />
+                            <p class="small opacity-50 m-0">Görsel Yönetimi (Sürüm 3.0 İçin Planlandı)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="premium-dialog-footer p-4 border-top border-white-10 d-flex justify-content-end gap-2">
+                <button class="premium-button secondary px-5" @onclick="ViewModel.CloseEditForm">Vazgeç</button>
+                <button class="premium-button success shine-effect px-5" @onclick="ViewModel.SaveCekAsync">Kaydı Onayla</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Cari Selection Dialog -->
+@if (ViewModel.IsCariSecimVisible)
+{
+    <div class="premium-dialog-overlay fade-in" style="z-index: 1060;">
+        <div class="premium-dialog glass-morphism p-0 shadow-2xl" style="width: 500px;">
+            <div class="premium-dialog-header p-4 bg-white-5 d-flex justify-content-between align-items-center">
+                <h3 class="m-0 h5 fw-bold">Cari Hesap Seçimi</h3>
+                <button class="btn-close-premium" @onclick="ViewModel.CloseCariSecim">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" />
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="premium-input-group mb-3">
+                    <div class="input-container border-white-10">
+                        <MudIcon Icon="@Icons.Material.Filled.Search" Class="input-icon" />
+                        <input type="text" @bind="ViewModel.CariSearchText" @bind:event="oninput" 
+                               @onkeyup='(e) => { if(e.Key == "Enter") ViewModel.SearchCariAsync(); }'
+                               placeholder="Cari ara..." />
+                    </div>
+                </div>
+                <div class="table-responsive" style="max-height: 300px;">
+                    <table class="premium-table">
+                        <tbody>
+                            @foreach (var cari in ViewModel.CariListesi)
+                            {
+                                <tr class="premium-row clickable @(ViewModel.SelectedCariForAdd?.Id == cari.Id ? "selected" : "")"
+                                    @onclick="() => ViewModel.SelectedCariForAdd = cari"
+                                    @ondblclick="ViewModel.SelectCari">
+                                    <td class="fw-bold">@cari.Unvan</td>
+                                    <td class="text-end small opacity-50">@cari.Grup</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="p-4 border-top border-white-10 d-flex justify-content-end gap-2">
+                <button class="premium-button secondary" @onclick="ViewModel.CloseCariSecim">Kapat</button>
+                <button class="premium-button success" @onclick="ViewModel.SelectCari" disabled="@(ViewModel.SelectedCariForAdd == null)">Seç</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        UiService.OnEscapePressed += HandleEscape;
+    }
+
+    private Task<bool> HandleEscape()
+    {
+        if (ViewModel.IsCariSecimVisible)
+        {
+            ViewModel.CloseCariSecim();
+            StateHasChanged();
+            return Task.FromResult(true);
+        }
+
+        if (ViewModel.IsEditFormVisible)
+        {
+            ViewModel.CloseEditForm();
+            StateHasChanged();
+            return Task.FromResult(true);
+        }
+
+        return Task.FromResult(false);
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+
+    private string GetDurumClass(string? durum) => durum switch
+    {
+        "Portföyde" => "info",
+        "Tahsil Edildi" => "success",
+        "Karşılıksız" => "danger",
+        _ => "secondary"
+    };
+
+    private async Task ConfirmDelete()
+    {
+        if (ViewModel.SelectedCek == null) return;
+        await ViewModel.DeleteCekAsync(null);
+        Snackbar.Add("Kayıt silindi", Severity.Success);
+    }
+}
+
+<style>
+    .premium-row.selected {
+        background: rgba(var(--primary-accent-rgb), 0.1) !important;
+        border-left: 3px solid var(--primary-accent);
+    }
+
+    .btn-close-premium {
+        background: rgba(255,255,255,0.05);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>

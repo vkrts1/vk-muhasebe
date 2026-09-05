@@ -1,0 +1,231 @@
+@page "/stok-mevcudu"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<style>
+    .rapor-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .rapor-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 20px;
+    }
+
+    .stat-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+        padding: 20px;
+    }
+
+    .stat-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 900;
+        color: white;
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .stock-badge {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+</style>
+
+<div class="rapor-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="rapor-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory" Color="Color.Success" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Stok Mevcudu Raporu</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Envanter durumu ve stok değerleme analizi.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-3">
+                <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Raporlara Dön</MudButton>
+                @if (raporOlusturuldu)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Style="border-radius: 12px; font-weight: 700;" OnClick="PrintReport">PDF İndir</MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. ACTION PANEL *@
+    <div class="glass-card mb-6">
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                 <MudTextField @bind-Value="searchString" Placeholder="Ürün Adı, Barkod veya Kategori ile Ara..." 
+                               Variant="Variant.Outlined" Adornment="Adornment.Start" 
+                               AdornmentIcon="@Icons.Material.Filled.Search" Class="bg-dark-input" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Style="height: 50px; border-radius: 12px; font-weight: 800;" OnClick="RaporOlustur">STOK LİSTESİNİ GÜNCELLE</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @if (raporOlusturuldu)
+    {
+        @* 3. KPI STATS *@
+        <MudGrid Class="mb-6">
+            <MudItem xs="12" sm="3">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">TOPLAM ÜRÜN</div>
+                    <div class="stat-value">@stoklar.Count</div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">TOPLAM ENVANTER DEĞERİ</div>
+                    <div class="stat-value" style="color: #60A5FA;">@toplamDeger.ToString("C2")</div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">KRİTİK SEVİYE</div>
+                    <div class="stat-value" style="color: #FBBF24;">@kritikStokSayisi</div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">TÜKENEN ÜRÜNLER</div>
+                    <div class="stat-value" style="color: #F87171;">@sifirStokSayisi</div>
+                </div>
+            </MudItem>
+        </MudGrid>
+
+        @* 4. DATA TABLE *@
+        <div class="glass-card">
+            <MudTable Items="@filteredStoklar" Dense="true" Hover="true" Class="compact-table" Style="background: transparent;">
+                <HeaderContent>
+                    <MudTh>STOK KODU</MudTh>
+                    <MudTh>STOK ADI</MudTh>
+                    <MudTh>KATEGORİ</MudTh>
+                    <MudTh Style="text-align: right;">MİKTAR</MudTh>
+                    <MudTh Style="text-align: right;">BİRİM FİYAT</MudTh>
+                    <MudTh Style="text-align: right;">TOPLAM DEĞER</MudTh>
+                    <MudTh Style="text-align: center;">DURUM</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.StokKodu</MudTd>
+                    <MudTd Style="font-weight: 700;">@context.StokAdi</MudTd>
+                    <MudTd>@context.Kategori</MudTd>
+                    <MudTd Style="text-align: right; font-weight: 800;">@context.Miktar @context.Birim</MudTd>
+                    <MudTd Style="text-align: right;">@context.SatisFiyati.ToString("N2") ₺</MudTd>
+                    <MudTd Style="text-align: right; color: #60A5FA; font-weight: 700;">@(((decimal)context.Miktar * context.SatisFiyati).ToString("N2")) ₺</MudTd>
+                    <MudTd Style="text-align: center;">
+                        @if(context.Miktar <= context.MinSeviye)
+                        {
+                            <span class="stock-badge" style="background: rgba(248, 113, 113, 0.1); color: #F87171;">KRİTİK</span>
+                        }
+                        else if(context.Miktar <= context.MinSeviye * 2)
+                        {
+                            <span class="stock-badge" style="background: rgba(251, 191, 36, 0.1); color: #FBBF24;">DÜŞÜK</span>
+                        }
+                        else
+                        {
+                            <span class="stock-badge" style="background: rgba(52, 211, 153, 0.1); color: #34D399;">NORMAL</span>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </div>
+    }
+</div>
+
+@code {
+    private bool raporOlusturuldu = false;
+    private List<StokKart> stoklar = new();
+    private string searchString = "";
+    
+    private IEnumerable<StokKart> filteredStoklar => 
+        string.IsNullOrWhiteSpace(searchString) 
+            ? stoklar 
+            : stoklar.Where(s => (s.StokAdi ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase) || 
+                                (s.StokKodu ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                                (s.Kategori ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+    private decimal toplamDeger => stoklar.Sum(s => (decimal)s.Miktar * s.SatisFiyati);
+    private int kritikStokSayisi => stoklar.Count(s => s.Miktar <= s.MinSeviye);
+    private int sifirStokSayisi => stoklar.Count(s => s.Miktar == 0);
+
+    protected override Task OnInitializedAsync() => Task.CompletedTask;
+
+    private async Task RaporOlustur()
+    {
+        stoklar = await DbService.GetStoklarAsync();
+        raporOlusturuldu = true;
+        StateHasChanged();
+    }
+    
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Stok Kodu", "Stok Adı", "Kategori", "Miktar", "Birim", "Birim Fiyat", "Toplam Değer" };
+            var rows = filteredStoklar.Select(s => new string[] 
+            { 
+                s.StokKodu ?? "",
+                s.StokAdi ?? "",
+                s.Kategori ?? "",
+                s.Miktar.ToString(),
+                s.Birim ?? "Adet",
+                s.SatisFiyati.ToString("C2"),
+                ((decimal)s.Miktar * s.SatisFiyati).ToString("C2")
+            }).ToList();
+            
+            rows.Add(new[] { "", "TOPLAM DEĞER", "", "", "", "", toplamDeger.ToString("N2") + " ₺" });
+
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Stok Mevcudu Analiz Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync($"Stok_Mevcudu_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
+            Snackbar.Add("Envanter raporu oluşturuldu.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

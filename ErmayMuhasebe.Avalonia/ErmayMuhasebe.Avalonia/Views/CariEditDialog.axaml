@@ -1,0 +1,262 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="730"
+             x:Class="ErmayMuhasebe.Avalonia.Views.CariEditDialog"
+             x:DataType="vm:CariListViewModel">
+
+    <Grid Background="#AA000000">
+        <Border Background="#080A0C" 
+                Width="1100" MaxHeight="640" 
+                VerticalAlignment="Center" HorizontalAlignment="Center" 
+                CornerRadius="16" Padding="0"
+                BorderBrush="#33FFFFFF" BorderThickness="1"
+                BoxShadow="0 20 60 0 #EE000000">
+            <DockPanel LastChildFill="True">
+                <!-- Dialog Header -->
+                <Border DockPanel.Dock="Top" Padding="25,15" Background="#24292e" CornerRadius="16,16,0,0" BorderBrush="#11FFFFFF" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                             <Border Background="{DynamicResource FluidBlueGradient}" Width="38" Height="38" CornerRadius="8">
+                                <ic:SymbolIcon Symbol="PersonAdd" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                             </Border>
+                             <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Grid.Column="2" Command="{Binding CloseDialogCommand}" 
+                                Background="#15FFFFFF" BorderThickness="0" Width="44" Height="44" CornerRadius="22" Padding="0">
+                            <ic:SymbolIcon Symbol="Dismiss" FontSize="24" Foreground="#88FFFFFF"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Dialog Footer -->
+                <Border DockPanel.Dock="Bottom" Padding="25,15" Background="#24292e" CornerRadius="0,0,16,16" BorderBrush="#11FFFFFF" BorderThickness="0,1,0,0">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <Button Grid.Column="0" Command="{Binding CloseDialogCommand}" IsEnabled="{Binding !IsSaving}" Classes="SideButton Secondary" Width="130" Height="42">
+                             <StackPanel Orientation="Horizontal" Spacing="10">
+                                 <ic:SymbolIcon Symbol="ArrowLeft" FontSize="18"/>
+                                 <TextBlock Text="VAZGEÇ" FontWeight="Bold" VerticalAlignment="Center" FontSize="12"/>
+                             </StackPanel>
+                        </Button>
+                        
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="25">
+                             <Border Background="#12FFFFFF" CornerRadius="10" Padding="15,5" VerticalAlignment="Center">
+                                 <StackPanel VerticalAlignment="Center" Spacing="0">
+                                     <TextBlock Text="Açılış Bakiyesi" FontSize="10" Foreground="#888" HorizontalAlignment="Right"/>
+                                     <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+                                         <TextBlock Text="{Binding EditAcilisBakiye, StringFormat='N2'}" FontSize="15" FontWeight="ExtraBold" Foreground="#10B981"/>
+                                         <TextBlock Text="₺" VerticalAlignment="Center" FontSize="12" FontWeight="Bold" Foreground="#10B981"/>
+                                     </StackPanel>
+                                 </StackPanel>
+                             </Border>
+                             
+                             <Button Command="{Binding SaveCariCommand}" IsEnabled="{Binding !IsSaving}" Classes="SideButton Success" Width="170" Height="44" Background="#10B981" BorderThickness="0">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <ic:SymbolIcon Symbol="Save" FontSize="18" Foreground="White"/>
+                                    <TextBlock Text="KAYDET" FontWeight="Black" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Validation Messages Panel (Always Visible when active) -->
+                <StackPanel DockPanel.Dock="Top" Margin="25,10" Spacing="8">
+                    <Border Background="#1A51CF66" BorderBrush="#4051CF66" BorderThickness="1" CornerRadius="8" Padding="15,10" IsVisible="{Binding SuccessMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ic:SymbolIcon Symbol="CheckmarkCircle" Foreground="#51CF66" FontSize="20"/>
+                            <TextBlock Text="{Binding SuccessMessage}" Foreground="#51CF66" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#1AFF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1" CornerRadius="8" Padding="15,10" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ic:SymbolIcon Symbol="DismissCircle" Foreground="#FF6B6B" FontSize="20"/>
+                            <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#1A60A5FA" BorderBrush="#4060A5FA" BorderThickness="1" CornerRadius="8" Padding="15,10" IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ProgressBar IsIndeterminate="True" Width="18" Height="18" Foreground="#60A5FA" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding StatusMessage}" Foreground="#60A5FA" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Dialog Content -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Grid ColumnDefinitions="400, 1, *" Margin="0">
+                        <!-- Left: Basic Info -->
+                        <Border Grid.Column="0" Background="#1c2128">
+                                    <StackPanel Margin="20,10" Spacing="6">
+                                    <Border Background="#1060A5FA" BorderBrush="#3060A5FA" BorderThickness="1" Padding="12,8" CornerRadius="8">
+                                        <TextBlock Text="TEMEL BİLGİLER" HorizontalAlignment="Center" FontWeight="Black" FontSize="12" Foreground="#60A5FA" LetterSpacing="1"/>
+                                    </Border>
+        
+                                    <Grid ColumnDefinitions="*, 15, *">
+                                        <StackPanel Grid.Column="0" Spacing="5">
+                                            <TextBlock Text="Cari Tipi" FontSize="11" FontWeight="SemiBold" Foreground="#60A5FA"/>
+                                            <ComboBox SelectedItem="{Binding EditGrup}" HorizontalAlignment="Stretch" Height="38" CornerRadius="6">
+                                                <x:String>Müşteri</x:String>
+                                                <x:String>Tedarikçi</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="5">
+                                            <TextBlock Text="Yetkili Kişi" FontSize="11" FontWeight="SemiBold" Foreground="#88FFFFFF"/>
+                                            <TextBox Text="{Binding EditYetkili}" Watermark="Ad Soyad" Height="38" CornerRadius="6" FontSize="12"/>
+                                        </StackPanel>
+                                    </Grid>
+            
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="Hesap / Firma Adı" FontSize="11" FontWeight="SemiBold" Foreground="#60A5FA"/>
+                                        <TextBox Text="{Binding EditUnvan}" Watermark="Firma Ünvanı" AcceptsReturn="True" Height="50" TextWrapping="Wrap" CornerRadius="6" FontSize="12" Padding="6"/>
+                                    </StackPanel>
+                
+                                    <Grid ColumnDefinitions="*, 15, *">
+                                        <StackPanel Grid.Column="0" Spacing="5">
+                                            <TextBlock Text="Vade Günü" FontSize="11" FontWeight="SemiBold" Foreground="#88FFFFFF"/>
+                                            <NumericUpDown Value="{Binding EditVadeGunu}" Height="38" ShowButtonSpinner="False" CornerRadius="6" FontSize="12"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="5">
+                                            <TextBlock Text="Ödeme Planı" FontSize="11" FontWeight="SemiBold" Foreground="#60A5FA"/>
+                                            <ComboBox SelectedItem="{Binding EditOdemePlani}" HorizontalAlignment="Stretch" Height="38" CornerRadius="6">
+                                                <x:String>Peşin</x:String>
+                                                <x:String>7 Gün</x:String>
+                                                <x:String>15 Gün</x:String>
+                                                <x:String>30 Gün</x:String>
+                                                <x:String>45 Gün</x:String>
+                                                <x:String>60 Gün</x:String>
+                                                <x:String>90 Gün</x:String>
+                                                <x:String>Haftalık</x:String>
+                                                <x:String>Aylık</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+        
+                                    <StackPanel Spacing="5">
+                                        <TextBlock Text="Risk Limiti" FontSize="11" FontWeight="SemiBold" Foreground="#88FFFFFF"/>
+                                        <NumericUpDown Value="{Binding EditRiskLimiti}" Height="38" ShowButtonSpinner="False" CornerRadius="6" FontSize="12"/>
+                                    </StackPanel>
+                
+                                    <StackPanel Spacing="2">
+                                         <TextBlock Text="Cari Kart Açıklaması" FontSize="11" FontWeight="SemiBold" Foreground="#88FFFFFF"/>
+                                         <TextBox Text="{Binding EditAciklama}" Watermark="Genel notlar..." Height="80" AcceptsReturn="True" TextWrapping="Wrap" CornerRadius="6" FontSize="12" Padding="6" VerticalContentAlignment="Top"/>
+                                    </StackPanel>
+                                </StackPanel>
+                        </Border>
+    
+                        <!-- Divider -->
+                        <Rectangle Grid.Column="1" Fill="#22FFFFFF" Width="1"/>
+    
+                        <!-- Right Column: Tabs -->
+                        <Border Grid.Column="2" Padding="25,5" Background="#161b22">
+                            <TabControl Background="Transparent" Padding="0">
+                                                      <TabItem Header="İletişim &amp; Adres">
+                                    <Grid RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, *" Margin="0,5,5,0">
+                                            <Grid Grid.Row="0" ColumnDefinitions="*, 20, *" Margin="0,0,0,8">
+                                                <StackPanel Grid.Column="0" Spacing="5">
+                                                    <TextBlock Text="Telefon" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditTelefon}" Watermark="Sabit Hat" CornerRadius="6" Height="36" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Spacing="5">
+                                                    <TextBlock Text="Cep Telefonu" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditCepTelefon}" Watermark="Mobil Hat" CornerRadius="6" Height="36" FontSize="12"/>
+                                                </StackPanel>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="1" ColumnDefinitions="*, 20, *" Margin="0,0,0,8">
+                                                <StackPanel Grid.Column="0" Spacing="5">
+                                                    <TextBlock Text="E-Mail" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditEmail}" Watermark="iletisim@firma.com" CornerRadius="6" Height="36" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Spacing="5">
+                                                    <TextBlock Text="IBAN" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditIBAN}" Watermark="TR..." CornerRadius="6" Height="36" FontSize="12"/>
+                                                </StackPanel>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" ColumnDefinitions="*, 20, *" Margin="0,0,0,8">
+                                                <StackPanel Grid.Column="0" Spacing="5">
+                                                    <TextBlock Text="Vergi No / VKN" FontSize="11" Foreground="#60A5FA" FontWeight="Bold"/>
+                                                    <TextBox Text="{Binding EditVergiNo}" Watermark="Vergi Numarası" CornerRadius="6" Height="38" FontSize="12" BorderBrush="#3360A5FA"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Spacing="5">
+                                                    <TextBlock Text="T.C. Kimlik No" FontSize="11" Foreground="#60A5FA" FontWeight="Bold"/>
+                                                    <TextBox Text="{Binding EditTCNo}" Watermark="11 Haneli TCKN" MaxLength="11" CornerRadius="6" Height="38" FontSize="12" BorderBrush="#3360A5FA"/>
+                                                </StackPanel>
+                                            </Grid>
+        
+                                            <StackPanel Grid.Row="3" Spacing="5" Margin="0,0,0,8">
+                                                 <TextBlock Text="Vergi Dairesi" FontSize="11" Foreground="#88FFFFFF"/>
+                                                 <TextBox Text="{Binding EditVergiDairesi}" Watermark="Daire Adı" CornerRadius="6" Height="36" FontSize="12"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="4" ColumnDefinitions="*, 15, *, 15, *" Margin="0,0,0,8">
+                                                <StackPanel Grid.Column="0" Spacing="5">
+                                                    <TextBlock Text="Ülke" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditUlke}" Watermark="Türkiye" CornerRadius="6" Height="36" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Spacing="5">
+                                                    <TextBlock Text="İl" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditIl}" Watermark="Şehir" CornerRadius="6" Height="36" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="4" Spacing="5">
+                                                    <TextBlock Text="İlçe" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditIlce}" Watermark="İlçe" CornerRadius="6" Height="36" FontSize="12"/>
+                                                </StackPanel>
+                                            </Grid>
+        
+                                            <StackPanel Grid.Row="5" Spacing="5" Margin="0,0,0,8">
+                                                <TextBlock Text="Cari Hesap Kodu" FontSize="11" Foreground="#60A5FA" FontWeight="Bold"/>
+                                                <TextBox Text="{Binding EditCariKod}" Watermark="C-0001" Height="38" CornerRadius="6" FontSize="12" BorderBrush="#3360A5FA"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="6" ColumnDefinitions="*, 20, *">
+                                                <StackPanel Grid.Column="0" Spacing="3">
+                                                    <TextBlock Text="Ana Adres" VerticalAlignment="Center" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditAdres}" Watermark="Açık Adres" Height="60" AcceptsReturn="True" TextWrapping="Wrap" CornerRadius="8" Padding="10" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Spacing="3">
+                                                    <TextBlock Text="Sevk Adresi" FontSize="11" Foreground="#88FFFFFF"/>
+                                                    <TextBox Text="{Binding EditSevkAdresi}" Watermark="Gönderim Adresi" Height="60" AcceptsReturn="True" TextWrapping="Wrap" CornerRadius="8" Padding="10" FontSize="12"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
+                                </TabItem>
+                                
+                                <TabItem Header="Risk &amp; Limit">
+                                        <StackPanel Spacing="10" Margin="0,15,5,0">
+                                            <Border Background="#1060A5FA" BorderBrush="#2060A5FA" BorderThickness="1" Padding="20" CornerRadius="12">
+                                                <StackPanel Spacing="15">
+                                                    <TextBlock Text="FİNANSAL RİSK PARAMETRELERİ" Foreground="#60A5FA" FontWeight="Bold" FontSize="12" LetterSpacing="1"/>
+                                                    <CheckBox Content="Risk Takibi Yapılsın (Limiti Aşınca Uyar)" IsChecked="{Binding EditRiskTakibiYapilsin}" Foreground="White" FontSize="13"/>
+                                                    <CheckBox Content="Vadesi Geçmiş Borçlarda İşlem Engelle" IsChecked="{Binding EditVadeGecmisteEngelle}" Foreground="White" FontSize="13"/>
+                                                    <CheckBox Content="Fatura Keserken Risk Kontrolü Yap" IsChecked="{Binding EditFaturadaRiskKontrolu}" Foreground="White" FontSize="13"/>
+                                                    
+                                                    <Separator Background="#22FFFFFF" Height="1" Margin="0,10"/>
+                                                    
+                                                    <TextBlock Text="COĞRAFİ KOORDİNATLAR (Harita İçin)" Foreground="#60A5FA" FontWeight="Bold" FontSize="12" LetterSpacing="1"/>
+                                                    <Grid ColumnDefinitions="*, 20, *">
+                                                        <StackPanel Grid.Column="0" Spacing="5">
+                                                            <TextBlock Text="Enlem (Latitude)" FontSize="11" Foreground="#88FFFFFF"/>
+                                                            <TextBox Text="{Binding EditLatitude}" Watermark="0.0000" CornerRadius="6" Height="36" FontSize="12"/>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="2" Spacing="5">
+                                                            <TextBlock Text="Boylam (Longitude)" FontSize="11" Foreground="#88FFFFFF"/>
+                                                            <TextBox Text="{Binding EditLongitude}" Watermark="0.0000" CornerRadius="6" Height="36" FontSize="12"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                </TabItem>
+                            </TabControl>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

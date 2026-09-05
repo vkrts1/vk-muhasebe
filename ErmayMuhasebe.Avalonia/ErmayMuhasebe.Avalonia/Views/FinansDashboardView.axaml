@@ -1,0 +1,400 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:converters="clr-namespace:ErmayMuhasebe.Avalonia.Converters"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             x:Class="ErmayMuhasebe.Avalonia.Views.FinansDashboardView"
+             x:DataType="vm:FinansDashboardViewModel">
+
+     <UserControl.Resources>
+        <ThemeVariant x:Key="ActiveTheme">Dark</ThemeVariant>
+        <converters:StringEqualsConverter x:Key="StringEqualsConverter"/>
+        <converters:VadeIncomingToColorConverter x:Key="VadeIncomingToColorConverter"/>
+        <converters:VadeTypeToIconConverter x:Key="VadeTypeToIconConverter"/>
+        <converters:OverdueToColorConverter x:Key="OverdueToColorConverter"/>
+    </UserControl.Resources>
+    
+    <UserControl.Styles>
+        <!-- Custom Button style for Period Filter Tabs (Specific class to override global App.axaml Button style) -->
+        <Style Selector="Button.PeriodButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Root" 
+                            Background="{TemplateBinding Background}" 
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}" 
+                                           VerticalAlignment="Center" 
+                                           HorizontalAlignment="Center"
+                                           FontSize="{TemplateBinding FontSize}"
+                                           FontWeight="{TemplateBinding FontWeight}"
+                                           Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.PeriodButton:pointerover">
+            <Setter Property="Background" Value="#11FFFFFF"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.PeriodButton.active">
+            <Setter Property="Background" Value="#2A00D4FF"/>
+            <Setter Property="Foreground" Value="#00D4FF"/>
+        </Style>
+
+        <!-- Custom RadioButton style for Period Filter Tabs -->
+        <Style Selector="RadioButton.PeriodTabButton">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Root" 
+                            Background="{TemplateBinding Background}" 
+                            Padding="{TemplateBinding Padding}" 
+                            CornerRadius="6" 
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Cursor="Hand">
+                        <ContentPresenter Content="{TemplateBinding Content}" 
+                                           VerticalAlignment="Center" 
+                                           HorizontalAlignment="Center"
+                                           FontSize="{TemplateBinding FontSize}"
+                                           FontWeight="{TemplateBinding FontWeight}"
+                                           Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.PeriodTabButton:checked">
+            <Setter Property="Background" Value="#2A00D4FF"/>
+            <Setter Property="BorderBrush" Value="#4000D4FF"/>
+            <Setter Property="Foreground" Value="#00D4FF"/>
+        </Style>
+        <Style Selector="RadioButton.PeriodTabButton:pointerover">
+            <Setter Property="Background" Value="#11FFFFFF"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="20" Margin="20,20,20,90">
+            <!-- 0. Filtreleme Paneli (Haftalık, Aylık, 6 Aylık, Yıllık & 2 Tarih Arası Seçim) -->
+            <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="16" Padding="15" BoxShadow="0 4 12 0 #10000000">
+                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                    <!-- Başlık veya Simge -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <ic:SymbolIcon Symbol="Filter" Foreground="#00D4FF" FontSize="18"/>
+                        <TextBlock Text="Dönem Filtresi" FontSize="13" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Hızlı Dönem Seçiciler -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="20,0,0,0" VerticalAlignment="Center">
+                        <RadioButton Content="Haftalık" 
+                                     IsChecked="{Binding ActivePeriodFilter, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Haftalık'}"
+                                     Command="{Binding SetPeriodFilterCommand}" CommandParameter="Haftalık"
+                                     Classes="PeriodTabButton"/>
+                        <RadioButton Content="Aylık" 
+                                     IsChecked="{Binding ActivePeriodFilter, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Aylık'}"
+                                     Command="{Binding SetPeriodFilterCommand}" CommandParameter="Aylık"
+                                     Classes="PeriodTabButton"/>
+                        <RadioButton Content="6 Aylık" 
+                                     IsChecked="{Binding ActivePeriodFilter, Converter={StaticResource StringEqualsConverter}, ConverterParameter='6 Aylık'}"
+                                     Command="{Binding SetPeriodFilterCommand}" CommandParameter="6 Aylık"
+                                     Classes="PeriodTabButton"/>
+                        <RadioButton Content="Yıllık" 
+                                     IsChecked="{Binding ActivePeriodFilter, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Yıllık'}"
+                                     Command="{Binding SetPeriodFilterCommand}" CommandParameter="Yıllık"
+                                     Classes="PeriodTabButton"/>
+                        <RadioButton Content="Özel Tarih" 
+                                     IsChecked="{Binding ActivePeriodFilter, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Özel'}"
+                                     Command="{Binding SetPeriodFilterCommand}" CommandParameter="Özel"
+                                     Classes="PeriodTabButton"/>
+                    </StackPanel>
+
+                    <!-- Tarih Seçiciler -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <CalendarDatePicker SelectedDate="{Binding FilterStartDate, Mode=TwoWay}" Watermark="Başlangıç" CustomDateFormatString="dd.MM.yyyy" SelectedDateFormat="Custom" Width="130" Background="#10FFFFFF" BorderBrush="#20FFFFFF"/>
+                        <TextBlock Text="-" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                        <CalendarDatePicker SelectedDate="{Binding FilterEndDate, Mode=TwoWay}" Watermark="Bitiş" CustomDateFormatString="dd.MM.yyyy" SelectedDateFormat="Custom" Width="130" Background="#10FFFFFF" BorderBrush="#20FFFFFF"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 1. Paranın Dağılımı (Kendi Kasamız vs Yönlendirilenler) -->
+            <Grid ColumnDefinitions="*, *" ColumnSpacing="20">
+                <!-- Kendi Kasamızda Kalanlar -->
+                <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" BorderBrush="#00FFA3" BorderThickness="1.5" CornerRadius="20" Padding="20" BoxShadow="0 6 20 0 #1500FFA3">
+                    <StackPanel Spacing="15">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="36" Height="36" CornerRadius="10" Background="#1F00FFA3">
+                                <ic:SymbolIcon Symbol="Wallet" Foreground="#00FFA3" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Kendi Kasamızda Kalan Net Paralar" FontSize="14" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <UniformGrid Columns="4" Rows="1">
+                            <StackPanel Margin="5,0" HorizontalAlignment="Center">
+                                <TextBlock Text="Nakit" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding KendiNakit, StringFormat='{}{0:N0} ₺'}" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Margin="5,0" HorizontalAlignment="Center">
+                                <TextBlock Text="Kredi Kartı" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding KendiKK, StringFormat='{}{0:N0} ₺'}" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Margin="5,0" HorizontalAlignment="Center">
+                                <TextBlock Text="Havale/EFT" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding KendiEFT, StringFormat='{}{0:N0} ₺'}" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Margin="5,0" HorizontalAlignment="Center">
+                                <TextBlock Text="Çek/Senet" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding KendiCek, StringFormat='{}{0:N0} ₺'}" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tedarikçiye Yönlendirilenler -->
+                <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" BorderBrush="#BD00FF" BorderThickness="1.5" CornerRadius="20" Padding="20" BoxShadow="0 6 20 0 #15BD00FF">
+                    <StackPanel Spacing="15">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="36" Height="36" CornerRadius="10" Background="#1FBD00FF">
+                                <ic:SymbolIcon Symbol="ArrowRight" Foreground="#BD00FF" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Tedarikçiye Yönlendirilen Paralar (Ciro)" FontSize="14" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <UniformGrid Columns="4" Rows="1">
+                            <StackPanel Margin="5,0" HorizontalAlignment="Center">
+                                <TextBlock Text="Nakit" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding YonlendirilenNakit, StringFormat='{}{0:N0} ₺'}" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Margin="5,0" HorizontalAlignment="Center">
+                                <TextBlock Text="Kredi Kartı" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding YonlendirilenKK, StringFormat='{}{0:N0} ₺'}" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Margin="5,0" HorizontalAlignment="Center">
+                                <TextBlock Text="Havale/EFT" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding YonlendirilenEFT, StringFormat='{}{0:N0} ₺'}" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Margin="5,0" HorizontalAlignment="Center">
+                                <TextBlock Text="Çek/Senet" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding YonlendirilenCek, StringFormat='{}{0:N0} ₺'}" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 2. Detaylı Analiz Paneli -->
+            <Grid ColumnDefinitions="1.2*, 0.8*, 1*" ColumnSpacing="20">
+                <!-- Alış Faturaları Kapatma Durumu -->
+                <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="20" BoxShadow="0 8 24 0 #15000000">
+                    <StackPanel Spacing="20">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="36" Height="36" CornerRadius="10" Background="#1F00D4FF">
+                                <ic:SymbolIcon Symbol="Receipt" Foreground="#00D4FF" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Alış Faturaları Kapatma Karnesi" FontSize="16" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="15">
+                            <!-- Progress Bar -->
+                            <StackPanel Spacing="5">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Text="Ödeme Kapatma Oranı" FontSize="12" Foreground="#94A3B8"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding AlisFaturaKapatmaOrani, StringFormat='{}{0:F1}%'}" FontSize="13" FontWeight="Bold" Foreground="#00FFA3"/>
+                                </Grid>
+                                <ProgressBar Height="8" Minimum="0" Maximum="100" Value="{Binding AlisFaturaKapatmaOrani}" Background="#1F00FFA3" Foreground="#00FFA3" CornerRadius="4"/>
+                            </StackPanel>
+
+                            <!-- Detaylı Değerler -->
+                            <Grid RowDefinitions="Auto, Auto, Auto" ColumnDefinitions="*, *" RowSpacing="10" ColumnSpacing="15">
+                                <StackPanel Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Text="Toplam Alış" FontSize="10" Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding AlisFaturaToplam, StringFormat='{}{0:N0} ₺'}" FontSize="14" FontWeight="Bold" Foreground="White"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="1">
+                                    <TextBlock Text="Kapatılan/Ödenen" FontSize="10" Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding AlisFaturaOdenen, StringFormat='{}{0:N0} ₺'}" FontSize="14" FontWeight="Bold" Foreground="#00FFA3"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="0">
+                                    <TextBlock Text="Kalan Toplam Borç" FontSize="10" Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding AlisFaturaKalan, StringFormat='{}{0:N0} ₺'}" FontSize="14" FontWeight="Bold" Foreground="White"/>
+                                </StackPanel>
+                                <Border Grid.Row="1" Grid.Column="1" Background="#1AFF4D4D" CornerRadius="8" Padding="8,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Gecikmiş (Geriden)" FontSize="10" Foreground="#FF8F8F"/>
+                                        <TextBlock Text="{Binding AlisFaturaGecikmis, StringFormat='{}{0:N0} ₺'}" FontSize="13" FontWeight="Bold" Foreground="#FF4D4D"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="2" Grid.Column="0" Background="#1F00FFA3" CornerRadius="8" Padding="8,4" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="180">
+                                    <StackPanel>
+                                        <TextBlock Text="Gelecek Ödemeler (Önden)" FontSize="10" Foreground="#A3FFD8"/>
+                                        <TextBlock Text="{Binding AlisFaturaOndenOdenen, StringFormat='{}{0:N0} ₺'}" FontSize="13" FontWeight="Bold" Foreground="#00FFA3"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Ortalama Ödeme ve Tahsilat Süreleri -->
+                <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="20" BoxShadow="0 8 24 0 #15000000">
+                    <StackPanel Spacing="20">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="36" Height="36" CornerRadius="10" Background="#1FFFB400">
+                                <ic:SymbolIcon Symbol="History" Foreground="#FFB400" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Ortalama Vadeler" FontSize="16" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="15">
+                            <!-- Ortalama Tahsilat Günü -->
+                            <Border Background="#10FFFFFF" CornerRadius="12" Padding="15">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Ortalama Tahsilat" FontSize="11" Foreground="#94A3B8"/>
+                                        <TextBlock Text="Müşterilerden Para Girişi" FontSize="9" Foreground="#64748B"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding OrtalamaTahsilatGunu, StringFormat='{}{0:0.#}'}" FontSize="24" FontWeight="Black" Foreground="#00FFA3"/>
+                                        <TextBlock Text=" Gün" FontSize="12" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="2,0,0,4"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Ortalama Ödeme Günü -->
+                            <Border Background="#10FFFFFF" CornerRadius="12" Padding="15">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Ortalama Ödeme" FontSize="11" Foreground="#94A3B8"/>
+                                        <TextBlock Text="Tedarikçilere Para Çıkışı" FontSize="9" Foreground="#64748B"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding OrtalamaOdemeGunu, StringFormat='{}{0:0.#}'}" FontSize="24" FontWeight="Black" Foreground="#FF4D4D"/>
+                                        <TextBlock Text=" Gün" FontSize="12" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="2,0,0,4"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- 30 Günlük Gelecek Projeksiyonu -->
+                <Border Grid.Column="2" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="20" BoxShadow="0 8 24 0 #15000000">
+                    <StackPanel Spacing="15">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="36" Height="36" CornerRadius="10" Background="#1FBD00FF">
+                                <ic:SymbolIcon Symbol="CalendarClock" Foreground="#BD00FF" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="30 Günlük Gelecek Tahmini" FontSize="16" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Scrollable Projections List -->
+                        <ScrollViewer Height="230">
+                            <ItemsControl ItemsSource="{Binding GelecekHareketiListesi}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#10FFFFFF" BorderThickness="0,0,0,1" Padding="0,8">
+                                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                                <!-- Icon representing Incoming/Outgoing -->
+                                                <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding IsIncoming, Converter={StaticResource VadeIncomingToColorConverter}, ConverterParameter='bg'}">
+                                                    <ic:SymbolIcon Symbol="{Binding Type, Converter={StaticResource VadeTypeToIconConverter}}" 
+                                                                   Foreground="{Binding IsIncoming, Converter={StaticResource VadeIncomingToColorConverter}, ConverterParameter='fg'}" 
+                                                                   FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <!-- Details -->
+                                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding CariAdi}" FontSize="12" FontWeight="SemiBold" Foreground="White" MaxLines="1" TextTrimming="CharacterEllipsis"/>
+                                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                                        <TextBlock Text="{Binding VadeTarihi, StringFormat='{}{0:dd.MM.yyyy}'}" FontSize="9" Foreground="#64748B"/>
+                                                        <TextBlock Text="•" FontSize="9" Foreground="#64748B"/>
+                                                        <TextBlock Text="{Binding KalanGunText}" FontSize="9" Foreground="{Binding RenkliUyari, Converter={StaticResource OverdueToColorConverter}}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <!-- Amount -->
+                                                <TextBlock Grid.Column="2" Text="{Binding Tutar, StringFormat='{}{0:N0} ₺'}" FontSize="13" FontWeight="Bold" 
+                                                           Foreground="{Binding IsIncoming, Converter={StaticResource VadeIncomingToColorConverter}, ConverterParameter='fg'}" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 3. Trend Grafik Alanı (Mevcut Grafik) -->
+            <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="20" Padding="25" Margin="0,0,0,20" BoxShadow="0 8 24 0 #15000000">
+                <StackPanel Spacing="20">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Margin="0,0,15,0">
+                            <Border Background="#2A00FFA3" Width="40" Height="40" CornerRadius="10">
+                                <ic:SymbolIcon Symbol="DataUsage" Foreground="#00FFA3" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Finansal Akış Trendi" FontSize="16" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="Gelir, gider ve akış özeti" FontSize="10" Foreground="#94A3B8"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Empty Spacer to push selector to the right -->
+                        <Panel Grid.Column="1"/>
+
+                        <!-- Period Selector -->
+                        <Border Grid.Column="2" HorizontalAlignment="Right" MinWidth="320" Height="34" VerticalAlignment="Center" Background="#1AFFFFFF" CornerRadius="8" Padding="2" BorderBrush="#20FFFFFF" BorderThickness="1">
+                            <UniformGrid Columns="4">
+                                <Button Content="Günlük" 
+                                        Classes="PeriodButton"
+                                        Classes.active="{Binding SelectedPeriod, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Daily'}"
+                                        Command="{Binding ChangePeriodCommand}" CommandParameter="Daily"/>
+                                <Button Content="Haftalık" 
+                                        Classes="PeriodButton"
+                                        Classes.active="{Binding SelectedPeriod, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Weekly'}"
+                                        Command="{Binding ChangePeriodCommand}" CommandParameter="Weekly"/>
+                                <Button Content="Aylık" 
+                                        Classes="PeriodButton"
+                                        Classes.active="{Binding SelectedPeriod, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Monthly'}"
+                                        Command="{Binding ChangePeriodCommand}" CommandParameter="Monthly"/>
+                                <Button Content="Yıllık" 
+                                        Classes="PeriodButton"
+                                        Classes.active="{Binding SelectedPeriod, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Yearly'}"
+                                        Command="{Binding ChangePeriodCommand}" CommandParameter="Yearly"/>
+                            </UniformGrid>
+                        </Border>
+                    </Grid>
+                    
+                    <lvc:CartesianChart MinHeight="350" Margin="0,15,0,0"
+                                         Series="{Binding TrendSeries}" 
+                                         XAxes="{Binding TrendXAxis}"
+                                         YAxes="{Binding TrendYAxis}"
+                                         LegendPosition="Bottom"
+                                         LegendTextPaint="{Binding LegendPaint}"
+                                         ZoomMode="X"
+                                         TooltipPosition="Top" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ermay Muhasebe - 30 GERÇEK EKSTRE TASARIMI</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&family=Outfit:wght@700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            padding: 50px;
+            color: #1c1e21;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .page-header h1 {
+            font-size: 3rem;
+            font-family: 'Outfit';
+            color: #0f172a;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            color: #64748b;
+        }
+
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 40px;
+        }
+
+        .design-item {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .design-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
+        }
+
+        .preview-pane {
+            height: 550px;
+            padding: 20px;
+            background: #cbd5e1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .item-info {
+            padding: 25px;
+            border-top: 1px solid #f1f5f9;
+            background: #fff;
+        }
+
+        .item-info h3 {
+            font-family: 'Outfit';
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+            color: #0f172a;
+        }
+
+        .item-info p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .select-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        /* PDF BASE */
+        .pdf {
+            width: 360px;
+            height: 500px;
+            background: white;
+            padding: 20px;
+            font-size: 10px;
+            position: relative;
+            border-radius: 2px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .summary-box {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            text-align: left;
+            padding: 5px;
+            background: #f8fafc;
+            font-size: 8px;
+        }
+
+        td {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            font-size: 8px;
+        }
+
+        .detay {
+            font-size: 7px;
+            color: #888;
+            padding-left: 15px !important;
+            background: #fafafa;
+        }
+
+        .bakiye {
+            font-weight: bold;
+            color: #dc2626;
+        }
+
+        /* --- 30 UNIQUE STYLES --- */
+
+        .st-1 {
+            border-top: 5px solid #2563eb;
+        }
+
+        /* Classic ERP */
+
+        .st-2 {
+            background: #0f172a;
+            color: white;
+        }
+
+        /* Midnight Pro */
+        .st-2 td,
+        .st-2 th {
+            border-color: #1e293b;
+            color: #94a3b8;
+        }
+
+        .st-2 h2 {
+            color: #38bdf8;
+        }
+
+        .st-2 .summary-box {
+            background: #1e293b;
+        }
+
+        .st-3 {
+            background: #000;
+            color: #0f0;
+            font-family: 'Roboto Mono';
+            border: 1px solid #0f0;
+        }
+
+        /* Cyberpunk */
+        .st-3 th {
+            background: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+        }
+
+        .st-3 td {
+            border-color: #0f0;
+            color: #0f0;
+        }
+
+        .st-4 {
+            border: 2px solid black;
+        }
+
+        /* Swiss Bold */
+        .st-4 th {
+            background: #000;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .st-4 h2 {
+            font-weight: 900;
+            font-size: 18px;
+            border-bottom: 4px solid black;
+            padding-bottom: 5px;
+        }
+
+        .st-5 {
+            color: #444;
+        }
+
+        /* Nordic Light */
+        .st-5 th {
+            background: transparent;
+            border-bottom: 2px solid #eee;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .st-5 .summary-box {
+            border: 1px dashed #ddd;
+        }
+
+        .st-6 {
+            border-top: 10px solid #1e3a8a;
+        }
+
+        /* Royal Navy */
+        .st-6 .summary-box {
+            background: #f1f5f9;
+            border-left: 4px solid #1e3a8a;
+        }
+
+        .st-7 {}
+
+        /* Vibrant Action */
+        .st-7 .badge {
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 7px;
+        }
+
+        .st-7 .bg-blue {
+            background: #3b82f6;
+        }
+
+        .st-7 .bg-green {
+            background: #10b981;
+        }
+
+        .st-8 {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border: 1px solid #3b82f6;
+        }
+
+        /* Glass Arctic */
+
+        .st-9 {
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Material */
+        .st-9 table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .st-10 {
+            font-family: 'Roboto Mono';
+            background: #fffcf0;
+            border: 1px solid #d4c3a1;
+        }
+
+        /* Retro Ledger */
+        .st-10 th,
+        .st-10 td {
+            border: 1px solid #d4c3a1;
+        }
+
+        .st-11 {
+            border-left: 15px solid #059669;
+        }
+
+        /* Emerald Trust */
+        .st-11 h2 {
+            color: #059669;
+        }
+
+        .st-12 {
+            border: 3px double #333;
+        }
+
+        /* Industrial Grey */
+        .st-12 th {
+            background: #ccc;
+        }
+
+        .st-13 {
+            background: #faf5ff;
+        }
+
+        /* Soft Pastel */
+        .st-13 .summary-box {
+            background: #f3e8ff;
+            border-radius: 20px;
+        }
+
+        .st-13 h2 {
+            color: #7c3aed;
+        }
+
+        .st-14 {
+            background: #000;
+            color: #fff;
+            border-left: 20px solid #f59e0b;
+        }
+
+        /* High Contrast Amber */
+
+        .st-15 {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Magazine Edit */
+        .st-15 h2 {
+            font-size: 22px;
+            margin-bottom: 30px;
+            text-decoration: underline;
+        }
+
+        .st-16 {
+            border: 8px solid #000;
+        }
+
+        /* Brutalist Raw */
+        .st-16 th {
+            font-size: 12px;
+        }
+
+        .st-17 {
+            background: #fff;
+            border-bottom: 10px solid #3b82f6;
+        }
+
+        /* Bottom Blue Line */
+
+        .st-18 {
+            border-top: 20px solid #ef4444;
+        }
+
+        /* Red Header Focus */
+        .st-18 .bakiye {
+            font-size: 14px;
+        }
+
+        .st-19 {
+            border-radius: 30px;
+            border: 1px solid #eee;
+        }
+
+        /* Rounded Zen */
+        .st-19 th {
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .st-20 {
+            background: #f8fafc;
+        }
+
+        /* Blueprint */
+        .st-20 .pdf-inner {
+            border: 1px solid #3b82f6;
+            height: 100%;
+            border-style: dotted;
+        }
+
+        .st-21 {
+            background: linear-gradient(to right, #4f46e5, #9333ea);
+            color: #fff;
+        }
+
+        /* Gradient Aura */
+        .st-21 th {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .st-22 {
+            border-top: 15px solid #1e293b;
+            border-bottom: 15px solid #1e293b;
+        }
+
+        /* Double Bar Navy */
+
+        .st-23 {
+            font-style: italic;
+        }
+
+        /* Italic Stylish */
+        .st-23 h2 {
+            border-left: 10px solid #ec4899;
+            padding-left: 10px;
+        }
+
+        .st-24 {
+            background: #111;
+            color: #fff;
+        }
+
+        /* Stealth Black */
+        .st-24 .summary-box {
+            border: 1px solid #444;
+        }
+
+        .st-25 {
+            background: #fff7ed;
+            border: 2px solid #ea580c;
+        }
+
+        /* Sunset Orange */
+        .st-25 th {
+            background: #ffedd5;
+        }
+
+        .st-26 {
+            border: 1px solid #000;
+        }
+
+        /* Grid Paper */
+        .st-26 table td,
+        .st-26 table th {
+            border: 1px solid #eee;
+        }
+
+        .st-27 {
+            background: #eff6ff;
+        }
+
+        /* Ocean Soft */
+        .st-27 .bakiye {
+            color: #1d4ed8;
+        }
+
+        .st-28 {
+            border-left: 4px solid #ef4444;
+            border-right: 4px solid #ef4444;
+        }
+
+        /* Side Border Red */
+
+        .st-29 {
+            background: #222;
+            color: #eb5757;
+        }
+
+        /* Blood Moon */
+        .st-29 th {
+            background: #333;
+            color: #fff;
+        }
+
+        .st-30 {
+            border-top: 30px solid #000;
+            text-align: center;
+        }
+
+        /* Minimal Center */
+        .st-30 .pdf-inner {
+            padding-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-header">
+        <h1>30 GERÇEK EKSTRE TASARIMI</h1>
+        <p>Lütfen aşağı kaydırarak her biri farklı 30 adet gerçek Ekstre/Detaylı Ekstre şablonunu inceleyin.</p>
+    </div>
+
+    <div class="catalog-grid" id="catalog">
+        <!-- JS TO POPULATE -->
+    </div>
+
+    <script>
+        const styles = [
+            { id: 1, name: "ERP Classic", class: "st-1", desc: "Temiz, profesyonel mavi detaylı klasik düzen." },
+            { id: 2, name: "Midnight Pro", class: "st-2", desc: "Koyu mod sevenler için neon mavi vurgular." },
+            { id: 3, name: "Cyberpunk", class: "st-3", desc: "Matris stili terminal görünümü, monospaced veri." },
+            { id: 4, name: "Swiss Bold", class: "st-4", desc: "İsviçre grafik tasarım ekolü, kalın hatlar." },
+            { id: 5, name: "Nordic Light", class: "st-5", desc: "İnce çizgiler, ferah beyaz boşluklar." },
+            { id: 6, name: "Royal Navy", class: "st-6", desc: "Lacivert ve kurumsal gri birlikteliği." },
+            { id: 7, name: "Vibrant Action", class: "st-7", desc: "Renkli işlem rozetleri ile hızlı analiz." },
+            { id: 8, name: "Glass Arctic", class: "st-8", desc: "Yumuşak mavi tonları ve gölge derinliği." },
+            { id: 9, name: "Material Shadow", class: "st-9", desc: "Google Material Design tarzı temiz gölgeler." },
+            { id: 10, name: "Retro Ledger", class: "st-10", desc: "Tarihi muhasebeci defteri ve daktilo fontu." },
+            { id: 11, name: "Emerald Trust", class: "st-11", desc: "Yeşil renkli finansal güven teması." },
+            { id: 12, name: "Industrial Grey", class: "st-12", desc: "Endüstriyel gri, sert hatlı tablo yapısı." },
+            { id: 13, name: "Soft Pastel", class: "st-13", desc: "Lila ve yumuşak tonlar, yuvarlak formlar." },
+            { id: 14, name: "High Contrast Amber", class: "st-14", desc: "Siyah zemin üzerine turuncu iddialı görünüm." },
+            { id: 15, name: "Magazine Edit", class: "st-15", desc: "Dergi mizanpajı gibi şık, tırnaklı fontlar." },
+            { id: 16, name: "Brutalist Raw", class: "st-16", desc: "Maksimum görünürlük için devasa siyah hatlar." },
+            { id: 17, name: "Bottom Blue Line", class: "st-17", desc: "Sadece altta vurgulu mavi bant tasarımı." },
+            { id: 18, name: "Red Alert Bakiye", class: "st-18", desc: "Bakiye bilgisini merkeze alan kırmızı başlık." },
+            { id: 19, name: "Rounded Zen", class: "st-19", desc: "Huzurlu yeşil tonları ve oval kenarlar." },
+            { id: 20, name: "Blueprint Dotted", class: "st-20", desc: "Teknik çizim, noktalı kenarlıklar." },
+            { id: 21, name: "Gradient Aura", class: "st-21", desc: "Akışkan renk geçişleri ile teknolojik hava." },
+            { id: 22, name: "Double Bar Navy", class: "st-22", desc: "Alt ve üst bantları vurgulayan ağır duruş." },
+            { id: 23, name: "Pink Stylish", class: "st-23", desc: "Pembe vurgulu modern butik işletme stili." },
+            { id: 24, name: "Stealth Black", class: "st-24", desc: "Tamamen siyah, çok az gri detaylı gizemli stil." },
+            { id: 25, name: "Sunset Orange", class: "st-25", desc: "Enerji veren turuncu ve sıcak tonlar." },
+            { id: 26, name: "Grid Paper", class: "st-26", desc: "İnce kareli kağıt üzerine veri yerleşimi." },
+            { id: 27, name: "Ocean Soft", class: "st-27", desc: "Okyanus mavisi bakiye vurguları." },
+            { id: 28, name: "Red Side Rail", class: "st-28", desc: "Yanlardan kırmızı hatlı disiplinli tablo." },
+            { id: 29, name: "Blood Moon", class: "st-29", desc: "Kırmızı ve koyu grinin dramatik uyumu." },
+            { id: 30, name: "Minimal Center", class: "st-30", desc: "Sayfa ortalı, aşırı kompakt başlık düzeni." }
+        ];
+
+        const catalog = document.getElementById('catalog');
+
+        styles.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'design-item';
+            card.innerHTML = `
+                <div class="preview-pane">
+                    <div class="pdf ${item.class}">
+                        <div class="pdf-inner">
+                            <div class="header-row">
+                                <b>ERMAY S.A.</b>
+                                <span>25.02.2026</span>
+                            </div>
+                            <h2>${item.name}</h2>
+                            <div class="summary-box">
+                                <p>Cari: <b>YAĞMUR PERDE</b></p>
+                                <p>Durum: <span class="bakiye">₺329.444,00 Borç</span></p>
+                            </div>
+                            <table>
+                                <thead><tr><th>Tarih</th><th>İşlem</th><th>Tutar</th></tr></thead>
+                                <tbody>
+                                    <tr><td>07.10</td><td>Satış (Detaylı)</td><td>₺1.200</td></tr>
+                                    <tr><td colspan="3" class="detay">- 10 Adet Ürün A (100 TL)</td></tr>
+                                    <tr><td colspan="3" class="detay">- 20 Adet Ürün B (10 TL)</td></tr>
+                                    <tr><td>13.10</td><td>Tahsilat</td><td>₺500</td></tr>
+                                    <tr><td>20.10</td><td>Satış Faturası</td><td>₺45.000</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="item-info">
+                    <h3>ID: ${item.id} - ${item.name}</h3>
+                    <p>${item.desc}</p>
+                    <a href="#" class="select-btn" onclick="alert('Seçilen: ${item.name}'); return false;">BU TASARIMI UYGULA</a>
+                </div>
+            `;
+            catalog.appendChild(card);
+        });
+    </script>
+</body>
+
+</html>

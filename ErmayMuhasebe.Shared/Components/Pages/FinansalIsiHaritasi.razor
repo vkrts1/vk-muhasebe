@@ -1,0 +1,123 @@
+@page "/finansal-isi-haritasi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@using MudBlazor
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Finansal Isı Haritası (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        @if(dayStats.Any())
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                Yazdır / PDF
+            </MudButton>
+        }
+    </MudStack>
+</div>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">Haftalık işlem yoğunluğunu (Para girişi ve çıkışı) gün bazlı analiz eder.</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Haftalık Tahsilat ve Ödeme Yoğunluğu</MudText>
+            <MudTable Items="@dayStats" Dense="true" Hover="true" Bordered="true">
+                <HeaderContent>
+                    <MudTh>Gün</MudTh>
+                    <MudTh Style="text-align: right;">Topl. Para Girişi</MudTh>
+                    <MudTh Style="text-align: right;">Yoğunluk</MudTh>
+                    <MudTh Style="text-align: right;">Topl. Para Çıkışı</MudTh>
+                    <MudTh Style="text-align: right;">Yoğunluk</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.GunAdi</MudTd>
+                    <MudTd Style="text-align: right;">@context.Giris.ToString("N2") ₺</MudTd>
+                    <MudTd Style="text-align: right;">
+                        <MudProgressLinear Color="Color.Success" Value="@context.GirisOran" Size="Size.Large" />
+                    </MudTd>
+                    <MudTd Style="text-align: right;">@context.Cikis.ToString("N2") ₺</MudTd>
+                    <MudTd Style="text-align: right;">
+                         <MudProgressLinear Color="Color.Error" Value="@context.CikisOran" Size="Size.Large" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<DayStat> dayStats = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        // Kasa ve Banka hareketlerinden veriyi çekelim
+        var kasaH = await DbService.GetKasaHareketleriAsync_All();
+        var bankaH = await DbService.GetBankaHareketleriAsync_All();
+
+        var days = new[] { "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar" };
+        
+        foreach (int i in Enumerable.Range(1, 7))
+        {
+            DayOfWeek dow = (DayOfWeek)(i == 7 ? 0 : i);
+            string gunAdi = days[i-1];
+
+            decimal giris = kasaH.Where(h => h.Tarih.DayOfWeek == dow && h.Tutar > 0).Sum(h => h.Tutar) +
+                           bankaH.Where(h => h.Tarih.DayOfWeek == dow && (h.IslemTuru == "Gelen Havale" || h.IslemTuru == "Tahsilat")).Sum(h => h.Tutar);
+
+            decimal cikis = kasaH.Where(h => h.Tarih.DayOfWeek == dow && h.Tutar < 0).Sum(h => Math.Abs(h.Tutar)) +
+                           bankaH.Where(h => h.Tarih.DayOfWeek == dow && (h.IslemTuru == "Giden Havale" || h.IslemTuru == "Ödeme")).Sum(h => h.Tutar);
+
+            dayStats.Add(new DayStat { GunAdi = gunAdi, Giris = giris, Cikis = cikis });
+        }
+
+        decimal maxG = dayStats.Max(x => x.Giris);
+        decimal maxC = dayStats.Max(x => x.Cikis);
+
+        foreach(var d in dayStats)
+        {
+            d.GirisOran = maxG == 0 ? 0 : (double)(d.Giris / maxG * 100);
+            d.CikisOran = maxC == 0 ? 0 : (double)(d.Cikis / maxC * 100);
+        }
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Gün", "Para Girişi", "Para Çıkışı" };
+            var rows = dayStats.Select(d => new[] 
+            { 
+                d.GunAdi, 
+                d.Giris.ToString("C2"), 
+                d.Cikis.ToString("C2") 
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Finansal İşlem Yoğunluğu Raporu (Haftalık)", headers, rows);
+            await FileService.SaveAndOpenFileAsync("FinansalIsiHaritasi.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class DayStat
+    {
+        public string GunAdi { get; set; } = "";
+        public decimal Giris { get; set; }
+        public decimal Cikis { get; set; }
+        public double GirisOran { get; set; }
+        public double CikisOran { get; set; }
+    }
+}

@@ -1,0 +1,17 @@
+@page "/test"
+
+<h1>Test Page</h1>
+<p>If you can see this, Blazor is working!</p>
+
+<button @onclick="TestClick">Click Me</button>
+
+<p>@message</p>
+
+@code {
+    private string message = "";
+
+    private void TestClick()
+    {
+        message = "Button clicked! Blazor is working!";
+    }
+}

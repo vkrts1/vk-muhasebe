@@ -1,0 +1,118 @@
+@page "/musteri-churn"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Müşteri Kayıp (Churn) Raporu (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+            Yazdır / PDF
+        </MudButton>
+    </MudStack>
+</div>
+
+<MudAlert Severity="Severity.Warning" Class="mb-4">Son 3 aydır (90 gün) hiç işlem yapmamış pasif müşteriler listelenmektedir.</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudTable Items="@churnData" Dense="true" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Cari Ünvan</MudTh>
+                <MudTh>Son İşlem Tarihi</MudTh>
+                <MudTh>Pasif Gün</MudTh>
+                <MudTh Style="text-align: right;">Geçmiş Ciro (Toplam)</MudTh>
+                <MudTh Style="text-align: right;">Risk Durumu</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Unvan</MudTd>
+                <MudTd>@context.SonIslemTarihi.ToString("dd.MM.yyyy")</MudTd>
+                <MudTd>@context.PasifGun Sayısı</MudTd>
+                <MudTd Style="text-align: right;">@context.ToplamCiro.ToString("N2") ₺</MudTd>
+                <MudTd Style="text-align: right;">
+                    @if(context.PasifGun > 180) {
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small">KAYBEDİLDİ</MudChip>
+                    } else {
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small">KRİTİK</MudChip>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<ChurnData> churnData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var cariler = await DbService.GetCarilerAsync();
+        var faturalar = await DbService.GetFaturalarAsync();
+
+        foreach(var c in cariler)
+        {
+            var cariFaturalar = faturalar.Where(f => f.CariId == c.Id).OrderByDescending(f => f.Tarih).ToList();
+            var sonFatura = cariFaturalar.FirstOrDefault();
+
+            if (sonFatura == null) continue; // Hiç işlemi yoksa churn değildir, yeni veya boştur.
+
+            int pasifGun = (int)(DateTime.Now - sonFatura.Tarih).TotalDays;
+
+            if (pasifGun >= 90)
+            {
+                churnData.Add(new ChurnData
+                {
+                    Unvan = c.Unvan ?? "Bilinmeyen",
+                    SonIslemTarihi = sonFatura.Tarih,
+                    PasifGun = pasifGun,
+                    ToplamCiro = cariFaturalar.Where(f => f.Tur == "Satis" || f.Tur == "Satış").Sum(f => f.GenelToplam)
+                });
+            }
+        }
+
+        churnData = churnData.OrderByDescending(x => x.PasifGun).ToList();
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Müşteri Ünvan", "Son İşlem", "Pasif Gün", "Geçmiş Ciro", "Risk" };
+            var rows = churnData.Select(c => new[] 
+            { 
+                c.Unvan, 
+                c.SonIslemTarihi.ToString("dd.MM.yyyy"), 
+                c.PasifGun.ToString() + " Gün",
+                c.ToplamCiro.ToString("N2") + " TL",
+                c.PasifGun > 180 ? "KAYBEDİLDİ" : "KRİTİK"
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Müşteri Kayıp (Churn) Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("MusteriChurnRaporu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class ChurnData
+    {
+        public string Unvan { get; set; } = "";
+        public DateTime SonIslemTarihi { get; set; }
+        public int PasifGun { get; set; }
+        public decimal ToplamCiro { get; set; }
+    }
+}

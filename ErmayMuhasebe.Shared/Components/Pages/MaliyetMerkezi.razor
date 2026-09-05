@@ -1,0 +1,132 @@
+@page "/maliyet-merkezi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Maliyet Merkezi Yönetimi</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Maliyet Merkezleri</MudText>
+            <div class="d-flex gap-2 mb-3">
+                 <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" Size="Size.Small" OnClick="YeniMerkez">Yeni Merkez</MudButton>
+                 @if(secilenMerkez != null)
+                 {
+                     <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Warning" Size="Size.Small" OnClick="DuzenleMerkez">Düzenle</MudButton>
+                     <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Error" Size="Size.Small" OnClick="SilMerkez">Sil</MudButton>
+                 }
+            </div>
+            <MudTable Items="@maliyetMerkezleri" Dense="true" Hover="true" T="MaliyetMerkeziDef">
+                <RowTemplate>
+                    <MudTd>@context.Ad <br/> <span style="font-size:0.75rem; color:grey;">@context.Kod</span></MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="8">
+        @if(secilenMerkez != null)
+        {
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-3">@secilenMerkez.Ad - Maliyet Analizi</MudText>
+                <MudSimpleTable Dense="true">
+                    <thead>
+                        <tr>
+                            <th>Gider Türü</th>
+                            <th>Bütçe</th>
+                            <th>Gerçekleşen</th>
+                            <th>Fark</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Personel</td>
+                            <td>@secilenMerkez.PersonelButce.ToString("C2")</td>
+                            <td>@secilenMerkez.PersonelGercek.ToString("C2")</td>
+                            <td style="color: @(secilenMerkez.PersonelFark >= 0 ? "green" : "red")">@secilenMerkez.PersonelFark.ToString("C2")</td>
+                            <td>%@secilenMerkez.PersonelYuzde.ToString("N1")</td>
+                        </tr>
+                        <tr>
+                            <td>Genel Giderler</td>
+                            <td>@secilenMerkez.GenelButce.ToString("C2")</td>
+                            <td>@secilenMerkez.GenelGercek.ToString("C2")</td>
+                            <td style="color: @(secilenMerkez.GenelFark >= 0 ? "green" : "red")">@secilenMerkez.GenelFark.ToString("C2")</td>
+                            <td>%@secilenMerkez.GenelYuzde.ToString("N1")</td>
+                        </tr>
+                        <tr style="background-color: #f5f5f5;">
+                            <td><b>Toplam</b></td>
+                            <td><b>@secilenMerkez.ToplamButce.ToString("C2")</b></td>
+                            <td><b>@secilenMerkez.ToplamGercek.ToString("C2")</b></td>
+                            <td style="color: @(secilenMerkez.ToplamFark >= 0 ? "green" : "red")"><b>@secilenMerkez.ToplamFark.ToString("C2")</b></td>
+                            <td><b>%@secilenMerkez.ToplamYuzde.ToString("N1")</b></td>
+                        </tr>
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        }
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<MaliyetMerkeziDef> maliyetMerkezleri = new();
+    private MaliyetMerkeziDef? secilenMerkez;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+    
+    private async Task LoadData()
+    {
+        maliyetMerkezleri = await DbService.GetMaliyetMerkezleriAsync();
+    }
+
+    private void MerkezSec(MaliyetMerkeziDef merkez)
+    {
+        secilenMerkez = merkez;
+    }
+    
+    private async Task YeniMerkez()
+    {
+        var dial = await DialogService.ShowAsync<MaliyetMerkeziDialog>("Yeni Merkez");
+        var res = await dial.Result;
+        if (res != null && !res.Canceled && res.Data is MaliyetMerkeziDef m)
+        {
+            await DbService.SaveMaliyetMerkeziAsync(m);
+            await LoadData();
+            Snackbar.Add("Kayıt eklendi", Severity.Success);
+        }
+    }
+    
+    private async Task DuzenleMerkez()
+    {
+        if(secilenMerkez == null) return;
+        var param = new DialogParameters{ ["Model"] = secilenMerkez };
+        var dial = await DialogService.ShowAsync<MaliyetMerkeziDialog>("Merkezi Düzenle", param);
+        var res = await dial.Result;
+        if (res != null && !res.Canceled && res.Data is MaliyetMerkeziDef m)
+        {
+             await DbService.SaveMaliyetMerkeziAsync(m);
+             await LoadData();
+             secilenMerkez = m; // Refresh view
+             Snackbar.Add("Güncellendi", Severity.Success);
+        }
+    }
+    
+    private async Task SilMerkez()
+    {
+        if(secilenMerkez == null) return;
+        var confirm = await DialogService.ShowMessageBox("Sil", "Silmek istediğinize emin misiniz?", yesText:"Sil", cancelText:"İptal");
+        if(confirm == true)
+        {
+            await DbService.DeleteMaliyetMerkeziAsync(secilenMerkez.Id);
+            secilenMerkez = null;
+            await LoadData();
+            Snackbar.Add("Silindi", Severity.Success);
+        }
+    }
+}

@@ -1,0 +1,170 @@
+@page "/borc-hatirlatici"
+@using ErmayMuhasebe.Shared.ViewModels
+@inject BorcHatirlaticiViewModel ViewModel
+@inject ISnackbar Snackbar
+
+<div class="premium-container fade-in">
+    <!-- Header Section -->
+    <div class="d-flex align-items-center justify-content-between mb-8">
+        <div class="d-flex align-center gap-4">
+            <div class="icon-box-large bg-danger-light">
+                <MudIcon Icon="@Icons.Material.Filled.Alarm" Class="text-danger" Style="font-size: 32px;" />
+            </div>
+            <div>
+                <h1 class="h2 fw-black mb-1 text-white">Borç Hatırlatıcı</h1>
+                <p class="text-muted mb-0">Vadesi geçen ödemeleri takip edin ve hatırlatmalar gönderin.</p>
+            </div>
+        </div>
+        
+        <div class="d-flex align-center gap-6">
+            <div class="stat-pill glass-panel border-white-5">
+                <div class="stat-label">TOPLAM GECİKEN</div>
+                <div class="stat-value text-danger">@ViewModel.ToplamGecikenCount</div>
+            </div>
+            <div class="stat-pill glass-panel border-white-5">
+                <div class="stat-label">TOPLAM TUTAR</div>
+                <div class="stat-value text-warning">@ViewModel.ToplamGecikenTutar.ToString("N2") ₺</div>
+            </div>
+            <button class="action-btn-large blue-border" @onclick="ViewModel.LoadDataAsync" style="width: auto; padding: 0 25px;">
+                <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="mr-2" /> YENİLE
+            </button>
+        </div>
+    </div>
+
+    <!-- Data Grid -->
+    <div class="glass-panel border-white-5 overflow-hidden">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>CARİ ÜNVAN</th>
+                    <th class="text-right">TUTAR</th>
+                    <th class="text-center">VADE TARİHİ</th>
+                    <th class="text-center">GECİKME</th>
+                    <th class="text-center">DURUM</th>
+                    <th class="text-right">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ViewModel.Hatirlatmalar)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-white">@item.CariUnvan}</div>
+                            <div class="small text-muted">@item.Telefon}</div>
+                        </td>
+                        <td class="text-right fw-black text-warning">@item.Tutar.ToString("N2") ₺</td>
+                        <td class="text-center">@item.Vade.ToShortDateString()</td>
+                        <td class="text-center">
+                            <div class="badge-danger">@item.GecikmeGunu GÜN</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="status-pill warning">@item.Durum</span>
+                        </td>
+                        <td class="text-right">
+                            <div class="d-flex gap-2 justify-end">
+                                <button class="btn-icon secondary" @onclick="() => ViewModel.SendSmsAsync(item)" title="SMS Gönder">
+                                    <MudIcon Icon="@Icons.Material.Filled.Sms" Size="Size.Small" />
+                                </button>
+                                <button class="btn-icon secondary" @onclick="() => ViewModel.SendEmailAsync(item)" title="E-Posta Gönder">
+                                    <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" />
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!ViewModel.Hatirlatmalar.Any())
+        {
+            <div class="d-flex flex-column align-center justify-center py-20 opacity-20">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Style="font-size: 64px;" />
+                <MudText Typo="Typo.h6" Class="mt-4">Şu an geciken bir ödeme bulunmuyor.</MudText>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.PropertyChanged += (s, e) => {
+             if (e.PropertyName == nameof(ViewModel.ErrorMessage) && !string.IsNullOrEmpty(ViewModel.ErrorMessage))
+             {
+                 Snackbar.Add(ViewModel.ErrorMessage, Severity.Error);
+             }
+             if (e.PropertyName == nameof(ViewModel.SuccessMessage) && !string.IsNullOrEmpty(ViewModel.SuccessMessage))
+             {
+                 Snackbar.Add(ViewModel.SuccessMessage, Severity.Success);
+             }
+             InvokeAsync(StateHasChanged);
+        };
+
+        await ViewModel.LoadDataAsync();
+    }
+}
+
+<style>
+    .stat-pill {
+        padding: 8px 20px;
+        text-align: center;
+        border-radius: 12px;
+    }
+    .stat-label { font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.3); margin-bottom: 2px; }
+    .stat-value { font-size: 18px; font-weight: 950; }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .premium-table th {
+        background: rgba(255,255,255,0.02);
+        color: rgba(255,255,255,0.3);
+        font-size: 10px;
+        font-weight: 900;
+        padding: 15px 20px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .premium-table td {
+        padding: 15px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+        font-size: 13px;
+        color: rgba(255,255,255,0.7);
+    }
+    .premium-table tr:hover { background: rgba(255,255,255,0.01); }
+
+    .badge-danger {
+        background: rgba(244, 63, 94, 0.1);
+        color: #f43f5e;
+        font-size: 10px;
+        font-weight: 900;
+        padding: 2px 8px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .status-pill {
+        font-size: 9px;
+        font-weight: 900;
+        padding: 3px 10px;
+        border-radius: 20px;
+    }
+    .status-pill.warning { background: rgba(251, 191, 36, 0.1); color: #FBBF24; }
+
+    .btn-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-icon.secondary {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #60A5FA;
+    }
+    .btn-icon.secondary:hover { background: rgba(96, 165, 250, 0.1); transform: translateY(-2px); }
+</style>

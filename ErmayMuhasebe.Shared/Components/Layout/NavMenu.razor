@@ -1,0 +1,16 @@
+@using MudBlazor
+@inject IDialogService DialogService
+
+<MudNavMenu Class="bilsoft-nav-menu mt-4">
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" Class="nav-item-pill">Ana Menü</MudNavLink>
+    <MudNavLink Href="/cari" Icon="@Icons.Material.Filled.PeopleAlt" Class="nav-item-pill">Cari Hesaplar</MudNavLink>
+    <MudNavLink Href="/stokkartlari" Icon="@Icons.Material.Filled.Inventory2" Class="nav-item-pill">Stok Kartları</MudNavLink>
+    <MudNavLink Href="/fatura-islemleri-menu" Icon="@Icons.Material.Filled.Description" Class="nav-item-pill">Faturalar</MudNavLink>
+    <MudNavLink Href="/finans" Icon="@Icons.Material.Filled.Payments" Class="nav-item-pill">Finans</MudNavLink>
+    <MudNavLink Href="/vadesi-gecmis-alacaklar" Icon="@Icons.Material.Filled.Update" Class="nav-item-pill">Vade Takip</MudNavLink>
+    <MudNavLink Href="/raporlar-menu" Icon="@Icons.Material.Filled.PieChart" Class="nav-item-pill">Raporlar</MudNavLink>
+    <MudNavLink Href="/siparis-listesi" Icon="@Icons.Material.Filled.Assignment" Class="nav-item-pill">Siparişler</MudNavLink>
+    <MudNavLink Href="/teklif-listesi" Icon="@Icons.Material.Filled.LocalOffer" Class="nav-item-pill">Teklifler</MudNavLink>
+    <MudNavLink Href="/ayarlar" Icon="@Icons.Material.Filled.Settings" Class="nav-item-pill">Ayarlar</MudNavLink>
+    <MudNavLink Href="/araclar-menu" Icon="@Icons.Material.Filled.Build" Class="nav-item-pill">Araçlar</MudNavLink>
+</MudNavMenu>

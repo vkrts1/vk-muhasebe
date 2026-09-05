@@ -1,0 +1,31 @@
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Models
+@inject DatabaseService DbService
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-4" Color="Color.Error">Kritik Stoklar</MudText>
+    <MudTable Items="@kritikList" Dense="true" Hover="true" Elevation="0">
+        <HeaderContent>
+            <MudTh>Stok Adı</MudTh>
+            <MudTh Style="text-align:right">Adet</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.StokAdi</MudTd>
+            <MudTd Style="text-align:right; color:red; font-weight:bold;">@context.Miktar.ToString("N0")</MudTd>
+        </RowTemplate>
+    </MudTable>
+    @if (!kritikList.Any())
+    {
+        <MudAlert Severity="Severity.Success" Dense="true" Class="mt-2">Kritik ürün yok.</MudAlert>
+    }
+</MudPaper>
+
+@code {
+    private List<StokKart> kritikList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await DbService.GetStoklarAsync();
+        kritikList = all.Where(s => s.Miktar < s.MinSeviye).Take(5).ToList();
+    }
+}

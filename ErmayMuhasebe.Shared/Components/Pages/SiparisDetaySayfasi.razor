@@ -1,0 +1,319 @@
+@page "/siparis-detay/{Id:int}"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@using ErmayMuhasebe.Shared.Components.Shared
+@inject DatabaseService DbService
+@inject NavigationManager NavManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <!-- Header -->
+    <div class="d-flex justify-space-between align-center mb-4">
+        <div class="d-flex align-center gap-2">
+            <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Outlined" OnClick="GoBack">Geri Dön</MudButton>
+            <MudText Typo="Typo.h5" Class="ml-2">Sipariş Detayı</MudText>
+        </div>
+        <div class="d-flex gap-2">
+            <MudTooltip Text="Siparişi Faturaya Dönüştür">
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Receipt" OnClick="TransferToFatura">Faturaya Aktar</MudButton>
+            </MudTooltip>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Print" OnClick="PrintPdf">Yazdır</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Download" OnClick="DownloadPdf">İndir</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditSiparis">Düzenle</MudButton>
+        </div>
+    </div>
+
+    @if (siparis == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else
+    {
+        <MudGrid>
+            <!-- Left Info Panel -->
+            <MudItem xs="12" md="5">
+                <MudPaper Class="pa-4" Elevation="3" Style="height: 100%;">
+                    <MudText Typo="Typo.h6" Class="mb-4">Sipariş Bilgileri</MudText>
+                    
+                    <MudGrid>
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Sipariş No</MudText>
+                            <MudText Typo="Typo.body1" Class="fw-bold">@siparis.SiparisNo</MudText>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Müşteri</MudText>
+                            <MudText Typo="Typo.body1" Class="fw-bold">@siparis.CariUnvan</MudText>
+                        </MudItem>
+                        
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Sipariş Tarihi</MudText>
+                            <MudText Typo="Typo.body1">@siparis.Tarih.ToShortDateString()</MudText>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Teslimat Tarihi</MudText>
+                            <MudText Typo="Typo.body1">@(siparis.TeslimatTarihi?.ToShortDateString() ?? "-")</MudText>
+                        </MudItem>
+                        
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">Durum</MudText>
+                            <MudMenu Label="@siparis.Durum" Variant="Variant.Filled" Color="@GetStatusColor(siparis.Durum ?? "")" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Bekliyor"))">Bekliyor</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Onaylandi"))">Onaylandı</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Hazırlanıyor"))">Hazırlanıyor</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Kargolandı"))">Kargolandı</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Tamamlandi"))">Tamamlandı</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Reddedildi"))">Reddedildi</MudMenuItem>
+                            </MudMenu>
+                        </MudItem>
+                         <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">Öncelik</MudText>
+                            <MudMenu Label="@siparis.Oncelik" Variant="Variant.Filled" Color="@GetPriorityColor(siparis.Oncelik ?? "")" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+                                <MudMenuItem OnClick="@(() => UpdatePriority("Düşük"))">Düşük</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdatePriority("Orta"))">Orta</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdatePriority("Yüksek"))">Yüksek</MudMenuItem>
+                            </MudMenu>
+                        </MudItem>
+
+                        <MudItem xs="12" Class="mt-4">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Toplam Tutar</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Success" Class="fw-bold">@siparis.GenelToplam.ToString("C2")</MudText>
+                        </MudItem>
+                         <MudItem xs="12">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Açıklama</MudText>
+                            <MudText Typo="Typo.body2">@siparis.Aciklama</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Right Items Panel -->
+            <MudItem xs="12" md="7">
+                <MudPaper Class="pa-4" Elevation="3" Style="height: 100%;">
+                    <MudText Typo="Typo.h6" Class="mb-4">Sipariş Kalemleri</MudText>
+                    
+                    <MudTable Items="@detaylar" Dense="true" Hover="true" Bordered="true" Elevation="0" Outlined="true">
+                        <HeaderContent>
+                            <MudTh>Ürün/Hizmet</MudTh>
+                            <MudTh>Miktar</MudTh>
+                            <MudTh>Birim</MudTh>
+                            <MudTh>Top</MudTh>
+                            <MudTh>Açıklama</MudTh>
+                            <MudTh>Birim Fiyat</MudTh>
+                            <MudTh>Tutar</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.StokAdi</MudTd>
+                            <MudTd>@context.Miktar</MudTd>
+                            <MudTd>@context.Birim</MudTd>
+                            <MudTd>@context.TopMiktari</MudTd>
+                            <MudTd>@context.Aciklama</MudTd>
+                            <MudTd>@context.BirimFiyat.ToString("C2")</MudTd>
+                            <MudTd>@context.Tutar.ToString("C2")</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Bottom History Panel -->
+            <MudItem xs="12">
+                <MudPaper Class="pa-4" Elevation="3">
+                    <MudText Typo="Typo.h6" Class="mb-4">Sipariş Geçmişi</MudText>
+                    
+                    <MudTimeline TimelinePosition="TimelinePosition.Start">
+                        <MudTimelineItem Color="Color.Success" Size="Size.Small">
+                            <ItemContent>
+                                <MudText Typo="Typo.body1" Class="fw-bold">Sipariş Oluşturuldu</MudText>
+                                <MudText Typo="Typo.caption">@siparis.Tarih.ToString("g")</MudText>
+                            </ItemContent>
+                        </MudTimelineItem>
+                        
+                        @if(siparis.Durum == "Onaylandi" || siparis.Durum == "Tamamlandi")
+                        {
+                            <MudTimelineItem Color="Color.Info" Size="Size.Small">
+                                <ItemContent>
+                                    <MudText Typo="Typo.body1" Class="fw-bold">Sipariş Onaylandı</MudText>
+                                    <MudText Typo="Typo.caption">Durum güncellendi.</MudText>
+                                </ItemContent>
+                            </MudTimelineItem>
+                        }
+                    </MudTimeline>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Siparis? siparis;
+    private List<SiparisDetay> detaylar = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        siparis = await DbService.GetSiparisAsync(Id);
+        if (siparis != null)
+        {
+            detaylar = await DbService.GetSiparisDetaylarAsync(Id);
+        }
+        else
+        {
+            Snackbar.Add("Sipariş bulunamadı", Severity.Error);
+            NavManager.NavigateTo("/siparis-listesi");
+        }
+    }
+    
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/siparis-listesi");
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Bekliyor" => Color.Warning,
+            "Onaylandi" => Color.Info,
+            "Hazırlanıyor" => Color.Primary,
+            "Kargolandı" => Color.Secondary,
+            "Tamamlandi" => Color.Success,
+            "Reddedildi" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetPriorityColor(string priority)
+    {
+        return priority switch
+        {
+            "Yüksek" => Color.Error,
+            "Orta" => Color.Info,
+            "Düşük" => Color.Success,
+            _ => Color.Default
+        };
+    }
+
+    private async Task UpdateStatus(string newStatus)
+    {
+        if (siparis == null) return;
+        siparis.Durum = newStatus;
+        await DbService.SaveSiparisWithDetailsAsync(siparis, detaylar);
+        Snackbar.Add($"Durum güncellendi: {newStatus}", Severity.Success);
+    }
+
+    private async Task UpdatePriority(string newPriority)
+    {
+        if (siparis == null) return;
+        siparis.Oncelik = newPriority;
+        await DbService.SaveSiparisWithDetailsAsync(siparis, detaylar);
+        Snackbar.Add($"Öncelik güncellendi: {newPriority}", Severity.Success);
+    }
+
+    private async Task TransferToFatura()
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Faturaya Aktar", 
+            "Bu siparişi faturaya dönüştürmek istediğinize emin misiniz? Fatura türünü seçiniz.", 
+            yesText: "Satış Faturası", 
+            cancelText: "İptal", 
+            noText: "Alış Faturası");
+            
+        if (result == null || siparis == null) return;
+        
+        string tur = result.Value ? "Satis" : "Alis";
+        
+        var items = detaylar.Select(d => new FaturaDialog.FaturaKalemi 
+        {
+            StokId = d.StokId,
+            UrunAdi = d.StokAdi ?? "",
+            Aciklama = d.Aciklama ?? "",
+            TopMiktari = d.TopMiktari.ToString(),
+            Miktar = (int)d.Miktar, 
+            Birim = d.Birim ?? "Adet",
+            BirimFiyat = d.BirimFiyat,
+            KDVOrani = 20, 
+            Toplam = (decimal)d.Miktar * d.BirimFiyat,
+            KDVTutari = ((decimal)d.Miktar * d.BirimFiyat) * 0.20m,
+            GenelToplam = ((decimal)d.Miktar * d.BirimFiyat) * 1.20m
+        }).ToList();
+        
+        var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, FullScreen = true };
+        var parameters = new DialogParameters 
+        { 
+            ["CariUnvan"] = siparis.CariUnvan,
+            ["IslemTipi"] = tur,
+            ["PreloadedItems"] = items
+        };
+
+        await DialogService.ShowAsync<FaturaDialog>("Fatura Oluştur", parameters, options);
+    }
+    
+    @inject IPdfService PdfService
+    @inject IFileService FileService
+
+    // ... (Existing code)
+
+    private async Task EditSiparis()
+    {
+        if (siparis == null) return;
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        
+        var parameters = new DialogParameters 
+        { 
+            ["Model"] = new Siparis // Clone for safety
+            {
+                Id = siparis.Id,
+                SiparisNo = siparis.SiparisNo,
+                Tarih = siparis.Tarih,
+                TeslimatTarihi = siparis.TeslimatTarihi,
+                CariId = siparis.CariId,
+                CariUnvan = siparis.CariUnvan,
+                Aciklama = siparis.Aciklama,
+                GenelToplam = siparis.GenelToplam,
+                Durum = siparis.Durum,
+                Oncelik = siparis.Oncelik
+            },
+            ["Detaylar"] = new List<SiparisDetay>(detaylar) // Clone list
+        };
+        
+        var dialog = await DialogService.ShowAsync<SiparisOlusturDialog>("Siparişi Düzenle", parameters, options);
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is SiparisOlusturDialog.SiparisData data)
+        {
+            await DbService.SaveSiparisWithDetailsAsync(data.Siparis, data.Detaylar);
+            Snackbar.Add("Sipariş güncellendi", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private async Task DownloadPdf()
+    {
+        if(siparis == null) return;
+        
+        try
+        {
+            var pdfBytes = await PdfService.GenerateSiparisPdfBytesAsync(siparis!, detaylar, null);
+            var fileName = $"Siparis_{siparis.SiparisNo}.pdf";
+            await FileService.SaveAndOpenFileAsync(fileName, pdfBytes, "application/pdf");
+        }
+        catch(Exception ex)
+        {
+             Snackbar.Add($"PDF oluşturulurken hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PrintPdf()
+    {
+        // For now, same as Download but implies printing intention. 
+        // Ideally we would trigger print dialog in JS.
+        // Opening the PDF usually allows printing.
+        await DownloadPdf();
+    }
+}

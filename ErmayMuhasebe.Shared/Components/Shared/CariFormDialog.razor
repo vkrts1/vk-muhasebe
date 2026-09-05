@@ -1,0 +1,317 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<style>
+    .dialog-glass {
+        background: rgba(30, 34, 40, 0.9) !important;
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+    }
+
+    .form-tab-panel {
+        background: transparent !important;
+        padding-top: 20px !important;
+    }
+
+    .form-section-title {
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(96, 165, 250, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .upload-box {
+        border: 2px dashed rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .upload-box:hover {
+        border-color: #60A5FA;
+        background: rgba(96, 165, 250, 0.05);
+    }
+
+    .dialog-btn {
+        border-radius: 12px !important;
+        padding: 8px 30px !important;
+        font-weight: 700 !important;
+    }
+</style>
+
+<MudDialog Class="dialog-glass rounded-xl">
+    <TitleContent>
+        <div class="d-flex align-center gap-3">
+             <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Info" />
+             <MudText Style="font-weight: 900; color: white;">Cari Kart İşlemleri</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-width: 900px; padding: 0;">
+            <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="form-tab-panel" Centered="false">
+                @* 1. TEMEL BİLGİLER *@
+                <MudTabPanel Text="Cari Bilgileri" Icon="@Icons.Material.Filled.Info">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudSelect T="string" Label="Cari Türü" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                       @bind-Value="cariKart.Tur" AnchorOrigin="Origin.BottomCenter" Required="true" Class="bg-dark-select">
+                                <MudSelectItem Value="@("Müşteri")">Müşteri</MudSelectItem>
+                                <MudSelectItem Value="@("Tedarikçi")">Tedarikçi</MudSelectItem>
+                                <MudSelectItem Value="@("Personel")">Personel</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField T="string" Label="Cari Kod" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.CariKod" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField T="string" Label="Ünvan / Hesap Adı" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.Unvan" Required="true" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField T="string" Label="Yetkili Kişi" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.Yetkili" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField T="string" Label="Vergi No / T.C. No" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.VKN" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField T="string" Label="Telefon" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.Telefon" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField T="string" Label="E-Mail" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.Email" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudNumericField T="int" Label="Vade (Gün)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             @bind-Value="cariKart.VadeGunu" Min="0" Class="bg-dark-input" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                @* 2. ADRES & KONUM *@
+                <MudTabPanel Text="Adres & Konum" Icon="@Icons.Material.Filled.LocationOn">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <MudTextField T="string" Label="Şehir" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.Il" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField T="string" Label="İlçe" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.Ilce" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField T="string" Label="Vergi Dairesi" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="cariKart.VergiDairesi" Class="bg-dark-input" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField T="string" Label="Açık Adres" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                          @bind-Value="cariKart.Adres" Lines="3" Class="bg-dark-input" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                @* 3. RİSK & LİMİTLER *@
+                <MudTabPanel Text="Risk Yönetimi" Icon="@Icons.Material.Filled.Security">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudNumericField T="decimal" Label="Cari Risk Limiti (₺)" Variant="Variant.Outlined" 
+                                             @bind-Value="cariKart.RiskLimiti" Min="0" Format="N2" Adornment="Adornment.End" AdornmentText="₺" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <span class="form-section-title">LİMİT AŞIM AKSİYONU</span>
+                            <MudRadioGroup T="string" @bind-Value="riskLimitSecenegi">
+                                <MudRadio T="string" Value="@("IslemYaptirma")" Color="Color.Error">Engelle</MudRadio>
+                                <MudRadio T="string" Value="@("OnayAl")" Color="Color.Warning">Onay Al</MudRadio>
+                                <MudRadio T="string" Value="@("IslemYaptir")" Color="Color.Success">Serbest</MudRadio>
+                            </MudRadioGroup>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                @* 4. ARŞİV *@
+                <MudTabPanel Text="Dijital Arşiv" Icon="@Icons.Material.Filled.Attachment">
+                    @if (cariKart.Id == 0)
+                    {
+                        <div class="d-flex flex-column align-center justify-center py-12" style="opacity: 0.5;">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Large" Class="mb-3" />
+                            <MudText>Dosya eklemek için önce cari kartı kaydetmelisiniz.</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudFileUpload T="IBrowserFile" OnFilesChanged="UploadFile" Class="mb-4">
+                            <ActivatorContent>
+                                <div class="upload-box">
+                                     <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Info" />
+                                     <MudText Typo="Typo.body2" Class="mt-2" Style="color: rgba(255,255,255,0.6);">Dosya yüklemek için tıklayın veya sürükleyin</MudText>
+                                </div>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                        
+                        <div class="glass-card pa-0" style="background: rgba(0,0,0,0.1) !important;">
+                            <MudTable Items="@dosyalar" Hover="true" Dense="true" Elevation="0" Style="background: transparent;">
+                                <HeaderContent>
+                                    <MudTh>DOSYA ADI</MudTh>
+                                    <MudTh>TARİH</MudTh>
+                                    <MudTh Style="text-align: right;">İŞLEM</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.DosyaAdi</MudTd>
+                                    <MudTd>@context.EklenmeTarihi.ToShortDateString()</MudTd>
+                                    <MudTd Style="text-align: right;">
+                                         <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Info" Size="Size.Small" OnClick="@(() => DownloadFile(context))" />
+                                         <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteFile(context))" />
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </div>
+                    }
+                </MudTabPanel>
+            </MudTabs>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Class="dialog-btn" Style="color: rgba(255,255,255,0.6);">Vazgeç</MudButton>
+        <MudButton OnClick="Save" Variant="Variant.Filled" Color="Color.Primary" Class="dialog-btn ml-3">Değişiklikleri Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public CariKart? ExistingCari { get; set; }
+    
+    private CariKart cariKart = new CariKart();
+    private string riskLimitSecenegi = "IslemYaptir";
+    private List<CariDosya> dosyalar = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if (ExistingCari != null)
+        {
+            cariKart = ExistingCari;
+            
+            // Normalize Grup for UI matching
+            if (cariKart.Grup == "MÜŞTERİ" || cariKart.Grup == "Musteri") cariKart.Grup = "Müşteri";
+            else if (cariKart.Grup == "TEDARİKÇİ" || cariKart.Grup == "Tedarikci") cariKart.Grup = "Tedarikçi";
+
+            // Normalize Tur for UI dropdown selection
+            if (cariKart.Tur == "Alici" || cariKart.Tur == "Alıcı" || string.IsNullOrEmpty(cariKart.Tur))
+            {
+                cariKart.Tur = "Müşteri";
+            }
+            else if (cariKart.Tur == "Satici" || cariKart.Tur == "Satıcı")
+            {
+                cariKart.Tur = "Tedarikçi";
+            }
+            else if (cariKart.Tur == "Personel")
+            {
+                cariKart.Tur = "Personel";
+            }
+            
+            await LoadFiles();
+        }
+        else
+        {
+            cariKart = new CariKart
+            {
+                Grup = "Müşteri",
+                Tur = "Müşteri",
+                Ulke = "Türkiye",
+                VadeGunu = 30
+            };
+        }
+    }
+    
+    private async Task LoadFiles()
+    {
+        if (cariKart.Id > 0) dosyalar = await DbService.GetCariDosyalariAsync(cariKart.Id);
+    }
+
+    private async Task UploadFile(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+        
+        try {
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "ErmayMuhasebe", "Arsiv", cariKart.Id.ToString());
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+            
+            var filePath = Path.Combine(folder, file.Name);
+            using (var stream = file.OpenReadStream(10 * 1024 * 1024))
+            using (var fs = new FileStream(filePath, FileMode.Create))
+            {
+                await stream.CopyToAsync(fs);
+            }
+            
+            var dosya = new CariDosya {
+                CariId = cariKart.Id,
+                CariUnvan = cariKart.Unvan,
+                DosyaAdi = file.Name,
+                DosyaYolu = filePath,
+                DosyaTuru = Path.GetExtension(file.Name),
+                EklenmeTarihi = DateTime.Now
+            };
+            
+            await DbService.SaveCariDosyaAsync(dosya);
+            Snackbar.Add("Dosya arşivlendi.", Severity.Success);
+            await LoadFiles();
+        } catch (Exception ex) {
+            Snackbar.Add($"Yükleme hatası: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private async Task DeleteFile(CariDosya dosya)
+    {
+        await DbService.DeleteCariDosyaAsync(dosya);
+        await LoadFiles();
+        Snackbar.Add("Dosya silindi.", Severity.Info);
+    }
+    
+    private void DownloadFile(CariDosya dosya)
+    {
+         Snackbar.Add($"Dosya açılıyor: {dosya.DosyaAdi}", Severity.Info);
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+    
+    void Save()
+    {
+        if (string.IsNullOrWhiteSpace(cariKart.Unvan))
+        {
+            Snackbar.Add("Cari ünvanı boş bırakılamaz!", Severity.Warning);
+            return;
+        }
+
+        // Normalize Tur and Grup back to DB standards before returning
+        if (cariKart.Tur == "Müşteri")
+        {
+            cariKart.Grup = "Müşteri";
+            cariKart.Tur = "Alici";
+        }
+        else if (cariKart.Tur == "Tedarikçi")
+        {
+            cariKart.Grup = "Tedarikçi";
+            cariKart.Tur = "Satici";
+        }
+        else if (cariKart.Tur == "Personel")
+        {
+            cariKart.Grup = "Personel";
+            cariKart.Tur = "Personel";
+        }
+
+        MudDialog.Close(DialogResult.Ok(cariKart));
+    }
+}

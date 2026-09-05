@@ -1,0 +1,182 @@
+@page "/stok-grup-duzenle"
+@using MudBlazor
+@using ErmayMuhasebe.Shared.ViewModels
+@inject StokGrupDuzenleViewModel ViewModel
+@inject NavigationManager Nav
+
+<div class="premium-container fade-in">
+    <!-- Header -->
+    <div class="d-flex align-center justify-between mb-8">
+        <div class="d-flex align-center gap-4">
+            <div class="icon-box-large bg-success-light">
+                <MudIcon Icon="@Icons.Material.Filled.Category" Class="text-success" Style="font-size: 32px;" />
+            </div>
+            <div>
+                <h1 class="h2 fw-black mb-1 text-white">Stok Grup Düzenle</h1>
+                <p class="text-muted mb-0">Seçili ürünlerin gruplarını toplu olarak güncelleyin.</p>
+            </div>
+        </div>
+        
+        <div class="d-flex gap-3">
+             <MudTextField @bind-Value="searchText" Placeholder="Ürünlerde ara..." Variant="Variant.Outlined" 
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="premium-search-input-dark" style="width: 300px;" Dense="true" />
+        </div>
+    </div>
+
+    <div class="row g-6">
+        <!-- Products List -->
+        <div class="col-lg-8">
+            <div class="glass-panel pa-0 overflow-hidden">
+                <div class="d-flex align-center justify-between pa-4 border-bottom border-white-5">
+                    <span class="small fw-black text-muted tracking-widest">ÜRÜN LİSTESİ</span>
+                    <div class="d-flex gap-4">
+                        <MudCheckBox T="bool" Value="@(FilteredItems.All(x => x.IsSelected))" 
+                                     ValueChanged="SelectAll" 
+                                     Label="Tümünü Seç" Color="Color.Primary" Dense="true" />
+                        <span class="small text-primary fw-bold">Seçili: @ViewModel.Items.Count(x => x.IsSelected)</span>
+                    </div>
+                </div>
+                
+                <div class="list-scroll-area" style="max-height: 60vh; overflow-y: auto;">
+                    @if (ViewModel.IsLoading)
+                    {
+                        @for(int i=0; i<8; i++) { <div class="skeleton mx-4 my-2" style="height: 60px; border-radius: 12px;"></div> }
+                    }
+                    else
+                    {
+                        <table class="premium-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;"></th>
+                                    <th>ÜRÜN ADI</th>
+                                    <th>KOD</th>
+                                    <th>MEVCUT GRUP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in FilteredItems)
+                                {
+                                    <tr class="@(item.IsSelected ? "selected" : "")" @onclick="() => item.IsSelected = !item.IsSelected">
+                                        <td class="text-center" @onclick:stopPropagation>
+                                            <MudCheckBox @bind-Value="item.IsSelected" Color="Color.Primary" Dense="true" />
+                                        </td>
+                                        <td class="fw-bold">@item.Stok.StokAdi</td>
+                                        <td class="text-muted small">@item.Stok.StokKodu</td>
+                                        <td>
+                                            <span class="badge-pill bg-white-10">@(item.Stok.Grup ?? "Genel")</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Panel -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 100px;">
+                <div class="glass-panel pa-6 mb-6">
+                    <h3 class="h5 fw-black text-white mb-6">Grup Değiştir</h3>
+                    
+                    <div class="mb-6">
+                        <label class="d-block mb-2 text-muted fw-bold small">HEDEF GRUP SEÇİN VEYA YAZIN</label>
+                        <MudAutocomplete T="string" 
+                                         @bind-Value="ViewModel.HedefGrup" 
+                                         SearchFunc="@SearchGruplar"
+                                         Placeholder="Grup adı..."
+                                         CoerceText="true"
+                                         Variant="Variant.Outlined"
+                                         Class="premium-input-dark"
+                                         AnchorOrigin="Origin.BottomCenter"
+                                         TransformOrigin="Origin.TopCenter"
+                                         Dense="true" />
+                    </div>
+
+                    <div class="mb-8">
+                        <div class="pa-4 rounded-xl bg-white-5 border border-white-10">
+                            <div class="d-flex justify-between mb-2">
+                                <span class="small text-muted">İşlem Yapılacak:</span>
+                                <span class="small fw-black text-white">@ViewModel.Items.Count(x => x.IsSelected) Ürün</span>
+                            </div>
+                            <div class="d-flex justify-between">
+                                <span class="small text-muted">Yeni Grup:</span>
+                                <span class="small fw-black text-success">@(string.IsNullOrEmpty(ViewModel.HedefGrup) ? "-" : ViewModel.HedefGrup)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="action-btn-large success-btn w-100 py-4" 
+                            @onclick="ViewModel.UygulaCommand.Execute"
+                            disabled="@(ViewModel.IsLoading || !ViewModel.Items.Any(x => x.IsSelected) || string.IsNullOrEmpty(ViewModel.HedefGrup))">
+                        @if (ViewModel.IsLoading)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Class="mr-2" />
+                        }
+                        DEĞİŞİKLİKLERİ UYGULA
+                    </button>
+                </div>
+
+                <div class="glass-panel pa-4 d-flex align-center gap-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" Size="Size.Small" />
+                    <span class="small text-muted">@ViewModel.StatusMessage</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string searchText = "";
+
+    protected override void OnInitialized()
+    {
+        ViewModel.OnNavigatedTo();
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+    }
+
+    private IEnumerable<StokGrupItem> FilteredItems => 
+        string.IsNullOrWhiteSpace(searchText) 
+        ? ViewModel.Items 
+        : ViewModel.Items.Where(x => (x.Stok.StokAdi ?? "").Contains(searchText, StringComparison.OrdinalIgnoreCase) || 
+                                     (x.Stok.StokKodu ?? "").Contains(searchText, StringComparison.OrdinalIgnoreCase));
+
+    private void SelectAll(bool val)
+    {
+        foreach(var item in FilteredItems) item.IsSelected = val;
+    }
+
+    private Task<IEnumerable<string>> SearchGruplar(string value, System.Threading.CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value)) return Task.FromResult<IEnumerable<string>>(ViewModel.Gruplar);
+        return Task.FromResult(ViewModel.Gruplar.Where(x => x.Contains(value, StringComparison.OrdinalIgnoreCase)));
+    }
+}
+
+<style>
+    .premium-search-input-dark ::deep .mud-input-outlined-border { border-color: rgba(255,255,255,0.1) !important; }
+    
+    .list-scroll-area::-webkit-scrollbar { width: 6px; }
+    .list-scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    
+    .premium-table tr.selected {
+        background: rgba(var(--primary-rgb), 0.05);
+    }
+    
+    .badge-pill {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .bg-white-10 { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
+</style>

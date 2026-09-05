@@ -1,0 +1,135 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
+             x:Class="ErmayMuhasebe.Avalonia.Views.MaliyetHesaplamaView"
+             x:DataType="vm:MaliyetHesaplamaViewModel"
+             Background="{DynamicResource BackgroundBrush}">
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="10,5" Spacing="8">
+        
+        <!-- Page Title -->
+        <TextBlock Text="Maliyet Hesaplama" 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Foreground="White" 
+                   HorizontalAlignment="Center" 
+                   Margin="0,0,0,5"/>
+ 
+        <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" HorizontalAlignment="Center" MaxWidth="1000">
+            
+            <!-- 1. Toplam KG Hesaplama -->
+            <Border Grid.Row="0" Grid.Column="0" 
+                    Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" 
+                    CornerRadius="12" Padding="12" Margin="4">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Toplam KG Hesaplama" FontSize="15" FontWeight="Bold" Foreground="White" Margin="0,0,0,3"/>
+                    
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="Gramaj (gr):" FontSize="10" Foreground="#88FFFFFF"/>
+                        <TextBox Text="{Binding Gr}" Watermark="Gramaj girin" Height="32" VerticalContentAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+ 
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="En (cm):" FontSize="10" Foreground="#88FFFFFF"/>
+                        <TextBox Text="{Binding En}" Watermark="En girin" Height="32" VerticalContentAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+ 
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="Sarım (metre):" FontSize="10" Foreground="#88FFFFFF"/>
+                        <TextBox Text="{Binding Sarim}" Watermark="Sarım girin" Height="32" VerticalContentAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+ 
+                    <Button Command="{Binding HesaplaKgCommand}" 
+                            Content="Hesapla" 
+                            Classes="Info"
+                            HorizontalAlignment="Stretch" Height="38" FontWeight="Bold" FontSize="12"/>
+                    
+                    <TextBlock Text="{Binding ToplamKgSonuc}" 
+                               HorizontalAlignment="Center" FontSize="18" FontWeight="Bold" Foreground="#60A5FA" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+ 
+            <!-- 2. Top Fiyatı Hesaplama -->
+            <Border Grid.Row="0" Grid.Column="1" 
+                    Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" 
+                    CornerRadius="12" Padding="12" Margin="4">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Top Fiyatı Hesaplama" FontSize="15" FontWeight="Bold" Foreground="White" Margin="0,0,0,3"/>
+                    
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="Toplam KG:" FontSize="10" Foreground="#88FFFFFF"/>
+                        <TextBox Text="{Binding ToplamKg}" Watermark="Toplam KG girin" Height="32" VerticalContentAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+ 
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="KG Fiyatı ($):" FontSize="10" Foreground="#88FFFFFF"/>
+                        <TextBox Text="{Binding KgFiyati}" Watermark="KG fiyatı girin" Height="32" VerticalContentAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+ 
+                    <Button Command="{Binding HesaplaTopFiyatiCommand}" 
+                            Content="Hesapla" 
+                            Classes="Info"
+                            HorizontalAlignment="Stretch" Height="38" FontWeight="Bold" Margin="0,48,0,0" FontSize="12"/>
+ 
+                    <TextBlock Text="{Binding TopFiyatiSonuc}" 
+                               HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="#60A5FA" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+ 
+            <!-- 3. Metrekare Hesaplama -->
+            <Border Grid.Row="1" Grid.Column="0" 
+                    Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" 
+                    CornerRadius="12" Padding="12" Margin="4">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Metrekare Hesaplama (160cm en için)" FontSize="15" FontWeight="Bold" Foreground="White" Margin="0,0,0,3"/>
+                    
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="Top Boy (metre):" FontSize="10" Foreground="#88FFFFFF"/>
+                        <TextBox Text="{Binding TopBoy}" Watermark="Top boy girin" Height="32" VerticalContentAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+ 
+                    <Button Command="{Binding HesaplaMetrekareCommand}" 
+                            Content="Hesapla" 
+                            Classes="Info"
+                            HorizontalAlignment="Stretch" Height="38" FontWeight="Bold" Margin="0,15,0,0" FontSize="12"/>
+ 
+                    <TextBlock Text="{Binding MetrekareSonuc}" 
+                               HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="#60A5FA" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+ 
+            <!-- 4. Birim Metrekare Maliyeti Hesaplama -->
+            <Border Grid.Row="1" Grid.Column="1" 
+                    Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" 
+                    CornerRadius="12" Padding="12" Margin="4">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Birim Metrekare Maliyeti Hesaplama" FontSize="15" FontWeight="Bold" Foreground="White" Margin="0,0,0,3"/>
+                    
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="Toplam Metrekare:" FontSize="10" Foreground="#88FFFFFF"/>
+                        <TextBox Text="{Binding ToplamMetrekare}" Watermark="Toplam metrekare girin" Height="32" VerticalContentAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+ 
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="Top Fiyatı ($):" FontSize="10" Foreground="#88FFFFFF"/>
+                        <TextBox Text="{Binding TopFiyatiInput}" Watermark="Top fiyatı girin" Height="32" VerticalContentAlignment="Center" FontSize="11"/>
+                    </StackPanel>
+ 
+                    <Button Command="{Binding HesaplaBirimMaliyetCommand}" 
+                            Content="Hesapla" 
+                            Classes="Info"
+                            HorizontalAlignment="Stretch" Height="38" FontWeight="Bold" FontSize="12"/>
+ 
+                    <TextBlock Text="{Binding BirimMaliyetSonuc}" 
+                               HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="#60A5FA" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

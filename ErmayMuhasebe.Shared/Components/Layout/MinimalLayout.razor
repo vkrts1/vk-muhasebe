@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div style="padding: 20px;">
+    <h1>Minimal Layout Test</h1>
+    @Body
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        System.Diagnostics.Debug.WriteLine("Minimal Layout Initialized");
+    }
+}

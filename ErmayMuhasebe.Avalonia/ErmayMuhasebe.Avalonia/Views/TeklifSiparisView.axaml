@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.TeklifSiparisView"
+             x:DataType="vm:TeklifSiparisViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#2610B981">
+          <ic:SymbolIcon Symbol="Play" Foreground="#10B981" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Tekliften Satışa Dönüştürme" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Onaylanan tekliflerinizi tek tıkla sipariş veya satış faturasına çevirin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" RowDefinitions="Auto, *">
+        <Border Grid.Row="0" Background="#1A1F2937" CornerRadius="15" Padding="20" Margin="0,0,0,20">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="#10B981" FontWeight="SemiBold"/>
+        </Border>
+
+        <Border Grid.Row="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="10" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <DataGrid ItemsSource="{Binding BekleyenTeklifler}" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Teklif No" Binding="{Binding No}" Width="120"/>
+                    <DataGridTextColumn Header="Müşteri" Binding="{Binding Cari}" Width="*"/>
+                    <DataGridTextColumn Header="Tutar" Binding="{Binding Tutar, StringFormat={}{0:N2} TL}" Width="150"/>
+                    <DataGridTextColumn Header="Tarih" Binding="{Binding Tarih, StringFormat={}{0:dd.MM.yyyy}}" Width="120"/>
+                    <DataGridTextColumn Header="Durum" Binding="{Binding Durum}" Width="100"/>
+                    <DataGridTemplateColumn Header="İşlem" Width="180">
+                        <DataTemplate>
+                            <Button Command="{Binding $parent[UserControl].DataContext.FaturayaDonusturCommand}" 
+                                    CommandParameter="{Binding}"
+                                    Classes="SideButton Info" Background="#10B981" Padding="10,5">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <ic:SymbolIcon Symbol="ArrowRight" FontSize="14"/> 
+                                    <TextBlock Text="FATURAYA ÇEVİR" FontSize="11" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+  </Grid>
+</UserControl>

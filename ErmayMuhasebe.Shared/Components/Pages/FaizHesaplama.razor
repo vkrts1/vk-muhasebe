@@ -1,0 +1,96 @@
+@page "/faiz-hesaplama"
+@using MudBlazor
+
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">TCMB Faiz Hesaplama Aracı</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Hesaplama Parametreleri</MudText>
+            
+            <MudNumericField @bind-Value="anaPara" Label="Ana Para (TL)" Variant="Variant.Outlined" Format="N2" Class="mb-3" />
+            
+            <MudSelect T="double" @bind-Value="faizOrani" Label="Faiz Türü / Oranı" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem Value="24.0">Yasal Faiz (%24)</MudSelectItem>
+                <MudSelectItem Value="48.0">Ticari Temerrüt Faizi (%48)</MudSelectItem>
+                <MudSelectItem Value="0.0">Özel Oran Gir</MudSelectItem>
+            </MudSelect>
+
+            @if (faizOrani == 0)
+            {
+                <MudNumericField @bind-Value="ozelOran" Label="Özel Faiz Oranı (%)" Variant="Variant.Outlined" Class="mb-3" />
+            }
+
+            <MudDateRangePicker @bind-DateRange="_dateRange" Label="Tarih Aralığı" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="Hesapla" StartIcon="@Icons.Material.Filled.Calculate">
+                Hesapla
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Style="height: 100%">
+            <MudText Typo="Typo.h6" Class="mb-4">Hesaplama Sonucu</MudText>
+            
+            @if (hesaplandi)
+            {
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex justify-space-between border-b pb-2">
+                        <MudText>Gün Sayısı:</MudText>
+                        <MudText Typo="Typo.body1"><b>@gunSayisi Gün</b></MudText>
+                    </div>
+                    <div class="d-flex justify-space-between border-b pb-2">
+                        <MudText>Uygulanan Faiz Oranı:</MudText>
+                        <MudText Typo="Typo.body1"><b>%@seciliOran</b></MudText>
+                    </div>
+                    <div class="d-flex justify-space-between border-b pb-2">
+                        <MudText>Net Faiz Tutarı:</MudText>
+                        <MudText Typo="Typo.h6" Color="Color.Error"><b>@faizTutari.ToString("N2") TL</b></MudText>
+                    </div>
+                    <div class="d-flex justify-space-between pt-2">
+                        <MudText><b>Toplam Tutar:</b></MudText>
+                        <MudText Typo="Typo.h5" Color="Color.Primary"><b>@toplamTutar.ToString("N2") TL</b></MudText>
+                    </div>
+
+                    <MudAlert Severity="Severity.Info" Class="mt-4">
+                        Formül: (Ana Para * Faiz Oranı * Gün Sayısı) / 36500
+                    </MudAlert>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex align-center justify-center" style="height: 200px">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Hesaplama yapmak için parametreleri girip "Hesapla" butonuna basın.</MudText>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private decimal anaPara = 10000;
+    private double faizOrani = 24;
+    private double ozelOran = 10;
+    private DateRange _dateRange = new DateRange(DateTime.Now.AddMonths(-1), DateTime.Now);
+    
+    private bool hesaplandi = false;
+    private int gunSayisi = 0;
+    private decimal faizTutari = 0;
+    private decimal toplamTutar = 0;
+    private double seciliOran = 0;
+
+    private void Hesapla()
+    {
+        if (_dateRange.Start == null || _dateRange.End == null) return;
+
+        gunSayisi = (_dateRange.End.Value - _dateRange.Start.Value).Days;
+        seciliOran = faizOrani == 0 ? ozelOran : faizOrani;
+
+        // Faiz = (A * N * T) / 36500
+        faizTutari = (anaPara * (decimal)seciliOran * (decimal)gunSayisi) / 36500m;
+        toplamTutar = anaPara + faizTutari;
+        
+        hesaplandi = true;
+    }
+}

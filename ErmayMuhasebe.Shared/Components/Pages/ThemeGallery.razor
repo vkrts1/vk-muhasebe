@@ -1,0 +1,98 @@
+@page "/theme-gallery"
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8 mb-8">
+    <MudText Typo="Typo.h3" Align="Align.Center" Class="mb-2" Color="Color.Primary"><b>🎨 Tema Galerisi</b></MudText>
+    <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mb-8" Color="Color.Secondary">Uygulamanız için modern ve şık tasarımlardan birini seçin.</MudText>
+
+    <MudGrid>
+        @foreach (var theme in ThemeList)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudCard Elevation="25" Class="h-100 d-flex flex-column theme-card" Style="@($"border: 2px solid {theme.PrimaryColor};")">
+                    <div style="@($"height: 120px; background: {theme.PreviewBackground}; position: relative; overflow: hidden;")">
+                        <!-- Mini Preview UI -->
+                        <div style="position: absolute; top: 20px; left: 20px; right: -20px; bottom: -20px; background: var(--mud-palette-surface); border-top-left-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); padding: 10px;">
+                            <MudText Typo="Typo.caption" Color="Color.Primary"><b>@theme.Name</b></MudText>
+                            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" Style="zoom: 0.7;">Buton</MudButton>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Style="zoom: 0.7;">Etiket</MudChip>
+                        </div>
+                    </div>
+                    
+                    <MudCardContent Class="flex-grow-1">
+                        <MudText Typo="Typo.h6">@theme.Name</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@theme.Description</MudText>
+                    </MudCardContent>
+                    
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" OnClick="@(() => ApplyTheme(theme.Id))">
+                            @if (_currentThemeId == theme.Id)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Check" Class="mr-2"/> <span>Seçili</span>
+                            }
+                            else
+                            {
+                                <span>Uygula</span>
+                            }
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .theme-card:hover {
+        transform: translateY(-5px);
+        transition: all 0.3s ease;
+    }
+</style>
+
+@code {
+    private string _currentThemeId = "clean-light";
+
+    private class ThemeOption
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string PrimaryColor { get; set; } = "";
+        public string PreviewBackground { get; set; } = "";
+    }
+
+    private List<ThemeOption> ThemeList = new()
+    {
+        new() { Id = "modern-ticari", Name = "Modern Ticari (Zirve/Bilsoft)", Description = "Sizin için özel: Zirve ve Bilsoft tarzı, Mavi/Turuncu kurumsal yapı.", PrimaryColor = "#1E88E5", PreviewBackground = "#F1F5F9" },
+        new() { Id = "ticari-dark", Name = "Ticari Dark", Description = "Modern Ticari temanın gece modu versiyonu.", PrimaryColor = "#1565C0", PreviewBackground = "#0F172A" },
+        new() { Id = "clean-light", Name = "Ermay Klasik", Description = "Sade, beyaz ve ferah. Standart kurumsal görünüm.", PrimaryColor = "#2563eb", PreviewBackground = "#f8fafc" },
+        new() { Id = "dark", Name = "Midnight Pro", Description = "Göz yormayan, profesyonel tam karanlık mod.", PrimaryColor = "#64b5f6", PreviewBackground = "#1a1a1a" },
+        new() { Id = "ocean-blue", Name = "Ocean Blue", Description = "Ferah okyanus tonları, turkuaz detaylar.", PrimaryColor = "#0288d1", PreviewBackground = "linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%)" },
+        new() { Id = "sunset-glow", Name = "Sunset Glow", Description = "Sıcak ve enerjik. Turuncu/Gold detaylar.", PrimaryColor = "#f4511e", PreviewBackground = "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)" },
+        new() { Id = "forest-corp", Name = "Forest Corporate", Description = "Güven veren yeşil tonları. Finans için ideal.", PrimaryColor = "#2e7d32", PreviewBackground = "#f1f8e9" },
+        new() { Id = "royal-purple", Name = "Royal Purple", Description = "Premium hissettiren mor ve altın renkler.", PrimaryColor = "#7b1fa2", PreviewBackground = "#f3e5f5" },
+        new() { Id = "slate-storm", Name = "Slate Storm", Description = "Modern yazılım editörü havasında gri/mavi tonlar.", PrimaryColor = "#64748b", PreviewBackground = "#0f172a" },
+        new() { Id = "material-monochrome", Name = "Minimalist", Description = "Sadece siyah ve beyaz. Dikkat dağıtmaz.", PrimaryColor = "#212121", PreviewBackground = "#eeeeee" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var saved = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "theme");
+        if (!string.IsNullOrEmpty(saved)) _currentThemeId = saved;
+    }
+
+    private async Task ApplyTheme(string themeId)
+    {
+        _currentThemeId = themeId;
+        // JSRuntime kullanarak global theme değiştirme fonksiyonunu tetikle
+        // MainLayout zaten bu değişikliği dinliyor (localStorage event veya custom event)
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "theme", themeId);
+        
+        // Notify MainLayout explicitly via the helper we added in index.html
+        await JSRuntime.InvokeVoidAsync("notifyThemeChange", themeId);
+        
+        StateHasChanged();
+    }
+}

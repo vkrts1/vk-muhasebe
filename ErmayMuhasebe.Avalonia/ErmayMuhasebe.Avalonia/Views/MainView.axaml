@@ -1,0 +1,594 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             xmlns:ic="clr-namespace:FluentIcons.Avalonia.Fluent;assembly=FluentIcons.Avalonia.Fluent"
+             xmlns:models="clr-namespace:ErmayMuhasebe.Models;assembly=ErmayMuhasebe.Shared"
+             xmlns:views="using:ErmayMuhasebe.Avalonia.Views"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ErmayMuhasebe.Avalonia.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             TextElement.FontFamily="Netflix Sans, Inter, Roboto, Segoe UI"
+             RenderOptions.TextRenderingMode="SubpixelAntialias">
+    
+    <UserControl.Styles>
+        <Style Selector="Button.IconButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.IconButton:pointerover">
+            <Setter Property="Background" Value="#15FFFFFF"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.IconButton:pressed">
+            <Setter Property="Background" Value="#30FFFFFF"/>
+            <Setter Property="RenderTransform" Value="none"/>
+        </Style>
+    </UserControl.Styles>
+
+    <UserControl.Resources>
+      <conv:SymbolIconConverter x:Key="SymbolIconConverter"/>
+      <conv:BoolToColorConverter x:Key="BoolToColorConverter"/>
+      <conv:StringEqualsConverter x:Key="StringEqualsConverter"/>
+      <conv:StringEqualsConverter x:Key="StringNotEqualsConverter" Inverted="True"/>
+    </UserControl.Resources>
+
+    <Grid>
+      <!-- Root container with scale support -->
+      <LayoutTransformControl>
+        <LayoutTransformControl.LayoutTransform>
+          <ScaleTransform ScaleX="{Binding Scaling}" ScaleY="{Binding Scaling}"/>
+        </LayoutTransformControl.LayoutTransform>
+        
+        <Grid>
+            <!-- MAIN APP CONTENT -->
+            <TransitioningContentControl Content="{Binding ActiveAuthView}">
+                <TransitioningContentControl.DataTemplates>
+                    <!-- LOGIN VIEW -->
+                    <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+                        <views:LoginView />
+                    </DataTemplate>
+                    <!-- YEAR SELECTION VIEW -->
+                    <DataTemplate DataType="{x:Type vm:YearSelectionViewModel}">
+                        <views:YearSelectionView />
+                    </DataTemplate>
+        
+                    <!-- MAIN APP VIEW -->
+                    <DataTemplate DataType="{x:Type vm:MainViewModel}">
+                      <Grid>
+                        <!-- 1. STANDARD LAYOUT (ModernSaaS, Enterprise, WindowsFluent) -->
+                        <Grid RowDefinitions="Auto, *" IsVisible="{Binding CurrentTheme, Converter={StaticResource StringNotEqualsConverter}, ConverterParameter='IDEProfessional'}">
+                          <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" Height="50">
+                              <Grid ColumnDefinitions="60, Auto, *, Auto, Auto">
+                              <Button Click="TogglePaneButton_Click" Background="Transparent" Width="60" Height="50" Padding="0" Grid.Column="0">
+                                <ic:SymbolIcon Symbol="Navigation" FontSize="20" Foreground="{DynamicResource TextBrush}"/> 
+                              </Button>
+                              <Image Grid.Column="1" Source="avares://ErmayMuhasebe.Avalonia/Assets/bawsaq_logo.png" Width="26" Height="26" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                              <TextBlock Grid.Column="2" Text="BAWSAQ" VerticalAlignment="Center" FontWeight="ExtraBold" FontSize="18" LetterSpacing="2" Foreground="{DynamicResource TextBrush}"/>
+                              
+                              <!-- BİLDİRİM BUTONU -->
+                              <Button Grid.Column="2" Classes="IconButton" Width="40" Height="50" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                  <Panel>
+                                      <ic:SymbolIcon Symbol="Alert" FontSize="20" Foreground="{DynamicResource TextBrush}"/>
+                                      <Border IsVisible="{Binding HasUnreadNotifications}" Background="#EF4444" Width="8" Height="8" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"/>
+                                  </Panel>
+                                  <Button.Flyout>
+                                      <Flyout Placement="BottomEdgeAlignedRight">
+                                          <Border Width="320" Padding="15" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="12">
+                                              <StackPanel Spacing="10">
+                                                  <!-- Header -->
+                                                  <Grid ColumnDefinitions="*, Auto">
+                                                      <TextBlock Text="Bildirimler" FontWeight="Bold" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                                          <Button Command="{Binding MarkAllAsReadCommand}" Classes="IconButton" ToolTip.Tip="Tümünü Okundu İşaretle">
+                                                              <ic:SymbolIcon Symbol="MailRead" FontSize="16" Foreground="#6366F1"/>
+                                                          </Button>
+                                                          <Button Command="{Binding ClearNotificationsCommand}" Classes="IconButton" ToolTip.Tip="Tümünü Temizle">
+                                                              <ic:SymbolIcon Symbol="Delete" FontSize="16" Foreground="#EF4444"/>
+                                                          </Button>
+                                                      </StackPanel>
+                                                  </Grid>
+                                                  
+                                                  <Separator Background="{DynamicResource BorderColor}" Height="1.5" Margin="0,5"/>
+                                                  
+                                                  <!-- Notifications List -->
+                                                  <ScrollViewer MaxHeight="250">
+                                                      <Panel>
+                                                          <!-- Empty State -->
+                                                          <TextBlock Text="Yeni bildirim bulunmuyor." FontSize="12" Opacity="0.5" HorizontalAlignment="Center" Margin="0,20" IsVisible="{Binding !Notifications.Count}"/>
+                                                          
+                                                          <!-- List -->
+                                                          <ItemsControl ItemsSource="{Binding Notifications}">
+                                                              <ItemsControl.ItemTemplate>
+                                                                  <DataTemplate DataType="vm:NotificationItem">
+                                                                      <Button Command="{Binding $parent[ItemsControl].DataContext.NotificationClickCommand}"
+                                                                              CommandParameter="{Binding}"
+                                                                              Background="Transparent"
+                                                                              BorderThickness="0"
+                                                                              Padding="0"
+                                                                              HorizontalAlignment="Stretch"
+                                                                              HorizontalContentAlignment="Stretch">
+                                                                          <Border Background="Transparent" Padding="5,8" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1">
+                                                                              <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="10">
+                                                                                  <!-- Dot for unread / Icon for read -->
+                                                                                  <Border Grid.Column="0" Width="8" Height="8" CornerRadius="4" Background="#F59E0B" VerticalAlignment="Center" IsVisible="{Binding !IsRead}"/>
+                                                                                  <ic:SymbolIcon Grid.Column="0" Symbol="{Binding Icon, Converter={StaticResource SymbolIconConverter}}" FontSize="18" Foreground="#F59E0B" VerticalAlignment="Center" IsVisible="{Binding IsRead}"/>
+                                                                                  
+                                                                                  <!-- Title & Message -->
+                                                                                  <StackPanel Grid.Column="1" Spacing="2">
+                                                                                      <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                                                      <TextBlock Text="{Binding Message}" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                                                                      <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}" FontSize="9" Opacity="0.5"/>
+                                                                                  </StackPanel>
+                                                                                  
+                                                                                  <!-- Mark as Read Button -->
+                                                                                  <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].DataContext.MarkAsReadCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsRead}" Classes="IconButton" VerticalAlignment="Center">
+                                                                                      <ic:SymbolIcon Symbol="Checkmark" FontSize="14" Foreground="#10B981"/>
+                                                                                  </Button>
+                                                                              </Grid>
+                                                                          </Border>
+                                                                      </Button>
+                                                                  </DataTemplate>
+                                                              </ItemsControl.ItemTemplate>
+                                                          </ItemsControl>
+                                                      </Panel>
+                                                  </ScrollViewer>
+                                              </StackPanel>
+                                          </Border>
+                                      </Flyout>
+                                  </Button.Flyout>
+                              </Button>
+
+                              <!-- Empty space for window controls when scaled -->
+                              <StackPanel Grid.Column="3" Width="140"/>
+                            </Grid>
+                          </Border>
+                          
+                          <SplitView Grid.Row="1" 
+                                     Name="SplitView"
+                                     IsPaneOpen="{Binding IsPaneOpen}"
+                                     DisplayMode="CompactInline"
+                                     CompactPaneLength="60"
+                                     OpenPaneLength="180"
+                                     Background="{DynamicResource BackgroundBrush}"
+                                     PaneBackground="{DynamicResource SidebarBrush}">
+                             <SplitView.Transitions>
+                                 <Transitions>
+                                     <DoubleTransition Property="OpenPaneLength" Duration="0:0:0.7" Easing="CircularEaseOut"/>
+                                 </Transitions>
+                             </SplitView.Transitions>
+                             <SplitView.Pane>
+                               <Grid RowDefinitions="*, Auto">
+                                 <Border Grid.RowSpan="2" BorderBrush="#15FFFFFF" BorderThickness="0,0,1,0" HorizontalAlignment="Right" Width="1"/>
+                                  <ListBox Grid.Row="0" 
+                                           x:Name="SidebarListBox"
+                                           ItemsSource="{Binding MenuItems}" 
+                                           SelectedItem="{Binding SelectedMenuItem}"
+                                           Margin="0,45,0,0"
+                                           Background="Transparent"
+                                           Padding="0,10"
+                                           VerticalAlignment="Stretch"
+                                           ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                     <ListBox.Styles>
+                                         <Style Selector="ListBoxItem">
+                                             <Setter Property="Padding" Value="0"/>
+                                             <Setter Property="Margin" Value="0"/>
+                                             <Setter Property="MinHeight" Value="48"/>
+                                             <Setter Property="Background" Value="Transparent"/>
+                                             <Setter Property="Template">
+                                                 <ControlTemplate>
+                                                     <Border Name="PART_RootBorder" 
+                                                             Background="{TemplateBinding Background}" 
+                                                             BorderBrush="Transparent" 
+                                                             BorderThickness="4,0,0,0">
+                                                         <ContentPresenter Name="PART_ContentPresenter"
+                                                                         Content="{TemplateBinding Content}"
+                                                                         ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                         Padding="15,0"
+                                                                         VerticalAlignment="Center"/>
+                                                     </Border>
+                                                 </ControlTemplate>
+                                             </Setter>
+                                         </Style>
+                                         <Style Selector="ListBoxItem:pointerover /template/ Border#PART_RootBorder">
+                                             <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+                                         </Style>
+                                         <Style Selector="ListBoxItem:selected /template/ Border#PART_RootBorder">
+                                             <Setter Property="Background" Value="{DynamicResource PanelBrush}"/>
+                                             <Setter Property="BorderBrush" Value="#007ACC"/>
+                                         </Style>
+                                         <Style Selector="ListBoxItem:selected TextBlock">
+                                             <Setter Property="Foreground" Value="White"/>
+                                             <Setter Property="FontWeight" Value="SemiBold"/>
+                                         </Style>
+                                         <Style Selector="ListBoxItem:selected ic|SymbolIcon">
+                                             <Setter Property="Foreground" Value="White"/>
+                                         </Style>
+                                         <Style Selector="ListBoxItem:pointerover /template/ Border#PART_RootBorder">
+                                             <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+                                         </Style>
+                                     </ListBox.Styles>
+                                     <ListBox.ItemTemplate>
+                                       <DataTemplate>
+                                         <Panel ToolTip.Tip="{Binding Name}">
+                                           <Grid ColumnDefinitions="45, *" IsVisible="{Binding !IsHeader}">
+                                             <ic:SymbolIcon Grid.Column="0" 
+                                                            Symbol="{Binding IconKey, Converter={StaticResource SymbolIconConverter}}" 
+                                                            FontSize="20"
+                                                            Foreground="{Binding $parent[ListBoxItem].Foreground}"
+                                                            HorizontalAlignment="Center"/>
+                                             <TextBlock Grid.Column="1" 
+                                                        Text="{Binding Name}" 
+                                                        VerticalAlignment="Center" 
+                                                        FontSize="13"
+                                                        Foreground="{Binding $parent[ListBoxItem].Foreground}"
+                                                        Margin="10,0,0,0"/>
+                                           </Grid>
+                                           <StackPanel IsVisible="{Binding IsHeader}" Margin="0,15,0,5">
+                                             <Separator Background="#20FFFFFF" Height="1" Margin="0,0,0,10"/>
+                                             <TextBlock Text="{Binding Name}" 
+                                                        FontSize="11" 
+                                                        FontWeight="Bold" 
+                                                        Foreground="#60A5FA" 
+                                                        Margin="15,0,0,0"
+                                                        Opacity="0.8"/>
+                                           </StackPanel>
+                                         </Panel>
+                                       </DataTemplate>
+                                     </ListBox.ItemTemplate>
+                                  </ListBox>
+                                 <StackPanel Grid.Row="1" Margin="0,0,0,10" Background="Transparent">
+                                     <Separator Background="#15FFFFFF" Height="1" Margin="10,0,10,10"/>
+                                     <Button Command="{Binding LogoutCommand}" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15,0" Margin="4,0,4,10" Height="40" BorderThickness="0">
+                                         <Grid ColumnDefinitions="40, *">
+                                             <ic:SymbolIcon Grid.Column="0" Symbol="SignOut" FontSize="20" Foreground="#EF4444" HorizontalAlignment="Center"/>
+                                             <TextBlock Grid.Column="1" Text="Çıkış Yap" VerticalAlignment="Center" FontSize="14" Foreground="#EF4444" IsVisible="{Binding IsPaneOpen}" Margin="10,0,0,0"/>
+                                         </Grid>
+                                     </Button>
+                                 </StackPanel>
+                               </Grid>
+                             </SplitView.Pane>
+      
+                             <Grid RowDefinitions="Auto, *, Auto">
+                              <Border Grid.Row="0" IsVisible="{Binding IsOffline}" Background="#EF4444" Height="28">
+                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <ic:SymbolIcon Symbol="WifiWarning" Foreground="White" FontSize="14" Margin="0,0,10,0"/>
+                                    <TextBlock Text="ÇEVRİMDIŞI MOD - BULUT EŞİTLEME HATASI" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                                 </StackPanel>
+                              </Border>
+                                <TransitioningContentControl Grid.Row="1" Content="{Binding CurrentPage}" Padding="20" Background="{DynamicResource BackgroundBrush}">
+
+                              </TransitioningContentControl>
+                              
+                              <Border Grid.Row="2" Height="30" Background="{DynamicResource SurfaceBrush}" BorderBrush="#15FFFFFF" BorderThickness="0,1,0,0" Padding="15,0">
+                                    <Grid ColumnDefinitions="*, Auto, *">
+                                         <!-- SOL: Döviz Kuru, Aktif Mali Yıl -->
+                                         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15" VerticalAlignment="Center">
+                                             <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                 <ic:SymbolIcon Symbol="Money" FontSize="14" VerticalAlignment="Center"/>
+                                                 <TextBlock Text="{Binding LiveExchangeRates}" FontSize="11" VerticalAlignment="Center"/>
+                                             </StackPanel>
+                                             <TextBlock Text="|" FontSize="11" Opacity="0.3" VerticalAlignment="Center"/>
+                                             <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                 <ic:SymbolIcon Symbol="Calendar" FontSize="14" VerticalAlignment="Center"/>
+                                                 <TextBlock Text="{Binding ActiveFiscalYear}" FontSize="11" VerticalAlignment="Center"/>
+                                             </StackPanel>
+                                         </StackPanel>
+
+                                         <!-- ORTA: Tarih ve Saat -->
+                                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Opacity="0.8">
+                                             <ic:SymbolIcon Symbol="Clock" FontSize="14" VerticalAlignment="Center"/>
+                                             <TextBlock Text="{Binding LiveDateTime}" FontSize="11" VerticalAlignment="Center"/>
+                                         </StackPanel>
+
+                                         <!-- SAĞ: Kullanıcı Adı, İnternet Durumu ve Bulut Eşitleme -->
+                                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="15" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                             <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                 <ic:SymbolIcon Symbol="Person" FontSize="14" VerticalAlignment="Center"/>
+                                                 <TextBlock Text="{Binding CurrentUserName}" FontSize="11" VerticalAlignment="Center"/>
+                                             </StackPanel>
+                                             <TextBlock Text="|" FontSize="11" Opacity="0.3" VerticalAlignment="Center"/>
+                                             <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                 <ic:SymbolIcon Symbol="{Binding ConnectionStatusIcon, Converter={StaticResource SymbolIconConverter}}" FontSize="14" VerticalAlignment="Center"/>
+                                                 <TextBlock Text="{Binding ConnectionStatusText}" FontSize="11" VerticalAlignment="Center"/>
+                                             </StackPanel>
+                                             <TextBlock Text="|" FontSize="11" Opacity="0.3" VerticalAlignment="Center"/>
+                                             <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                 <ic:SymbolIcon Symbol="CloudCheckmark" FontSize="14" VerticalAlignment="Center"/>
+                                                 <TextBlock Text="{Binding SyncStatusText}" FontSize="11" VerticalAlignment="Center"/>
+                                             </StackPanel>
+                                         </StackPanel>
+                                    </Grid>
+                               </Border>
+                            </Grid>
+                          </SplitView>
+                        </Grid>
+    
+                        <!-- 2. IDE PROFESSIONAL LAYOUT -->
+                        <Grid IsVisible="{Binding CurrentTheme, Converter={StaticResource StringEqualsConverter}, ConverterParameter='IDEProfessional'}">
+                           <SplitView Name="IDESplitView"
+                                      IsPaneOpen="{Binding IsPaneOpen}"
+                                      DisplayMode="CompactInline"
+                                      CompactPaneLength="55"
+                                      OpenPaneLength="180"
+                                      Background="{DynamicResource BackgroundBrush}"
+                                      PaneBackground="{DynamicResource SidebarBrush}">
+                              <SplitView.Transitions>
+                                  <Transitions>
+                                      <DoubleTransition Property="OpenPaneLength" Duration="0:0:0.7" Easing="CircularEaseOut"/>
+                                  </Transitions>
+                              </SplitView.Transitions>
+                              <SplitView.Pane>
+                                 <!-- UNIFIED SIDEBAR AREA -->
+                                 <Grid RowDefinitions="*, Auto" Background="{DynamicResource SidebarBrush}" PointerExited="IDESideBar_PointerExited" PointerEntered="IDESideBar_PointerEntered" PointerPressed="IDESideBar_PointerPressed">
+                                    <ListBox Grid.Row="0" 
+                                             x:Name="IDESidebarListBox"
+                                             ItemsSource="{Binding MenuItems}" 
+                                             SelectedItem="{Binding SelectedMenuItem}"
+                                             Margin="0,45,0,0"
+                                             Background="Transparent"
+                                             Padding="0"
+                                             PointerPressed="IDESideBar_PointerPressed">
+                                       <ListBox.Styles>
+                                          <Style Selector="ListBoxItem">
+                                             <Setter Property="Padding" Value="0"/>
+                                             <Setter Property="Height" Value="48"/>
+                                             <Setter Property="Background" Value="Transparent"/>
+                                             <Setter Property="Foreground" Value="#A0A0A0"/>
+                                             <Setter Property="Template">
+                                                <ControlTemplate>
+                                                   <Border Name="PART_RootBorder" 
+                                                           Background="{TemplateBinding Background}" 
+                                                           BorderBrush="Transparent" 
+                                                           BorderThickness="3,0,0,0">
+                                                       <ContentPresenter Name="PART_ContentPresenter"
+                                                                       Content="{TemplateBinding Content}"
+                                                                       ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                       Padding="0"
+                                                                       VerticalAlignment="Center"/>
+                                                   </Border>
+                                                </ControlTemplate>
+                                             </Setter>
+                                          </Style>
+                                          <Style Selector="ListBoxItem:selected /template/ Border#PART_RootBorder">
+                                             <Setter Property="Background" Value="{DynamicResource PanelBrush}"/>
+                                             <Setter Property="BorderBrush" Value="#007acc"/>
+                                          </Style>
+                                          <Style Selector="ListBoxItem:selected TextBlock">
+                                             <Setter Property="Foreground" Value="White"/>
+                                             <Setter Property="FontWeight" Value="SemiBold"/>
+                                          </Style>
+                                          <Style Selector="ListBoxItem:selected ic|SymbolIcon">
+                                             <Setter Property="Foreground" Value="White"/>
+                                          </Style>
+                                          <Style Selector="ListBoxItem:pointerover /template/ Border#PART_RootBorder">
+                                             <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+                                         </Style>
+                                       </ListBox.Styles>
+                                       <ListBox.ItemTemplate>
+                                          <DataTemplate>
+                                             <Grid ColumnDefinitions="55, *" Background="Transparent" ToolTip.Tip="{Binding Name}" ToolTip.ShowDelay="150">
+                                                <!-- Icon Area (Always visible) -->
+                                                <ic:SymbolIcon Grid.Column="0" 
+                                                               Symbol="{Binding IconKey, Converter={StaticResource SymbolIconConverter}}" 
+                                                               FontSize="22" 
+                                                               Foreground="{Binding $parent[ListBoxItem].Foreground}"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                
+                                                <!-- Text Area (Visible when pane is open) -->
+                                                <TextBlock Grid.Column="1" 
+                                                           Text="{Binding Name}" 
+                                                           VerticalAlignment="Center" 
+                                                           FontSize="13"
+                                                           Margin="5,0,0,0"
+                                                           IsVisible="{Binding $parent[SplitView].IsPaneOpen}"
+                                                           Foreground="{Binding $parent[ListBoxItem].Foreground}"/>
+                                             </Grid>
+                                          </DataTemplate>
+                                       </ListBox.ItemTemplate>
+                                    </ListBox>
+    
+                                    <!-- Bottom Logout Section -->
+                                    <Button Grid.Row="1" Command="{Binding LogoutCommand}" Background="Transparent" Height="50" HorizontalAlignment="Stretch" Padding="0">
+                                       <Grid ColumnDefinitions="50, *">
+                                          <ic:SymbolIcon Grid.Column="0" Symbol="SignOut" FontSize="22" Foreground="#EF4444" HorizontalAlignment="Center"/>
+                                          <TextBlock Grid.Column="1" Text="Çıkış Yap" VerticalAlignment="Center" FontSize="13" Foreground="#EF4444" IsVisible="{Binding $parent[SplitView].IsPaneOpen}" Margin="5,0,0,0"/>
+                                       </Grid>
+                                    </Button>
+                                 </Grid>
+                              </SplitView.Pane>
+    
+                              <SplitView.Content>
+                                 <!-- Editor Area -->
+                                 <Grid RowDefinitions="Auto, Auto, *, Auto" Background="{DynamicResource BackgroundBrush}" PointerEntered="IDESideBar_PointerExited">
+                                    <!-- Breadcrumbs -->
+                                    <Border Grid.Row="0" Height="30" Background="{DynamicResource BackgroundBrush}" Padding="15,0">
+                                       <Grid ColumnDefinitions="*, Auto">
+                                           <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8" Opacity="0.5">
+                                              <TextBlock Text="BAWSAQ" FontSize="11" FontWeight="Bold"/>
+                                              <TextBlock Text=">" FontSize="11"/>
+                                              <TextBlock Text="{Binding SelectedMenuItem.Name}" FontSize="11" FontWeight="SemiBold"/>
+                                           </StackPanel>
+                                           <!-- Space for window controls -->
+                                           <Border Grid.Column="1" Width="140"/>
+                                       </Grid>
+                                    </Border>
+    
+                                    <!-- Editor Tabs Simulated -->
+                                     <Border Grid.Row="1" Height="35" Background="{DynamicResource SidebarBrush}">
+                                         <Grid ColumnDefinitions="*, Auto">
+                                             <!-- Sekmeler -->
+                                             <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="#007acc" BorderThickness="0,1,0,0" Padding="15,0" MinWidth="120">
+                                                   <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                                      <ic:SymbolIcon Symbol="{Binding SelectedMenuItem.IconKey, Converter={StaticResource SymbolIconConverter}}" FontSize="14" Foreground="#007acc"/>
+                                                      <TextBlock Text="{Binding SelectedMenuItem.Name}" FontSize="12" VerticalAlignment="Center"/>
+                                                      <ic:SymbolIcon Symbol="Dismiss" FontSize="12" Opacity="0.5" Margin="5,0,0,0"/>
+                                                   </StackPanel>
+                                                </Border>
+                                             </StackPanel>
+                                             
+                                             <!-- BİLDİRİM BUTONU -->
+                                             <Button Grid.Column="1" Classes="IconButton" Width="35" Height="35" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,0,10,0">
+                                                 <Panel>
+                                                     <ic:SymbolIcon Symbol="Alert" FontSize="18" Foreground="White"/>
+                                                     <Border IsVisible="{Binding HasUnreadNotifications}" Background="Red" Width="8" Height="8" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,2,0"/>
+                                                 </Panel>
+                                                 <Button.Flyout>
+                                                     <Flyout Placement="BottomEdgeAlignedRight">
+                                                         <Border Width="320" Padding="15" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" CornerRadius="12">
+                                                             <StackPanel Spacing="10">
+                                                                 <!-- Header -->
+                                                                 <Grid ColumnDefinitions="*, Auto">
+                                                                     <TextBlock Text="Bildirimler" FontWeight="Bold" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                                                         <Button Command="{Binding MarkAllAsReadCommand}" Classes="IconButton" ToolTip.Tip="Tümünü Okundu İşaretle">
+                                                                             <ic:SymbolIcon Symbol="MailRead" FontSize="16" Foreground="#6366F1"/>
+                                                                         </Button>
+                                                                         <Button Command="{Binding ClearNotificationsCommand}" Classes="IconButton" ToolTip.Tip="Tümünü Temizle">
+                                                                             <ic:SymbolIcon Symbol="Delete" FontSize="16" Foreground="#EF4444"/>
+                                                                         </Button>
+                                                                     </StackPanel>
+                                                                 </Grid>
+                                                                 
+                                                                 <Separator Background="{DynamicResource BorderColor}" Height="1.5" Margin="0,5"/>
+                                                                 
+                                                                 <!-- Notifications List -->
+                                                                 <ScrollViewer MaxHeight="250">
+                                                                     <Panel>
+                                                                         <!-- Empty State -->
+                                                                         <TextBlock Text="Yeni bildirim bulunmuyor." FontSize="12" Opacity="0.5" HorizontalAlignment="Center" Margin="0,20" IsVisible="{Binding !Notifications.Count}"/>
+                                                                         
+                                                                         <!-- List -->
+                                                                         <ItemsControl ItemsSource="{Binding Notifications}">
+                                                                             <ItemsControl.ItemTemplate>
+                                                                                 <DataTemplate DataType="vm:NotificationItem">
+                                                                                     <Button Command="{Binding $parent[ItemsControl].DataContext.NotificationClickCommand}"
+                                                                                             CommandParameter="{Binding}"
+                                                                                             Background="Transparent"
+                                                                                             BorderThickness="0"
+                                                                                             Padding="0"
+                                                                                             HorizontalAlignment="Stretch"
+                                                                                             HorizontalContentAlignment="Stretch">
+                                                                                         <Border Background="Transparent" Padding="5,8" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1">
+                                                                                             <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="10">
+                                                                                                 <!-- Dot for unread / Icon for read -->
+                                                                                                 <Border Grid.Column="0" Width="8" Height="8" CornerRadius="4" Background="#F59E0B" VerticalAlignment="Center" IsVisible="{Binding !IsRead}"/>
+                                                                                                 <ic:SymbolIcon Grid.Column="0" Symbol="{Binding Icon, Converter={StaticResource SymbolIconConverter}}" FontSize="18" Foreground="#F59E0B" VerticalAlignment="Center" IsVisible="{Binding IsRead}"/>
+                                                                                                 
+                                                                                                 <!-- Title & Message -->
+                                                                                                 <StackPanel Grid.Column="1" Spacing="2">
+                                                                                                     <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                                                                     <TextBlock Text="{Binding Message}" FontSize="11" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                                                                                                     <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}" FontSize="9" Opacity="0.5"/>
+                                                                                                 </StackPanel>
+                                                                                                 
+                                                                                                 <!-- Mark as Read Button -->
+                                                                                                 <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].DataContext.MarkAsReadCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsRead}" Classes="IconButton" VerticalAlignment="Center">
+                                                                                                     <ic:SymbolIcon Symbol="Checkmark" FontSize="14" Foreground="#10B981"/>
+                                                                                                 </Button>
+                                                                                             </Grid>
+                                                                                         </Border>
+                                                                                     </Button>
+                                                                                 </DataTemplate>
+                                                                             </ItemsControl.ItemTemplate>
+                                                                         </ItemsControl>
+                                                                     </Panel>
+                                                                 </ScrollViewer>
+                                                             </StackPanel>
+                                                         </Border>
+                                                     </Flyout>
+                                                 </Button.Flyout>
+                                             </Button>
+                                         </Grid>
+                                    </Border>
+    
+                                    <!-- Main Content (Dashboard or Modules) -->
+                                    <TransitioningContentControl Grid.Row="2" Content="{Binding CurrentPage}" Padding="15">
+                                    </TransitioningContentControl>
+    
+    
+                                    <!-- IDE Status Bar (Blue) -->
+                                    <Border Grid.Row="3" Height="50" Background="#007acc" Padding="15,0">
+                                    <Grid ColumnDefinitions="*, Auto, *">
+                                        <!-- SOL: Döviz Kuru, Aktif Mali Yıl -->
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                <ic:SymbolIcon Symbol="Money" FontSize="16" Foreground="White" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding LiveExchangeRates}" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="|" FontSize="13" Foreground="White" Opacity="0.3" VerticalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                <ic:SymbolIcon Symbol="Calendar" FontSize="16" Foreground="White" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding ActiveFiscalYear}" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- ORTA: Tarih ve Saat -->
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Opacity="0.8">
+                                            <ic:SymbolIcon Symbol="Clock" FontSize="16" Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding LiveDateTime}" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <!-- SAĞ: Kullanıcı Adı, İnternet Durumu ve Bulut Eşitleme -->
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="15" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                <ic:SymbolIcon Symbol="Person" FontSize="16" Foreground="White" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding CurrentUserName}" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="|" FontSize="13" Foreground="White" Opacity="0.3" VerticalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                <ic:SymbolIcon Symbol="{Binding ConnectionStatusIcon, Converter={StaticResource SymbolIconConverter}}" FontSize="16" Foreground="White" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding ConnectionStatusText}" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="|" FontSize="13" Foreground="White" Opacity="0.3" VerticalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Opacity="0.8">
+                                                <ic:SymbolIcon Symbol="CloudCheckmark" FontSize="16" Foreground="White" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding SyncStatusText}" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                               </Border>
+                                 </Grid>
+                              </SplitView.Content>
+                           </SplitView>
+                        </Grid>
+                      </Grid>
+                    </DataTemplate>
+                </TransitioningContentControl.DataTemplates>
+            </TransitioningContentControl>
+
+             <!-- GLOBAL WINDOW CONTROLS (Now inside Scale support) -->
+             <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right" ZIndex="1000">
+                 <Button Classes="WindowControl" Click="MinimizeButton_Click">
+                     <ic:SymbolIcon Symbol="Subtract"/>
+                 </Button>
+                 <Button Classes="WindowControl" Click="MaximizeButton_Click">
+                     <ic:SymbolIcon Symbol="Maximize"/>
+                 </Button>
+                 <Button Classes="WindowControl Close" Click="CloseButton_Click">
+                     <ic:SymbolIcon Symbol="Dismiss"/>
+                 </Button>
+             </StackPanel>
+        </Grid>
+       </LayoutTransformControl>
+     </Grid>
+</UserControl>

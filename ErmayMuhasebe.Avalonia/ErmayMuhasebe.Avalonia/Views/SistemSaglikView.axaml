@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.SistemSaglikView"
+             x:DataType="vm:SistemSaglikViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#2610B981">
+          <!-- <ic:SymbolIcon Symbol="Activity" Foreground="#10B981" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> --> 
+        </Border>
+        <TextBlock Text="Sistem Kaynak ve Performans İzleyici" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Uygulama kaynak tüketimini ve çalışma süresini anlık olarak takip edin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, *, *" RowDefinitions="Auto, *">
+       <!-- CPU -->
+       <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <StackPanel Spacing="20" HorizontalAlignment="Center">
+             <TextBlock Text="CPU KULLANIMI" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+             <TextBlock Text="{Binding CpuUsage, StringFormat={}{0}%}" FontSize="48" FontWeight="Black" Foreground="#60A5FA" HorizontalAlignment="Center"/>
+             <ProgressBar Value="{Binding CpuUsage}" Height="4" CornerRadius="2" Background="#15FFFFFF" Foreground="#60A5FA"/>
+          </StackPanel>
+       </Border>
+
+       <!-- RAM -->
+       <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <StackPanel Spacing="20" HorizontalAlignment="Center">
+             <TextBlock Text="BELLEK (RAM)" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+             <TextBlock Text="{Binding RamUsage, StringFormat={}{0} MB}" FontSize="48" FontWeight="Black" Foreground="#8B5CF6" HorizontalAlignment="Center"/>
+             <TextBlock Text="Sistem kararlı durumda" FontSize="11" Foreground="#10B981" HorizontalAlignment="Center"/>
+          </StackPanel>
+       </Border>
+
+       <!-- Uptime -->
+       <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <StackPanel Spacing="20" HorizontalAlignment="Center">
+             <TextBlock Text="ÇALIŞMA SÜRESİ" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+             <TextBlock Text="{Binding Uptime}" FontSize="40" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
+             <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                <Ellipse Width="8" Height="8" Fill="#10B981"/>
+                <TextBlock Text="SİSTEM ÇEVRİMİÇİ" FontSize="11" Foreground="#10B981"/>
+             </StackPanel>
+          </StackPanel>
+       </Border>
+
+       <!-- Detailed Info -->
+       <Border Grid.Row="1" Grid.ColumnSpan="3" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <Grid ColumnDefinitions="*, Auto">
+             <StackPanel Spacing="10">
+                <TextBlock Text="Bağlantı ve Veritabanı Durumu" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                <TextBlock Text="SQLite veritabanı motoru aktif. Tüm bağlantılar optimize edildi." FontSize="13" Foreground="#9CA3AF"/>
+             </StackPanel>
+             <!-- <ic:SymbolIcon Grid.Column="1" Symbol="DatabaseCheckmark" FontSize="40" Foreground="#10B981"/> -->
+          </Grid>
+       </Border>
+    </Grid>
+  </Grid>
+</UserControl>

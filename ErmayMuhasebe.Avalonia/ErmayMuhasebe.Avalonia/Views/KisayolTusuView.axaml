@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.KisayolTusuView"
+             x:DataType="vm:KisayolTusuViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <!-- Header -->
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#266B7280">
+          <ic:SymbolIcon Symbol="Keyboard" Foreground="#9CA3AF" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Kısayol Tuşları" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Uygulama içerisinde kullanabileceğiniz hızlı erişim tuşları." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <!-- Shortcut List -->
+    <ScrollViewer Grid.Row="1">
+        <ItemsControl ItemsSource="{Binding Shortcuts}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="{DynamicResource PanelBrush}" 
+                            CornerRadius="15" 
+                            Width="260" 
+                            Margin="0,0,15,15" 
+                            Padding="20" 
+                            BorderBrush="#15FFFFFF" 
+                            BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <Border Background="#15FFFFFF" 
+                                    CornerRadius="8" 
+                                    Padding="10,5" 
+                                    HorizontalAlignment="Left">
+                                <TextBlock Text="{Binding Key}" 
+                                           FontWeight="Black" 
+                                           Foreground="#60A5FA" 
+                                           FontSize="16"/>
+                            </Border>
+                            <TextBlock Text="{Binding Description}" 
+                                       Foreground="White" 
+                                       FontSize="14" 
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Category}" 
+                                       Foreground="#6B7280" 
+                                       FontSize="11" 
+                                       FontStyle="Italic"/>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

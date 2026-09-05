@@ -1,0 +1,276 @@
+@page "/grafana-info"
+@using MudBlazor
+
+<div class="grafana-info-container fade-in">
+    <!-- Header Section -->
+    <div class="info-header mb-8">
+        <div class="header-icon-box">
+            <MudIcon Icon="@Icons.Material.Filled.AutoGraph" Style="font-size: 40px; color: #F97316;" />
+        </div>
+        <div class="header-text">
+            <h1 class="info-title">Grafana ve İş Analitiği</h1>
+            <p class="info-subtitle">Ermay Muhasebe için modern veri görselleştirme mimarisi.</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="info-grid">
+        <!-- Intro Card -->
+        <div class="info-card wide">
+            <p class="intro-text">
+                Grafana, dünyadaki en popüler açık kaynaklı veri analizi ve görselleştirme platformudur. 
+                Sizin projeniz olan <span class="highlight">Ermay Muhasebe</span> bağlamında, Grafana'yı şu şekilde değerlendirebiliriz:
+            </p>
+        </div>
+
+        <!-- Section 1 -->
+        <div class="info-card">
+            <div class="card-header">
+                <MudIcon Icon="@Icons.Material.Filled.QuestionMark" class="card-icon" />
+                <h3>1. İşimize Yarar mı?</h3>
+            </div>
+            <p>
+                Evet, kesinlikle yarar; ancak bir muhasebe yazılımı için Grafana'yı doğrudan kodun içine gömmek yerine, 
+                onu <strong>"Üst Düzey Analiz Paneli"</strong> veya <strong>"Sistem İzleme"</strong> aracı olarak kullanmak daha mantıklıdır.
+            </p>
+        </div>
+
+        <!-- Section 2 -->
+        <div class="info-card">
+            <div class="card-header">
+                <MudIcon Icon="@Icons.Material.Filled.FeaturedPlayList" class="card-icon" />
+                <h3>2. Ne İşimize Yarar?</h3>
+            </div>
+            <ul class="feature-list">
+                <li>
+                    <span class="feature-title">Ultra Profesyonel BI:</span> 
+                    Şu an projemizde yaptığımız grafiklerden çok daha karmaşık, binlerce veriyi saniyeler içinde işleyen "Finansal Takip Odaları" oluşturabilirsiniz.
+                </li>
+                <li>
+                    <span class="feature-title">Akıllı Alarm Sistemi:</span> 
+                    Aylık giderler satışı aşarsa SMS/E-posta gönderilmesi gibi çok gelişmiş alarm mekanizmaları kurabilirsiniz.
+                </li>
+                <li>
+                    <span class="feature-title">Sistem Sağlığı İzleme:</span> 
+                    Sunucu durumu, veritabanı hızı ve anlık aktif kullanıcı sayısını teknik bir ekip gibi izlemenizi sağlar.
+                </li>
+                <li>
+                    <span class="feature-title">Müşteriye Özel Dashboard'lar:</span> 
+                    Büyük müşterilerinize finansal verilerini dev ekranlarda (TV'lerde) yansıtabilecekleri paneller sunabilirsiniz.
+                </li>
+            </ul>
+        </div>
+
+        <!-- Section 3 -->
+        <div class="info-card">
+            <div class="card-header">
+                <MudIcon Icon="@Icons.Material.Filled.SettingsSuggest" class="card-icon" />
+                <h3>3. Nasıl Kullanabiliriz?</h3>
+            </div>
+            <div class="method-box">
+                <div class="method-item">
+                    <span class="method-tag">Sunucu</span>
+                    <strong>Ayrı Bir Servis Olarak Kurulum:</strong> Veritabanına bağlayıp sürükle-bırakla grafikler oluşturabilirsiniz.
+                </div>
+                <div class="method-item">
+                    <span class="method-tag">Gömülü</span>
+                    <strong>IFrame ile Gömme:</strong> Grafana'daki bir grafiği Ermay Cloud içinde bir sayfanın içine yansıtabilirsiniz.
+                </div>
+                <div class="method-item">
+                    <span class="method-tag">Cloud</span>
+                    <strong>Grafana Cloud:</strong> Bulut üzerinden verileri bağlayıp hazır paneller kullanabilirsiniz.
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="info-card summary-card">
+            <div class="summary-content">
+                <MudIcon Icon="@Icons.Material.Filled.TipsAndUpdates" Style="font-size: 32px; color: #FBBF24; margin-bottom: 10px;" />
+                <h3>Özet Görüşüm</h3>
+                <p>
+                    Muhasebe ihtiyacı için MudBlazor yapıları daha hızlıdır. 
+                    Ancak <strong>"Holding patronları tüm finansı dev ekranlardan izlesin"</strong> derseniz, Grafana en doğru adrestir.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .grafana-info-container {
+        padding: 40px;
+        color: white;
+        font-family: 'Outfit', sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .info-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 30px;
+    }
+
+    .header-icon-box {
+        width: 80px;
+        height: 80px;
+        background: rgba(249, 115, 22, 0.1);
+        border: 1px solid rgba(249, 115, 22, 0.2);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .info-title {
+        font-size: 32px;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .info-subtitle {
+        font-size: 16px;
+        color: #9CA3AF;
+        margin: 5px 0 0 0;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+
+    .info-card {
+        background: rgba(30, 41, 59, 0.4);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 30px;
+        transition: transform 0.3s ease;
+    }
+
+    .info-card.wide {
+        grid-column: span 2;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .card-icon {
+        color: #60A5FA;
+        font-size: 24px;
+    }
+
+    .card-header h3 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        color: #F8FAFC;
+    }
+
+    .intro-text {
+        font-size: 18px;
+        line-height: 1.6;
+        color: #CBD5E1;
+    }
+
+    .highlight {
+        color: #F97316;
+        font-weight: 700;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .feature-list li {
+        margin-bottom: 15px;
+        padding-left: 20px;
+        position: relative;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #94A3B8;
+    }
+
+    .feature-list li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: #F97316;
+        font-weight: bold;
+    }
+
+    .feature-title {
+        color: white;
+        font-weight: 700;
+        margin-right: 5px;
+        display: block;
+        margin-bottom: 3px;
+    }
+
+    .method-box {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .method-item {
+        background: rgba(0,0,0,0.2);
+        padding: 15px;
+        border-radius: 12px;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .method-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        background: #334155;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        color: #94A3B8;
+    }
+
+    .summary-card {
+        grid-column: span 2;
+        border-color: rgba(251, 191, 36, 0.3);
+        background: rgba(251, 191, 36, 0.05);
+        text-align: center;
+    }
+
+    .summary-content h3 {
+        color: #FBBF24;
+        margin-bottom: 10px;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @@media (max-width: 900px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        .info-card.wide, .summary-card {
+            grid-column: span 1;
+        }
+    }
+</style>

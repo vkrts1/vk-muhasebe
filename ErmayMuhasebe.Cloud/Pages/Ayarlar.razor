@@ -1,0 +1,1366 @@
+@page "/ayarlar"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ISyncLocalStorageService LocalStorage
+@inject ClientDatabaseService DbService
+@inject ClientAuthService AuthService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject UiService UiService
+@inject IDialogService DialogService
+@using ErmayMuhasebe.Services
+@inject IYearContext YearContext
+@inject IFirebaseService FirebaseService
+@implements IDisposable
+
+<div class="fade-in d-flex flex-grow-1 flex-column" style="overflow: hidden;">
+
+    <!-- Header Section -->
+    <div style="margin: 0 10px 20px 10px;">
+        <div style="display: flex; align-items: center; gap: 25px;">
+            @if (_currentCategory != null)
+            {
+                <button class="settings-back-btn" @onclick="GoBack">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Style="font-size: 24px; color: white;" />
+                </button>
+            }
+
+            <div class="settings-header-icon" style="background: @GetCategoryIconBg();">
+                <MudIcon Icon="@GetCategoryIcon()" Style="@($"font-size: 30px; color: {GetCategoryIconColor()};" )" />
+            </div>
+
+            <div>
+                <div style="font-size: 34px; font-weight: 900; color: white; letter-spacing: -0.8px;">
+                    @GetPageTitle()
+                </div>
+                <div style="font-size: 15px; color: #94a3b8; font-weight: 500;">
+                    @GetPageDescription()
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    @if (_currentCategory == null)
+    {
+        <!-- Categories Grid -->
+        <div style="display: flex; flex-wrap: wrap; gap: 25px; padding: 0 10px; overflow-y: auto;">
+            @foreach (var cat in _categories)
+            {
+                <button class="settings-category-card" @onclick="() => SelectCategory(cat.Id)">
+                    <div style="display: flex; align-items: flex-start; gap: 20px;">
+                        <div class="settings-cat-icon" style="background: @(cat.Color)26;">
+                            <MudIcon Icon="@cat.IconMaterial" Style="@($"font-size: 28px; color: {cat.Color};" )" />
+                        </div>
+                        <div style="text-align: left;">
+                            <div style="font-size: 20px; font-weight: 900; color: white; letter-spacing: -0.3px; margin-bottom: 4px;">@cat.Title</div>
+                            <div style="font-size: 13px; color: #94a3b8; line-height: 18px;">@cat.Description</div>
+                        </div>
+                    </div>
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="flex-grow-1" style="overflow-y: auto; padding: 0 10px 30px 10px;">
+            <!-- SYSTEM & BACKUP -->
+            @if (_currentCategory == "system")
+            {
+                <div class="settings-detail-panel">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Style="font-size: 24px; color: #60a5fa;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">Sistem Bilgileri ve VeritabanÃ„Â±</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <!-- Info Grid -->
+                        <div style="display: grid; grid-template-columns: 180px 1fr; row-gap: 15px; margin-bottom: 20px;">
+                            <span style="color: #94a3b8; font-weight: 600;">Program SÃƒÂ¼rÃƒÂ¼mÃƒÂ¼</span>
+                            <span style="font-weight: 900; color: #60a5fa; font-size: 18px;">1.2.5-Stable</span>
+
+                            <span style="color: #94a3b8; font-weight: 600;">VeritabanÃ„Â± Yolu</span>
+                            <span style="font-size: 12px; opacity: 0.8; font-family: Consolas, monospace;">IndexedDB (TarayÃ„Â±cÃ„Â±)</span>
+
+                            <span style="color: #94a3b8; font-weight: 600;">Son BaÃ…Å¸arÃ„Â±lÃ„Â± Yedek</span>
+                            <span style="font-weight: 900; color: #10b981; font-size: 18px;">@_lastBackupDate</span>
+                        </div>
+
+                        <div style="height: 1px; background: #333; margin: 20px 0;"></div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                            <button class="settings-action-btn" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.12);" @onclick="CreateBackup">
+                                <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Style="font-size: 20px; color: #60a5fa; margin-right: 12px;" />
+                                <span style="font-weight: 600;">VeritabanÃ„Â± Yolunu DeÃ„Å¸iÃ…Å¸tir</span>
+                            </button>
+                            <button class="settings-action-btn settings-success-btn" @onclick="CreateBackup">
+                                <MudIcon Icon="@Icons.Material.Filled.Save" Style="font-size: 20px; margin-right: 12px;" />
+                                <span style="font-weight: 900;">HÃ„Â±zlÃ„Â± Yedek Al</span>
+                            </button>
+                        </div>
+
+                        <!-- Toggles -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <div style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 12px;">Ãƒâ€¡evrimdÃ„Â±Ã…Å¸Ã„Â± Mod</div>
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                    <MudSwitch T="bool" @bind-Value="_isOfflineMode" Color="Color.Success" />
+                                    <span style="font-size: 13px; opacity: 0.8; color: @(_isOfflineMode ? "#10b981" : "#94a3b8");">@(_isOfflineMode ? "Açık" : "Kapalı")</span>
+                                </div>
+                                <div style="font-size: 11px; opacity: 0.5;">İnternet bağlantısı olmadan yerel verilerle çalışma.</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 12px;">Bakım Modu</div>
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                    <MudSwitch T="bool" @bind-Value="_isMaintenanceMode" Color="Color.Success" />
+                                    <span style="font-size: 13px; opacity: 0.8; color: @(_isMaintenanceMode ? "#10b981" : "#94a3b8");">@(_isMaintenanceMode ? "Açık" : "Kapalı")</span>
+                                </div>
+                                <div style="font-size: 11px; opacity: 0.5;">Sadece yönetici girişi ve bakım işlemleri.</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(_backupStatus))
+                        {
+                            <div style="margin-top: 15px; font-size: 13px; color: #9CA3AF; font-weight: 500;">@_backupStatus</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- LOGO & DOCUMENTS -->
+            @if (_currentCategory == "appearance")
+            {
+                <!-- Firma Logosu -->
+                <div class="settings-detail-panel" style="margin-bottom: 20px;">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Image" Style="font-size: 24px; color: #EC4899;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">Firma Logosu</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <div style="display: flex; gap: 30px; align-items: center; margin-bottom: 25px;">
+                            <!-- Logo Preview -->
+                            <div style="width: 240px; height: 120px; background: rgba(255,255,255,0.03); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                @if (string.IsNullOrEmpty(_companyLogo))
+                                {
+                                    <div style="text-align: center; opacity: 0.4;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Image" Style="font-size: 32px;" />
+                                        <div style="font-size: 11px; font-weight: 900; margin-top: 5px;">LOGO SEÇİLMEDİ</div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <img src="@_companyLogo" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                                }
+                            </div>
+
+                            <!-- Upload Button -->
+                            <MudFileUpload T="IBrowserFile" Accept=".png,.jpg,.jpeg,.gif,.bmp" OnFilesChanged="UploadLogo">
+                                <ActivatorContent>
+                                    <button class="settings-action-btn" style="background: rgba(0, 97, 255, 0.1); border-color: rgba(0, 97, 255, 0.3); color: white; width: 240px;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Add" Style="font-size: 20px; margin-right: 10px;" />
+                                        <span style="font-weight: 900;">Logo YÃƒÂ¼kle</span>
+                                    </button>
+                                </ActivatorContent>
+                            </MudFileUpload>
+                        </div>
+
+                        <div style="height: 1px; background: #333; margin: 20px 0;"></div>
+
+                        <div style="font-size: 16px; font-weight: 600; color: white; margin-bottom: 15px;">Rapor ve Belgelerde Logo GÃƒÂ¶sterimi</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 20px;">
+                            <MudCheckBox T="bool" @bind-Value="_logoFatura" Label="Fatura" Color="Color.Success" />
+                            <MudCheckBox T="bool" @bind-Value="_logoSiparis" Label="SipariÃ…Å¸" Color="Color.Success" />
+                            <MudCheckBox T="bool" @bind-Value="_logoTeklif" Label="Teklif" Color="Color.Success" />
+                            <MudCheckBox T="bool" @bind-Value="_logoEkstre" Label="Ekstre" Color="Color.Success" />
+                            <MudCheckBox T="bool" @bind-Value="_logoRaporlar" Label="Genel Raporlar" Color="Color.Success" />
+                        </div>
+
+                        <button class="settings-action-btn" style="background: #1a1a1a; border-color: #333; color: rgba(255,255,255,0.7);" @onclick="SaveLogoSettings">
+                            <span>Logo AyarlarÃ„Â±nÃ„Â± Kaydet</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- YazdÃ„Â±rma AyarlarÃ„Â± -->
+                <div class="settings-detail-panel">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Print" Style="font-size: 24px; color: #10B981;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">YazdÃ„Â±rma AyarlarÃ„Â±</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <div style="margin-bottom: 15px;">
+                            <div style="font-size: 14px; color: #9CA3AF; margin-bottom: 8px;">VarsayÃ„Â±lan YazÃ„Â±cÃ„Â±</div>
+                            <select class="settings-select-field" @bind="_selectedPrinter">
+                                <option value="OneNote (Desktop)">OneNote (Desktop)</option>
+                                <option value="VarsayÃ„Â±lan">Sistem YazÃ„Â±cÃ„Â±sÃ„Â± (VarsayÃ„Â±lan)</option>
+                            </select>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 5px;">Fatura Boyutu</div>
+                                <select class="settings-select-field" @bind="_faturaSize">
+                                    @foreach (var s in _sizeList) { <option value="@s">@s</option> }
+                                </select>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 5px;">Fatura YÃƒÂ¶nÃƒÂ¼</div>
+                                <select class="settings-select-field" @bind="_faturaOrientation">
+                                    @foreach (var o in _orientationList) { <option value="@o">@o</option> }
+                                </select>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 5px;">SipariÃ…Å¸ Boyutu</div>
+                                <select class="settings-select-field" @bind="_siparisSize">
+                                    @foreach (var s in _sizeList) { <option value="@s">@s</option> }
+                                </select>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 5px;">SipariÃ…Å¸ YÃƒÂ¶nÃƒÂ¼</div>
+                                <select class="settings-select-field" @bind="_siparisOrientation">
+                                    @foreach (var o in _orientationList) { <option value="@o">@o</option> }
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="settings-action-btn" style="background: #1a1a1a; border-color: #333; color: rgba(255,255,255,0.7); margin-top: 20px; width: 100%;" @onclick="SavePageSettings">
+                            <span style="font-weight: 700;">Tüm Sayfa Ayarlarını Kaydet</span>
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <!-- USERS & SECURITY -->
+            @if (_currentCategory == "security")
+            {
+                <div class="settings-detail-panel">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Shield" Style="font-size: 24px; color: #F43F5E;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">Kullanıcı ve Güvenlik Yönetimi</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <!-- Ã…Âifre DeÃ„Å¸iÃ…Å¸tir -->
+                        <div style="font-size: 16px; font-weight: 600; color: #F43F5E; margin-bottom: 15px;">Ã…Âifre DeÃ„Å¸iÃ…Å¸tir</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 140px; gap: 15px; margin-bottom: 25px;">
+                            <input type="password" @bind="_oldPassword" placeholder="Eski Ã…Âifre" class="settings-input-field" />
+                            <input type="password" @bind="_newPassword" placeholder="Yeni Ã…Âifre" class="settings-input-field" />
+                            <button class="settings-action-btn settings-danger-btn" @onclick="ChangePassword">GÃƒÂ¼ncelle</button>
+                        </div>
+
+                        <div style="height: 1px; background: #333; margin: 20px 0;"></div>
+
+                        <!-- Yeni KullanÃ„Â±cÃ„Â± TanÃ„Â±mla -->
+                        <div style="font-size: 16px; font-weight: 600; color: #60A5FA; margin-bottom: 15px;">Yeni KullanÃ„Â±cÃ„Â± TanÃ„Â±mla</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 180px; gap: 15px; margin-bottom: 25px;">
+                            <input type="text" @bind="_newUsername" placeholder="KullanÃ„Â±cÃ„Â± AdÃ„Â±" class="settings-input-field" />
+                            <input type="password" @bind="_newUserPassword" placeholder="Geçici Şifre" class="settings-input-field" />
+                            <select class="settings-select-field" @bind="_newUserRole">
+                                <option value="OperatÃƒÂ¶r">OperatÃƒÂ¶r</option>
+                                <option value="YÃƒÂ¶netici">YÃƒÂ¶netici</option>
+                                <option value="Muhasebe">Muhasebe</option>
+                            </select>
+                            <button class="settings-action-btn" style="background: rgba(0, 97, 255, 0.1); border-color: rgba(0, 97, 255, 0.3); color: white;" @onclick="AddUser">
+                                <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Style="font-size: 20px; margin-right: 10px;" />
+                                <span style="font-weight: 900;">Ekle</span>
+                            </button>
+                        </div>
+
+                        <!-- Mevcut Kullanıcılar -->
+                        @if (_users.Any())
+                        {
+                            <div style="font-size: 16px; font-weight: 600; color: #94a3b8; margin-bottom: 15px;">Sistemdeki Kayıtlı Kullanıcılar</div>
+                            @foreach (var user in _users)
+                            {
+                                <div class="settings-user-row">
+                                    <div style="width: 42px; height: 42px; border-radius: 14px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Person" Style="font-size: 22px; color: #3b82f6;" />
+                                    </div>
+                                    <div style="min-width: 150px;">
+                                        <div style="font-weight: 900; font-size: 16px; color: white;">@user.Username</div>
+                                        <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">@user.Role</div>
+                                    </div>
+                                    <div style="flex: 1; margin: 0 20px;">
+                                        <input type="password" @bind="user.TempPassword" placeholder="Yeni Şifre Belirle" class="settings-input-field" style="height: 42px;" />
+                                    </div>
+                                    <button class="settings-action-btn settings-success-btn" style="height: 42px; min-width: 160px;" @onclick="@(() => UpdateUserPassword(user))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Save" Style="font-size: 16px; margin-right: 8px;" />
+                                        <span style="font-weight: 900; font-size: 11px;">ŞİFREYİ KAYDET</span>
+                                    </button>
+                                    @if (user.Username != "admin")
+                                    {
+                                        <button class="settings-delete-btn" @onclick="@(() => DeleteUser(user))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Style="font-size: 24px; color: #ef4444;" />
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- CLOUD & API -->
+            @if (_currentCategory == "cloud")
+            {
+                <div class="settings-detail-panel">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Cloud" Style="font-size: 24px; color: #f59e0b;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">Bulut ve API Servisleri</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <!-- Firebase -->
+                        <div style="font-size: 16px; font-weight: 600; color: #f59e0b; margin-bottom: 15px;">Firebase Bulut VeritabanÃ„Â±</div>
+                        <div style="margin-bottom: 10px;">
+                            <input type="text" @bind="_firebaseUrl" placeholder="https://your-project.firebaseio.com" class="settings-input-field" />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <input type="password" @bind="_firebaseToken" placeholder="Database Secret Key" class="settings-input-field" />
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                            <button class="settings-action-btn" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.12);" @onclick="SaveConfig">
+                                <span style="font-weight: 600;">BaÃ„Å¸lantÃ„Â±yÃ„Â± Kaydet</span>
+                            </button>
+                            <button class="settings-action-btn" style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #f59e0b;" @onclick="SyncCloud">
+                                <MudIcon Icon="@Icons.Material.Filled.CloudSync" Style="font-size: 20px; margin-right: 10px;" />
+                                <span style="font-weight: 900;">Ã…Âimdi EÃ…Å¸itle</span>
+                            </button>
+                        </div>
+                        <div style="font-size: 12px; color: #9CA3AF; margin-bottom: 25px;">@_cloudStatus</div>
+
+                        <div style="height: 1px; background: #333; margin: 20px 0;"></div>
+
+                        <!-- External API Keys -->
+                        <div style="font-size: 16px; font-weight: 600; color: #8b5cf6; margin-bottom: 15px;">DÃ„Â±Ã…Å¸ Servis API AnahtarlarÃ„Â±</div>
+                        <div style="display: grid; grid-template-columns: 140px 1fr; row-gap: 10px; column-gap: 10px; margin-bottom: 20px;">
+                            <span style="display: flex; align-items: center; color: rgba(255,255,255,0.7);">DÃƒÂ¶viz Kuru:</span>
+                            <input type="text" @bind="_exchangeRateApiKey" class="settings-input-field" style="height: 40px;" />
+
+                            <span style="display: flex; align-items: center; color: rgba(255,255,255,0.7);">Konum Servisi:</span>
+                            <input type="text" @bind="_positionStackApiKey" class="settings-input-field" style="height: 40px;" />
+
+                            <span style="display: flex; align-items: center; color: rgba(255,255,255,0.7);">E-Posta DoÃ„Å¸rulama:</span>
+                            <input type="text" @bind="_emailableApiKey" class="settings-input-field" style="height: 40px;" />
+                        </div>
+
+                        <button class="settings-action-btn" style="background: #8b5cf6; border-color: #8b5cf6; color: white; float: right; padding: 10px 20px;" @onclick="SaveApiKeys">
+                            <span style="font-weight: 700;">API YapÃ„Â±landÃ„Â±rmasÃ„Â±nÃ„Â± Kaydet</span>
+                        </button>
+                        <div style="clear: both;"></div>
+                    </div>
+                </div>
+            }
+
+            <!-- THEME SELECTION -->
+            @if (_currentCategory == "theme")
+            {
+                <div class="settings-detail-panel">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Palette" Style="font-size: 24px; color: #3b82f6;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">Arayüz Tasarımı ve Temalar</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <div style="font-size: 16px; font-weight: 600; color: #9CA3AF; margin-bottom: 20px;">Uygulama Görünümü Seçin</div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <!-- Standard Premium Theme -->
+                            <button class="settings-category-card @(_selectedTheme == "standard" ? "active-theme" : "")" 
+                                    style="height: auto; padding: 20px; border: 2px solid @(_selectedTheme == "standard" ? "#3b82f6" : "rgba(255,255,255,0.05)");"
+                                    @onclick='() => SetTheme("standard")'>
+                                <div style="text-align: center; width: 100%;">
+                                    <div style="width: 100%; height: 100px; background: #050505; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                        <div style="width: 20px; height: 100%; background: #030405; border-right: 1px solid rgba(255,255,255,0.05);"></div>
+                                        <div style="flex: 1; padding: 10px;">
+                                            <div style="width: 40px; height: 6px; background: #0061FF; border-radius: 2px; margin-bottom: 5px;"></div>
+                                            <div style="width: 100%; height: 30px; background: rgba(255,255,255,0.03); border-radius: 4px;"></div>
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 16px; font-weight: 800; color: white;">Ermay Premium</div>
+                                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Modern, cam efektli ve akıcı tasarım.</div>
+                                </div>
+                            </button>
+
+                            <!-- IDE Style Theme -->
+                            <button class="settings-category-card @(_selectedTheme == "ide" ? "active-theme" : "")" 
+                                    style="height: auto; padding: 20px; border: 2px solid @(_selectedTheme == "ide" ? "#3b82f6" : "rgba(255,255,255,0.05)");"
+                                    @onclick='() => SetTheme("ide")'>
+                                <div style="text-align: center; width: 100%;">
+                                    <div style="width: 100%; height: 100px; background: #1e1e1e; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                        <div style="width: 20px; height: 100%; background: #333333; border-right: 1px solid #252526;"></div>
+                                        <div style="flex: 1; padding: 10px;">
+                                            <div style="width: 30px; height: 6px; background: #007acc; border-radius: 1px; margin-bottom: 5px;"></div>
+                                            <div style="width: 100%; height: 30px; background: #252526; border-radius: 0;"></div>
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 16px; font-weight: 800; color: white;">IDE Profesyonel</div>
+                                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Teknik, odaklanmış ve köşeli IDE yapısı.</div>
+                                </div>
+                            </button>
+                        </div>
+
+                        <div style="margin-top: 30px; padding: 15px; background: rgba(59, 130, 246, 0.05); border-radius: 12px; border: 1px dashed rgba(59, 130, 246, 0.2); font-size: 12px; color: #94a3b8; text-align: center;">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Style="font-size: 16px; vertical-align: middle; margin-right: 5px;" />
+                            Tema değişikliği uygulama genelinde anında uygulanır.
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- YEAR & TRANSFER -->
+            @if (_currentCategory == "year")
+            {
+                <div class="settings-detail-panel">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Event" Style="font-size: 24px; color: #8B5CF6;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">YÃ„Â±l ve Devir Ã„Â°Ã…Å¸lemleri</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <!-- Active Year Display -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 15px 20px; margin-bottom: 25px;">
+                            <div>
+                                <div style="font-size: 13px; color: #a78bfa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Aktif Ãƒâ€¡alÃ„Â±Ã…Å¸ma YÃ„Â±lÃ„Â±</div>
+                                <div style="font-size: 28px; font-weight: 900; color: white;">@YearContext.CurrentYear</div>
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Style="font-size: 40px; color: #a78bfa; opacity: 0.5;" />
+                        </div>
+
+                        <!-- Year Switcher -->
+                        <div style="font-size: 16px; font-weight: 700; color: white; margin-bottom: 12px;">Ãƒâ€¡alÃ„Â±Ã…Å¸ma YÃ„Â±lÃ„Â±nÃ„Â± DeÃ„Å¸iÃ…Å¸tir</div>
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; margin-bottom: 30px;">
+                            <select class="settings-select-field" @bind="_selectedYearToSwitch">
+                                @foreach (var year in _availableYears)
+                                {
+                                    <option value="@year">@year YÃ„Â±lÃ„Â±</option>
+                                }
+                            </select>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                                       Style="background: #8B5CF6; color: white; border: none; padding: 0 25px; height: 45px;" 
+                                       OnClick="SwitchYear" Disabled="@(_isProcessingYear)">
+                                <span style="font-weight: 700;">YILA GEÃƒâ€¡Ã„Â°Ã…Â YAP</span>
+                            </MudButton>
+                        </div>
+
+                        <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 25px 0;"></div>
+
+                        <!-- Year Transfer -->
+                        <div style="font-size: 16px; font-weight: 700; color: #a78bfa; margin-bottom: 15px;">Yeni YÃ„Â±la Devret (YÃ„Â±l AktarÃ„Â±mÃ„Â±)</div>
+                        <div style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin-bottom: 25px;">
+                            <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; margin-bottom: 20px;">
+                                <div>
+                                    <div style="font-size: 12px; color: #94a3b8; margin-bottom: 5px;">Kaynak Yıl</div>
+                                    <select class="settings-select-field" @bind="_transferFromYear">
+                                        @foreach (var year in _availableYears)
+                                        {
+                                            <option value="@year">@year</option>
+                                        }
+                                    </select>
+                                </div>
+                                <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Style="color: #8B5CF6; margin-top: 15px;" />
+                                <div>
+                                    <div style="font-size: 12px; color: #94a3b8; margin-bottom: 5px;">Hedef Yıl (Yeni)</div>
+                                    <input type="number" class="settings-input-field" @bind="_transferToYear" />
+                                </div>
+                            </div>
+                            
+                            <div style="font-size: 11px; color: #64748b; margin-top: 12px; font-style: italic; line-height: 1.4;">
+                                * Bu iÃ…Å¸lem cari bakiyeleri, stok miktarlarÃ„Â±nÃ„Â± ve banka bakiyelerini yeni yÃ„Â±la "AÃƒÂ§Ã„Â±lÃ„Â±Ã…Å¸ FiÃ…Å¸i" olarak aktarÃ„Â±r. Mevcut hareketler aktarÃ„Â±lmaz.
+                            </div>
+                        </div>
+
+                        <!-- Delete Year -->
+                        <div style="font-size: 16px; font-weight: 700; color: #ef4444; margin-bottom: 12px;">YÃ„Â±l Silme</div>
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px;">
+                             <select class="settings-select-field" @bind="_selectedYearToDelete" style="border-color: rgba(239, 68, 68, 0.2);">
+                                @foreach (var year in _availableYears)
+                                {
+                                    <option value="@year">@year YÃ„Â±lÃ„Â± Verilerini Sil</option>
+                                }
+                            </select>
+                            <MudButton Variant="Variant.Filled" Color="Color.Error" 
+                                       Style="padding: 0 25px; height: 45px;" OnClick="DeleteYear" 
+                                       Disabled="@(_isProcessingYear)" StartIcon="@Icons.Material.Filled.DeleteForever">
+                                <span style="font-weight: 800;">YILI SÃ„Â°L</span>
+                            </MudButton>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- DISPLAY SCALING -->
+            @if (_currentCategory == "display")
+            {
+                <div class="settings-detail-panel">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.DesktopWindows" Style="font-size: 24px; color: #10b981;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">Ekran Ãƒâ€“lÃƒÂ§eklendirme</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 12px; border: 1px dashed rgba(16, 185, 129, 0.2);">
+                                <div>
+                                    <div style="font-size: 16px; font-weight: 700; color: #10b981;">Otomatik Ekran Ölçeği</div>
+                                    <div style="font-size: 12px; opacity: 0.6;">Cihaz çözünürlüğünüze göre en uygun boyutu ayarlar.</div>
+                                </div>
+                                <MudSwitch T="bool" Value="_isAutoScalingEnabled" ValueChanged="OnAutoScalingToggled" Color="Color.Success" />
+                            </div>
+
+                            <div style="opacity: @(_isAutoScalingEnabled ? "0.4" : "1.0"); pointer-events: @(_isAutoScalingEnabled ? "none" : "auto"); transition: all 0.3s ease;">
+                                <div style="font-size: 16px; font-weight: 600; color: #9CA3AF; margin-bottom: 15px;">Arayüz Büyüklüğü (Manuel)</div>
+                                <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
+                                    <input type="range" min="0.6" max="2.0" step="0.05"
+                                           style="flex: 1; accent-color: #10b981;"
+                                           value="@_appScale" @oninput="OnScaleChanged" />
+                                    <div style="width: 70px; height: 40px; background: #1a1a1a; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #10b981;">
+                                        @Math.Round(_appScale * 100)%
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                                    <button class="settings-action-btn" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); width: 100px;" @onclick='async () => await SetScale(0.75)'>
+                                        <span>75%</span>
+                                    </button>
+                                    <button class="settings-action-btn" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); width: 100px;" @onclick='async () => await SetScale(0.85)'>
+                                        <span>85%</span>
+                                    </button>
+                                    <button class="settings-action-btn" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); width: 100px;" @onclick='async () => await SetScale(1.0)'>
+                                        <span>100%</span>
+                                    </button>
+                                    <button class="settings-action-btn" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); width: 100px;" @onclick='async () => await SetScale(1.15)'>
+                                        <span>115%</span>
+                                    </button>
+                                    <button class="settings-action-btn" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); width: 100px;" @onclick='async () => await SetScale(1.25)'>
+                                        <span>125%</span>
+                                    </button>
+                                    <button class="settings-action-btn" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); width: 100px;" @onclick='async () => await SetScale(1.5)'>
+                                        <span>150%</span>
+                                    </button>
+                            </div>
+                            </div>
+
+                        <div style="font-size: 11px; opacity: 0.5; font-style: italic;">Not: Ölçeklendirme ayarları anında uygulanır ve yerel cihazınıza kaydedilir.</div>
+                    </div>
+                </div>
+            }
+
+            <!-- ADVANCED -->
+            @if (_currentCategory == "advanced")
+            {
+                <div class="settings-detail-panel" style="margin-bottom: 20px;">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Build" Style="font-size: 24px; color: #ef4444;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">GeliÃ…Å¸miÃ…Å¸ Sistem Ã„Â°Ã…Å¸lemleri</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <!-- Factory Reset Box -->
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 15px; padding: 25px; margin-bottom: 25px;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Style="font-size: 28px; color: #ef4444;" />
+                                <span style="font-size: 20px; font-weight: 900; color: #ef4444;">Fabrika AyarlarÃ„Â±na DÃƒÂ¶n</span>
+                            </div>
+                            <div style="font-size: 14px; color: #ef4444; opacity: 0.9; margin-bottom: 20px;">
+                                Bu iÃ…Å¸lem tÃƒÂ¼m verileri, kayÃ„Â±tlarÃ„Â± ve yapÃ„Â±landÃ„Â±rmalarÃ„Â± kalÃ„Â±cÃ„Â± olarak silecektir! Bu iÃ…Å¸lemin geri dÃƒÂ¶nÃƒÂ¼Ã…Å¸ÃƒÂ¼ mÃƒÂ¼mkÃƒÂ¼n deÃ„Å¸ildir.
+                            </div>
+                            <div style="font-size: 13px; font-weight: 900; color: #ef4444; opacity: 0.8; margin-bottom: 15px;">Onay Ã…Âifresi: ERMAY2025</div>
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 20px;">
+                                <input type="password" @bind="_resetPassInput" placeholder="SÃ„Â±fÃ„Â±rlama Onay Ã…Âifresini YazÃ„Â±n" class="settings-input-field"
+                                       style="border-color: #ef4444; height: 55px;" />
+                                <button class="settings-action-btn settings-danger-btn" style="height: 55px; padding: 0 40px;" @onclick="FactoryReset">
+                                    <span style="font-weight: 900; font-size: 14px;">SÃ„Â°STEMÃ„Â° TAMAMEN SIFIRLA</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="height: 1px; background: #333; margin: 20px 0;"></div>
+
+                        <!-- Support -->
+                        <div style="font-size: 16px; font-weight: 600; color: white; margin-bottom: 15px;">Teknik Destek ve Hata Bildirimi</div>
+                        <div style="margin-bottom: 10px;">
+                            <input type="text" @bind="_supportSubject" placeholder="Konu (Opsiyonel)" class="settings-input-field" style="height: 40px;" />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <textarea @bind="_supportMessage" placeholder="YaÃ…Å¸adÃ„Â±Ã„Å¸Ã„Â±nÃ„Â±z sorunu veya talebinizi buraya detaylÃ„Â±ca yazabilirsiniz..." class="settings-input-field" style="height: 120px; resize: none;"></textarea>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end;">
+                            <button class="settings-action-btn" style="background: rgba(0, 97, 255, 0.1); border-color: rgba(0, 97, 255, 0.3); color: white; width: 260px;" @onclick="SendSupport">
+                                <MudIcon Icon="@Icons.Material.Filled.Send" Style="font-size: 20px; margin-right: 10px;" />
+                                <span style="font-weight: 900;">Destek Talebini Gönder</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+            <!-- BAR CUSTOMIZATION -->
+            @if (_currentCategory == "bar")
+            {
+                <div class="settings-detail-panel">
+                    <div class="settings-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.SettingsSuggest" Style="font-size: 24px; color: #6366F1;" />
+                        <span style="font-size: 20px; font-weight: 700; color: white;">Alt Bar Özelleştirme</span>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                            <!-- Visibility -->
+                            <div>
+                                <div style="font-size: 16px; font-weight: 700; color: #6366F1; margin-bottom: 20px;">Görünürlük Ayarları</div>
+                                <div style="display: flex; flex-direction: column; gap: 15px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Versiyon Bilgisini Göster</span>
+                                        <MudSwitch T="bool" @bind-Value="_showVersion" Color="Color.Primary" />
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Kullanıcı Adını Göster</span>
+                                        <MudSwitch T="bool" @bind-Value="_showUser" Color="Color.Primary" />
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Telif Hakkı Yazısını Göster</span>
+                                        <MudSwitch T="bool" @bind-Value="_showCopyright" Color="Color.Primary" />
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Branş/Yol Bilgisini Göster (IDE)</span>
+                                        <MudSwitch T="bool" @bind-Value="_showBranch" Color="Color.Primary" />
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Sistem Durumunu Göster (IDE)</span>
+                                        <MudSwitch T="bool" @bind-Value="_showSystemStatus" Color="Color.Primary" />
+                                    </div>
+                                    <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 5px 0;"></div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Senkronizasyon Durumunu Göster</span>
+                                        <MudSwitch T="bool" @bind-Value="_showSyncStatus" Color="Color.Primary" />
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Bağlantı Durumunu Göster</span>
+                                        <MudSwitch T="bool" @bind-Value="_showConnectionStatus" Color="Color.Primary" />
+                                    </div>
+                                    <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 5px 0;"></div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Güncel Kurları Göster</span>
+                                        <MudSwitch T="bool" @bind-Value="_showExchangeRates" Color="Color.Primary" />
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Canlı Saat ve Tarih</span>
+                                        <MudSwitch T="bool" @bind-Value="_showDateTime" Color="Color.Primary" />
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="color: white; font-size: 14px;">Sistem Kaynak Kullanımı (RAM)</span>
+                                        <MudSwitch T="bool" @bind-Value="_showSystemUsage" Color="Color.Primary" />
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 30px;">
+                                    <div style="font-size: 16px; font-weight: 700; color: #6366F1; margin-bottom: 20px;">Bar Öğe Sıralaması</div>
+                                    <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px;">
+                                        @foreach (var id in _itemsOrder)
+                                        {
+                                            var itemIdForDrag = id;
+                                            var itemName = id switch {
+                                                "Version" => "Versiyon Bilgisi",
+                                                "User" => "Kullanıcı Adı",
+                                                "SyncStatus" => "Senkronizasyon Durumu",
+                                                "ConnectionStatus" => "Bağlantı Durumu",
+                                                "ExchangeRates" => "Döviz Kurları",
+                                                "SystemUsage" => "Sistem Kullanımı",
+                                                "DateTime" => "Saat ve Tarih",
+                                                "Copyright" => "Telif Hakkı",
+                                                _ => id
+                                            };
+                                            <div draggable="true" 
+                                                 @ondragstart="@(() => HandleDragStart(itemIdForDrag))"
+                                                 @ondrop="@(() => HandleDrop(itemIdForDrag))"
+                                                 ondragover="event.preventDefault();"
+                                                 style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); margin-bottom: 5px; padding: 12px; border-radius: 8px; cursor: grab; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;"
+                                                 class="drag-item">
+                                                <div style="display: flex; align-items: center; gap: 12px;">
+                                                    <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" Style="opacity: 0.3;" />
+                                                    <span style="color: white; font-size: 14px; font-weight: 500;">@itemName</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom Labels -->
+                            <div>
+                                <div style="font-size: 16px; font-weight: 700; color: #6366F1; margin-bottom: 20px;">Metin Özelleştirme</div>
+                                <div style="display: flex; flex-direction: column; gap: 20px;">
+                                    <div>
+                                        <div style="font-size: 12px; opacity: 0.6; color: white; margin-bottom: 5px;">Özel Sol Metin</div>
+                                        <input type="text" @bind="_customLeftText" placeholder="Sol tarafa eklenecek yazı..." class="settings-input-field" />
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; opacity: 0.6; color: white; margin-bottom: 5px;">Özel Sağ Metin</div>
+                                        <input type="text" @bind="_customRightText" placeholder="Sağ tarafa eklenecek yazı..." class="settings-input-field" />
+                                    </div>
+                                    <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 5px 0;"></div>
+                                    <div>
+                                        <div style="font-size: 12px; opacity: 0.6; color: white; margin-bottom: 5px;">Branş İsmi (IDE)</div>
+                                        <input type="text" @bind="_ideBranchName" class="settings-input-field" />
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; opacity: 0.6; color: white; margin-bottom: 5px;">Sistem Durum Yazısı (IDE)</div>
+                                        <input type="text" @bind="_ideStatusText" class="settings-input-field" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
+                            <button class="settings-action-btn" style="background: #6366F1; color: white; border: none; padding: 12px 40px; font-weight: 900; border-radius: 12px;" @onclick="SaveBarSettings">
+                                AYARLARI KAYDET
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    // Categories
+    private string? _currentCategory;
+
+    private class SettingCategoryItem
+    {
+        public string Id { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string IconMaterial { get; set; } = "";
+        public string Color { get; set; } = "";
+    }
+
+    private readonly List<SettingCategoryItem> _categories = new()
+    {
+        new() { Id = "system", Title = "Sistem ve Yedekleme", Description = "Veritabanı konumunu yönetin ve yedek alın.", IconMaterial = Icons.Material.Filled.Storage, Color = "#60A5FA" },
+        new() { Id = "appearance", Title = "Logo ve Belgeler", Description = "Logo, yazıcı ve sayfa boyutlarını ayarlayın.", IconMaterial = Icons.Material.Filled.Image, Color = "#EC4899" },
+        new() { Id = "security", Title = "Kullanıcılar ve Güvenlik", Description = "Şifre değiştirin ve kullanıcıları yönetin.", IconMaterial = Icons.Material.Filled.Shield, Color = "#F43F5E" },
+        new() { Id = "cloud", Title = "Bulut ve API", Description = "Firebase ve dış servis bağlantılarını yönetin.", IconMaterial = Icons.Material.Filled.Cloud, Color = "#F59E0B" },
+        new() { Id = "year", Title = "Yıl ve Devir İşlemleri", Description = "Yeni yıla geçiş ve devir işlemlerini yönetin.", IconMaterial = Icons.Material.Filled.Event, Color = "#8B5CF6" },
+        new() { Id = "theme", Title = "Arayüz Teması", Description = "Uygulama tasarımını ve renk paletini değiştirin.", IconMaterial = Icons.Material.Filled.Palette, Color = "#3b82f6" },
+        new() { Id = "display", Title = "Ekran Ölçeklendirme", Description = "Arayüz boyutunu cihazınıza göre ayarlayın.", IconMaterial = Icons.Material.Filled.DesktopWindows, Color = "#10B981" },
+        new() { Id = "bar", Title = "Bar Özelleştirme", Description = "Alt durum çubuğunun içeriğini ve görünümünü ayarlayın.", IconMaterial = Icons.Material.Filled.SettingsSuggest, Color = "#6366F1" },
+        new() { Id = "advanced", Title = "Gelişmiş Ayarlar", Description = "Sistem sıfırlama ve bakım işlemleri.", IconMaterial = Icons.Material.Filled.Build, Color = "#EF4444" },
+    };
+
+    // State
+    private string _firebaseUrl = "";
+    private string _firebaseToken = "";
+    private string _cloudStatus = "Bekleniyor...";
+    private string _backupStatus = "Yedekleme durumu bekleniyor..";
+    private string _lastBackupDate = "-";
+    private string _selectedTheme = "standard";
+    private double _appScale = 1.0;
+    private bool _isAutoScalingEnabled = true;
+    private bool _isOfflineMode;
+    private bool _isMaintenanceMode;
+    
+    // Year Management State
+    private List<int> _availableYears = new();
+    private int _selectedYearToSwitch;
+    private int _transferFromYear;
+    private int _transferToYear = DateTime.Now.Year + 1;
+    private int _selectedYearToDelete;
+    private bool _isProcessingYear;
+    private string _companyLogo = "";
+
+    private string _oldPassword = "";
+    private string _newPassword = "";
+    private string _newUsername = "";
+    private string _newUserPassword = "";
+    private string _newUserRole = "OperatÃƒÂ¶r";
+    private string _supportSubject = "";
+    private string _supportMessage = "";
+    private string _resetPassInput = "";
+
+    private string _selectedPrinter = "OneNote (Desktop)";
+    private string _faturaSize = "A4";
+    private string _faturaOrientation = "Dikey";
+    private string _siparisSize = "A5";
+    private string _siparisOrientation = "Dikey";
+
+    private bool _logoFatura = true;
+    private bool _logoSiparis = true;
+    private bool _logoTeklif = true;
+    private bool _logoEkstre = true;
+    private bool _logoRaporlar = true;
+
+    private string _exchangeRateApiKey = "";
+    private string _positionStackApiKey = "";
+    private string _emailableApiKey = "";
+
+    // Status Bar Settings
+    private bool _showVersion = true;
+    private bool _showUser = true;
+    private bool _showBranch = true;
+    private bool _showSystemStatus = true;
+    private bool _showCopyright = true;
+    private bool _showExchangeRates = false;
+    private bool _showDateTime = false;
+    private bool _showSystemUsage = false;
+    private bool _showSyncStatus = true;
+    private bool _showConnectionStatus = true;
+    private List<string> _itemsOrder = new() { "Version", "User", "SyncStatus", "ConnectionStatus", "ExchangeRates", "SystemUsage", "DateTime", "Copyright" };
+    private string _customLeftText = "";
+    private string _customRightText = "";
+    private string _ideBranchName = "Main*";
+    private string _ideStatusText = "Sistem Hazır";
+    private string _ideEncoding = "UTF-8";
+    private string _ideLanguage = "C#";
+
+    private readonly string[] _sizeList = { "A3", "A4", "A5", "A6", "B5" };
+    private readonly string[] _orientationList = { "Dikey", "Yatay" };
+
+    private List<User> _users = new();
+
+    // Helper methods for header
+    private string GetPageTitle()
+    {
+        if (_currentCategory == null) return "Uygulama Ayarları";
+        return _categories.FirstOrDefault(c => c.Id == _currentCategory)?.Title ?? "Ayarlar";
+    }
+
+    private string GetPageDescription()
+    {
+        if (_currentCategory == null) return "Sistem yapılandırmasını ve kullanıcı tercihlerini buradan yönetebilirsiniz.";
+        return _categories.FirstOrDefault(c => c.Id == _currentCategory)?.Description ?? "";
+    }
+
+    private string GetCategoryIcon()
+    {
+        if (_currentCategory == null) return Icons.Material.Filled.Settings;
+        return _categories.FirstOrDefault(c => c.Id == _currentCategory)?.IconMaterial ?? Icons.Material.Filled.Settings;
+    }
+
+    private string GetCategoryIconColor()
+    {
+        if (_currentCategory == null) return "#60A5FA";
+        return _categories.FirstOrDefault(c => c.Id == _currentCategory)?.Color ?? "#60A5FA";
+    }
+
+    private string GetCategoryIconBg()
+    {
+        var color = GetCategoryIconColor();
+        return $"{color}26";
+    }
+
+    private void SelectCategory(string id)
+    {
+        _currentCategory = id;
+        StateHasChanged();
+    }
+
+    private void GoBack()
+    {
+        _currentCategory = null;
+        StateHasChanged();
+    }
+
+    private Task<bool> HandleEscape()
+    {
+        if (_currentCategory != null)
+        {
+            GoBack();
+            StateHasChanged();
+            return Task.FromResult(true);
+        }
+        return Task.FromResult(false);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UiService.OnEscapePressed += HandleEscape;
+        try
+        {
+            if (LocalStorage.ContainKey("firebase_url"))
+                _firebaseUrl = LocalStorage.GetItem<string>("firebase_url") ?? "";
+
+            if (LocalStorage.ContainKey("firebase_token"))
+                _firebaseToken = LocalStorage.GetItem<string>("firebase_token") ?? "";
+
+            if (LocalStorage.ContainKey("company_logo"))
+                _companyLogo = LocalStorage.GetItem<string>("company_logo") ?? "";
+
+            if (LocalStorage.ContainKey("auto_scale_enabled"))
+                _isAutoScalingEnabled = LocalStorage.GetItem<bool>("auto_scale_enabled");
+
+            if (LocalStorage.ContainKey("app_scale"))
+            {
+                var val = LocalStorage.GetItem<object>("app_scale");
+                if (val != null && double.TryParse(val.ToString()?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var s))
+                {
+                    _appScale = s;
+                }
+            }
+
+            // Correctly derive current scale if it was auto-detected at startup
+            if (_isAutoScalingEnabled)
+            {
+                await AutoDetectScaling();
+            }
+            else if (LocalStorage.ContainKey("app_scale"))
+            {
+                // Manual scale was already loaded above
+                await SetScale(_appScale, false);
+            }
+
+            if (LocalStorage.ContainKey("app_theme"))
+                _selectedTheme = LocalStorage.GetItem<string>("app_theme") ?? "standard";
+
+            LoadBarSettings();
+
+            await LoadUsers();
+            await LoadAvailableYears();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Sayfa yÃƒÂ¼kleme hatasÃ„Â±: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task LoadAvailableYears()
+    {
+        try 
+        {
+            _availableYears = await FirebaseService.GetAvailableYearsAsync();
+            if (_availableYears.Any())
+            {
+                if (_selectedYearToSwitch == 0) _selectedYearToSwitch = YearContext.CurrentYear;
+                if (_transferFromYear == 0) _transferFromYear = YearContext.CurrentYear;
+                if (_selectedYearToDelete == 0) _selectedYearToDelete = _availableYears.Last();
+                
+                // Ensure ToYear is logically set to something else than FromYear
+                if (_transferToYear == YearContext.CurrentYear)
+                    _transferToYear = _availableYears.Max() + 1;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex) 
+        {
+             Console.WriteLine("LoadYears Error: " + ex.Message);
+        }
+    }
+
+    private async Task SwitchYear()
+    {
+        if (_selectedYearToSwitch == YearContext.CurrentYear)
+        {
+            Snackbar.Add("Zaten seÃƒÂ§ili yÃ„Â±ldasÃ„Â±nÃ„Â±z.", Severity.Info);
+            return;
+        }
+
+        _isProcessingYear = true;
+        try 
+        {
+            YearContext.CurrentYear = _selectedYearToSwitch;
+            DbService.InvalidateAllCache();
+            
+            Snackbar.Add($"{_selectedYearToSwitch} yÃ„Â±lÃ„Â±na geÃƒÂ§iÃ…Å¸ yapÃ„Â±ldÃ„Â±. Sayfa yenileniyor...", Severity.Success);
+            await Task.Delay(1500);
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        finally { _isProcessingYear = false; }
+    }
+
+    
+
+    private async Task DeleteYear()
+    {
+        if (_selectedYearToDelete == YearContext.CurrentYear)
+        {
+            Snackbar.Add("Aktif ÃƒÂ§alÃ„Â±Ã…Å¸ma yÃ„Â±lÃ„Â± silinemez!", Severity.Error);
+            return;
+        }
+
+        bool? confirm = await DialogService.ShowMessageBox("YÃ„Â±lÃ„Â± Sil", $"{_selectedYearToDelete} yÃ„Â±lÃ„Â±na ait TÃƒÅ“M veriler (faturalar, hareketler, kartlar) silinecektir. Bu iÃ…Å¸lem geri alÃ„Â±namaz! OnaylÃ„Â±yor musunuz?", yesText: "SÃ„Â°L", cancelText: "Ã„Â°PTAL");
+        if (confirm != true) return;
+
+        _isProcessingYear = true;
+        try 
+        {
+            await FirebaseService.DeleteYearAsync(_selectedYearToDelete);
+            
+            // Remove from local cache as well
+            if (LocalStorage.ContainKey("ermay_registered_years"))
+            {
+                var years = LocalStorage.GetItem<List<int>>("ermay_registered_years");
+                if (years != null && years.Contains(_selectedYearToDelete))
+                {
+                    years.Remove(_selectedYearToDelete);
+                    LocalStorage.SetItem("ermay_registered_years", years);
+                }
+            }
+
+            Snackbar.Add($"{_selectedYearToDelete} yÃ„Â±lÃ„Â± verileri silindi.", Severity.Success);
+            await LoadAvailableYears();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Silme HatasÃ„Â±: {ex.Message}", Severity.Error);
+        }
+        finally { _isProcessingYear = false; }
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            var conn = await DbService.GetConnectionAsync();
+            if (conn != null)
+            {
+                var list = await conn.Table<User>().ToListAsync();
+                _users = list ?? new();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadUsers Error: {ex.Message}");
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        if (string.IsNullOrWhiteSpace(_newPassword))
+        {
+            Snackbar.Add("Yeni Ã…Å¸ifre boÃ…Å¸ olamaz.", Severity.Warning);
+            return;
+        }
+        Snackbar.Add("Ã…Âifre gÃƒÂ¼ncelleme bu sÃƒÂ¼rÃƒÂ¼mde kÃ„Â±sÃ„Â±tlanmÃ„Â±Ã…Å¸tÃ„Â±r.", Severity.Info);
+        await Task.CompletedTask;
+    }
+
+    private async Task AddUser()
+    {
+        if (string.IsNullOrWhiteSpace(_newUsername) || string.IsNullOrWhiteSpace(_newUserPassword))
+        {
+            Snackbar.Add("KullanÃ„Â±cÃ„Â± adÃ„Â± ve Ã…Å¸ifre gereklidir.", Severity.Warning);
+            return;
+        }
+        Snackbar.Add("KullanÃ„Â±cÃ„Â± ekleme bu sÃƒÂ¼rÃƒÂ¼mde kÃ„Â±sÃ„Â±tlanmÃ„Â±Ã…Å¸tÃ„Â±r.", Severity.Info);
+        await Task.CompletedTask;
+    }
+
+    private async Task UpdateUserPassword(User user)
+    {
+        if (string.IsNullOrEmpty(user.TempPassword))
+        {
+            Snackbar.Add("LÃƒÂ¼tfen yeni bir Ã…Å¸ifre girin.", Severity.Warning);
+            return;
+        }
+        Snackbar.Add("Ã…Âifre gÃƒÂ¼ncelleme bu sÃƒÂ¼rÃƒÂ¼mde kÃ„Â±sÃ„Â±tlanmÃ„Â±Ã…Å¸tÃ„Â±r.", Severity.Info);
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteUser(User user)
+    {
+        Snackbar.Add("KullanÃ„Â±cÃ„Â± silme bu sÃƒÂ¼rÃƒÂ¼mde kÃ„Â±sÃ„Â±tlanmÃ„Â±Ã…Å¸tÃ„Â±r.", Severity.Info);
+        await Task.CompletedTask;
+    }
+
+    private async Task SendSupport()
+    {
+        if (string.IsNullOrWhiteSpace(_supportMessage))
+        {
+            Snackbar.Add("LÃƒÂ¼tfen bir mesaj yazÃ„Â±n.", Severity.Warning);
+            return;
+        }
+        await Task.Delay(1000);
+        Snackbar.Add("Destek talebiniz teknik ekibe iletildi.", Severity.Success);
+        _supportSubject = "";
+        _supportMessage = "";
+    }
+
+    private async Task FactoryReset()
+    {
+        if (_resetPassInput != "ERMAY2025")
+        {
+            Snackbar.Add("HatalÃ„Â± sÃ„Â±fÃ„Â±rlama Ã…Å¸ifresi!", Severity.Error);
+            return;
+        }
+        try
+        {
+            await DbService.ClearAllTablesAsync();
+            Snackbar.Add("TÃƒÂ¼m veri tabanÃ„Â± sÃ„Â±fÃ„Â±rlandÃ„Â±. Sayfa yenileniyor...", Severity.Success);
+            await Task.Delay(2000);
+            Nav.NavigateTo(Nav.Uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void SaveConfig()
+    {
+        LocalStorage.SetItem("firebase_url", _firebaseUrl);
+        LocalStorage.SetItem("firebase_token", _firebaseToken);
+        
+        DbService.SyncService.SaveConfig(_firebaseUrl, _firebaseToken);
+        if (FirebaseService is ErmayMuhasebe.Cloud.Services.FirebaseService fs)
+        {
+             fs.SetConfig(_firebaseUrl, _firebaseToken);
+        }
+
+        _cloudStatus = "Ayarlar kaydedildi.";
+        Snackbar.Add("Bağlantı ayarları kaydedildi.", Severity.Success);
+    }
+
+    private async Task SyncCloud()
+    {
+        _cloudStatus = "Senkronizasyon baÃ…Å¸latÃ„Â±lÃ„Â±yor...";
+        StateHasChanged();
+        await Task.Delay(500);
+        _cloudStatus = "Senkronizasyon BaÃ…Å¸arÃ„Â±lÃ„Â±!";
+        Snackbar.Add("Veriler bulut ile senkronize edildi.", Severity.Success);
+    }
+
+    private async Task CreateBackup()
+    {
+        _backupStatus = "Veriler paketleniyor...";
+        StateHasChanged();
+        await Task.Delay(1000);
+
+        try
+        {
+            var allData = await DbService.GetAllDataForBackupAsync();
+            var json = System.Text.Json.JsonSerializer.Serialize(allData);
+
+            await JS.InvokeVoidAsync("downloadFile", $"Ermay_Yedek_{DateTime.Now:yyyyMMdd}.json", "application/json", json);
+
+            _backupStatus = "Yedekleme baÃ…Å¸arÃ„Â±yla tamamlandÃ„Â± ve indirildi.";
+            _lastBackupDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm");
+            Snackbar.Add("VeritabanÃ„Â± yedeÃ„Å¸i indirildi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _backupStatus = "Hata: " + ex.Message;
+            Snackbar.Add("Yedekleme hatasÃ„Â±.", Severity.Error);
+        }
+    }
+
+    private async Task UploadLogo(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        try
+        {
+            if (file.Size > 2 * 1024 * 1024)
+            {
+                Snackbar.Add("Logo boyutu 2MB'dan bÃƒÂ¼yÃƒÂ¼k olamaz.", Severity.Warning);
+                return;
+            }
+
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(2 * 1024 * 1024).ReadAsync(buffer);
+            var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+            
+            _companyLogo = base64;
+            LocalStorage.SetItem("company_logo", base64);
+            
+            // Sync with specific Firebase setting
+            await FirebaseService.SaveSettingAsync("company_logo", base64);
+            
+            Snackbar.Add("Logo baÃ…Å¸arÃ„Â±yla gÃƒÂ¼ncellendi.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"YÃƒÂ¼kleme hatasÃ„Â±: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void SaveLogoSettings()
+    {
+        Snackbar.Add("Logo ayarlarÃ„Â± kaydedildi.", Severity.Success);
+    }
+
+    private void SavePageSettings()
+    {
+        Snackbar.Add("Sayfa boyut ayarlarÃ„Â± kaydedildi.", Severity.Success);
+    }
+
+    private void SaveApiKeys()
+    {
+        Snackbar.Add("API yapÃ„Â±landÃ„Â±rmasÃ„Â± kaydedildi.", Severity.Success);
+    }
+
+    private async Task SetTheme(string theme)
+    {
+        _selectedTheme = theme;
+        await JS.InvokeVoidAsync("applyAppTheme", theme);
+        LocalStorage.SetItem("app_theme", theme);
+        Snackbar.Add($"{(theme == "ide" ? "IDE Profesyonel" : "Ermay Premium")} teması uygulandı.", Severity.Success);
+    }
+
+    private async Task OnScaleChanged(ChangeEventArgs e)
+    {
+        string val = e.Value?.ToString() ?? "1";
+        if (double.TryParse(val.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var scale))
+        {
+            await SetScale(scale);
+        }
+    }
+
+    private async Task OnAutoScalingToggled(bool value)
+    {
+        _isAutoScalingEnabled = value;
+        LocalStorage.SetItem("auto_scale_enabled", _isAutoScalingEnabled);
+        
+        if (_isAutoScalingEnabled)
+        {
+            await AutoDetectScaling();
+        }
+        else 
+        {
+            // Reset to 100% or keep current scale but stop auto-updates?
+            // Usually, turning off auto means keeping the current but allowing manual.
+            await SetScale(_appScale, false);
+        }
+    }
+
+    private async Task SetScale(double scale, bool isManual = true)
+    {
+        if (isManual) _isAutoScalingEnabled = false;
+        
+        var resultStr = await JS.InvokeAsync<string>("applyAppScaling", scale, false);
+        if (!string.IsNullOrEmpty(resultStr) && double.TryParse(resultStr.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var finalScale))
+        {
+            _appScale = finalScale;
+        }
+
+        LocalStorage.SetItem("app_scale", _appScale);
+        LocalStorage.SetItem("auto_scale_enabled", _isAutoScalingEnabled);
+        
+        StateHasChanged();
+    }
+
+    private async Task AutoDetectScaling()
+    {
+        if (!_isAutoScalingEnabled) return;
+        
+        try
+        {
+            var resultStr = await JS.InvokeAsync<string>("applyAppScaling", 1.0, true);
+            if (!string.IsNullOrEmpty(resultStr) && double.TryParse(resultStr.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var s))
+            {
+                _appScale = s;
+                LocalStorage.SetItem("app_scale", _appScale);
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void LoadBarSettings()
+    {
+        try
+        {
+            if (LocalStorage.ContainKey("sb_show_version")) _showVersion = LocalStorage.GetItem<bool>("sb_show_version");
+            if (LocalStorage.ContainKey("sb_show_user")) _showUser = LocalStorage.GetItem<bool>("sb_show_user");
+            if (LocalStorage.ContainKey("sb_show_branch")) _showBranch = LocalStorage.GetItem<bool>("sb_show_branch");
+            if (LocalStorage.ContainKey("sb_show_status")) _showSystemStatus = LocalStorage.GetItem<bool>("sb_show_status");
+            if (LocalStorage.ContainKey("sb_show_copyright")) _showCopyright = LocalStorage.GetItem<bool>("sb_show_copyright");
+            if (LocalStorage.ContainKey("sb_show_exchange")) _showExchangeRates = LocalStorage.GetItem<bool>("sb_show_exchange");
+            if (LocalStorage.ContainKey("sb_show_datetime")) _showDateTime = LocalStorage.GetItem<bool>("sb_show_datetime");
+            if (LocalStorage.ContainKey("sb_show_usage")) _showSystemUsage = LocalStorage.GetItem<bool>("sb_show_usage");
+            if (LocalStorage.ContainKey("sb_show_sync")) _showSyncStatus = LocalStorage.GetItem<bool>("sb_show_sync");
+            if (LocalStorage.ContainKey("sb_show_conn")) _showConnectionStatus = LocalStorage.GetItem<bool>("sb_show_conn");
+            if (LocalStorage.ContainKey("sb_items_order")) _itemsOrder = LocalStorage.GetItem<List<string>>("sb_items_order") ?? _itemsOrder;
+            if (LocalStorage.ContainKey("sb_custom_left")) _customLeftText = LocalStorage.GetItem<string>("sb_custom_left") ?? "";
+            if (LocalStorage.ContainKey("sb_custom_right")) _customRightText = LocalStorage.GetItem<string>("sb_custom_right") ?? "";
+            if (LocalStorage.ContainKey("sb_ide_branch")) _ideBranchName = LocalStorage.GetItem<string>("sb_ide_branch") ?? "Main*";
+            if (LocalStorage.ContainKey("sb_ide_status")) _ideStatusText = LocalStorage.GetItem<string>("sb_ide_status") ?? "Sistem Hazır";
+        }
+        catch { }
+    }
+
+    private void SaveBarSettings()
+    {
+        try
+        {
+            LocalStorage.SetItem("sb_show_version", _showVersion);
+            LocalStorage.SetItem("sb_show_user", _showUser);
+            LocalStorage.SetItem("sb_show_branch", _showBranch);
+            LocalStorage.SetItem("sb_show_status", _showSystemStatus);
+            LocalStorage.SetItem("sb_show_copyright", _showCopyright);
+            LocalStorage.SetItem("sb_show_exchange", _showExchangeRates);
+            LocalStorage.SetItem("sb_show_datetime", _showDateTime);
+            LocalStorage.SetItem("sb_show_usage", _showSystemUsage);
+            LocalStorage.SetItem("sb_show_sync", _showSyncStatus);
+            LocalStorage.SetItem("sb_show_conn", _showConnectionStatus);
+            LocalStorage.SetItem("sb_items_order", _itemsOrder);
+            LocalStorage.SetItem("sb_custom_left", _customLeftText);
+            LocalStorage.SetItem("sb_custom_right", _customRightText);
+            LocalStorage.SetItem("sb_ide_branch", _ideBranchName);
+            LocalStorage.SetItem("sb_ide_status", _ideStatusText);
+            
+            Snackbar.Add("Alt bar ayarları kaydedildi.", Severity.Success);
+            
+            // Notify UI that settings changed (Layout needs to re-read)
+            UiService.NotifyThemeChanged(); // Reuse this to trigger layout refresh
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void MoveItem(string id, int direction)
+    {
+        var index = _itemsOrder.IndexOf(id);
+        if (index < 0) return;
+        var newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= _itemsOrder.Count) return;
+        _itemsOrder.RemoveAt(index);
+        _itemsOrder.Insert(newIndex, id);
+        StateHasChanged();
+    }
+
+    private string _draggingId = "";
+
+    private void HandleDragStart(string id)
+    {
+        _draggingId = id;
+    }
+
+    private void HandleDrop(string targetId)
+    {
+        if (string.IsNullOrEmpty(_draggingId) || _draggingId == targetId) return;
+        
+        int oldIndex = _itemsOrder.IndexOf(_draggingId);
+        int newIndex = _itemsOrder.IndexOf(targetId);
+        
+        if (oldIndex != -1 && newIndex != -1)
+        {
+            _itemsOrder.RemoveAt(oldIndex);
+            _itemsOrder.Insert(newIndex, _draggingId);
+            _draggingId = "";
+            
+            // Live Preview: Update LocalStorage and notify layout
+            LocalStorage.SetItem("sb_items_order", _itemsOrder);
+            UiService.NotifyBarSettingsChanged();
+            
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+}
+

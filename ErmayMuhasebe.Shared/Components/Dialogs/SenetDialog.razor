@@ -1,0 +1,92 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MudBlazor
+@inject IDialogService DialogService
+
+<MudDialog Style="min-width: 500px;">
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSelect T="string" Label="Senet Türü" @bind-Value="Model.SenetTuru" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.SwapHoriz">
+                    <MudSelectItem Value="@("Alacak")">Alacak Senedi</MudSelectItem>
+                    <MudSelectItem Value="@("Borc")">Borç Senedi</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Model.SenetNo" Label="Senet No" Variant="Variant.Outlined" />
+            </MudItem>
+            
+            <MudItem xs="12">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudTextField @bind-Value="Model.CariUnvan" Label="@(Model.SenetTuru == "Alacak" ? "Borçlu (Müşteri)" : "Alacaklı (Tedarikçi)")" Variant="Variant.Outlined" ReadOnly="true"/>
+                    <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="CariSec" Variant="Variant.Filled" Color="Color.Primary" />
+                </MudStack>
+            </MudItem>
+
+            <MudItem xs="6">
+                <MudDatePicker Label="Vade Tarihi" @bind-Date="vadeDate" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudNumericField @bind-Value="Model.Tutar" Label="Tutar" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+            </MudItem>
+            
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Model.Aciklama" Label="Açıklama" Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+             <MudItem xs="12">
+                <MudSelect T="string" Label="Durum" @bind-Value="Model.Durum" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("Portfoy")">Portföy</MudSelectItem>
+                    <MudSelectItem Value="@("Bankaya")">Bankaya Verildi</MudSelectItem>
+                    <MudSelectItem Value="@("Tahsil")">Tahsil Edildi</MudSelectItem>
+                    <MudSelectItem Value="@("Iade")">İade / Protesto</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public Senet Model { get; set; } = new();
+    
+    private DateTime? vadeDate;
+
+    protected override void OnInitialized()
+    {
+        if (Model.VadeTarihi == default) Model.VadeTarihi = DateTime.Now;
+        vadeDate = Model.VadeTarihi;
+        if (string.IsNullOrEmpty(Model.SenetTuru)) Model.SenetTuru = "Alacak";
+        if (string.IsNullOrEmpty(Model.Durum)) Model.Durum = "Portfoy";
+    }
+
+    private async Task CariSec()
+    {
+        var dialog = await DialogService.ShowAsync<CariSecDialog>("Cari Seç");
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is CariKart cari)
+        {
+            Model.CariId = cari.Id;
+            Model.CariUnvan = cari.Unvan;
+        }
+    }
+
+    void Submit()
+    {
+        if (vadeDate.HasValue) Model.VadeTarihi = vadeDate.Value;
+        if (string.IsNullOrEmpty(Model.CariUnvan))
+        {
+             // Basit validasyon
+             return; 
+        }
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}

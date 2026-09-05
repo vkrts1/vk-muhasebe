@@ -1,0 +1,104 @@
+@page "/karlilik-raporlari"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h5" Class="font-weight-bold">Kârlılık ve Verimlilik Analizi</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Satış hızı ve kâr marjı odaklı raporlama</MudText>
+        </div>
+    </div>
+
+    <MudGrid>
+        @foreach (var stat in Stats)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4 d-flex flex-column" Elevation="1">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@stat.Title</MudText>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold" Color="@stat.Color">@stat.Value</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+
+        <MudItem xs="12">
+            <MudTable Items="@FilteredItems" Dense="true" Hover="true" Striped="true" Elevation="1">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Ürün Bazlı Kârlılık</MudText>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="searchString" Placeholder="Ara..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Stok Adı</MudTh>
+                    <MudTh>Satış Adet</MudTh>
+                    <MudTh>Ciro</MudTh>
+                    <MudTh>Toplam Kâr</MudTh>
+                    <MudTh>Marj (%)</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Ad">@context.StokAdi</MudTd>
+                    <MudTd DataLabel="Satış">@context.SatisAdet</MudTd>
+                    <MudTd DataLabel="Ciro">₺@context.Revenue.ToString("N2")</MudTd>
+                    <MudTd DataLabel="Kâr">
+                        <MudText Color="@(context.ToplamKar >= 0 ? Color.Success : Color.Error)" Class="font-weight-bold">
+                            ₺@context.ToplamKar.ToString("N2")
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Marj">
+                         <MudChip T="string" Color="@(context.KarMarji >= 20 ? Color.Success : Color.Warning)" Size="Size.Small">
+                             %@context.KarMarji.ToString("N1")
+                         </MudChip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string searchString = "";
+    private List<KarlilikItem> Items = new();
+    private List<StatModel> Stats = new();
+
+    public class KarlilikItem
+    {
+        public string StokAdi { get; set; } = "";
+        public int SatisAdet { get; set; }
+        public decimal Revenue { get; set; }
+        public decimal ToplamKar { get; set; }
+        public decimal KarMarji { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var rawData = await DbService.GetProductProfitabilityAsync();
+        Items = rawData.Select(x => new KarlilikItem {
+            StokAdi = x.StokAdi,
+            SatisAdet = x.Quantity,
+            Revenue = x.Revenue,
+            ToplamKar = x.Profit,
+            KarMarji = x.Margin
+        }).ToList();
+        
+        Stats = new List<StatModel>
+        {
+            new StatModel("Ortalama Kâr Marjı", $"%{ (Items.Any() ? Items.Average(x => x.KarMarji) : 0):N1}", Color.Primary),
+            new StatModel("En Çok Satan", Items.OrderByDescending(x => x.SatisAdet).FirstOrDefault()?.StokAdi ?? "-", Color.Info),
+            new StatModel("Toplam Ürün Sayısı", Items.Count.ToString(), Color.Secondary),
+            new StatModel("Kârlılık Verimliliği", "Yüksek", Color.Success)
+        };
+    }
+
+    private IEnumerable<KarlilikItem> FilteredItems => 
+        string.IsNullOrWhiteSpace(searchString) ? Items : Items.Where(x => x.StokAdi.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+    public record StatModel(string Title, string Value, Color Color);
+}

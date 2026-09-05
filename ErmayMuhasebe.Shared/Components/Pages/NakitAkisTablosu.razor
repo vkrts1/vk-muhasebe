@@ -1,0 +1,267 @@
+@page "/nakit-akis-tablosu"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@using MudBlazor
+
+    <div class="d-flex align-center justify-space-between mb-4">
+        <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary">Nakit Akış Tablosu</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+            @if(raporOlusturuldu)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                    Yazdır / PDF
+                </MudButton>
+            }
+        </MudStack>
+    </div>
+
+    <MudPaper Class="pa-4 mb-3">
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker @bind-Date="baslangicTarihi" Label="Başlangıç Tarihi" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker @bind-Date="bitisTarihi" Label="Bitiş Tarihi" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="RaporOlustur">
+                    Rapor Oluştur
+                </MudButton>
+                @if (raporOlusturuldu)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="MudBlazor.Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport" Class="ml-4">
+                        Yazdır / PDF
+                    </MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if(raporOlusturuldu)
+    {
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">
+                Dönem: @baslangicTarihi?.ToShortDateString() - @bitisTarihi?.ToShortDateString()
+            </MudText>
+            
+            <MudSimpleTable Dense="true" Bordered="true" Style="background-color: transparent;">
+                <tbody>
+                    <tr style="background-color: rgba(33, 150, 243, 0.15);">
+                        <td colspan="2"><MudText Color="Color.Info"><b>İŞLETME FAALİYETLERİNDEN NAKİT AKIŞLARI</b></MudText></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Müşterilerden Tahsilatlar</td>
+                        <td></td>
+                        <td style="text-align: right;">@musteriTahsilat.ToString("N2")</td>
+                    </tr>
+                    <tr>
+                        <td>Tedarikçilere Ödemeler</td>
+                        <td></td>
+                        <td style="text-align: right;">(@tedarikciOdeme.ToString("N2"))</td>
+                    </tr>
+                    <tr>
+                        <td>Personel Ödemeleri</td>
+                        <td></td>
+                        <td style="text-align: right;">(@personelOdeme.ToString("N2"))</td>
+                    </tr>
+                    <tr>
+                        <td>Diğer İşletme Giderleri</td>
+                        <td></td>
+                        <td style="text-align: right;">(@digerGider.ToString("N2"))</td>
+                    </tr>
+                    <tr style="background-color: rgba(33, 150, 243, 0.2);">
+                        <td><b>İşletme Faaliyetlerinden Net Nakit</b></td>
+                        <td></td>
+                        <td style="text-align: right;"><b>@isletmeNakit.ToString("N2")</b></td>
+                    </tr>
+                    
+                    <tr style="background-color: rgba(255, 152, 0, 0.15);">
+                        <td colspan="2"><MudText Color="Color.Warning"><b>YATIRIM FAALİYETLERİNDEN NAKİT AKIŞLARI</b></MudText></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Sabit Kıymet Alımları</td>
+                        <td></td>
+                        <td style="text-align: right;">(@sabitKiymetAlim.ToString("N2"))</td>
+                    </tr>
+                    <tr>
+                        <td>Sabit Kıymet Satışları</td>
+                        <td></td>
+                        <td style="text-align: right;">@sabitKiymetSatis.ToString("N2")</td>
+                    </tr>
+                    <tr style="background-color: rgba(255, 152, 0, 0.2);">
+                        <td><b>Yatırım Faaliyetlerinden Net Nakit</b></td>
+                        <td></td>
+                        <td style="text-align: right;"><b>@yatirimNakit.ToString("N2")</b></td>
+                    </tr>
+                    
+                    <tr style="background-color: rgba(76, 175, 80, 0.15);">
+                        <td colspan="2"><MudText Color="Color.Success"><b>FİNANSMAN FAALİYETLERİNDEN NAKİT AKIŞLARI</b></MudText></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Kredi Kullanımı</td>
+                        <td></td>
+                        <td style="text-align: right;">@krediKullanim.ToString("N2")</td>
+                    </tr>
+                    <tr>
+                        <td>Kredi Geri Ödemeleri</td>
+                        <td></td>
+                        <td style="text-align: right;">(@krediOdeme.ToString("N2"))</td>
+                    </tr>
+                    <tr style="background-color: rgba(76, 175, 80, 0.2);">
+                        <td><b>Finansman Faaliyetlerinden Net Nakit</b></td>
+                        <td></td>
+                        <td style="text-align: right;"><b>@finansmanNakit.ToString("N2")</b></td>
+                    </tr>
+                    
+                    <tr style="background-color: rgba(255, 255, 255, 0.05);">
+                        <td colspan="2"><MudText Color="Color.Secondary"><b>NAKİT VE NAKİT BENZERLERİNDEKİ NET ARTIŞ/(AZALIŞ)</b></MudText></td>
+                        <td style="text-align: right;"><b>@netDegisim.ToString("N2")</b></td>
+                    </tr>
+                    <tr>
+                        <td>Dönem Başı Nakit</td>
+                        <td></td>
+                        <td style="text-align: right;">@donemBasiNakit.ToString("N2")</td>
+                    </tr>
+                    <tr style="background-color: rgba(255, 255, 255, 0.1);">
+                        <td colspan="2"><b>DÖNEM SONU NAKİT</b></td>
+                        <td style="text-align: right;"><b>@donemSonuNakit.ToString("N2")</b></td>
+                    </tr>
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+    }
+
+@code {
+    private DateTime? baslangicTarihi = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private DateTime? bitisTarihi = DateTime.Now;
+    private bool raporOlusturuldu = false;
+
+    private decimal musteriTahsilat = 0;
+    private decimal tedarikciOdeme = 0;
+    private decimal personelOdeme = 0;
+    private decimal digerGider = 0;
+    private decimal sabitKiymetAlim = 0;
+    private decimal sabitKiymetSatis = 0;
+    private decimal krediKullanim = 0;
+    private decimal krediOdeme = 0;
+    private decimal donemBasiNakit = 0;
+
+    private decimal isletmeNakit => musteriTahsilat - tedarikciOdeme - personelOdeme - digerGider;
+    private decimal yatirimNakit => sabitKiymetSatis - sabitKiymetAlim;
+    private decimal finansmanNakit => krediKullanim - krediOdeme;
+    private decimal netDegisim => isletmeNakit + yatirimNakit + finansmanNakit;
+    private decimal donemSonuNakit => donemBasiNakit + netDegisim;
+
+    private async Task RaporOlustur()
+    {
+        musteriTahsilat = 0;
+        tedarikciOdeme = 0;
+        personelOdeme = 0;
+        digerGider = 0;
+        sabitKiymetAlim = 0; sabitKiymetSatis = 0;
+        krediKullanim = 0; krediOdeme = 0;
+        
+        var kasaHareketleri = await DbService.GetKasaHareketleriAsync();
+        var bankaHareketleri = await DbService.GetBankaHareketleriAsync();
+
+        var filteredKasa = kasaHareketleri
+            .Where(x => (!baslangicTarihi.HasValue || x.Tarih.Date >= baslangicTarihi.Value.Date) && 
+                         (!bitisTarihi.HasValue || x.Tarih.Date <= bitisTarihi.Value.Date))
+            .ToList();
+            
+        var filteredBanka = bankaHareketleri
+            .Where(x => (!baslangicTarihi.HasValue || x.Tarih.Date >= baslangicTarihi.Value.Date) && 
+                         (!bitisTarihi.HasValue || x.Tarih.Date <= bitisTarihi.Value.Date))
+            .ToList();
+
+        foreach(var k in filteredKasa)
+        {
+            decimal giren = (k.IslemTuru == "Tahsilat" || k.IslemTuru == "Giriş") ? k.Tutar : 0;
+            decimal cikan = (k.IslemTuru == "Ödeme" || k.IslemTuru == "Odeme" || k.IslemTuru == "Çıkış") ? k.Tutar : 0;
+
+            var aciklama = k.Aciklama ?? "";
+            if (IsTahsilat(aciklama)) musteriTahsilat += giren;
+            else if (IsOdeme(aciklama)) tedarikciOdeme += cikan;
+            else if (giren > 0) musteriTahsilat += giren; 
+            else if (cikan > 0) digerGider += cikan; 
+        }
+        
+        foreach(var b in filteredBanka)
+        {
+             var tur = b.IslemTuru ?? "";
+             if (tur.Contains("Gelen") || tur.Contains("Tahsilat")) musteriTahsilat += b.Tutar;
+             else if (tur.Contains("Giden") || tur.Contains("Ödeme")) tedarikciOdeme += b.Tutar;
+        }
+
+        var oncekiKasa = kasaHareketleri
+            .Where(x => baslangicTarihi.HasValue && x.Tarih.Date < baslangicTarihi.Value.Date)
+            .Sum(x => (x.IslemTuru == "Tahsilat" || x.IslemTuru == "Giriş" ? x.Tutar : 0) - (x.IslemTuru == "Ödeme" || x.IslemTuru == "Odeme" || x.IslemTuru == "Çıkış" ? x.Tutar : 0));
+        
+        decimal oncekiBanka = 0;
+        var oncekiBankaList = bankaHareketleri
+            .Where(x => baslangicTarihi.HasValue && x.Tarih.Date < baslangicTarihi.Value.Date)
+            .ToList();
+            
+        foreach(var b in oncekiBankaList)
+        {
+             if ((b.IslemTuru ?? "").Contains("Gelen")) oncekiBanka += b.Tutar;
+             else oncekiBanka -= b.Tutar;
+        }
+        
+        donemBasiNakit = oncekiKasa + oncekiBanka;
+
+        raporOlusturuldu = true;
+        Snackbar.Add("Nakit akış tablosu güncellendi", Severity.Success);
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Açıklama", "Tutar (TL)" };
+            var rows = new List<string[]>();
+            
+            rows.Add(new[] { "İŞLETME FAALİYETLERİ", "" });
+            rows.Add(new[] { "  Müşterilerden Tahsilatlar", musteriTahsilat.ToString("N2") });
+            rows.Add(new[] { "  Tedarikçilere Ödemeler", $"({tedarikciOdeme.ToString("N2")})" });
+            rows.Add(new[] { "  Personel Ödemeleri", $"({personelOdeme.ToString("N2")})" });
+            rows.Add(new[] { "  Diğer İşletme Giderleri", $"({digerGider.ToString("N2")})" });
+            rows.Add(new[] { "Net İşletme Nakit Akışı", isletmeNakit.ToString("N2") });
+            
+            rows.Add(new[] { "YATIRIM FAALİYETLERİ", "" });
+            rows.Add(new[] { "  Sabit Kıymet Satışları", sabitKiymetSatis.ToString("N2") });
+            rows.Add(new[] { "  Sabit Kıymet Alımları", $"({sabitKiymetAlim.ToString("N2")})" });
+            rows.Add(new[] { "Net Yatırım Nakit Akışı", yatirimNakit.ToString("N2") });
+            
+            rows.Add(new[] { "FİNANSMAN FAALİYETLERİ", "" });
+            rows.Add(new[] { "  Kredi Kullanımı", krediKullanim.ToString("N2") });
+            rows.Add(new[] { "  Kredi Geri Ödemeleri", $"({krediOdeme.ToString("N2")})" });
+            rows.Add(new[] { "Net Finansman Nakit Akışı", finansmanNakit.ToString("N2") });
+            
+            rows.Add(new[] { "ÖZET", "" });
+            rows.Add(new[] { "Net Değişim", netDegisim.ToString("N2") });
+            rows.Add(new[] { "Dönem Başı Nakit", donemBasiNakit.ToString("N2") });
+            rows.Add(new[] { "DÖNEM SONU NAKİT", donemSonuNakit.ToString("N2") });
+
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync($"Nakit Akış Tablosu ({baslangicTarihi?.ToShortDateString()} - {bitisTarihi?.ToShortDateString()})", headers, rows);
+            await FileService.SaveAndOpenFileAsync("NakitAkisTablosu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private bool IsTahsilat(string text) => text.Contains("Tahsilat", StringComparison.OrdinalIgnoreCase) || text.Contains("Satış", StringComparison.OrdinalIgnoreCase);
+    private bool IsOdeme(string text) => text.Contains("Ödeme", StringComparison.OrdinalIgnoreCase) || text.Contains("Alış", StringComparison.OrdinalIgnoreCase);
+}

@@ -1,0 +1,170 @@
+@using ErmayMuhasebe.Shared.ViewModels
+
+<div class="simple-bar-chart">
+    @if (Data != null && Data.Length >= 2)
+    {
+        var maxValue = Data.SelectMany(d => d.Values).Max();
+        var targetData = Data[0];
+        var actualData = Data[1];
+
+        <div class="chart-bars">
+            @for (int i = 0; i < targetData.Labels.Length; i++)
+            {
+                <div class="bar-group">
+                    <div class="bar-container">
+                        <!-- Target Bar -->
+                        <div class="bar bar-target" 
+                             style="height: @(maxValue > 0 ? (targetData.Values[i] / maxValue * 100) : 0)%; background: @targetData.Color;">
+                            @if (targetData.Values[i] > 0)
+                            {
+                                <span class="bar-label">@targetData.Values[i].ToString("N0")</span>
+                            }
+                        </div>
+                        <!-- Actual Bar -->
+                        <div class="bar bar-actual" 
+                             style="height: @(maxValue > 0 ? (actualData.Values[i] / maxValue * 100) : 0)%; background: @actualData.Color;">
+                            @if (actualData.Values[i] > 0)
+                            {
+                                <span class="bar-label">@actualData.Values[i].ToString("N0")</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="bar-x-label">@targetData.Labels[i]</div>
+                </div>
+            }
+        </div>
+
+        <div class="chart-legend">
+            <div class="legend-item">
+                <span class="legend-color" style="background: @targetData.Color;"></span>
+                <span>@targetData.Name</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: @actualData.Color;"></span>
+                <span>@actualData.Name</span>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .simple-bar-chart {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .chart-bars {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        gap: 20px;
+        padding: 20px 0;
+        min-height: 300px;
+    }
+
+    .bar-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .bar-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .bar {
+        flex: 1;
+        max-width: 60px;
+        border-radius: 8px 8px 0 0;
+        position: relative;
+        transition: all 0.3s ease;
+        animation: barGrow 0.8s ease-out;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 8px;
+    }
+
+    .bar:hover {
+        opacity: 0.8;
+        transform: scaleY(1.02);
+    }
+
+    .bar-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .bar-x-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-align: center;
+    }
+
+    .chart-legend {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: var(--radius-sm);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+    }
+
+    @@keyframes barGrow {
+        from {
+            height: 0;
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .chart-bars {
+            gap: 12px;
+        }
+
+        .bar {
+            max-width: 40px;
+        }
+
+        .bar-label {
+            font-size: 10px;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public ChartDataSet[] Data { get; set; } = Array.Empty<ChartDataSet>();
+}

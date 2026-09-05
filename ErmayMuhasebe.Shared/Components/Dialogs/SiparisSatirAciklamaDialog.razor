@@ -1,0 +1,137 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+
+<MudDialog Class="custom-dialog-dark" Style="min-width: 700px; border-radius: 12px; background: #1D2633;">
+    <DialogContent>
+        <div class="p-4" style="color: white;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                   <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0;">Sipariş Açıklamaları - @SiparisNo</h2>
+                   <p style="font-size: 0.85rem; color: #94A3B8; margin-top: 4px;">Ürünlere özel açıklamalar ekleyin. Bu açıklamalar faturaya aktarılmaz.</p>
+                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="Cancel" Color="Color.Inherit" Size="Size.Small" />
+            </div>
+            
+            <div class="aciklama-table-wrapper">
+                <table class="aciklama-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">Ürün Adı</th>
+                            <th>Açıklama</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Detaylar == null || Detaylar.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="2" class="text-center py-4" style="color: #64748B;">Seçili siparişe ait ürün bulunamadı.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Detaylar)
+                            {
+                                <tr>
+                                    <td class="stok-adi">@(item.StokAdi ?? "İsimsiz Ürün")</td>
+                                    <td>
+                                        <input @bind="item.Aciklama" @bind:event="oninput" class="aciklama-input" placeholder="Açıklama yazın..." />
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex justify-content-end gap-3 p-4 w-100">
+            <button class="dlg-btn secondary" @onclick="Cancel">İptal</button>
+            <button class="dlg-btn success" @onclick="Submit">Kaydet</button>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public string? SiparisNo { get; set; }
+    [Parameter] public List<SiparisDetay> Detaylar { get; set; } = new();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(Detaylar));
+    private void Cancel() => MudDialog.Cancel();
+}
+
+<style>
+    .custom-dialog-dark .mud-dialog-content {
+        padding: 0 !important;
+    }
+    .aciklama-table-wrapper {
+        background: rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 0 4px;
+    }
+    .aciklama-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #CBD5E1;
+        font-size: 13px;
+    }
+    .aciklama-table th {
+        background: #0F172A;
+        text-align: left;
+        padding: 12px 20px;
+        color: #60A5FA;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+    }
+    .aciklama-table td {
+        padding: 8px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .stok-adi {
+        font-weight: 600;
+        color: #E2E8F0;
+    }
+    .aciklama-input {
+        width: 100%;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        outline: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+    .aciklama-input:focus {
+        border-color: #60A5FA;
+        background: rgba(255,255,255,0.05);
+    }
+    .dlg-btn {
+        padding: 10px 32px;
+        border-radius: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+    .dlg-btn.secondary { 
+        background: rgba(255,255,255,0.05); 
+        color: #94A3B8;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .dlg-btn.success { 
+        background: #00FF87; 
+        color: #064E3B; 
+        box-shadow: 0 4px 14px rgba(0, 255, 135, 0.2);
+    }
+    .dlg-btn:hover { 
+        transform: translateY(-1px);
+        filter: brightness(1.1); 
+    }
+</style>

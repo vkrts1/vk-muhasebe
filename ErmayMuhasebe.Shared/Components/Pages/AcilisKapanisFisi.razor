@@ -1,0 +1,166 @@
+@page "/acilis-kapanis-fisi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using MudBlazor
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="p-4">
+            <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">@Title</MudText>
+            
+            <MudGrid>
+                <MudItem xs="6" md="3">
+                    <MudSelect @bind-Value="Model.FisTuru" Label="Fiş Türü" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("Acilis")">Açılış Fişi</MudSelectItem>
+                        <MudSelectItem Value="@("Kapanis")">Kapanış Fişi</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudTextField @bind-Value="Model.FisNo" Label="Fiş No" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudDatePicker @bind-Date="date" Label="Tarih" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="3">
+                     <MudTextField @bind-Value="Model.Aciklama" Label="Genel Açıklama" Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudTable Items="@Detaylar" Hover="true" Dense="true" Striped="true">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Fiş Kalemleri</MudText>
+                <MudSpacer />
+                <MudButtonGroup Color="MudBlazor.Color.Primary" Variant="Variant.Outlined">
+                    <MudButton OnClick="AddCariLine">Cari Ekle</MudButton>
+                    <MudButton OnClick="AddStokLine">Stok Ekle</MudButton>
+                    <MudButton OnClick="AddEmptyLine">Manuel Satır</MudButton>
+                </MudButtonGroup>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Hesap Kodu</MudTh>
+                <MudTh>Hesap Adı</MudTh>
+                <MudTh>Açıklama</MudTh>
+                <MudTh>Borç</MudTh>
+                <MudTh>Alacak</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.HesapKodu</MudTd>
+                <MudTd>@context.HesapAdi</MudTd>
+                <MudTd>
+                     <MudTextField @bind-Value="context.Aciklama" Margin="Margin.Dense" />
+                </MudTd>
+                <MudTd>
+                     <MudNumericField @bind-Value="context.Borc" Min="0" Margin="Margin.Dense" />
+                </MudTd>
+                <MudTd>
+                     <MudNumericField @bind-Value="context.Alacak" Min="0" Margin="Margin.Dense" />
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="MudBlazor.Color.Error" Size="Size.Small" OnClick="@(() => RemoveLine(context))" />
+                </MudTd>
+            </RowTemplate>
+            <FooterContent>
+                <MudTd colspan="3" Style="text-align:right"><b>Toplam:</b></MudTd>
+                <MudTd><b>@Detaylar.Sum(x => x.Borc).ToString("N2")</b></MudTd>
+                <MudTd><b>@Detaylar.Sum(x => x.Alacak).ToString("N2")</b></MudTd>
+                <MudTd></MudTd>
+            </FooterContent>
+        </MudTable>
+    </MudItem>
+    
+    <MudItem xs="12" Class="d-flex justify-end mt-4">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Success" Size="Size.Large" StartIcon="@Icons.Material.Filled.Save" OnClick="Save">Kaydet</MudButton>
+    </MudItem>
+</MudGrid>
+
+@code {
+    public ErmayMuhasebe.Models.AcilisKapanisFisi Model { get; set; } = new ErmayMuhasebe.Models.AcilisKapanisFisi();
+    public List<AcilisKapanisFisiDetay> Detaylar { get; set; } = new();
+    
+    private DateTime? date = DateTime.Now;
+    
+    private string Title => Model.FisTuru == "Acilis" ? "Açılış Fişi" : "Kapanış Fişi";
+
+    protected override void OnInitialized()
+    {
+        Model.FisTuru = "Acilis";
+        Model.FisNo = "FIS-" + DateTime.Now.Year;
+    }
+
+    private void AddEmptyLine()
+    {
+        Detaylar.Add(new AcilisKapanisFisiDetay { Aciklama = "Manuel Kayıt" });
+    }
+
+    private async Task AddCariLine()
+    {
+        var dialog = await DialogService.ShowAsync<CariSecDialog>("Cari Seç");
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is CariKart c)
+        {
+            // Initial Balance Logic
+            // If Cari has Debt (Borc), put in Borc.
+            // But usually opening slip sets the balance.
+            decimal borc = c.Bakiye > 0 ? c.Bakiye : 0; // Positive balance in Cari model usually means receivable (Alacak)? 
+            // Wait, standard: Cari Bakiye = (Borc - Alacak). 
+            // In my app: 
+            //   Satis (Sales) -> Increases Balance (Positive). So Positive = We are owed money (Borçlu they are).
+            //   So if Bakiye > 0, it is Borc (Debit) in our books? No.
+            //   Confusion point: "Cari Hesabı" vs "Bizim Muhasebe".
+            //   Tek Düzen: 120 Alicilar (Asset, Debit Balance = They owe us).
+            //   So Positive Balance = Debit (Borc).
+            
+            Detaylar.Add(new AcilisKapanisFisiDetay 
+            { 
+                 HesapKodu = "120-" + c.Id, 
+                 HesapAdi = c.Unvan, 
+                 Borc = c.Bakiye > 0 ? c.Bakiye : 0,
+                 Alacak = c.Bakiye < 0 ? -c.Bakiye : 0
+            });
+        }
+    }
+
+    private async Task AddStokLine()
+    {
+        var dialog = await DialogService.ShowAsync<StokSecDialog>("Stok Seç");
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is StokKart s)
+        {
+             // Opening Stock = Debit (Borc) to 153 Inventory
+             decimal val = (decimal)s.Miktar * s.AlisFiyati;
+             Detaylar.Add(new AcilisKapanisFisiDetay 
+             { 
+                 HesapKodu = s.StokKodu, 
+                 HesapAdi = s.StokAdi, 
+                 Borc = val,
+                 Alacak = 0,
+                 Aciklama = $"{s.Miktar} {s.Birim} x {s.AlisFiyati:N2}"
+             });
+        }
+    }
+
+    private void RemoveLine(AcilisKapanisFisiDetay item) => Detaylar.Remove(item);
+
+    private async Task Save()
+    {
+        if (Detaylar.Sum(x => x.Borc) != Detaylar.Sum(x => x.Alacak))
+        {
+            Snackbar.Add("Uyarı: Borç ve Alacak toplamları eşit değil! Yine de kaydediliyor.", Severity.Warning);
+        }
+
+        if (date.HasValue) Model.FisTarihi = date.Value;
+        Model.ToplamBorc = Detaylar.Sum(x => x.Borc);
+        Model.ToplamAlacak = Detaylar.Sum(x => x.Alacak);
+
+        await DbService.SaveAcilisFisiAsync(Model, Detaylar);
+        Snackbar.Add("Fiş kaydedildi.", Severity.Success);
+    }
+}

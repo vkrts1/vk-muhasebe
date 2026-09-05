@@ -1,0 +1,449 @@
+@page "/stokkartlari"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@using MiniExcelLibs
+@using System.IO
+@using Microsoft.AspNetCore.Components.Forms
+@inject IFileService FileService
+@inject IDialogService DialogService
+@using ErmayMuhasebe.Shared.Components.Dialogs
+
+<style>
+    .stok-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .stok-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        overflow: hidden;
+    }
+
+    .sidebar-glass {
+        background: rgba(45, 52, 60, 0.4);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px;
+        padding: 24px;
+        height: 100%;
+        min-height: 800px;
+    }
+
+    .stok-table-panel {
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stok-hareket-panel {
+        height: 380px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .stat-box {
+        background: rgba(96, 165, 250, 0.1);
+        border: 1px solid rgba(96, 165, 250, 0.1);
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+    }
+
+    .side-btn {
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        padding: 10px !important;
+    }
+</style>
+
+<div class="stok-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="stok-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(96, 165, 250, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Info" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Stok Yönetimi</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Ürün takibi, envanter analizi ve hareket kaydı.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="filterKod" Placeholder="Stok Kodu veya Ürün Adı Ara..." 
+                              Variant="Variant.Outlined" Adornment="Adornment.Start" 
+                              AdornmentIcon="@Icons.Material.Filled.Search" Class="bg-dark-input" Margin="Margin.Dense" Immediate="true" />
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. CONTENT GRID *@
+    <MudGrid Spacing="4">
+        @* LEFTSIDE: TABLES *@
+        <MudItem xs="12" lg="8">
+            <MudStack Spacing="4">
+                @* Table: Stoklar *@
+                <div class="glass-card stok-table-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">📦 TÜM ÜRÜNLER (Toplam: @stoklar.Count)</span>
+                    </div>
+                    <div style="flex-grow: 1; overflow: auto;">
+                        <MudTable T="StokKart" Items="@GetFilteredStoklar()" Hover="true" Dense="true" FixedHeader="true" 
+                                  SelectedItem="@selectedStok" OnRowClick="@StokRowClicked" Class="compact-table" Elevation="0" Style="background: transparent;">
+                            <HeaderContent>
+                                <MudTh>KOD</MudTh>
+                                <MudTh>GRUP</MudTh>
+                                <MudTh>ÜRÜN ADI</MudTh>
+                                <MudTh Style="text-align:right">SATIŞ</MudTh>
+                                <MudTh Style="text-align:right">MEVCUT</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd Style="font-size: 12px; opacity: 0.7;">@context.StokKodu</MudTd>
+                                <MudTd>
+                                     <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; background: rgba(96, 165, 250, 0.1); color: #60A5FA;">
+                                        @context.Kategori?.ToUpper()
+                                    </span>
+                                </MudTd>
+                                <MudTd Style="font-weight: 700;">@context.StokAdi</MudTd>
+                                <MudTd Style="text-align:right; font-weight: 700;">@context.SatisFiyati.ToString("N2") ₺</MudTd>
+                                <MudTd Style="text-align:right; font-weight: 900; color: #60A5FA;">@context.Miktar.ToString("N1") @context.Birim</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </div>
+                </div>
+
+                @* Table: Hareketler *@
+                <div class="glass-card stok-hareket-panel">
+                    <div class="panel-header" style="background: rgba(16, 185, 129, 0.1) !important;">
+                         <span class="panel-title" style="color: #34D399 !important;">🔄 STOK HAREKETLERİ @(selectedStok != null ? $"- {selectedStok.StokAdi}" : "")</span>
+                    </div>
+                    <div style="flex-grow: 1; overflow: auto;">
+                        @if (selectedStok != null)
+                        {
+                            <MudTable Items="@stokHareketleri" Dense="true" Hover="true" FixedHeader="true" Class="compact-table" Elevation="0" Style="background: transparent;">
+                                <HeaderContent>
+                                    <MudTh>TARİH</MudTh>
+                                    <MudTh>TÜR</MudTh>
+                                    <MudTh>AÇIKLAMA</MudTh>
+                                    <MudTh Style="text-align:right">MİKTAR</MudTh>
+                                </HeaderContent>
+                                <RowTemplate Context="hareket">
+                                    <MudTd>@hareket.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                                    <MudTd>
+                                        <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 900; background: @(hareket.IslemTuru == "GİRİŞ" ? "rgba(52, 211, 153, 0.15)" : "rgba(248, 113, 113, 0.15)"); color: @(hareket.IslemTuru == "GİRİŞ" ? "#34D399" : "#F87171")">
+                                            @hareket.IslemTuru
+                                        </span>
+                                    </MudTd>
+                                    <MudTd Style="font-size: 11px; opacity: 0.6;">@hareket.Aciklama</MudTd>
+                                    <MudTd Style="@($"text-align:right; font-weight: 800; color: {(hareket.IslemTuru == "GİRİŞ" ? "#34D399" : "#F87171")}")">
+                                        @((hareket.IslemTuru == "GİRİŞ" ? "+" : "-") + hareket.Miktar.ToString("N1"))
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                        else
+                        {
+                            <div class="d-flex align-center justify-center p-8" style="height: 100%; opacity: 0.3;">
+                                <MudText>Hareketleri incelemek için listeden bir ürün seçin</MudText>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </MudStack>
+        </MudItem>
+
+        @* RIGHTSIDE: SIDEBAR *@
+        <MudItem xs="12" lg="4">
+            <div class="sidebar-glass animate-slide-in">
+                <MudText Style="font-size: 11px; font-weight: 900; color: rgba(255,255,255,0.3); letter-spacing: 2px;" Class="mb-4">ÜRÜN DETAY / İŞLEM</MudText>
+                
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="editStokAdi" Label="Ürün Adı" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="editStokKodu" Label="Stok Kodu" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="editGrup" Label="Ürün Grubu" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                    </MudItem>
+                    <MudItem xs="6">
+                         <MudNumericField @bind-Value="editAlisFiyati" Label="Alış Fiyatı" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" HideSpinButtons="true" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudNumericField @bind-Value="editSatisFiyati" Label="Satış Fiyatı" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" HideSpinButtons="true" />
+                    </MudItem>
+                    
+                    <MudItem xs="12" Class="mt-2">
+                        <div class="d-flex gap-2">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Class="side-btn flex-grow-1" OnClick="SaveStok">DEĞİŞİKLİKLERİ KAYDET</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Class="side-btn" OnClick="FormuTemizle">YENİ</MudButton>
+                        </div>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                         <MudDivider Style="border-color: rgba(255,255,255,0.05)" Class="my-4"/>
+                         <MudText Style="font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.2);" Class="mb-3">HIZLI STOK HAREKETI</MudText>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                         <MudNumericField @bind-Value="islemMiktar" Label="Miktar" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                    </MudItem>
+                    <MudItem xs="6">
+                         <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" Class="side-btn" StartIcon="@Icons.Material.Filled.Add" OnClick='() => ManualStokHareket("GİRİŞ")'>GİRİŞ</MudButton>
+                    </MudItem>
+                    <MudItem xs="6">
+                         <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true" Class="side-btn" StartIcon="@Icons.Material.Filled.Remove" OnClick='() => ManualStokHareket("ÇIKIŞ")'>ÇIKIŞ</MudButton>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudDivider Style="border-color: rgba(255,255,255,0.05)" Class="my-4"/>
+                    </MudItem>
+
+                    <MudItem xs="6">
+                         <MudButton Variant="Variant.Outlined" Color="Color.Success" FullWidth="true" Class="side-btn" StartIcon="@Icons.Material.Filled.FileDownload" OnClick="DownloadTemplate">EXCEL</MudButton>
+                    </MudItem>
+                    <MudItem xs="6">
+                         <MudFileUpload T="IBrowserFile" OnFilesChanged="UploadExcel" Accept=".xlsx" Class="flex-grow-1">
+                                <ActivatorContent>
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Info" FullWidth="true" Class="side-btn" StartIcon="@Icons.Material.Filled.FileUpload">İÇE AKTAR</MudButton>
+                                </ActivatorContent>
+                         </MudFileUpload>
+                    </MudItem>
+
+                    <MudItem xs="12" Class="mt-auto">
+                        @if(selectedStok != null)
+                        {
+                            <div class="stat-box mt-4">
+                                <div style="font-size: 28px; font-weight: 900; color: #60A5FA;">@selectedStok.Miktar.ToString("N1")</div>
+                                <div style="font-size: 10px; opacity: 0.5; font-weight: 700; text-transform: uppercase;">GÜNCEL STOK DURUMU (@selectedStok.Birim)</div>
+                            </div>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" Class="mt-4" OnClick="DeleteStok" Style="font-size: 11px; font-weight: 800;">BU ÜRÜNÜ SİSTEMDEN SİL</MudButton>
+                        }
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </MudItem>
+    </MudGrid>
+</div>
+
+@code {
+    private List<StokKart> stoklar = new();
+    private List<ErmayMuhasebe.Models.StokHareket> stokHareketleri = new();
+    private StokKart? selectedStok = null;
+    private string filterKod = "";
+    private string editStokKodu = "";
+    private string editStokAdi = "";
+    private string editGrup = "";
+    private string editBirim = "Adet";
+    private decimal editAlisFiyati = 0;
+    private decimal editSatisFiyati = 0;
+    private decimal editKDV = 20;
+    private decimal editAcilisBakiye = 0;
+    private double islemMiktar = 0;
+    private DateTime? islemTarih = DateTime.Now;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+    private async Task LoadData()
+    {
+        stoklar = await DbService.GetStoklarAsync();
+    }
+    
+    private IEnumerable<StokKart> GetFilteredStoklar()
+    {
+        if (string.IsNullOrWhiteSpace(filterKod)) return stoklar;
+        return stoklar.Where(s => (s.StokKodu?.Contains(filterKod, StringComparison.OrdinalIgnoreCase) == true) || 
+                                 (s.StokAdi?.Contains(filterKod, StringComparison.OrdinalIgnoreCase) == true));
+    }
+    
+    private void StokRowClicked(TableRowClickEventArgs<StokKart> args)
+    {
+        selectedStok = args.Item;
+        if (selectedStok != null) {
+            editStokKodu = selectedStok.StokKodu ?? "";
+            editStokAdi = selectedStok.StokAdi ?? "";
+            editGrup = selectedStok.Kategori ?? "";
+            editBirim = selectedStok.Birim ?? "Adet";
+            editAlisFiyati = selectedStok.AlisFiyati;
+            editSatisFiyati = selectedStok.SatisFiyati;
+            editKDV = selectedStok.KDV;
+            editAcilisBakiye = (decimal)selectedStok.Miktar;
+            LoadStokHareketleri(selectedStok.Id);
+        }
+    }
+    
+    private async void LoadStokHareketleri(int stokId)
+    {
+        stokHareketleri = await DbService.GetStokHareketleriByStokIdAsync(stokId);
+        StateHasChanged();
+    }
+
+    private Task FormuTemizle()
+    {
+        selectedStok = null;
+        editStokKodu = ""; editStokAdi = ""; editGrup = ""; editBirim = "Adet";
+        editAlisFiyati = 0; editSatisFiyati = 0; editKDV = 20; editAcilisBakiye = 0;
+        stokHareketleri = new();
+        return Task.CompletedTask;
+    }
+    
+    private async Task SaveStok()
+    {
+        if (string.IsNullOrWhiteSpace(editStokAdi)) { Snackbar.Add("Ürün adı boş olamaz.", Severity.Warning); return; }
+
+        var target = selectedStok ?? new StokKart();
+        target.StokKodu = editStokKodu;
+        target.StokAdi = editStokAdi;
+        target.Kategori = editGrup;
+        target.Birim = editBirim;
+        target.AlisFiyati = editAlisFiyati;
+        target.SatisFiyati = editSatisFiyati;
+        target.KDV = (int)editKDV;
+        
+        if (selectedStok == null) target.KayitTarihi = DateTime.Now;
+
+        await DbService.SaveStokAsync(target);
+        Snackbar.Add("Stok kartı başarıyla kaydedildi.", Severity.Success);
+        await LoadData();
+        if (selectedStok == null) await FormuTemizle();
+    }
+    
+    private async Task DeleteStok()
+    {
+        if (selectedStok == null) return;
+        bool? result = await DialogService.ShowMessageBox("Silme Onayı", "Bu ürünü silmek istediğinize emin misiniz?", "Evet", "Hayır");
+        if (result == true) {
+            await DbService.DeleteStokAsync(selectedStok.Id);
+            Snackbar.Add("Ürün silindi.", Severity.Success);
+            await FormuTemizle();
+            await LoadData();
+        }
+    }
+
+    private async Task ManualStokHareket(string islemTuru)
+    {
+         if (selectedStok == null) { Snackbar.Add("Lütfen ürün seçin!", Severity.Warning); return; }
+         if (islemMiktar <= 0) { Snackbar.Add("Geçersiz miktar!", Severity.Warning); return; }
+
+         var hareket = new StokHareket {
+             StokId = selectedStok.Id, StokKodu = selectedStok.StokKodu, StokAdi = selectedStok.StokAdi,
+             Tarih = DateTime.Now, IslemTuru = islemTuru, Miktar = (decimal)islemMiktar,
+             Aciklama = "Hızlı Panel İşlemi"
+         };
+         
+         if (islemTuru == "GİRİŞ") selectedStok.Miktar += islemMiktar;
+         else selectedStok.Miktar -= islemMiktar;
+         
+         await DbService.SaveStokAsync(selectedStok);
+         await DbService.SaveStokHareketAsync(hareket);
+         Snackbar.Add($"Stok {islemTuru} kaydedildi.", Severity.Success);
+         LoadStokHareketleri(selectedStok.Id);
+         islemMiktar = 0;
+    }
+
+    private async Task DownloadTemplate()
+    {
+        var templateData = new List<StokExcelDto>
+        {
+            new StokExcelDto
+            {
+                StokKodu = "STK-001",
+                StokAdi = "Örnek Ürün Adı",
+                Barkod = "8690000000001",
+                Birim = "Adet",
+                Kategori = "Genel",
+                AlisFiyati = 50.00m,
+                SatisFiyati = 100.00m,
+                KDV = 20,
+                Miktar = 10,
+                MinSeviye = 5,
+                Aciklama = "Örnek stok açıklaması"
+            }
+        };
+        using var ms = new MemoryStream();
+        ms.SaveAs(templateData);
+        await FileService.SaveAndOpenFileAsync("Stok_Yukleme_Sablonu.xlsx", ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+
+    private async Task UploadExcel(InputFileChangeEventArgs e)
+    {
+        try {
+            using var ms = new MemoryStream();
+            await e.File.OpenReadStream(maxAllowedSize: 10485760).CopyToAsync(ms);
+            ms.Position = 0;
+            var rows = MiniExcel.Query(ms, useHeaderRow: true).ToList();
+            int count = 0;
+            foreach (var row in rows) {
+                var r = (IDictionary<string, object>)row;
+                string? GetVal(params string[] keys)
+                {
+                    foreach (var k in keys)
+                    {
+                        var match = r.Keys.FirstOrDefault(x => string.Equals(x.Replace(" ", "").Replace("_", ""), k.Replace(" ", "").Replace("_", ""), StringComparison.OrdinalIgnoreCase));
+                        if (match != null && r[match] != null) return r[match]?.ToString()?.Trim();
+                    }
+                    return null;
+                }
+
+                var kod = GetVal("StokKodu", "StokKod", "Kod", "UrunKodu");
+                if (string.IsNullOrWhiteSpace(kod)) continue;
+
+                var ad = GetVal("StokAdi", "StokAd", "UrunAdi", "Ad") ?? "İthal Ürün";
+                var birim = GetVal("Birim") ?? "Adet";
+                var kategori = GetVal("Kategori", "Grup", "StokGrubu") ?? "Genel";
+                var barkod = GetVal("Barkod", "Barcode");
+                var aciklama = GetVal("Aciklama", "Not");
+
+                decimal.TryParse(GetVal("AlisFiyati", "Alis", "AlisFiyat") ?? "0", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var alis);
+                decimal.TryParse(GetVal("SatisFiyati", "Satis", "SatisFiyat") ?? "0", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var satis);
+                int.TryParse(GetVal("KDV", "KdvOrani") ?? "20", out var kdv);
+                double.TryParse(GetVal("Miktar", "AcilisBakiyesi", "AcilisBakiye", "Adet") ?? "0", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var miktar);
+                double.TryParse(GetVal("MinSeviye", "KritikSeviye") ?? "0", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var minSeviye);
+
+                var existing = (await DbService.GetStoklarAsync()).FirstOrDefault(x => string.Equals(x.StokKodu, kod, StringComparison.OrdinalIgnoreCase));
+                var s = existing ?? new StokKart { StokKodu = kod, KayitTarihi = DateTime.Now };
+
+                s.StokAdi = ad;
+                s.Birim = birim;
+                s.Kategori = kategori;
+                s.Barkod = barkod;
+                s.AlisFiyati = alis;
+                s.SatisFiyati = satis;
+                s.KDV = kdv;
+                s.Miktar = miktar;
+                s.MinSeviye = minSeviye;
+                s.Aciklama = aciklama;
+
+                await DbService.SaveStokAsync(s);
+                count++;
+            }
+            Snackbar.Add($"{count} ürün içe aktarıldı.", Severity.Success);
+            await LoadData();
+        } catch (Exception ex) { Snackbar.Add("Hata: " + ex.Message, Severity.Error); }
+    }
+}

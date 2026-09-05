@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Müşteri Ekstresi - Pixel-Perfect Clone</title>
+    <style>
+        /*
+        ============================================
+        FORENSIC VISUAL ANALYSIS REPORT
+        ============================================
+        
+        Font Family:        Arial, sans-serif
+        Default Font Size:  9pt (12px)
+        Default Font Color: #000000
+        Page Background:    #ffffff
+        Page Format:        A4 Portrait (595pt x 842pt)
+        Page Margin:        1cm (~28pt / ~37px)
+        
+        HEADER:
+          - Date text:      9pt, Regular 400, #000000
+          - "ERMAY" text:   9pt, Regular 400, #000000
+          - Title text:     16pt, Bold 700, #000000
+          - Title margin-top: 15pt
+          - Header padding-bottom: 20pt
+        
+        GENEL BİLGİLER CARD:
+          - Border:         1px solid #d1d5db
+          - Border-radius:  0px (no radius in image)
+          - Padding:        20px all sides
+          - Margin-bottom:  20px
+          - "Genel Bilgiler" text: 10pt, Bold 700, #000000
+          - Label width:    150px
+          - Label font:     9pt, Regular 400, #000000
+          - Value font:     9pt, Regular 400, #000000
+          - Bakiye value:   9pt, Bold 700, #dc2626
+          - Row spacing:    6px
+        
+        İŞLEM DETAYLARI CARD:
+          - Border:         1px solid #d1d5db
+          - Border-radius:  0px
+          - Padding:        20px all sides
+          - "İşlem Detayları" text: 10pt, Bold 700, #000000 (INSIDE card)
+          - Title margin-bottom: 15px
+        
+        TABLE:
+          - No extra outer border (card border serves as container)
+          - Header BG:      #f9fafb
+          - Header border:  1px bottom #e5e7eb (NO vertical borders)
+          - Header font:    9pt, Regular 400, #000000
+          - Cell border:    1px bottom #e5e7eb (NO vertical borders)
+          - Cell padding:   10px vertical, 8px horizontal
+          - Cell font:      9pt, Regular 400, #000000
+          - Row height:     ~36px
+        
+        COLUMN WIDTHS:
+          - Tarih:          70px (fixed)
+          - İşlem Tipi:     70px (fixed)
+          - Açıklama:       flex 2
+          - Ödeme Yöntemi:  flex 1.2
+          - Borç:           80px (fixed)
+          - Alacak:         80px (fixed)
+          - Bakiye:         80px (fixed)
+        
+        BADGES:
+          - Satış:          BG #3b82f6, text #ffffff, radius 10px (pill)
+          - Ödeme:          BG #22c55e, text #ffffff, radius 10px (pill)
+          - Alış:           BG #f59e0b, text #ffffff, radius 10px (pill)
+          - Padding:        2px 8px
+          - Font:           9pt, Regular 400
+        
+        AMOUNTS:
+          - Borç:           Bold 700, #dc2626 (₺ prefix)
+          - Alacak:         Bold 700, #16a34a (₺ prefix)
+          - Bakiye:         Bold 700, #000000 ($ prefix)
+          - Empty cell:     "-", Regular 400, #000000
+        
+        FOOTER:
+          - Left:           URL link (blue #3b82f6, 8pt)
+          - Right:          Page number "1/1" (9pt, #000000)
+        ============================================
+        */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #000000;
+            background-color: #ffffff;
+        }
+
+        .page {
+            width: 595px;
+            min-height: 842px;
+            padding: 37px;
+            margin: 0 auto;
+            background: #ffffff;
+            position: relative;
+        }
+
+        /* HEADER */
+        .header {
+            padding-bottom: 20px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 400;
+            color: #000000;
+        }
+
+        .header-title {
+            margin-top: 15px;
+            font-size: 21px;
+            font-weight: 700;
+            color: #000000;
+        }
+
+        /* CARD */
+        .card {
+            border: 1px solid #d1d5db;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 15px;
+        }
+
+        /* INFO ROWS */
+        .info-row {
+            display: flex;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 400;
+            color: #000000;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            width: 150px;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            flex: 1;
+        }
+
+        .info-value.balance-red {
+            font-weight: 700;
+            color: #dc2626;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        thead th {
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 400;
+            color: #000000;
+            text-align: left;
+        }
+
+        thead th.align-right {
+            text-align: right;
+        }
+
+        tbody td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 400;
+            color: #000000;
+            vertical-align: middle;
+        }
+
+        tbody td.align-right {
+            text-align: right;
+        }
+
+        /* COLUMN WIDTHS */
+        .col-tarih {
+            width: 70px;
+        }
+
+        .col-islem-tipi {
+            width: 70px;
+        }
+
+        .col-aciklama {
+            /* flex */
+        }
+
+        .col-odeme {
+            width: 95px;
+        }
+
+        .col-borc {
+            width: 80px;
+        }
+
+        .col-alacak {
+            width: 80px;
+        }
+
+        .col-bakiye {
+            width: 80px;
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 400;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        .badge-satis {
+            background-color: #3b82f6;
+        }
+
+        .badge-odeme {
+            background-color: #22c55e;
+        }
+
+        .badge-alis {
+            background-color: #f59e0b;
+        }
+
+        /* AMOUNTS */
+        .amount-borc {
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        .amount-alacak {
+            color: #16a34a;
+            font-weight: 700;
+        }
+
+        .amount-bakiye {
+            color: #000000;
+            font-weight: 700;
+        }
+
+        .amount-dash {
+            color: #000000;
+            font-weight: 400;
+        }
+
+        /* FOOTER */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            font-size: 12px;
+            color: #000000;
+            position: absolute;
+            bottom: 37px;
+            left: 37px;
+            right: 37px;
+        }
+
+        .footer-link {
+            font-size: 10px;
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+
+        .footer-page {
+            font-size: 12px;
+            color: #000000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page">
+
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-top">
+                <span>11.02.2026 14:03</span>
+                <span>ERMAY</span>
+            </div>
+            <div class="header-title">Müşteri Ekstresi: YAĞMUR PERDE</div>
+        </div>
+
+        <!-- GENEL BİLGİLER CARD -->
+        <div class="card">
+            <div class="card-title">Genel Bilgiler</div>
+            <div class="info-row">
+                <div class="info-label">Müşteri Adı:</div>
+                <div class="info-value">YAĞMUR PERDE</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Toplam Satış:</div>
+                <div class="info-value">₺694.044,00</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Toplam Ödeme:</div>
+                <div class="info-value">₺364.600,00</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Bakiye:</div>
+                <div class="info-value balance-red">₺329.444,00 (Borçlu)</div>
+            </div>
+        </div>
+
+        <!-- İŞLEM DETAYLARI CARD -->
+        <div class="card">
+            <div class="card-title">İşlem Detayları</div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-tarih">Tarih</th>
+                        <th class="col-islem-tipi">İşlem Tipi</th>
+                        <th class="col-aciklama">Açıklama</th>
+                        <th class="col-odeme">Ödeme Yöntemi</th>
+                        <th class="col-borc align-right">Borç</th>
+                        <th class="col-alacak align-right">Alacak</th>
+                        <th class="col-bakiye align-right">Bakiye</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>07.10.2025</td>
+                        <td><span class="badge badge-satis">Satış</span></td>
+                        <td>HURÇ SİYAH +1 kalem</td>
+                        <td>-</td>
+                        <td class="align-right amount-borc">₺189.844,00</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-bakiye">$189.844,00</td>
+                    </tr>
+                    <tr>
+                        <td>13.10.2025</td>
+                        <td><span class="badge badge-odeme">Ödeme</span></td>
+                        <td>ÖDEME</td>
+                        <td>Nakit</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-alacak">₺50.000,00</td>
+                        <td class="align-right amount-bakiye">$139.844,00</td>
+                    </tr>
+                    <tr>
+                        <td>22.10.2025</td>
+                        <td><span class="badge badge-satis">Satış</span></td>
+                        <td>BANT</td>
+                        <td>-</td>
+                        <td class="align-right amount-borc">₺3.200,00</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-bakiye">$143.044,00</td>
+                    </tr>
+                    <tr>
+                        <td>28.10.2025</td>
+                        <td><span class="badge badge-satis">Satış</span></td>
+                        <td>HURÇ SİYAH</td>
+                        <td>-</td>
+                        <td class="align-right amount-borc">₺62.000,00</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-bakiye">$205.044,00</td>
+                    </tr>
+                    <tr>
+                        <td>28.10.2025</td>
+                        <td><span class="badge badge-satis">Satış</span></td>
+                        <td>HURÇ GRİ</td>
+                        <td>-</td>
+                        <td class="align-right amount-borc">₺62.000,00</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-bakiye">$267.044,00</td>
+                    </tr>
+                    <tr>
+                        <td>28.10.2025</td>
+                        <td><span class="badge badge-odeme">Ödeme</span></td>
+                        <td>ÖDEME</td>
+                        <td>Nakit</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-alacak">₺100.000,00</td>
+                        <td class="align-right amount-bakiye">$167.044,00</td>
+                    </tr>
+                    <tr>
+                        <td>02.12.2025</td>
+                        <td><span class="badge badge-odeme">Ödeme</span></td>
+                        <td>ÖDEME</td>
+                        <td>Nakit</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-alacak">₺40.000,00</td>
+                        <td class="align-right amount-bakiye">$127.044,00</td>
+                    </tr>
+                    <tr>
+                        <td>22.12.2025</td>
+                        <td><span class="badge badge-odeme">Ödeme</span></td>
+                        <td>ÖDEME</td>
+                        <td>Nakit</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-alacak">₺40.000,00</td>
+                        <td class="align-right amount-bakiye">$87.044,00</td>
+                    </tr>
+                    <tr>
+                        <td>17.01.2026</td>
+                        <td><span class="badge badge-odeme">Ödeme</span></td>
+                        <td>800$</td>
+                        <td>Nakit</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-alacak">₺34.600,00</td>
+                        <td class="align-right amount-bakiye">$52.444,00</td>
+                    </tr>
+                    <tr>
+                        <td>28.01.2026</td>
+                        <td><span class="badge badge-satis">Satış</span></td>
+                        <td>PERDE HURRCU</td>
+                        <td>-</td>
+                        <td class="align-right amount-borc">₺169.000,00</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-bakiye">$221.444,00</td>
+                    </tr>
+                    <tr>
+                        <td>02.02.2026</td>
+                        <td><span class="badge badge-odeme">Ödeme</span></td>
+                        <td>ÖDEME HESABA GELEN</td>
+                        <td>Havale</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-alacak">₺50.000,00</td>
+                        <td class="align-right amount-bakiye">$171.444,00</td>
+                    </tr>
+                    <tr>
+                        <td>02.02.2026</td>
+                        <td><span class="badge badge-satis">Satış</span></td>
+                        <td>PERDE HURCU</td>
+                        <td>-</td>
+                        <td class="align-right amount-borc">₺208.000,00</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-bakiye">$379.444,00</td>
+                    </tr>
+                    <tr>
+                        <td>09.02.2026</td>
+                        <td><span class="badge badge-odeme">Ödeme</span></td>
+                        <td>-</td>
+                        <td>Havale</td>
+                        <td class="align-right amount-dash">-</td>
+                        <td class="align-right amount-alacak">₺50.000,00</td>
+                        <td class="align-right amount-bakiye">$329.444,00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <span class="footer-link">https://s2k-one.vercel.app/customers/JAoBrQWhXmBej7HUHk/extract</span>
+            <span class="footer-page">1/1</span>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

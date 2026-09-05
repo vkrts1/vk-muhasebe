@@ -1,0 +1,238 @@
+@page "/cari-hareket-dokumu"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@using MudBlazor
+
+<style>
+    .rapor-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .rapor-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 25px;
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .total-panel {
+        background: rgba(96, 165, 250, 0.05);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 20px;
+        border: 1px solid rgba(96, 165, 250, 0.1);
+    }
+
+    .total-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+    }
+
+    .total-value {
+        font-size: 20px;
+        font-weight: 900;
+        color: white;
+    }
+</style>
+
+<div class="rapor-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="rapor-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(96, 165, 250, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.ListAlt" Color="Color.Info" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Cari Hareket Dökümü</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Extre ve işlem detay analizi.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-3">
+                <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Raporlara Dön</MudButton>
+                @if (hareketler != null && hareketler.Any())
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Style="border-radius: 12px; font-weight: 700;" OnClick="PrintReport">Extre Yazdır (PDF)</MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. FILTERS *@
+    <div class="glass-card mb-6">
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="5">
+                <MudAutocomplete T="CariKart" Label="Cari Hesap Seçiniz" 
+                                  SearchFunc="@SearchCariler" @bind-Value="selectedCari"
+                                  ToStringFunc="@(c => c == null ? "" : c.Unvan)"
+                                  Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Person" AdornmentColor="Color.Info"
+                                  Class="bg-dark-input" Dense="true">
+                    <ItemTemplate Context="e">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="width: 100%; padding: 4px 0;">
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@e.Unvan</MudText>
+                            <span style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);">@e.Grup?.ToUpper()</span>
+                        </MudStack>
+                    </ItemTemplate>
+                </MudAutocomplete>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDateRangePicker Label="Tarih Aralığı" @bind-DateRange="_dateRange" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Style="height: 50px; border-radius: 12px; font-weight: 800;" OnClick="Raporla">RAPORLA</MudButton>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                 <MudButton Variant="Variant.Outlined" Color="Color.Info" FullWidth="true" Style="height: 50px; border-radius: 12px; font-weight: 700;" OnClick="LoadAllMovements">TÜMÜNÜ GÖR</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @if (hareketler != null && hareketler.Any())
+    {
+        @* 3. DATA TABLE *@
+        <div class="glass-card">
+            <div class="d-flex align-center justify-space-between mb-4 pa-4" style="background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                 <div>
+                     <MudText Style="font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.5); letter-spacing: 1px;">SEÇİLİ HESAP</MudText>
+                     <MudText Style="font-size: 16px; font-weight: 900; color: white;">@selectedCari?.Unvan</MudText>
+                 </div>
+                 <div class="d-flex align-center">
+                     <span style="font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 8px; background: rgba(96, 165, 250, 0.1); color: #60A5FA; letter-spacing: 0.5px;">
+                         @selectedCari?.Grup?.ToUpper() HESABI
+                     </span>
+                 </div>
+            </div>
+
+            <MudTable Items="@hareketler" Dense="true" Hover="true" Class="compact-table" Style="background: transparent;">
+                <HeaderContent>
+                    <MudTh>TARİH</MudTh>
+                    <MudTh>EVRAK NO</MudTh>
+                    <MudTh>İŞLEM TÜRÜ</MudTh>
+                    <MudTh>AÇIKLAMA</MudTh>
+                    <MudTh Style="text-align:right">BORÇ (+)</MudTh>
+                    <MudTh Style="text-align:right">ALACAK (-)</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Tarih.ToShortDateString()</MudTd>
+                    <MudTd>@context.EvrakNo</MudTd>
+                    <MudTd Style="font-weight: 700; color: #60A5FA;">@context.IslemTuru</MudTd>
+                    <MudTd Style="font-size: 12px;">@context.Aciklama</MudTd>
+                    <MudTd Style="text-align:right; color: #F87171; font-weight: 700;">@context.Borc.ToString("N2")</MudTd>
+                    <MudTd Style="text-align:right; color: #34D399; font-weight: 700;">@context.Alacak.ToString("N2")</MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            @* 4. TOTALS *@
+            <div class="total-panel">
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <div class="total-label">TOPLAM BORÇ</div>
+                        <div class="total-value" style="color: #F87171;">@hareketler.Sum(x => x.Borc).ToString("C2")</div>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <div class="total-label">TOPLAM ALACAK</div>
+                        <div class="total-value" style="color: #34D399;">@hareketler.Sum(x => x.Alacak).ToString("C2")</div>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <div class="total-label">BAKİYE DURUMU</div>
+                        <div class="total-value" style="color: #60A5FA;">@((hareketler.Sum(x => x.Borc) - hareketler.Sum(x => x.Alacak)).ToString("C2"))</div>
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </div>
+    }
+    else if (searched)
+    {
+        <div class="glass-card d-flex align-center justify-center py-12" style="opacity: 0.5;">
+             <MudText Typo="Typo.h6">Seçilen kriterlere uygun hareket bulunamadı.</MudText>
+        </div>
+    }
+</div>
+
+@code {
+    private List<CariKart> cariler = new();
+    private CariKart? selectedCari;
+    private DateRange _dateRange = new DateRange(new DateTime(DateTime.Now.Year, 1, 1), DateTime.Now);
+    private List<CariHareket>? hareketler;
+    private bool searched = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cariler = await DbService.GetCarilerAsync();
+    }
+
+    private async Task<IEnumerable<CariKart>> SearchCariler(string value, CancellationToken token)
+    {
+        await Task.CompletedTask;
+        if (string.IsNullOrEmpty(value)) return cariler.Take(20);
+        return cariler.Where(x => (x.Unvan ?? "").Contains(value, StringComparison.OrdinalIgnoreCase)).Take(10);
+    }
+
+    private async Task Raporla()
+    {
+        if (selectedCari == null)
+        {
+            Snackbar.Add("Lütfen bir cari hesap seçiniz.", Severity.Warning);
+            return;
+        }
+
+        searched = true;
+        var all = await DbService.GetCariHareketleriAsync(selectedCari.Id);
+        
+        hareketler = all.Where(x => 
+            (_dateRange.Start == null || x.Tarih.Date >= _dateRange.Start.Value.Date) && 
+            (_dateRange.End == null || x.Tarih.Date <= _dateRange.End.Value.Date)).ToList();
+    }
+
+    private async Task LoadAllMovements()
+    {
+        if (selectedCari == null)
+        {
+            Snackbar.Add("Lütfen bir cari hesap seçiniz.", Severity.Warning);
+            return;
+        }
+        searched = true;
+        hareketler = (await DbService.GetCariHareketleriAsync(selectedCari.Id)).ToList();
+    }
+    
+    private async Task PrintReport()
+    {
+        if (selectedCari == null || hareketler == null || !hareketler.Any()) return;
+        
+        try
+        {
+            var pdf = await PdfService.GenerateCariEkstrePdfBytesAsync(selectedCari, hareketler);
+            await FileService.SaveAndOpenFileAsync($"Ekstre_{selectedCari.Id}_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
+            Snackbar.Add("Extre PDF olarak oluşturuldu.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"PDF hatası: {ex.Message}", Severity.Error);
+        }
+    }
+}

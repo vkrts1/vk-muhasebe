@@ -1,0 +1,296 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject ISnackbar Snackbar
+
+<div class="quick-notes-container">
+    <div class="notes-header d-flex align-center justify-space-between mb-4">
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.NoteAlt" Style="color: #FBBF24;" />
+            <h3 class="notes-title">Hızlı Notlar</h3>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" OnClick="AddNewNote" 
+                       Style="background: rgba(251, 191, 36, 0.1); color: #FBBF24;" />
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-center py-8">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+        </div>
+    }
+    else if (!notes.Any())
+    {
+        <div class="empty-state py-8 text-center" @onclick="AddNewNote" style="cursor: pointer;">
+            <MudIcon Icon="@Icons.Material.Outlined.NoteAdd" Style="font-size: 40px; color: rgba(255,255,255,0.05);" />
+            <p style="color: rgba(255,255,255,0.2); font-size: 12px; margin-top: 8px;">Henüz not eklenmemiş. Eklemek için tıklayın.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notes-grid">
+            @foreach (var note in notes)
+            {
+                <div class="note-card" style="border-left: 4px solid @note.Color;">
+                    <div class="note-content-wrapper" @onclick="() => EditNote(note)">
+                        <div class="note-header-row">
+                            <span class="note-date">@note.CreatedAt.ToString("dd MMM HH:mm")</span>
+                            @if (note.IsPinned)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.PushPin" Size="Size.Small" Style="color: #FBBF24; font-size: 14px;" />
+                            }
+                        </div>
+                        <h4 class="note-card-title">@note.Title</h4>
+                        <p class="note-card-text">@note.Content</p>
+                    </div>
+                    <div class="note-actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" 
+                                       OnClick="() => DeleteNote(note)" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Add/Edit Dialog -->
+<MudDialog Visible="isDialogVisible" VisibleChanged="(bool val) => isDialogVisible = val" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@(editingNote.Id == 0 ? Icons.Material.Filled.Add : Icons.Material.Filled.Edit)" Class="mr-3"/> 
+            @(editingNote.Id == 0 ? "Yeni Not" : "Notu Düzenle")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField T="string" Label="Başlık" @bind-Value="editingNote.Title" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" />
+        <MudTextField T="string" Label="Not İçeriği" @bind-Value="editingNote.Content" Lines="4" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        
+        <div class="d-flex align-center gap-3 mt-4">
+            <span style="font-size: 12px; opacity: 0.6;">Renk:</span>
+            @foreach (var color in noteColors)
+            {
+                <div class="color-circle @(editingNote.Color == color ? "active" : "")" 
+                     style="background-color: @color;" @onclick="() => editingNote.Color = color"></div>
+            }
+            <MudSpacer />
+            <MudCheckBox T="bool" @bind-Checked="editingNote.IsPinned" Label="Sabitle" Dense="true" Color="Color.Warning" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => isDialogVisible = false">İptal</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SaveNote" Variant="Variant.Filled">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public string RelatedType { get; set; } = "General";
+    [Parameter] public int? RelatedId { get; set; }
+
+    private List<Note> notes = new();
+    private bool isLoading = true;
+    private bool isDialogVisible = false;
+    private Note editingNote = new();
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+    
+    private string[] noteColors = new[] { "#FBBF24", "#F87171", "#60A5FA", "#34D399", "#A78BFA", "#F472B6" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotes();
+    }
+
+    private async Task LoadNotes()
+    {
+        isLoading = true;
+        try
+        {
+            // Note: INoteRepository support was added to backend
+            notes = await DbService.Notes.GetByRelatedAsync(RelatedType, RelatedId ?? 0);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Notes Load Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AddNewNote()
+    {
+        editingNote = new Note 
+        { 
+            RelatedType = RelatedType, 
+            RelatedId = RelatedId,
+            Color = noteColors[0],
+            CreatedAt = DateTime.Now
+        };
+        isDialogVisible = true;
+    }
+
+    private void EditNote(Note note)
+    {
+        editingNote = new Note
+        {
+            Id = note.Id,
+            Title = note.Title,
+            Content = note.Content,
+            Color = note.Color,
+            IsPinned = note.IsPinned,
+            RelatedId = note.RelatedId,
+            RelatedType = note.RelatedType,
+            CreatedAt = note.CreatedAt,
+            TenantId = note.TenantId
+        };
+        isDialogVisible = true;
+    }
+
+    private async Task SaveNote()
+    {
+        if (string.IsNullOrWhiteSpace(editingNote.Title) && string.IsNullOrWhiteSpace(editingNote.Content))
+        {
+            Snackbar.Add("İçerik boş olamaz", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            await DbService.Notes.SaveAsync(editingNote);
+            isDialogVisible = false;
+            Snackbar.Add("Not kaydedildi", Severity.Success);
+            await LoadNotes();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Kayıt hatası: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteNote(Note note)
+    {
+        try
+        {
+            await DbService.Notes.DeleteAsync(note.Id);
+            Snackbar.Add("Not silindi", Severity.Info);
+            await LoadNotes();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Silme hatası: " + ex.Message, Severity.Error);
+        }
+    }
+}
+
+<style>
+    .quick-notes-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .notes-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: white;
+        margin: 0;
+    }
+
+    .notes-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .note-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 12px;
+        position: relative;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .note-card:hover {
+        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-2px);
+    }
+
+    .note-content-wrapper {
+        cursor: pointer;
+        flex-grow: 1;
+    }
+
+    .note-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .note-date {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.3);
+        font-weight: 600;
+    }
+
+    .note-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0 0 4px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .note-card-text {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .note-actions {
+        opacity: 0;
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        transition: opacity 0.2s;
+    }
+
+    .note-card:hover .note-actions {
+        opacity: 1;
+    }
+
+    .color-circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.2s;
+    }
+
+    .color-circle:hover {
+        transform: scale(1.2);
+    }
+
+    .color-circle.active {
+        border-color: white;
+        transform: scale(1.1);
+    }
+
+    .empty-state:hover {
+        background: rgba(255,255,255,0.02);
+        border-radius: 12px;
+    }
+</style>

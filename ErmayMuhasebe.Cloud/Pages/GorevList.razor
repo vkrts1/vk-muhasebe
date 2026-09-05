@@ -1,0 +1,227 @@
+@page "/gorevler"
+@using MudBlazor
+@using System.Collections.ObjectModel
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+<div class="kanban-page fade-in">
+    <div class="kanban-header">
+        <div class="header-main">
+            <div class="header-icon-box" style="background: rgba(99, 102, 241, 0.15);">
+                <MudIcon Icon="@Icons.Material.Filled.ViewQuilt" Style="font-size: 26px; color: #6366F1;" />
+            </div>
+            <h1 class="header-title">Görev ve İş Takip Panosu (Kanban)</h1>
+        </div>
+        <p class="header-subtitle">Ekibinizin günlük işlerini ve önceliklerini görsel bir pano üzerinden yönetin.</p>
+    </div>
+
+    <div class="kanban-grid">
+        <!-- YAPILACAKLAR -->
+        <div class="kanban-col">
+            <div class="col-inner">
+                <div class="col-header">
+                    <span class="col-title" style="color: #9CA3AF;">YAPILACAKLAR</span>
+                    
+                    <div class="add-task-container">
+                        <input class="task-input" @bind="_newTaskTitle" placeholder="Yeni görev ekle..." @onkeyup="@(async e => { if(e.Key == "Enter") await AddTask(); })" />
+                        <button class="btn-add" @onclick="AddTask">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                        </button>
+                    </div>
+                </div>
+
+                <div class="task-list">
+                    @foreach (var task in _todo)
+                    {
+                        <div class="task-card">
+                            <span class="task-label">@task.Title</span>
+                            <div class="task-footer">
+                                <span class="task-user">@task.User</span>
+                                <div class="priority-pill" style="color: @task.Color; background: @(task.Color + "33");">@task.Priority</div>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn-action delete" @onclick="() => DeleteTask(task, 0)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Style="font-size:14px;" />
+                                </button>
+                                <button class="btn-action next" @onclick="() => MoveNext(task, 0)">
+                                    <MudIcon Icon="@Icons.Material.Filled.ArrowForwardIos" Style="font-size:14px;" />
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- DEVAM EDENLER -->
+        <div class="kanban-col">
+            <div class="col-inner">
+                <div class="col-header">
+                    <span class="col-title" style="color: #F59E0B;">DEVAM EDENLER</span>
+                </div>
+
+                <div class="task-list">
+                    @foreach (var task in _inProgress)
+                    {
+                        <div class="task-card">
+                            <span class="task-label">@task.Title</span>
+                            <div class="task-footer">
+                                <span class="task-user">@task.User</span>
+                                <div class="priority-pill" style="color: @task.Color; background: @(task.Color + "33");">@task.Priority</div>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn-action delete" @onclick="() => DeleteTask(task, 1)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Style="font-size:14px;" />
+                                </button>
+                                <button class="btn-action next" @onclick="() => MoveNext(task, 1)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Check" Style="font-size:14px;" />
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- TAMAMLANANLAR -->
+        <div class="kanban-col">
+            <div class="col-inner">
+                <div class="col-header">
+                    <span class="col-title" style="color: #10B981;">TAMAMLANANLAR</span>
+                </div>
+
+                <div class="task-list">
+                    @foreach (var task in _done)
+                    {
+                        <div class="task-card done">
+                            <span class="task-label strike">@task.Title</span>
+                            <div class="task-footer">
+                                <span class="task-user">@task.User</span>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn-action delete" @onclick="() => DeleteTask(task, 2)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Style="font-size:14px;" />
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _newTaskTitle = "";
+    private List<KanbanTask> _todo = new();
+    private List<KanbanTask> _inProgress = new();
+    private List<KanbanTask> _done = new();
+
+    protected override void OnInitialized()
+    {
+        // Mock data to match desktop state
+        _todo = new List<KanbanTask> {
+            new KanbanTask { Title = "Muhasebe kayıtlarının kontrolü", User = "Ahmet Y.", Priority = "Yüksek", Color = "#EF4444" },
+            new KanbanTask { Title = "Yeni ürün görsellerinin eklenmesi", User = "Elif S.", Priority = "Normal", Color = "#60A5FA" }
+        };
+        _inProgress = new List<KanbanTask> {
+            new KanbanTask { Title = "Haftalık raporların hazırlanması", User = "Murat K.", Priority = "Yüksek", Color = "#EF4444" }
+        };
+        _done = new List<KanbanTask> {
+            new KanbanTask { Title = "Yedekleme sisteminin testi", User = "System", Priority = "Düşük", Color = "#10B981" }
+        };
+    }
+
+    private async Task AddTask()
+    {
+        if (string.IsNullOrWhiteSpace(_newTaskTitle)) return;
+        _todo.Add(new KanbanTask { Title = _newTaskTitle, User = "Ben", Priority = "Normal", Color = "#60A5FA" });
+        _newTaskTitle = "";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void MoveNext(KanbanTask task, int currentStep)
+    {
+        if (currentStep == 0) { _todo.Remove(task); _inProgress.Add(task); }
+        else if (currentStep == 1) { _inProgress.Remove(task); _done.Add(task); }
+        StateHasChanged();
+    }
+
+    private void DeleteTask(KanbanTask task, int step)
+    {
+        if (step == 0) _todo.Remove(task);
+        else if (step == 1) _inProgress.Remove(task);
+        else if (step == 2) _done.Remove(task);
+        StateHasChanged();
+    }
+
+    public class KanbanTask
+    {
+        public string Title { get; set; } = "";
+        public string User { get; set; } = "";
+        public string Priority { get; set; } = "";
+        public string Color { get; set; } = "#6366F1";
+    }
+}
+
+<style>
+.kanban-page { padding: 30px; background: var(--background-color); min-height: calc(100vh - 50px); color: white; display: flex; flex-direction: column; }
+
+.kanban-header { margin-bottom: 25px; }
+.header-main { display: flex; gap: 15px; align-items: center; }
+.header-icon-box { 
+    width: 50px; height: 50px; background: rgba(99, 102, 241, 0.15); 
+    border-radius: 15px; display: flex; align-items: center; justify-content: center;
+}
+.header-title { font-size: 28px; font-weight: 700; margin: 0; }
+.header-subtitle { font-size: 15px; color: #9CA3AF; margin: 10px 0 0 65px; }
+
+.kanban-grid { 
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; 
+}
+
+.kanban-col { 
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); 
+    border-radius: 16px; padding: 15px; display: flex; flex-direction: column;
+}
+.col-inner { display: flex; flex-direction: column; height: 100%; }
+
+.col-header { margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.col-title { font-size: 14px; font-weight: 700; letter-spacing: 1px; }
+
+.add-task-container { 
+    align-self: stretch; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); 
+    border-radius: 8px; display: flex; padding: 2px; align-items: center;
+}
+.task-input { 
+    flex: 1; background: transparent; border: none; color: white; padding: 8px 12px; font-size: 13px; outline: none;
+}
+.btn-add { 
+    width: 32px; height: 32px; background: #6366F1; border: none; color: white; border-radius: 6px; 
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+
+.task-list { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1; }
+
+.task-card { 
+    background: #1A1D21; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 12px; 
+    display: flex; flex-direction: column; gap: 8px; transition: background 0.2s;
+}
+.task-card:hover { background: #22252a; }
+.task-card.done { opacity: 0.6; }
+
+.task-label { font-size: 13px; font-weight: 600; color: white; }
+.task-label.strike { text-decoration: line-through; }
+
+.task-footer { display: flex; justify-content: space-between; align-items: center; }
+.task-user { font-size: 10px; color: #9CA3AF; }
+.priority-pill { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+
+.task-actions { display: flex; gap: 5px; margin-top: 5px; justify-content: space-between; }
+.btn-action { 
+    background: transparent; border: none; cursor: pointer; padding: 5px; border-radius: 4px; display: flex; align-items: center;
+}
+.btn-action:hover { background: rgba(255,255,255,0.05); }
+.btn-action.delete { color: #EF4444; }
+.btn-action.next { color: #10B981; }
+</style>

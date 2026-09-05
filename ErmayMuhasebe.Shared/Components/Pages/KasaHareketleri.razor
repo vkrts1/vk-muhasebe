@@ -1,0 +1,204 @@
+@page "/kasa-hareketleri"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+
+<style>
+    .kasa-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .kasa-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        overflow: hidden;
+        padding: 24px;
+    }
+
+    .filter-panel {
+        background: rgba(255,255,255,0.02);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .action-btn {
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        padding: 8px 24px !important;
+        text-transform: none !important;
+    }
+
+    .status-pill {
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 800;
+    }
+</style>
+
+<div class="kasa-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="kasa-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(52, 211, 153, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Success" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Kasa Hareket Dökümü</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Nakit giriş, çıkış ve bakiye analizi.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-2">
+                 <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.ArrowBack" Class="action-btn" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">GERİ DÖN</MudButton>
+                 @if(hareketler.Any())
+                 {
+                     <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Class="action-btn" OnClick="PrintReport">PDF OLARAK YAZDIR</MudButton>
+                 }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. FILTER & TABLE *@
+    <div class="glass-card">
+        <div class="filter-panel">
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker @bind-Date="baslangic" Label="Başlangıç Tarihi" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker @bind-Date="bitis" Label="Bitiş Tarihi" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-dark-input" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true" Class="action-btn" StartIcon="@Icons.Material.Filled.FilterList" OnClick="Listele">LİSTELE</MudButton>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        @if(listelendi)
+        {
+            <MudTable Items="@hareketler" Hover="true" Dense="true" Class="compact-table" Elevation="0" Style="background: transparent;">
+                <HeaderContent>
+                    <MudTh>TARİH</MudTh>
+                    <MudTh>AÇIKLAMA / İŞLEM DETAYI</MudTh>
+                    <MudTh Style="text-align: right;">GİRİŞ (+)</MudTh>
+                    <MudTh Style="text-align: right;">ÇIKIŞ (-)</MudTh>
+                    <MudTh Style="text-align: right;">BAKİYE</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                    <MudTd>
+                        <MudText Style="font-weight: 700; font-size: 13px;">@context.Islem</MudText>
+                    </MudTd>
+                    <MudTd Style="text-align: right; color: #34D399; font-weight: 800;">
+                        @(context.Giris > 0 ? "+ " + context.Giris.ToString("N2") : "")
+                    </MudTd>
+                    <MudTd Style="text-align: right; color: #F87171; font-weight: 800;">
+                        @(context.Cikis > 0 ? "- " + context.Cikis.ToString("N2") : "")
+                    </MudTd>
+                    <MudTd Style="text-align: right; font-weight: 900; color: white; background: rgba(255,255,255,0.02);">
+                        @context.Bakiye.ToString("N2") ₺
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </div>
+</div>
+
+@code {
+    private DateTime? baslangic = DateTime.Now.AddMonths(-1);
+    private DateTime? bitis = DateTime.Now;
+    private bool listelendi = false;
+    private List<KasaHareketView> hareketler = new();
+
+    class KasaHareketView
+    {
+        public DateTime Tarih { get; set; }
+        public string Islem { get; set; } = "";
+        public decimal Giris { get; set; }
+        public decimal Cikis { get; set; }
+        public decimal Bakiye { get; set; }
+    }
+
+    private async Task Listele()
+    {
+        hareketler.Clear();
+        var tumHareketler = await DbService.GetKasaHareketleriAsync();
+        
+        var filtreli = tumHareketler.Where(h => 
+            (!baslangic.HasValue || h.Tarih.Date >= baslangic.Value.Date) &&
+            (!bitis.HasValue || h.Tarih.Date <= bitis.Value.Date)
+        ).OrderBy(x => x.Tarih).ToList();
+
+        decimal bakiye = 0;
+        foreach(var h in filtreli)
+        {
+            decimal giris = (h.IslemTuru == "Tahsilat" || h.IslemTuru == "Giriş" || h.IslemTuru == "Satis") ? h.Tutar : 0;
+            decimal cikis = (h.IslemTuru == "Ödeme" || h.IslemTuru == "Odeme" || h.IslemTuru == "Çıkış" || h.IslemTuru == "Alis") ? h.Tutar : 0;
+
+            if (giris == 0 && cikis == 0) cikis = h.Tutar; 
+
+            bakiye += (giris - cikis);
+            
+            hareketler.Add(new KasaHareketView
+            {
+                Tarih = h.Tarih,
+                Islem = h.Aciklama ?? "",
+                Giris = giris,
+                Cikis = cikis,
+                Bakiye = bakiye
+            });
+        }
+        
+        hareketler = hareketler.OrderByDescending(x => x.Tarih).ToList();
+        listelendi = true;
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Tarih", "İşlem", "Giriş", "Çıkış", "Bakiye" };
+            var rows = hareketler.Select(h => new[] 
+            { 
+                h.Tarih.ToString("dd.MM.yyyy"), 
+                h.Islem, 
+                (h.Giris > 0 ? h.Giris.ToString("N2") : "-"),
+                (h.Cikis > 0 ? h.Cikis.ToString("N2") : "-"),
+                h.Bakiye.ToString("N2")
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Kasa Hareketleri Dökümü", headers, rows);
+            await FileService.SaveAndOpenFileAsync("KasaHareketleri.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

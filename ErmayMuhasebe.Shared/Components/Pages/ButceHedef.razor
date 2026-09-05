@@ -1,0 +1,493 @@
+@page "/butce-hedef"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject NavigationManager Nav
+
+<style>
+    .butce-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .butce-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .butce-panel-glass {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 25px;
+        height: 100%;
+    }
+
+    .metric-value {
+        font-size: 28px;
+        font-weight: 900;
+        color: white;
+        letter-spacing: -0.5px;
+    }
+
+    .metric-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.5);
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .badge-yuzde {
+        background: rgba(245, 158, 11, 0.15);
+        color: #F59E0B;
+        padding: 6px 12px;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 16px;
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .edit-mode-indicator {
+        background: #EF4444;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .btn-action {
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        padding: 8px 20px !important;
+    }
+</style>
+
+<div class="butce-container">
+    @* 1. TOP SUMMARY & ACTIONS *@
+    <div class="butce-header-glass animate-fade-in">
+        <MudGrid Class="align-center">
+            @* Title & Year *@
+            <MudItem xs="12" md="4">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(96, 165, 250, 0.15); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.TrackChanges" Color="Color.Info" Size="Size.Medium" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 20px; color: white;">Bütçe Planlama Merkezi</MudText>
+                        <div class="d-flex align-center gap-2 mt-1">
+                            <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Mali Yıl:</MudText>
+                            <MudSelect T="int" Value="@SelectedYear" ValueChanged="OnYearChanged" Dense="true" Margin="Margin.Dense" Variant="Variant.Text" Style="width: 100px; color: white; font-weight: 700;">
+                                @foreach(var y in AvailableYears)
+                                {
+                                    <MudSelectItem Value="@y">@y</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+                    </div>
+                </div>
+            </MudItem>
+
+            @* KPI Centers *@
+            <MudItem xs="12" md="5">
+                <div class="d-flex align-center justify-space-around" style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 15px 30px;">
+                    <div>
+                        <div class="metric-label">YILLIK HEDEF</div>
+                        @if (IsEditMode)
+                        {
+                            <MudNumericField @bind-Value="YillikHedef" Variant="Variant.Text" Margin="Margin.Dense" Style="width: 150px; color: white; font-size: 24px; font-weight: 900;" HideSpinButtons="true" Format="N0" />
+                        }
+                        else
+                        {
+                            <div class="metric-value">@YillikHedef.ToString("N0") ₺</div>
+                        }
+                    </div>
+                    <MudDivider Vertical="true" FlexItem="true" DividerType="DividerType.Middle" Class="mx-4" />
+                    <div>
+                        <div class="metric-label">GERÇEKLEŞEN</div>
+                        <div class="metric-value" style="color: #10B981;">@YillikGerceklesen.ToString("N0") ₺</div>
+                    </div>
+                    <MudDivider Vertical="true" FlexItem="true" DividerType="DividerType.Middle" Class="mx-4" />
+                    <div class="badge-yuzde">
+                        % @YillikYuzde.ToString("N1")
+                    </div>
+                </div>
+            </MudItem>
+
+            @* Actions *@
+            <MudItem xs="12" md="3" Class="d-flex justify-end gap-3 align-center">
+                @if (IsEditMode)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Material.Filled.AutoFixHigh" OnClick="AutoDistribute" Class="btn-action">Otomatik Doldur</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveAll" Class="btn-action">Kaydet</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ToggleEdit" Class="btn-action" Style="color: white;">İptal</MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Edit" OnClick="ToggleEdit" Class="btn-action">Hedefleri Düzenle</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport" Class="btn-action">PDF Aktar</MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. MAIN CONTENT *@
+    <MudGrid Spacing="6">
+        @* Left: Monthly Matrix *@
+        <MudItem xs="12" lg="5">
+            <div class="butce-panel-glass">
+                <MudText Typo="Typo.h6" Style="color: white; font-weight: 800; margin-bottom: 20px;">Aylık Hedef Matrisi</MudText>
+                <MudTable Items="@AylikPlanlar" Dense="true" Hover="true" Class="compact-table" 
+                          T="AylikPlanItem" OnRowClick="OnMonthSelected" SelectedItem="@SelectedAylikPlan">
+                    <HeaderContent>
+                        <MudTh>AY</MudTh>
+                        <MudTh Style="text-align: right;">HEDEF</MudTh>
+                        <MudTh Style="text-align: right;">GERÇEKLEŞEN</MudTh>
+                        <MudTh>DURUM</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.AyAdi</MudTd>
+                        <MudTd Style="text-align: right; font-weight: 700;">
+                            @if (IsEditMode)
+                            {
+                                <MudNumericField @bind-Value="context.Hedef" Variant="Variant.Text" Margin="Margin.Dense" Style="text-align: right; color: white;" HideSpinButtons="true" />
+                            }
+                            else
+                            {
+                                <span>@context.Hedef.ToString("N0") ₺</span>
+                            }
+                        </MudTd>
+                        <MudTd Style="text-align: right; color: #10B981; font-weight: 700;">@context.Gerceklesen.ToString("N0") ₺</MudTd>
+                        <MudTd>
+                            <div class="d-flex align-center">
+                                <span class="status-dot" style="background: @context.Renk;"></span>
+                                <MudText Style="@($"color: {context.Renk}; font-weight: 800; font-size: 12px;")">% @context.Yuzde.ToString("N0")</MudText>
+                            </div>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </div>
+        </MudItem>
+
+        @* Right Side *@
+        <MudItem xs="12" lg="7">
+            <MudGrid Spacing="6">
+                @* Trend Chart *@
+                <MudItem xs="12">
+                    <div class="butce-panel-glass" style="height: 350px;">
+                        <MudText Typo="Typo.h6" Style="color: white; font-weight: 800; margin-bottom: 20px;">Hedef & Gerçekleşme Trendi</MudText>
+                        <MudChart ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@ChartXLabels" Width="100%" Height="240px" ChartOptions="@ChartOptions" />
+                    </div>
+                </MudItem>
+
+                @* Weekly Detail *@
+                <MudItem xs="12">
+                    <div class="butce-panel-glass">
+                        <div class="d-flex align-center justify-space-between mb-4">
+                            <div class="d-flex align-center gap-3">
+                                <MudText Typo="Typo.h6" Style="color: white; font-weight: 800;">
+                                    @(SelectedAylikPlan != null ? SelectedAylikPlan.AyAdi + " Ayı Haftalık Detay" : "Finansal Özet & Haftalık Plan")
+                                </MudText>
+                                @if (IsEditMode && SelectedAylikPlan != null)
+                                {
+                                    <span class="edit-mode-indicator">DÜZENLEME MODU</span>
+                                }
+                            </div>
+                            @if (IsEditMode && SelectedAylikPlan != null)
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" OnClick="AutoDistributeWeekly" Class="rounded-pill">Haftalık Dağıt</MudButton>
+                            }
+                        </div>
+
+                        @if (SelectedAylikPlan == null)
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-12" style="opacity: 0.5;">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Large" Class="mb-3" />
+                                <MudText>Detaylı haftalık analiz için sol tablodan bir ay seçiniz.</MudText>
+                            </div>
+                        }
+                        else
+                        {
+                            <MudTable Items="@HaftalikPlanlar" Dense="true" Hover="true" Class="compact-table">
+                                <HeaderContent>
+                                    <MudTh>HAFTA</MudTh>
+                                    <MudTh Style="text-align: right;">HEDEF</MudTh>
+                                    <MudTh Style="text-align: right;">GERÇEKLEŞEN</MudTh>
+                                    <MudTh>DURUM</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.HaftaAdi</MudTd>
+                                    <MudTd Style="text-align: right;">
+                                        @if (IsEditMode)
+                                        {
+                                            <MudNumericField @bind-Value="context.Hedef" Variant="Variant.Text" Margin="Margin.Dense" Style="text-align: right; color: white;" HideSpinButtons="true" />
+                                        }
+                                        else
+                                        {
+                                            <span>@context.Hedef.ToString("N0") ₺</span>
+                                        }
+                                    </MudTd>
+                                    <MudTd Style="text-align: right; color: #10B981;">@context.Gerceklesen.ToString("N0") ₺</MudTd>
+                                    <MudTd>
+                                        <div class="d-flex align-center">
+                                            <span class="status-dot" style="background: @context.RenkText;"></span>
+                                            <MudText Style="@($"color: {context.RenkText}; font-weight: 700;")">% @context.Yuzde.ToString("N0")</MudText>
+                                        </div>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+    </MudGrid>
+</div>
+
+@code {
+    private bool IsEditMode = false;
+    private int SelectedYear = DateTime.Now.Year;
+    private List<int> AvailableYears = new() { DateTime.Now.Year - 1, DateTime.Now.Year, DateTime.Now.Year + 1 };
+
+    private decimal YillikHedef { get; set; }
+    private decimal YillikGerceklesen => AylikPlanlar.Sum(p => p.Gerceklesen);
+    private decimal YillikYuzde => YillikHedef == 0 ? 0 : (YillikGerceklesen / YillikHedef * 100);
+
+    private List<AylikPlanItem> AylikPlanlar = new();
+    private List<HaftalikPlanItem> HaftalikPlanlar = new();
+    private AylikPlanItem? SelectedAylikPlan;
+
+    private List<ChartSeries> Series = new();
+    private string[] ChartXLabels = { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" };
+    private ChartOptions ChartOptions = new() { YAxisTicks = 5, ShowLegend = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task OnYearChanged(int year)
+    {
+        SelectedYear = year;
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        AylikPlanlar.Clear();
+        SelectedAylikPlan = null;
+        HaftalikPlanlar.Clear();
+
+        // Load Yillik Hedef
+        var yillikHedefler = await DbService.GetYillikSatisHedefleriAsync();
+        var currentYillik = yillikHedefler.FirstOrDefault(x => x.Yil == SelectedYear);
+        YillikHedef = currentYillik?.HedefTutari ?? 0;
+
+        // Load Monthly
+        var monthlyTargets = await DbService.GetSatisHedefleriAsync(SelectedYear);
+        var faturalar = await DbService.GetFaturalarAsync();
+        var satislar = faturalar.Where(f => (f.Tur == "Satis" || f.Tur == "Satış") && f.Tarih.Year == SelectedYear).ToList();
+
+        var ayIsimleri = new[] { "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık" };
+
+        for (int i = 1; i <= 12; i++)
+        {
+            decimal target = monthlyTargets.FirstOrDefault(x => x.Ay == i)?.HedefTutari ?? 0;
+            decimal actual = satislar.Where(f => f.Tarih.Month == i).Sum(f => f.GenelToplam);
+
+            AylikPlanlar.Add(new AylikPlanItem
+            {
+                Ay = i,
+                AyAdi = ayIsimleri[i-1],
+                Hedef = target,
+                Gerceklesen = actual
+            });
+        }
+
+        UpdateChart();
+        StateHasChanged();
+    }
+
+    private void UpdateChart()
+    {
+        Series.Clear();
+        Series.Add(new ChartSeries { Name = "Hedef", Data = AylikPlanlar.Select(x => (double)x.Hedef).ToArray() });
+        Series.Add(new ChartSeries { Name = "Gerçekleşen", Data = AylikPlanlar.Select(x => (double)x.Gerceklesen).ToArray() });
+    }
+
+    private void OnMonthSelected(TableRowClickEventArgs<AylikPlanItem> args)
+    {
+        SelectedAylikPlan = args.Item;
+        Task.Run(LoadWeeklyData);
+    }
+
+    private async Task LoadWeeklyData()
+    {
+        if (SelectedAylikPlan == null) return;
+
+        var weeklyTargets = await DbService.GetHaftalikSatisHedefleriAsync();
+        var faturalar = await DbService.GetFaturalarAsync();
+        var satislar = faturalar.Where(f => (f.Tur == "Satis" || f.Tur == "Satış") && f.Tarih.Year == SelectedYear && f.Tarih.Month == SelectedAylikPlan.Ay).ToList();
+
+        HaftalikPlanlar.Clear();
+        
+        // Find weeks in that month
+        int totalWeeks = System.Globalization.ISOWeek.GetWeeksInYear(SelectedYear);
+        for (int w = 1; w <= totalWeeks; w++)
+        {
+            try {
+                var monday = System.Globalization.ISOWeek.ToDateTime(SelectedYear, w, DayOfWeek.Monday);
+                if (monday.Month == SelectedAylikPlan.Ay)
+                {
+                    decimal target = weeklyTargets.FirstOrDefault(x => x.Yil == SelectedYear && x.Hafta == w)?.HedefTutari ?? 0;
+                    decimal actual = satislar.Where(f => System.Globalization.ISOWeek.GetWeekOfYear(f.Tarih) == w).Sum(f => f.GenelToplam);
+
+                    HaftalikPlanlar.Add(new HaftalikPlanItem
+                    {
+                        Hafta = w,
+                        HaftaAdi = $"{w}. Hafta",
+                        Hedef = target,
+                        Gerceklesen = actual
+                    });
+                }
+            } catch {}
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleEdit() => IsEditMode = !IsEditMode;
+
+    private void AutoDistribute()
+    {
+        if (YillikHedef <= 0) return;
+        decimal monthTarget = Math.Round(YillikHedef / 12, 0);
+        foreach (var p in AylikPlanlar) p.Hedef = monthTarget;
+        Snackbar.Add("Hedefler aylara eşit dağıtıldı.", Severity.Info);
+    }
+
+    private void AutoDistributeWeekly()
+    {
+        if (SelectedAylikPlan == null || SelectedAylikPlan.Hedef <= 0 || !HaftalikPlanlar.Any()) return;
+        decimal weekTarget = Math.Round(SelectedAylikPlan.Hedef / HaftalikPlanlar.Count, 0);
+        foreach (var p in HaftalikPlanlar) p.Hedef = weekTarget;
+        Snackbar.Add("Haftalık hedefler aya göre dağıtıldı.", Severity.Info);
+    }
+
+    private async Task SaveAll()
+    {
+        try
+        {
+            // 1. Save Yillik
+            var yillikHedefler = await DbService.GetYillikSatisHedefleriAsync();
+            var hYillik = yillikHedefler.FirstOrDefault(x => x.Yil == SelectedYear) ?? new YillikSatisHedefi { Yil = SelectedYear };
+            hYillik.HedefTutari = YillikHedef;
+            await DbService.SaveYillikSatisHedefiAsync(hYillik);
+
+            // 2. Save Monthly
+            var monthlyTargets = await DbService.GetSatisHedefleriAsync(SelectedYear);
+            foreach (var p in AylikPlanlar)
+            {
+                var hm = monthlyTargets.FirstOrDefault(x => x.Ay == p.Ay) ?? new SatisHedefi { Yil = SelectedYear, Ay = p.Ay };
+                hm.HedefTutari = p.Hedef;
+                await DbService.SaveSatisHedefiAsync(hm);
+            }
+
+            // 3. Save Weekly (Current Month)
+            if (SelectedAylikPlan != null && HaftalikPlanlar.Any())
+            {
+                var weeklyTargets = await DbService.GetHaftalikSatisHedefleriAsync();
+                foreach (var wp in HaftalikPlanlar)
+                {
+                    var hw = weeklyTargets.FirstOrDefault(x => x.Yil == SelectedYear && x.Hafta == wp.Hafta) ?? new HaftalikSatisHedefi { Yil = SelectedYear, Hafta = wp.Hafta };
+                    hw.HedefTutari = wp.Hedef;
+                    await DbService.SaveHaftalikSatisHedefiAsync(hw);
+                }
+            }
+
+            IsEditMode = false;
+            Snackbar.Add("Tüm hedefler başarıyla kaydedildi.", Severity.Success);
+            UpdateChart();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Kaydetme hatası: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            // Prepare PDF
+            var sections = new List<ReportSection>();
+
+            // 1. Yillik
+            sections.Add(new ReportSection { 
+                Title = $"YILLIK ÖZET ({SelectedYear})", 
+                Headers = new[] { "Kalem", "Tutar" }, 
+                Rows = new List<string[]> {
+                    new[] { "Yıllık Hedef", YillikHedef.ToString("N2") + " TL" },
+                    new[] { "Gerçekleşen", YillikGerceklesen.ToString("N2") + " TL" },
+                    new[] { "Performans", $"%{YillikYuzde:N1}" }
+                }
+            });
+
+            // 2. Aylik
+            var aRows = AylikPlanlar.Select(a => new[] { a.AyAdi, a.Hedef.ToString("N2"), a.Gerceklesen.ToString("N2"), $"%{a.Yuzde:N1}" }).ToList();
+            sections.Add(new ReportSection { 
+                Title = "AYLIK HEDEF & GERÇEKLEŞME", 
+                Headers = new[] { "Ay", "Hedef", "Gerçekleşen", "Durum" }, 
+                Rows = aRows 
+            });
+
+            var pdf = await PdfService.GenerateConsolidatedReportPdfBytesAsync("BÜTÇE VE HEDEF ANALİZ RAPORU", sections);
+            await FileService.SaveAndOpenFileAsync($"Butce_Raporu_{SelectedYear}.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"PDF hatası: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class AylikPlanItem
+    {
+        public int Ay { get; set; }
+        public string AyAdi { get; set; } = "";
+        public decimal Hedef { get; set; }
+        public decimal Gerceklesen { get; set; }
+        public decimal Yuzde => Hedef == 0 ? 0 : (Gerceklesen / Hedef * 100);
+        public string Renk => Yuzde >= 100 ? "#10B981" : (Yuzde >= 80 ? "#F59E0B" : "#EF4444");
+    }
+
+    public class HaftalikPlanItem
+    {
+        public int Hafta { get; set; }
+        public string HaftaAdi { get; set; } = "";
+        public decimal Hedef { get; set; }
+        public decimal Gerceklesen { get; set; }
+        public decimal Yuzde => Hedef == 0 ? 0 : (Gerceklesen / Hedef * 100);
+        public string RenkText => Yuzde >= 100 ? "#10B981" : (Yuzde >= 80 ? "#F59E0B" : "#EF4444");
+    }
+}

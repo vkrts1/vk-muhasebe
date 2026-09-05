@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Shared.ViewModels;assembly=ErmayMuhasebe.Shared"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.MusteriLimitView"
+             x:DataType="vm:MusteriLimitViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#268B5CF6">
+          <ic:SymbolIcon Symbol="ShieldCheckmark" Foreground="#8B5CF6" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Müşteri Kredi ve Risk Limit Yönetimi" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Açık hesap çalışan müşterilerinize özel limitler tanımlayın ve risklerini anlık izleyin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" RowDefinitions="Auto, *">
+        <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" CornerRadius="15" Padding="15" Margin="0,0,0,15" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <TextBox Text="{Binding FilterText}" Watermark="Müşteri adında ara..." Classes="SearchBox" Width="400" HorizontalAlignment="Left"/>
+        </Border>
+
+        <Border Grid.Row="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="10" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <DataGrid ItemsSource="{Binding Limitler}" AutoGenerateColumns="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Müşteri Ünvan" Binding="{Binding Cari.Unvan}" Width="2*"/>
+                    <DataGridTemplateColumn Header="Kredi Limiti" Width="150">
+                        <DataTemplate>
+                            <NumericUpDown Value="{Binding KrediLimiti}"  ShowButtonSpinner="False" BorderThickness="0" Background="Transparent"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Anlık Risk" Binding="{Binding MevcutRisk, StringFormat={}{0:N2} TL}" Width="150"/>
+                    <DataGridTemplateColumn Header="Limit Doluluk" Width="200">
+                        <DataTemplate>
+                            <StackPanel VerticalAlignment="Center" Spacing="5" Margin="10,0">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <ProgressBar Value="{Binding DolulukOrani}" Height="6" Maximum="100" CornerRadius="3" Foreground="{Binding Renk}" Background="#10FFFFFF"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding DolulukOrani, StringFormat={}{0:N1}%}" FontSize="10" Foreground="{Binding Renk}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="İşlem" Width="100">
+                        <DataTemplate>
+                            <Button Command="{Binding $parent[UserControl].DataContext.KaydetCommand}" 
+                                    CommandParameter="{Binding}"
+                                    Classes="SideButton" Background="#8B5CF6" Padding="8,4">
+                                <TextBlock Text="KAYDET" FontSize="10" FontWeight="Bold"/>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+  </Grid>
+</UserControl>

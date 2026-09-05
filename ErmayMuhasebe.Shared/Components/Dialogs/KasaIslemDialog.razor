@@ -1,0 +1,75 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MudBlazor
+@inject IDialogService DialogService
+
+<MudDialog Style="min-width: 400px;">
+    <DialogContent>
+        <MudSelect T="string" Label="İşlem Türü" @bind-Value="Model.IslemTuru" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.SwapVert">
+            <MudSelectItem Value="@("Tahsilat")">Tahsilat (Giriş)</MudSelectItem>
+            <MudSelectItem Value="@("Ödeme")">Ödeme (Çıkış)</MudSelectItem>
+        </MudSelect>
+        
+        <MudDatePicker Label="Tarih" @bind-Date="date" Variant="Variant.Outlined" Class="mt-3" />
+        
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-3">
+             <MudTextField @bind-Value="CariUnvan" Label="Cari (Opsiyonel)" Variant="Variant.Outlined" ReadOnly="true" />
+             <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="CariSec" Variant="Variant.Filled" Color="Color.Primary" />
+        </MudStack>
+        
+        <MudNumericField @bind-Value="Model.Tutar" Label="Tutar" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Class="mt-3" />
+        
+        <MudTextField @bind-Value="Model.Aciklama" Label="Açıklama" Variant="Variant.Outlined" Lines="2" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public KasaHareket Model { get; set; } = new();
+    
+    private DateTime? date;
+    public string CariUnvan { get; set; } = "";
+    public int? CariId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Model.Tarih == default) Model.Tarih = DateTime.Now;
+        date = Model.Tarih;
+        if (string.IsNullOrEmpty(Model.IslemTuru)) Model.IslemTuru = "Tahsilat";
+    }
+
+    private async Task CariSec()
+    {
+        var dialog = await DialogService.ShowAsync<CariSecDialog>("Cari Seç");
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is CariKart cari)
+        {
+            CariId = cari.Id;
+            CariUnvan = cari.Unvan ?? "";
+        }
+    }
+
+    void Submit()
+    {
+        if (Model.Tutar <= 0) return;
+        if (date.HasValue) Model.Tarih = date.Value;
+        
+        // Return explicit object wrapping result
+        MudDialog.Close(DialogResult.Ok(new KasaIslemResult { KasaHareket = Model, CariId = CariId, CariUnvan = CariUnvan }));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+    
+    public class KasaIslemResult
+    {
+        public KasaHareket KasaHareket { get; set; } = new();
+        public int? CariId { get; set; }
+        public string CariUnvan { get; set; } = "";
+    }
+}

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ErmayMuhasebe.Functions</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QuestPDF" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ErmayMuhasebe.Shared\ErmayMuhasebe.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\ErmayMuhasebe.Shared\wwwroot\images\ermay_logo.png" Link="wwwroot\images\ermay_logo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\ErmayMuhasebe.Cloud\wwwroot\css\fonts\Roboto-*.ttf" Link="wwwroot\css\fonts\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

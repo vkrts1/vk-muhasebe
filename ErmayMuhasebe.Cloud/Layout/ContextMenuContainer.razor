@@ -1,0 +1,130 @@
+@using ErmayMuhasebe.Cloud.Services
+@inject UiService UiService
+@implements IDisposable
+
+@if (_visible)
+{
+    <div class="custom-context-menu-overlay" @onclick="Hide" @oncontextmenu:preventDefault="true" @oncontextmenu="Hide">
+        <div class="custom-context-menu" style="left: @(_x)px; top: @(_y)px;" @onclick:stopPropagation="true">
+            @foreach (var item in _items)
+            {
+                if (item.IsDivider)
+                {
+                    <div class="menu-divider"></div>
+                }
+                else
+                {
+                    <div class="menu-item @(item.IsDanger ? "delete" : "")" @onclick="() => RunAction(item)">
+                        @if (!string.IsNullOrEmpty(item.Icon))
+                        {
+                            <MudIcon Icon="@item.Icon" Size="Size.Small" />
+                        }
+                        <span>@item.Text</span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+<style>
+    .custom-context-menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 10000;
+        background: transparent;
+    }
+
+    .custom-context-menu {
+        position: absolute;
+        background: #1e1e2d;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+        padding: 5px;
+        min-width: 180px;
+        animation: menu-appear 0.1s ease-out;
+        backdrop-filter: blur(20px);
+    }
+
+    @@keyframes menu-appear {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 15px;
+        color: rgba(255,255,255,0.8);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s;
+        text-align: left;
+    }
+
+    .menu-item:hover {
+        background: rgba(255,255,255,0.08);
+        color: white;
+    }
+
+    .menu-item.delete:hover {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+
+    .menu-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.08);
+        margin: 5px 10px;
+    }
+</style>
+
+@code {
+    private bool _visible;
+    private double _x;
+    private double _y;
+    private List<UiService.ContextMenuItem> _items = new();
+
+    protected override void OnInitialized()
+    {
+        UiService.OnShowContextMenu += Show;
+        UiService.OnHideContextMenu += Hide;
+    }
+
+    private void Show(double x, double y, List<UiService.ContextMenuItem> items)
+    {
+        _x = x;
+        _y = y;
+        _items = items;
+        _visible = true;
+        StateHasChanged();
+    }
+
+    private void Hide()
+    {
+        _visible = false;
+        StateHasChanged();
+    }
+
+    private async Task RunAction(UiService.ContextMenuItem item)
+    {
+        Hide();
+        if (item.Action != null)
+        {
+            await item.Action();
+        }
+    }
+
+    public void Dispose()
+    {
+        UiService.OnShowContextMenu -= Show;
+        UiService.OnHideContextMenu -= Hide;
+    }
+}

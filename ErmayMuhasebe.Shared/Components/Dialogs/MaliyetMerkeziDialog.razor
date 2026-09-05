@@ -1,0 +1,32 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Model.Kod" Label="Merkez Kodu" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Ad" Label="Merkez Adı" Variant="Variant.Outlined" Class="mb-3" />
+        <MudNumericField @bind-Value="Model.PersonelButce" Label="Personel Bütçesi" Variant="Variant.Outlined" Class="mb-3" />
+        <MudNumericField @bind-Value="Model.GenelButce" Label="Genel Bütçe" Variant="Variant.Outlined" Class="mb-3" />
+        <MudDivider Class="my-2"/>
+        <MudNumericField @bind-Value="Model.PersonelGercek" Label="Gerçekleşen Personel" Variant="Variant.Outlined" Class="mb-3" />
+        <MudNumericField @bind-Value="Model.GenelGercek" Label="Gerçekleşen Genel" Variant="Variant.Outlined" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public MaliyetMerkeziDef Model { get; set; } = new();
+
+    void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Kod) || string.IsNullOrWhiteSpace(Model.Ad)) return;
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}

@@ -1,0 +1,55 @@
+/* Fatura Dialog - Sadece Tema Renkleri */
+
+/* Header Arka Planları */
+.fatura-header-left-bg {
+  background: var(--bg-secondary);
+}
+
+.fatura-header-left-bg .mud-typography {
+  color: var(--text-primary) !important;
+}
+
+.fatura-header-right-bg {
+  background: var(--danger);
+}
+
+/* Ana Panel Border */
+.fatura-main-border {
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+/* Cari Seçim Alanı */
+.cari-selection-bg {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cari-label-text {
+  color: var(--text-primary) !important;
+}
+
+/* Tablo Header */
+.table-header-bg {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Tablo İçerik */
+.table-content-bg {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Tablo Footer */
+.table-footer-bg {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Sağ Panel Border */
+.fatura-actions-border {
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}

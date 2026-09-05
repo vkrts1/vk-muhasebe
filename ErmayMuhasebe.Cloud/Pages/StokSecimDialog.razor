@@ -1,0 +1,98 @@
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-items-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Ürün Seçimi</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="searchString" 
+                      Placeholder="Ürün adı veya kodla ara..." 
+                      Adornment="Adornment.Start" 
+                      AdornmentIcon="@Icons.Material.Filled.Search" 
+                      Class="mb-4" 
+                      Immediate="true" 
+                      Variant="Variant.Outlined" 
+                      Margin="Margin.Dense" />
+        
+        <div style="max-height: 400px; overflow-y: auto;">
+            <MudTable Items="@FilteredStocks" 
+                      Hover="true" 
+                      Dense="true" 
+                      T="StokKart" 
+                      OnRowClick="RowClick" 
+                      SelectedItem="selectedStock"
+                      Loading="@_loading"
+                      LoadingProgressColor="Color.Info"
+                      EmptyLabel="Ürün bulunamadı.">
+                <HeaderContent>
+                    <MudTh>Kod</MudTh>
+                    <MudTh>Ürün Adı</MudTh>
+                    <MudTh Style="text-align:right">Birim</MudTh>
+                    <MudTh Style="text-align:right">Fiyat</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd @ondblclick="() => DoubleClick(context)">@context.StokKodu</MudTd>
+                    <MudTd @ondblclick="() => DoubleClick(context)">@context.StokAdi</MudTd>
+                    <MudTd Style="text-align:right" @ondblclick="() => DoubleClick(context)">@context.Birim</MudTd>
+                    <MudTd Style="text-align:right" @ondblclick="() => DoubleClick(context)">@((Type == "Alis" ? context.AlisFiyati : context.SatisFiyati).ToString("N2"))</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Kapat</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(selectedStock == null)">Seç</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string Type { get; set; } = "Satis";
+
+    private List<StokKart> stocks = new();
+    private string searchString = "";
+    private StokKart? selectedStock;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try 
+        {
+            stocks = await DbService.GetStoklarAsync();
+        }
+        finally 
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private IEnumerable<StokKart> FilteredStocks => stocks.Where(x => 
+        !x.IsDeleted &&
+        (string.IsNullOrEmpty(searchString) || 
+        (x.StokAdi != null && x.StokAdi.Contains(searchString, StringComparison.OrdinalIgnoreCase)) ||
+        (x.StokKodu != null && x.StokKodu.Contains(searchString, StringComparison.OrdinalIgnoreCase)) ||
+        (x.Barkod != null && x.Barkod.Contains(searchString, StringComparison.OrdinalIgnoreCase)))
+    );
+
+    private void RowClick(TableRowClickEventArgs<StokKart> args)
+    {
+        if (args.Item == null) return;
+        selectedStock = args.Item;
+        if (args.MouseEventArgs.Detail == 2)
+        {
+            DoubleClick(args.Item);
+        }
+    }
+
+    private void DoubleClick(StokKart s) => MudDialog.Close(DialogResult.Ok(s));
+    private void Submit() => MudDialog.Close(DialogResult.Ok(selectedStock));
+    private void Cancel() => MudDialog.Cancel();
+}

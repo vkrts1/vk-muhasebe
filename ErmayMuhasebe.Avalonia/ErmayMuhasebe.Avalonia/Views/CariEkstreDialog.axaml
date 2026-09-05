@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="300"
+             x:Class="ErmayMuhasebe.Avalonia.Views.CariEkstreDialog"
+             x:DataType="vm:CariListViewModel">
+
+    <Grid Background="#CC000000">
+        <Border Background="#080A0C" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="16" 
+                Width="400" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="0" ClipToBounds="True">
+            <Grid RowDefinitions="Auto, Auto, Auto">
+                
+                <!-- HEADER -->
+                <Border Grid.Row="0" Padding="25,20" Background="#050607">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <ic:SymbolIcon Symbol="Document" FontSize="24" Foreground="#FF5252"/>
+                            <TextBlock Text="{Binding EkstreTitle}" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ic:SymbolIcon Grid.Column="1" Symbol="DocumentBulletList" FontSize="20" Foreground="#55FFFFFF" Opacity="0.5"/>
+                    </Grid>
+                </Border>
+
+                <!-- OPTIONS -->
+                <Grid Grid.Row="1" RowDefinitions="Auto, Auto" ColumnDefinitions="*, *" Margin="20,25" RowSpacing="15" ColumnSpacing="15">
+                    <!-- PREVIEW -->
+                    <Button Grid.Row="0" Grid.Column="0" Command="{Binding PreviewEkstreCommand}" 
+                            Classes="TransparentButton" HorizontalAlignment="Stretch" Height="100">
+                        <Border Background="#1A60A5FA" BorderBrush="#4060A5FA" BorderThickness="1" CornerRadius="12">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                 <ic:SymbolIcon Symbol="Eye" FontSize="28" Foreground="#60A5FA"/> 
+                                 <TextBlock Text="GÖRÜNTÜLE" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+
+                    <!-- DOWNLOAD -->
+                    <Button Grid.Row="0" Grid.Column="1" Command="{Binding DownloadEkstreCommand}" CommandParameter="{Binding $parent[Window]}"
+                            Classes="TransparentButton" HorizontalAlignment="Stretch" Height="100">
+                        <Border Background="#1A10B981" BorderBrush="#4010B981" BorderThickness="1" CornerRadius="12">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                 <ic:SymbolIcon Symbol="ArrowDownload" FontSize="28" Foreground="#10B981"/> 
+                                 <TextBlock Text="İNDİR" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+
+                    <!-- EMAIL -->
+                    <Button Grid.Row="1" Grid.Column="0" Command="{Binding ShareEkstreEmailCommand}" 
+                            Classes="TransparentButton" HorizontalAlignment="Stretch" Height="100">
+                        <Border Background="#1Aa855f7" BorderBrush="#40a855f7" BorderThickness="1" CornerRadius="12">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                 <ic:SymbolIcon Symbol="Mail" FontSize="28" Foreground="#a855f7"/> 
+                                 <TextBlock Text="E-POSTA" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+
+                    <!-- WHATSAPP -->
+                    <Button Grid.Row="1" Grid.Column="1" Command="{Binding ShareEkstreWhatsAppCommand}" 
+                            Classes="TransparentButton" HorizontalAlignment="Stretch" Height="100">
+                        <Border Background="#1A22c55e" BorderBrush="#4022c55e" BorderThickness="1" CornerRadius="12">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                 <ic:SymbolIcon Symbol="Chat" FontSize="28" Foreground="#22c55e"/> 
+                                 <TextBlock Text="WHATSAPP" FontWeight="Bold" FontSize="12" Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                </Grid>
+
+                <!-- FOOTER -->
+                <Border Grid.Row="2" Background="#11FFFFFF" Padding="20,15">
+                     <Button Command="{Binding CloseEkstreOptionCommand}" 
+                             HorizontalAlignment="Center"
+                             Background="Transparent" BorderThickness="0" Padding="10">
+                         <TextBlock Text="Pencereyi Kapat" Foreground="#888" FontSize="12" FontWeight="Medium" VerticalAlignment="Center"/>
+                     </Button>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

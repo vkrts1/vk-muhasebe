@@ -1,0 +1,165 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<MudDialog Style="max-width: 800px;" Options="@(new DialogOptions { CloseOnEscapeKey = true })">
+    <DialogContent>
+        <div id="makbuz-content" style="background: white; padding: 40px; font-family: Arial, sans-serif;" tabindex="0" @onkeydown="HandleKeyDown" @ref="dialogRef">
+            @* Firma Bilgileri *@
+            <div style="margin-bottom: 20px;">
+                <div style="font-weight: bold; font-size: 14px;">FİRMA : asdas</div>
+                <div style="font-size: 11px;">Adres : asdas</div>
+                <div style="font-size: 11px;">TEL1 : 0 VERGİ : 0 GSM TEL : (111) 211-2112</div>
+                <div style="font-size: 11px;">asdas@asdas.com</div>
+            </div>
+
+            @* Başlık *@
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 18px; font-weight: bold;">@MakbuzTipi</h2>
+            </div>
+
+            @* Tarih *@
+            <div style="text-align: right; margin-bottom: 20px; font-size: 12px;">
+                <strong>Tarih :</strong> @Tarih.ToString("d.M.yyyy")
+            </div>
+
+            @* Cari Bilgileri *@
+            <div style="background: #5C9BD1; color: white; padding: 8px; margin-bottom: 10px;">
+                <div style="font-size: 12px;"><strong>ÜNVAN :</strong> @CariUnvan</div>
+                <div style="font-size: 12px;"><strong>YETKİLİ :</strong> @CariUnvan</div>
+                <div style="font-size: 12px;"><strong>ADRES :</strong> -</div>
+            </div>
+
+            @* Tutar Bilgileri *@
+            <div style="margin-bottom: 20px;">
+                <div style="margin-bottom: 5px; font-size: 12px;">
+                    <strong>Tahsilat Tutarı :</strong> @Tutar.ToString("N2")
+                </div>
+                <div style="margin-bottom: 5px; font-size: 12px;">
+                    <strong>Tahsil Hakkında :</strong> @Tutar.ToString("N2") Cari Alacaklı
+                </div>
+                <div style="margin-bottom: 5px; font-size: 12px;">
+                    <strong>Yalnız :</strong> @TutarYazisi TL
+                </div>
+            </div>
+
+            @* Açıklama *@
+            <div style="margin-bottom: 30px;">
+                <div style="font-size: 12px; margin-bottom: 5px;"><strong>Açıklama :</strong></div>
+                <div style="border: 1px solid #ccc; min-height: 60px; padding: 8px; font-size: 11px;">
+                    @Aciklama
+                </div>
+            </div>
+
+            @* İmza Alanları *@
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px;">
+                <div style="text-align: center; border-top: 1px solid #ccc; padding-top: 8px;">
+                    <div style="font-size: 11px; color: #999;">Müşteri</div>
+                    <div style="font-size: 11px; color: #999;">Adı Soyadı/İmza</div>
+                </div>
+                <div style="text-align: center; border-top: 1px solid #ccc; padding-top: 8px;">
+                    <div style="font-size: 11px; color: #999;">Yetkili</div>
+                    <div style="font-size: 11px; color: #999;">Adı Soyadı/İmza</div>
+                </div>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Style="background: #6C7A89; color: white;">Kapat</MudButton>
+        <MudButton OnClick="Print" Variant="Variant.Filled" Style="background: #2196F3; color: white;">Yazdır</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public string MakbuzTipi { get; set; } = "TAHSİLAT MAKBUZU";
+    [Parameter] public string CariUnvan { get; set; } = "";
+    [Parameter] public DateTime Tarih { get; set; } = DateTime.Now;
+    [Parameter] public decimal Tutar { get; set; }
+    [Parameter] public string Aciklama { get; set; } = "";
+    
+    private string TutarYazisi => TutarToYazi(Tutar);
+    private ElementReference dialogRef;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("eval", "document.querySelector('[tabindex=\"0\"]')?.focus()");
+        }
+    }
+    
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" || e.Code == "Escape")
+        {
+            Cancel();
+        }
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+    
+    void Print()
+    {
+        // Yazdırma işlevi - window.print() çağrılacak
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+    
+    private string TutarToYazi(decimal tutar)
+    {
+        // Basit tutar yazıya çevirme
+        string[] birler = { "", "Bir", "İki", "Üç", "Dört", "Beş", "Altı", "Yedi", "Sekiz", "Dokuz" };
+        string[] onlar = { "", "On", "Yirmi", "Otuz", "Kırk", "Elli", "Altmış", "Yetmiş", "Seksen", "Doksan" };
+        string[] binler = { "", "Bin", "Milyon", "Milyar" };
+        
+        if (tutar == 0) return "Sıfır";
+        
+        int tamKisim = (int)tutar;
+        int kusurat = (int)((tutar - tamKisim) * 100);
+        
+        string sonuc = "";
+        int binlikSayac = 0;
+        
+        while (tamKisim > 0)
+        {
+            int uclu = tamKisim % 1000;
+            if (uclu > 0)
+            {
+                string ucluYazi = "";
+                
+                int yuzler = uclu / 100;
+                int kalanlar = uclu % 100;
+                int onlarBasamak = kalanlar / 10;
+                int birlerBasamak = kalanlar % 10;
+                
+                if (yuzler > 0)
+                {
+                    if (yuzler == 1)
+                        ucluYazi += "Yüz ";
+                    else
+                        ucluYazi += birler[yuzler] + " Yüz ";
+                }
+                
+                if (onlarBasamak > 0)
+                    ucluYazi += onlar[onlarBasamak] + " ";
+                
+                if (birlerBasamak > 0)
+                    ucluYazi += birler[birlerBasamak] + " ";
+                
+                if (binlikSayac > 0)
+                    ucluYazi += binler[binlikSayac] + " ";
+                
+                sonuc = ucluYazi + sonuc;
+            }
+            
+            tamKisim /= 1000;
+            binlikSayac++;
+        }
+        
+        if (kusurat > 0)
+            sonuc += $"ve {kusurat}/100";
+        
+        return sonuc.Trim();
+    }
+}

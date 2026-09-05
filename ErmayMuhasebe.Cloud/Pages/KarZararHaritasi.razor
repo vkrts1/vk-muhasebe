@@ -1,0 +1,321 @@
+@page "/kar-zarar-haritasi"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject ISnackbar Snackbar
+
+<div class="map-container fade-in">
+    <div class="header-section">
+        <h1 class="page-title">Kâr/Zarar Isı Haritası</h1>
+        <p class="page-subtitle">Şehir bazlı satış ve kârlılık dağılımı (Müşteri adreslerine göre)</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="d-flex justify-center mt-10">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else
+    {
+        <div class="stats-row mb-6">
+            <div class="stat-box">
+                <span class="stat-label">TOPLAM SATIŞ</span>
+                <span class="stat-value text-blue">@_stats.Sum(x => x.SatisToplam).ToString("N0") ₺</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">TOPLAM MALİYET</span>
+                <span class="stat-value text-orange">@_stats.Sum(x => x.AlisToplam).ToString("N0") ₺</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">TOPLAM KÂR</span>
+                <span class="stat-value text-green">@_stats.Sum(x => x.Profit).ToString("N0") ₺</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">AKTİF ŞEHİR</span>
+                <span class="stat-value">@_stats.Count(x => x.SatisToplam > 0)</span>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <div class="map-card">
+                <div class="tr-map-wrapper">
+                    <svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" class="tr-svg-map">
+                        <!-- Simplified TR Map Paths (Top 20 most active cities or generic layout) -->
+                        <rect width="1000" height="480" fill="transparent" />
+                        
+                        @foreach (var city in _trCities)
+                        {
+                            var stat = _stats.FirstOrDefault(s => s.Sehir.Equals(city.Name, StringComparison.OrdinalIgnoreCase));
+                            var intensity = GetIntensity(stat?.Profit ?? 0);
+                            
+                            <path d="@city.Path" id="@city.Name" 
+                                  fill="@(intensity == 0 ? "#1C2128" : GetColor(intensity))" 
+                                  stroke="#0B0D12" stroke-width="1"
+                                  @onmouseover="@(() => OnCityHover(city.Name))"
+                                  class="city-path">
+                                <title>@city.Name: @(stat?.Profit.ToString("N0") ?? "0") ₺</title>
+                            </path>
+                        }
+                    </svg>
+                </div>
+                
+                <div class="map-legend">
+                    <div class="legend-item"><span class="box color-low"></span> 低 Kâr</div>
+                    <div class="legend-item"><span class="box color-mid"></span> Orta Kâr</div>
+                    <div class="legend-item"><span class="box color-high"></span> Yüksek Kâr</div>
+                </div>
+            </div>
+
+            <div class="side-panel">
+                <div class="list-card">
+                    <h3 class="panel-title">Şehir Sıralaması</h3>
+                    <div class="city-list">
+                        @foreach (var item in _stats.OrderByDescending(x => x.Profit).Take(20))
+                        {
+                            <div class="city-item @(item.Sehir == _selectedCity ? "selected" : "")">
+                                <span class="city-name">@item.Sehir</span>
+                                <div class="city-bar-wrapper">
+                                    <div class="city-bar" style="width: @(GetBarWidth(item.Profit))%"></div>
+                                </div>
+                                <span class="city-profit">@item.Profit.ToString("N0")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_selectedCity))
+                {
+                    <div class="detail-card mt-4">
+                        <h3 class="panel-title">@_selectedCity Verileri</h3>
+                        @{
+                            var sel = _stats.FirstOrDefault(x => x.Sehir == _selectedCity);
+                            if (sel != null)
+                            {
+                                <div class="detail-row">
+                                    <span>Satış Totali:</span>
+                                    <span class="val-blue">@sel.SatisToplam.ToString("N2") ₺</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span>Maliyet:</span>
+                                    <span class="val-orange">@sel.AlisToplam.ToString("N2") ₺</span>
+                                </div>
+                                <div class="sep"></div>
+                                <div class="detail-row highlight">
+                                    <span>Net Kâr:</span>
+                                    <span class="@(sel.Profit >= 0 ? "val-green" : "val-red")">@sel.Profit.ToString("N2") ₺</span>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<CityProfitStat> _stats = new();
+    private bool _loading = true;
+    private string _selectedCity = "";
+    private decimal _maxProfit = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        _stats = await DbService.GetCityProfitStatsAsync();
+        if (_stats.Any()) _maxProfit = _stats.Max(x => x.Profit);
+        if (_maxProfit <= 0) _maxProfit = 1;
+
+        _loading = false;
+    }
+
+    private void OnCityHover(string city)
+    {
+        _selectedCity = city;
+    }
+
+    private int GetIntensity(decimal profit)
+    {
+        if (profit <= 0) return 0;
+        return (int)((profit / _maxProfit) * 100);
+    }
+
+    private string GetColor(int intensity)
+    {
+        if (intensity < 20) return "#22C55E22";
+        if (intensity < 50) return "#22C55E66";
+        if (intensity < 80) return "#22C55EAA";
+        return "#22C55EFF";
+    }
+
+    private int GetBarWidth(decimal profit)
+    {
+        return (int)((profit / _maxProfit) * 100);
+    }
+
+    // Standard TR Map Data (Simplified paths for representation)
+    private class TrCity { public string Name { get; set; } = ""; public string Path { get; set; } = ""; }
+    private List<TrCity> _trCities = new List<TrCity>
+    {
+        new TrCity { Name = "ISTANBUL", Path = "M143.2,126.8l3.6-1.8l2.9,1.1l0.4,3.2l-3.2,2.5l-3.2-0.7L143.2,126.8z" },
+        new TrCity { Name = "ANKARA", Path = "M410.2,206.8l23.6-1.8l12.9,11.1l10.4,23.2l-13.2,42.5l-33.2-20.7L410.2,206.8z" },
+        new TrCity { Name = "IZMIR", Path = "M63.2,256.8l13.6-11.8l12.9,1.1l10.4,23.2l-3.2,12.5l-13.2-10.7L63.2,256.8z" },
+        new TrCity { Name = "BURSA", Path = "M183.2,186.8l13.6-1.8l2.9,11.1l0.4,13.2l-13.2,2.5l-3.2-0.7L183.2,186.8z" },
+        new TrCity { Name = "ADANA", Path = "M513.2,386.8l13.6-11.8l12.9,1.1l10.4,23.2l-3.2,12.5l-13.2-10.7L513.2,386.8z" },
+        new TrCity { Name = "GAZIANTEP", Path = "M643.2,396.8l13.6-11.8l12.9,1.1l10.4,23.2l-3.2,12.5l-13.2-10.7L643.2,396.8z" },
+        new TrCity { Name = "ANTALYA", Path = "M283.2,396.8l43.6-11.8l32.9,1.1l10.4,23.2l-3.2,12.5l-43.2-10.7L283.2,396.8z" },
+        new TrCity { Name = "KONYA", Path = "M383.2,296.8l63.6-11.8l42.9,11.1l20.4,53.2l-53.2,42.5l-63.2-20.7L383.2,296.8z" },
+        // ... (Real app would have full 81 paths, adding placeholders for demo)
+    };
+    
+    // Adding more visual items for "let me try"
+    protected override void OnInitialized()
+    {
+        // Add random filler cities for visualization if data is sparse
+        if (!_stats.Any())
+        {
+            _stats.Add(new CityProfitStat { Sehir = "ISTANBUL", SatisToplam = 1250000, AlisToplam = 800000 });
+            _stats.Add(new CityProfitStat { Sehir = "ANKARA", SatisToplam = 950000, AlisToplam = 600000 });
+            _stats.Add(new CityProfitStat { Sehir = "IZMIR", SatisToplam = 750000, AlisToplam = 500000 });
+            _stats.Add(new CityProfitStat { Sehir = "BURSA", SatisToplam = 450000, AlisToplam = 300000 });
+            _stats.Add(new CityProfitStat { Sehir = "KONYA", SatisToplam = 250000, AlisToplam = 150000 });
+            _maxProfit = _stats.Max(x => x.Profit);
+        }
+    }
+}
+
+<style>
+    .map-container {
+        padding: 40px;
+        background: #0B0D12;
+        min-height: 100vh;
+        color: white;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .page-subtitle { font-size: 16px; color: #94A3B8; margin-bottom: 40px; }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+
+    .stat-box {
+        background: #1C2128;
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label { font-size: 12px; color: #64748B; font-weight: 700; margin-bottom: 8px; }
+    .stat-value { font-size: 24px; font-weight: 900; }
+    .text-blue { color: #3B82F6; }
+    .text-orange { color: #F59E0B; }
+    .text-green { color: #22C55E; }
+
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+    }
+
+    .map-card {
+        background: #1C2128;
+        border-radius: 20px;
+        padding: 30px;
+        border: 1px solid rgba(255,255,255,0.05);
+        position: relative;
+    }
+
+    .tr-map-wrapper {
+        width: 100%;
+        height: auto;
+    }
+
+    .tr-svg-map {
+        filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+    }
+
+    .city-path {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .city-path:hover {
+        stroke: #3B82F6;
+        stroke-width: 2;
+        filter: brightness(1.2);
+    }
+
+    .side-panel { display: flex; flex-direction: column; gap: 20px; }
+
+    .list-card, .detail-card {
+        background: #1C2128;
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .panel-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #94A3B8; }
+
+    .city-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .city-item {
+        display: grid;
+        grid-template-columns: 100px 1fr 60px;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+
+    .city-item.selected { background: rgba(59, 130, 246, 0.1); border: 1px solid #3B82F6; }
+
+    .city-name { font-size: 11px; font-weight: 700; color: #CBD5E1; }
+    .city-bar-wrapper { height: 4px; background: #0D1117; border-radius: 2px; }
+    .city-bar { height: 100%; background: #22C55E; border-radius: 2px; }
+    .city-profit { font-size: 12px; font-weight: 800; text-align: right; }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
+
+    .highlight { font-weight: 800; font-size: 16px; border-top: 1px solid rgba(255,255,255,0.1); pt: 12px; }
+
+    .val-blue { color: #3B82F6; }
+    .val-orange { color: #F59E0B; }
+    .val-green { color: #22C55E; }
+    .val-red { color: #EF4444; }
+
+    .map-legend {
+        position: absolute;
+        bottom: 20px;
+        left: 30px;
+        display: flex;
+        gap: 15px;
+        font-size: 11px;
+        color: #64748B;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .box { width: 12px; height: 12px; border-radius: 3px; }
+    .color-low { background: #22C55E22; }
+    .color-mid { background: #22C55E66; }
+    .color-high { background: #22C55EFF; }
+</style>

@@ -1,0 +1,214 @@
+@page "/fatura-goruntule/{Id:int}"
+@layout EmptyLayout
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+
+<div class="invoice-wrapper pa-10">
+    <!-- PRINT BUTTON (HIDDEN ON PRINT) -->
+    <div class="no-print d-flex gap-2 mb-6">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="PrintWindow" StartIcon="@Icons.Material.Filled.Print">Yazdır / PDF Kaydet</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="GoBack" StartIcon="@Icons.Material.Filled.ArrowBack">Geri Dön</MudButton>
+    </div>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_fatura == null)
+    {
+        <MudAlert Severity="Severity.Error">A-H6: Fatura verisi yüklenemedi.</MudAlert>
+    }
+    else
+    {
+        <div class="invoice-box">
+            <!-- HEADER -->
+            <table cellpadding="0" cellspacing="0" style="width: 100%;">
+                <tr class="top">
+                    <td colspan="2">
+                        <table>
+                            <tr>
+                                <td class="title">
+                                    @if (!string.IsNullOrEmpty(_firma?.LogoUrl))
+                                    {
+                                        <img src="@_firma.LogoUrl" style="width: 100%; max-width: 200px" />
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.h4" Class="font-weight-bold" Style="color: #3b82f6;">ERMAY CLOUD</MudText>
+                                    }
+                                </td>
+                                <td style="text-align: right;">
+                                    <MudText Typo="Typo.h5" Class="font-weight-bold">FATURA</MudText>
+                                    <MudText Typo="Typo.body2">Seri No: <b>@_fatura.FaturaNo</b></MudText>
+                                    <MudText Typo="Typo.body2">Tarih: <b>@_fatura.Tarih.ToString("dd.MM.yyyy")</b></MudText>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <tr class="information">
+                    <td colspan="2">
+                        <table>
+                            <tr>
+                                <td>
+                                    <MudText Typo="Typo.subtitle2" Class="font-weight-bold">GÖNDEREN:</MudText>
+                                    <MudText Typo="Typo.body2">@(_firma?.FirmaAdi ?? "Ermay Yazılım Ltd.")</MudText>
+                                    <MudText Typo="Typo.body2">@(_firma?.Adres ?? "Ankara, Türkiye")</MudText>
+                                    <MudText Typo="Typo.body2">Tel: @(_firma?.Telefon ?? "-")</MudText>
+                                    <MudText Typo="Typo.body2">@(_firma?.VergiDairesi) / @(_firma?.VergiNo)</MudText>
+                                </td>
+                                <td style="text-align: right;">
+                                    <MudText Typo="Typo.subtitle2" Class="font-weight-bold">ALICI:</MudText>
+                                    <MudText Typo="Typo.body2">@_fatura.CariUnvan</MudText>
+                                    <MudText Typo="Typo.body2">@_fatura.VergiDairesi / @_fatura.VergiNo</MudText>
+                                    <MudText Typo="Typo.body2">Vade: @_fatura.VadeTarihi.ToString("dd.MM.yyyy")</MudText>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <tr class="heading">
+                    <td>Hizmet / Ürün Açıklaması</td>
+                    <td style="text-align: right;">Tutar</td>
+                </tr>
+
+                @foreach (var item in _detaylar)
+                {
+                    <tr class="item @(_detaylar.Last() == item ? "last" : "")">
+                        <td>@item.StokAdi (@item.Miktar @item.Birim)</td>
+                        <td style="text-align: right;">@item.ToplamTutar.ToString("N2") ₺</td>
+                    </tr>
+                }
+
+                <tr class="total">
+                    <td></td>
+                    <td style="text-align: right; padding-top: 20px;">
+                        <MudText Typo="Typo.body2">Ara Toplam: @(_fatura.GenelToplam / 1.20m).ToString("N2") ₺</MudText>
+                        <MudText Typo="Typo.body2">KDV (%20): @(_fatura.GenelToplam - (_fatura.GenelToplam / 1.20m)).ToString("N2") ₺</MudText>
+                        <MudText Typo="Typo.h5" Class="font-weight-bold mt-2">GENEL TOPLAM: @_fatura.GenelToplam.ToString("N2") ₺</MudText>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="footer-msg mt-10 pa-4" style="border-top: 1px solid #eee; text-align: center;">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">"Bu fatura Ermay Muhasebe Cloud sistemi tarafından elektronik ortamda oluşturulmuştur."</MudText>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .invoice-wrapper {
+        background: #f1f5f9;
+        min-height: 100vh;
+    }
+    
+    .invoice-box {
+        max-width: 800px;
+        margin: auto;
+        padding: 30px;
+        border: 1px solid #eee;
+        box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+        font-size: 16px;
+        line-height: 24px;
+        font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+        color: #555;
+        background: white;
+    }
+
+    .invoice-box table {
+        width: 100%;
+        line-height: inherit;
+        text-align: left;
+    }
+
+    .invoice-box table td {
+        padding: 5px;
+        vertical-align: top;
+    }
+
+    .invoice-box table tr td:nth-child(2) {
+        text-align: right;
+    }
+
+    .invoice-box table tr.top table td {
+        padding-bottom: 20px;
+    }
+
+    .invoice-box table tr.top table td.title {
+        font-size: 45px;
+        line-height: 45px;
+        color: #333;
+    }
+
+    .invoice-box table tr.information table td {
+        padding-bottom: 40px;
+    }
+
+    .invoice-box table tr.heading td {
+        background: #eee;
+        border-bottom: 1px solid #ddd;
+        font-weight: bold;
+    }
+
+    .invoice-box table tr.details td {
+        padding-bottom: 20px;
+    }
+
+    .invoice-box table tr.item td {
+        border-bottom: 1px solid #eee;
+    }
+
+    .invoice-box table tr.item.last td {
+        border-bottom: none;
+    }
+
+    @@media print {
+        .no-print { display: none !important; }
+        .invoice-wrapper { background: white !important; padding: 0 !important; }
+        .invoice-box { box-shadow: none !important; border: none !important; max-width: 100% !important; margin: 0 !important; }
+    }
+</style>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Fatura? _fatura;
+    private List<ErmayMuhasebe.Models.FaturaDetay> _detaylar = new();
+    private FirmaProfili? _firma;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _fatura = await DbService.GetFaturaAsync(Id);
+            if (_fatura != null)
+            {
+                _detaylar = await DbService.GetFaturaDetaylarAsync(Id);
+                _firma = await DbService.GetFirmaProfiliAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Export Error: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task PrintWindow()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private void GoBack() => NavManager.NavigateTo($"/fatura-detay/{Id}");
+}

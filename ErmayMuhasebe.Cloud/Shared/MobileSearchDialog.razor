@@ -1,0 +1,94 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@using MudBlazor
+@inject ClientDatabaseService DbService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<MudDialog Class="premium-search-dialog">
+    <DialogContent>
+        <div class="pa-4">
+            <div class="d-flex align-center mb-6">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="Close" Class="mr-2" />
+                <MudText Typo="Typo.h6" Style="font-weight: 800;">HIZLI ARAMA</MudText>
+            </div>
+            
+            <MudAutocomplete T="GlobalSearchResult" Placeholder="Cari, Stok, Belge..." 
+                             SearchFunc="@SearchAsync" 
+                             ToStringFunc="@(r => r?.Title)"
+                             Value="selected"
+                             ValueChanged="OnSelected"
+                             Variant="Variant.Filled" 
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             FullWidth="true" 
+                             AutoFocus="true"
+                             Clearable="true"
+                             Class="rounded-xl" />
+
+            <div class="mt-8">
+                <MudText Typo="Typo.caption" Style="opacity: 0.5; letter-spacing: 1px; font-weight: 700;">SON SONUÇLAR</MudText>
+                @if (results != null && results.Any())
+                {
+                    <MudList T="GlobalSearchResult" SelectedValue="selected" SelectedValueChanged="OnSelected">
+                        @foreach (var res in results)
+                        {
+                            <MudListItem OnClick="@(() => OnSelected(res))">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@GetIcon(res.Type)" Size="Size.Small" Class="mr-4" Color="Color.Primary" />
+                                    <div>
+                                        <MudText Typo="Typo.body2" Style="font-weight: 700;">@res.Title</MudText>
+                                        <MudText Typo="Typo.caption" Style="opacity: 0.6;">@res.Type</MudText>
+                                    </div>
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+                else
+                {
+                    <div class="d-flex flex-column align-center justify-center pa-12" style="opacity: 0.3;">
+                        <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" />
+                        <MudText Typo="Typo.body2" Class="mt-2">Aramaya başlayın...</MudText>
+                    </div>
+                }
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    
+    private GlobalSearchResult? selected;
+    private IEnumerable<GlobalSearchResult>? results;
+
+    private async Task<IEnumerable<GlobalSearchResult>> SearchAsync(string value, CancellationToken token)
+    {
+        results = await DbService.GlobalSearchAsync(value);
+        return results;
+    }
+
+    private void OnSelected(GlobalSearchResult? res)
+    {
+        if (res == null) return;
+        selected = res;
+        
+        if (res.Type == "Cari") Nav.NavigateTo($"/cariler?selectId={res.Id}");
+        else if (res.Type == "Stok") Nav.NavigateTo($"/stoklar?selectId={res.Id}");
+        else if (res.Type == "Fatura") Nav.NavigateTo($"/faturalar?id={res.Id}");
+        else if (res.Type == "Siparis") Nav.NavigateTo($"/siparisler?id={res.Id}");
+        
+        MudDialog.Close();
+    }
+
+    private string GetIcon(string type) => type switch
+    {
+        "Cari" => Icons.Material.Filled.People,
+        "Stok" => Icons.Material.Filled.Inventory2,
+        "Fatura" => Icons.Material.Filled.Description,
+        "Siparis" => Icons.Material.Filled.ListAlt,
+        _ => Icons.Material.Filled.Search
+    };
+
+    void Close() => MudDialog.Close();
+}

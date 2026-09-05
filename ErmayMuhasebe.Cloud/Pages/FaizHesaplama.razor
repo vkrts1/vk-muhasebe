@@ -1,0 +1,263 @@
+@page "/gecikme-faizi"
+@page "/faiz-hesaplama"
+@using System.Globalization
+@inject ISnackbar Snackbar
+@inject ErmayMuhasebe.Services.DovizService DovizService
+
+<div class="desktop-sync-container">
+    <!-- Header Section -->
+    <div class="header-section mb-8">
+        <div class="header-icon-box red">
+            <MudIcon Icon="@Icons.Material.Filled.Receipt" Style="font-size: 24px; color: #EF4444;" />
+        </div>
+        <div class="header-content">
+            <h1 class="page-title">Gecikme Faizi Hesaplayıcı</h1>
+            <p class="page-subtitle">Vadesi geçmiş borçlar için yasal veya akdi gecikme faizi hesaplaması yapın.</p>
+        </div>
+    </div>
+
+    <div class="calculator-grid">
+        <!-- Sidebar: Inputs -->
+        <div class="input-panel">
+            <div class="panel-card">
+                <div class="form-group mb-6">
+                    <label class="form-lbl">Ana Para Tutarı</label>
+                    <MudNumericField @bind-Value="anaPara" 
+                                    Variant="Variant.Outlined" 
+                                    Margin="Margin.Dense" 
+                                    HideSpinButtons="true"
+                                    Class="custom-numeric-field"
+                                    OnInternalInputChanged="Calculate" />
+                </div>
+
+                <div class="form-group mb-6">
+                    <label class="form-lbl">Yıllık Faiz Oranı (%)</label>
+                    <div class="d-flex gap-2">
+                        <MudNumericField @bind-Value="yillikFaizOrani" 
+                                        Variant="Variant.Outlined" 
+                                        Margin="Margin.Dense"
+                                        HideSpinButtons="true"
+                                        Class="custom-numeric-field"
+                                        OnInternalInputChanged="Calculate" />
+                        <select class="custom-select" @onchange="OnFaizTipiChanged">
+                            <option value="yasal">Yasal (%24)</option>
+                            <option value="ticari" selected>Ticari (%48)</option>
+                            <option value="tcmb">@tcmbRateText</option>
+                            <option value="custom">Özel</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group mb-8">
+                    <label class="form-lbl">Gecikme Günü</label>
+                    <MudNumericField @bind-Value="gecikmeGun" 
+                                    Min="0" Max="3650"
+                                    Variant="Variant.Outlined" 
+                                    Margin="Margin.Dense"
+                                    HideSpinButtons="true"
+                                    Class="custom-numeric-field"
+                                    OnInternalInputChanged="Calculate" />
+                </div>
+
+                <MudButton Variant="Variant.Filled" 
+                           Class="calc-btn" 
+                           OnClick="Calculate"
+                           FullWidth="true">
+                    HESAPLA
+                </MudButton>
+            </div>
+        </div>
+
+        <!-- Result Panel -->
+        <div class="result-panel">
+            <div class="result-card">
+                <div class="result-content">
+                    <div class="main-result">
+                        <span class="result-lbl">FAİZ DAHİL TOPLAM TUTAR</span>
+                        <div class="total-amount">@((anaPara + faizTutarı).ToString("N2", CultureInfo.GetCultureInfo("tr-TR"))) TL</div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="sub-result">
+                        <span class="result-lbl">SADECE FAİZ TUTARI</span>
+                        <div class="interest-amount">@faizTutarı.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")) TL</div>
+                    </div>
+
+                    <div class="info-note-box">
+                        <div class="note-header">
+                            <span class="note-title">Faiz Detayı</span>
+                        </div>
+                        <p class="note-text">
+                            Hesaplama yıllık basit faiz formülü (AnaPara * Oran * Gün / 365) kullanılarak yapılmıştır.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private decimal anaPara = 50000;
+    private decimal yillikFaizOrani = 48;
+    private int gecikmeGun = 30;
+    private decimal faizTutarı;
+
+    private decimal tcmbPolicyRate = 50;
+    private string tcmbRateText = "TCMB Politika (Yükleniyor...)";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            tcmbPolicyRate = await DovizService.GetTcmbPolicyRateAsync();
+            tcmbRateText = $"TCMB Politika (Güncel: %{tcmbPolicyRate:0})";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"TCMB rate fetch error: {ex.Message}");
+            tcmbRateText = "TCMB Politika (Güncel: %50)";
+        }
+        Calculate();
+    }
+
+    private void OnFaizTipiChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (val == "yasal")
+        {
+            yillikFaizOrani = 24;
+            Calculate();
+        }
+        else if (val == "ticari")
+        {
+            yillikFaizOrani = 48;
+            Calculate();
+        }
+        else if (val == "tcmb")
+        {
+            yillikFaizOrani = tcmbPolicyRate;
+            Calculate();
+        }
+    }
+
+    private void Calculate()
+    {
+        decimal gunlukFaizOrani = (yillikFaizOrani / 100) / 365;
+        faizTutarı = Math.Round(anaPara * gunlukFaizOrani * gecikmeGun, 2);
+        StateHasChanged();
+    }
+}
+
+<style>
+    .desktop-sync-container {
+        padding: 30px 40px !important;
+        background-color: #0d1117;
+        min-height: 100vh;
+        color: white;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Header Styling */
+    .header-section { display: flex; align-items: center; gap: 15px; }
+    .header-icon-box {
+        width: 45px; height: 45px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .header-icon-box.red { background: rgba(239, 68, 68, 0.15); }
+    .page-title { font-size: 26px; font-weight: 700; margin: 0; }
+    .page-subtitle { font-size: 13px; color: #9ca3af; margin: 2px 0 0 0; }
+
+    /* Grid Layout */
+    .calculator-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 20px;
+        align-items: stretch;
+        margin-top: 10px;
+    }
+
+    /* Input Panel */
+    .panel-card {
+        background: #161b22;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 30px;
+        height: 100%;
+    }
+
+    .form-lbl { font-size: 12px; color: #9ca3af; margin-bottom: 6px; display: block; }
+    
+    .custom-numeric-field {
+        background: #0d1117;
+        border-radius: 8px;
+    }
+
+    .custom-select {
+        background: #0d1117;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        border-radius: 8px;
+        padding: 0 10px;
+        font-size: 12px;
+        min-width: 110px;
+    }
+
+    .calc-btn {
+        background-color: #ef4444 !important;
+        color: white !important;
+        height: 48px !important;
+        font-weight: 700 !important;
+        border-radius: 15px !important;
+        text-transform: none !important;
+        font-size: 14px !important;
+        margin-top: 5px;
+    }
+
+    /* Result Panel */
+    .result-card {
+        background: #161b22;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 40px;
+        height: 100%;
+    }
+
+    .result-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        min-height: 400px;
+    }
+
+    .result-lbl { font-size: 14px; color: #9ca3af; font-weight: 500; letter-spacing: 0.5px; }
+    .total-amount { font-size: 60px; font-weight: 900; color: white; margin-top: 8px; font-family: 'Inter', sans-serif; }
+    .interest-amount { font-size: 32px; font-weight: 700; color: #ef4444; margin-top: 8px; }
+
+    .divider { width: 250px; height: 1px; background: rgba(255,255,255,0.05); margin: 35px 0; }
+
+    .info-note-box {
+        background: rgba(239, 68, 68, 0.05);
+        border-radius: 12px;
+        padding: 20px 25px;
+        max-width: 400px;
+        width: 100%;
+        margin-top: 40px;
+    }
+
+    .note-header {
+        color: #ef4444; font-weight: 700; font-size: 13px; margin-bottom: 8px; text-align: left;
+    }
+
+    .note-text { font-size: 11px; color: #9ca3af; line-height: 1.5; margin: 0; text-align: left; }
+
+    @@media (max-width: 900px) {
+        .calculator-grid { grid-template-columns: 1fr; }
+        .total-amount { font-size: 40px; }
+        .result-card { min-height: auto; }
+    }
+</style>

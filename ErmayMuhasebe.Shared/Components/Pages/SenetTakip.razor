@@ -1,0 +1,145 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Senet Takip Sistemi</MudText>
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+    <MudTabPanel Text="Alacak Senetleri">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="@(() => YeniSenetEkle("Alacak"))" Class="mb-3">
+            Yeni Senet Ekle
+        </MudButton>
+        
+        <MudTable Items="@alacakSenetleri" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>Senet No</MudTh>
+                <MudTh>Cari</MudTh>
+                <MudTh>Tutar</MudTh>
+                <MudTh>Vade</MudTh>
+                <MudTh>Durum</MudTh>
+                <MudTh>Kalan Gün</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.SenetNo</MudTd>
+                <MudTd>@context.CariUnvan</MudTd>
+                <MudTd>@context.Tutar.ToString("C2")</MudTd>
+                <MudTd>@context.VadeTarihi.ToShortDateString()</MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Color="@GetDurumColor(context.Durum)">@context.Durum</MudChip>
+                </MudTd>
+                <MudTd>
+                    @{
+                        var kalanGun = (context.VadeTarihi - DateTime.Now).Days;
+                        var color = kalanGun < 7 ? MudBlazor.Color.Error : kalanGun < 30 ? MudBlazor.Color.Warning : MudBlazor.Color.Success;
+                    }
+                    <MudChip T="string" Size="Size.Small" Color="@color">@kalanGun gün</MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditSenet(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+    
+    <MudTabPanel Text="Borç Senetleri">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="@(() => YeniSenetEkle("Borc"))" Class="mb-3">
+            Yeni Senet Ekle
+        </MudButton>
+        
+        <MudTable Items="@borcSenetleri" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>Senet No</MudTh>
+                <MudTh>Cari</MudTh>
+                <MudTh>Tutar</MudTh>
+                <MudTh>Vade</MudTh>
+                <MudTh>Durum</MudTh>
+                <MudTh>Kalan Gün</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.SenetNo</MudTd>
+                <MudTd>@context.CariUnvan</MudTd>
+                <MudTd>@context.Tutar.ToString("C2")</MudTd>
+                <MudTd>@context.VadeTarihi.ToShortDateString()</MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Color="@GetDurumColor(context.Durum)">@context.Durum</MudChip>
+                </MudTd>
+                <MudTd>
+                    @{
+                        var kalanGun = (context.VadeTarihi - DateTime.Now).Days;
+                        var color = kalanGun < 7 ? MudBlazor.Color.Error : kalanGun < 30 ? MudBlazor.Color.Warning : MudBlazor.Color.Success;
+                    }
+                    <MudChip T="string" Size="Size.Small" Color="@color">@kalanGun gün</MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+</MudTabs>
+
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@inject IDialogService DialogService
+
+@code {
+    private List<Senet> alacakSenetleri = new();
+    private List<Senet> borcSenetleri = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var allSenetler = await DbService.GetSenetlerAsync();
+        alacakSenetleri = allSenetler.Where(s => s.SenetTuru == "Alacak").ToList();
+        borcSenetleri = allSenetler.Where(s => s.SenetTuru == "Borc").ToList();
+    }
+
+    private async Task YeniSenetEkle(string tur)
+    {
+        var yeniSenet = new Senet { SenetTuru = tur, Durum = "Portfoy", VadeTarihi = DateTime.Now };
+        var parameters = new DialogParameters { ["Model"] = yeniSenet };
+        
+        var dialog = await DialogService.ShowAsync<SenetDialog>($"Yeni {tur} Senedi", parameters);
+        var result = await dialog.Result;
+
+         if (result != null && !result.Canceled && result.Data is Senet senet)
+        {
+            await DbService.SaveSenetAsync(senet);
+            Snackbar.Add("Senet başarıyla kaydedildi.", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private async Task EditSenet(Senet senet)
+    {
+        var parameters = new DialogParameters { ["Model"] = senet };
+        
+        var dialog = await DialogService.ShowAsync<SenetDialog>("Senet Düzenle", parameters);
+        var result = await dialog.Result;
+
+         if (result != null && !result.Canceled && result.Data is Senet updatedSenet)
+        {
+            await DbService.SaveSenetAsync(updatedSenet);
+            Snackbar.Add("Senet güncellendi.", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private MudBlazor.Color GetDurumColor(string? durum)
+    {
+        return durum switch
+        {
+            "Portfoy" => MudBlazor.Color.Info,
+            "Bankaya" => MudBlazor.Color.Primary,
+            "Tahsil" => MudBlazor.Color.Success,
+            "Iade" => MudBlazor.Color.Error,
+            _ => MudBlazor.Color.Default
+        };
+    }
+}

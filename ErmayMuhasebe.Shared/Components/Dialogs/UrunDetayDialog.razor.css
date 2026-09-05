@@ -1,0 +1,416 @@
+/* Fix Prefix Classes - Yeni Tasarım */
+.fix-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: #6C7A89;
+    color: white;
+}
+
+.fix-urun-form-container {
+    padding: 16px;
+    background: var(--bilsoft-bg);
+}
+
+.fix-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.fix-col-auto {
+    display: flex;
+    flex-direction: column;
+}
+
+.fix-col-grow {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.fix-col-small {
+    display: flex;
+    flex-direction: column;
+}
+
+.fix-col-mid {
+    display: flex;
+    flex-direction: column;
+}
+
+.fix-col-price {
+    display: flex;
+    flex-direction: column;
+}
+
+.fix-label {
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--bilsoft-text);
+    white-space: nowrap;
+}
+
+.fix-input {
+    height: 32px;
+    padding: 4px 8px;
+    border: 1px solid var(--bilsoft-border);
+    border-radius: 4px;
+    font-size: 12px;
+    background: var(--bilsoft-white);
+    color: var(--bilsoft-text);
+    width: 100%;
+}
+
+.fix-input:focus {
+    outline: none;
+    border-color: #2196F3;
+}
+
+.fix-input.blue-bg {
+    background-color: #e3f2fd;
+}
+
+.fix-stok-bul-btn {
+    height: 32px;
+    text-transform: none;
+    font-size: 11px;
+    padding: 0 12px;
+}
+
+.fix-ekle-btn {
+    height: 32px;
+    text-transform: none;
+    font-size: 11px;
+    padding: 0 12px;
+}
+
+.fix-green-box {
+    height: 32px;
+    background-color: #c8e6c9;
+    border: 1px solid #81c784;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 8px;
+    font-weight: 600;
+    font-size: 12px;
+    color: #1b5e20;
+}
+
+/* MudSelect Düzeltmeleri - KDV Dropdown İçin */
+.fix-mud-select {
+    height: 32px;
+    min-height: 32px;
+}
+
+.fix-mud-select ::deep .mud-input-root {
+    height: 32px;
+    min-height: 32px;
+}
+
+.fix-mud-select ::deep .mud-input {
+    height: 32px;
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.fix-mud-select ::deep .mud-select-input {
+    height: 32px;
+    min-height: 32px;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+}
+
+.fix-mud-select ::deep .mud-input-slot {
+    padding: 0 !important;
+}
+
+/* MudSelect Item'ları için */
+.fix-mud-select ::deep .mud-list-item {
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+}
+
+/* Popover genişliği */
+.fix-mud-select ::deep .mud-popover {
+    min-width: 100px !important;
+}
+
+/* Text overflow düzeltmesi */
+.fix-mud-select ::deep .mud-select-input {
+    white-space: nowrap;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+/* Dark mode desteği */
+[data-theme="dark"] .fix-input {
+    background: var(--bilsoft-sidebar-bg);
+    color: var(--bilsoft-text);
+    border-color: var(--bilsoft-border);
+}
+
+[data-theme="dark"] .fix-green-box,
+[data-theme="modern-saas"] .fix-green-box {
+    background-color: #2e7d32;
+    border-color: #1b5e20;
+    color: #c8e6c9;
+}
+
+[data-theme="modern-saas"] .fix-urun-form-container {
+    background: #0D1012;
+}
+
+[data-theme="modern-saas"] .tabs-container {
+    background: #1A1D21 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="modern-saas"] .fix-input {
+    background: #1A1D21 !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Eski Sınıflar - Geriye Dönük Uyumluluk */
+.urun-detay-dialog .mud-dialog-title {
+    padding: 8px 16px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+}
+
+.dialog-header {
+    display: flex;
+    align-items: center;
+    color: #4CAF50;
+}
+
+.urun-form-container {
+    padding: 10px;
+    background: #f0f0f0;
+    font-size: 13px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-right: 5px;
+}
+
+.form-group label {
+    font-weight: bold;
+    margin-bottom: 2px;
+    font-size: 11px;
+    color: #333;
+}
+
+.custom-input,
+.custom-select {
+    border: 1px solid #ccc;
+    padding: 4px;
+    border-radius: 2px;
+    height: 28px;
+    font-size: 12px;
+}
+
+.custom-input:focus,
+.custom-select:focus {
+    border-color: #66afe9;
+    outline: none;
+}
+
+.blue-bg {
+    background-color: #e0f7fa;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.top-row {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.stok-bul-btn {
+    height: 48px;
+    margin-right: 10px;
+    background-color: #3f51b5 !important;
+    color: white;
+    text-transform: none;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 0 20px;
+}
+
+.urun-adi-group {
+    flex: 2;
+}
+
+.miktar-group {
+    width: 120px;
+}
+
+.input-with-select {
+    display: flex;
+}
+
+.input-with-select input {
+    width: 50px;
+    border-right: none;
+}
+
+.input-with-select select {
+    width: 70px;
+}
+
+.birim-fiyat-group {
+    width: 80px;
+}
+
+.iskonto-group {
+    width: 140px;
+}
+
+.multi-input {
+    display: flex;
+    gap: 2px;
+}
+
+.multi-input input {
+    width: 40px;
+}
+
+.kdv-group {
+    width: 120px;
+}
+
+.kdv-select-area input {
+    width: 40px;
+}
+
+.kdv-select-area select {
+    width: 80px;
+}
+
+.total-group,
+.general-total-group {
+    width: 90px;
+    margin-left: 5px;
+}
+
+.green-box {
+    background-color: #ccffcc;
+    border: 1px solid #99cc99;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    padding-left: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.middle-row {
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 10px;
+    position: relative;
+    padding-right: 180px;
+}
+
+.wide-select {
+    width: 200px;
+}
+
+.otv-group {
+    width: 100px;
+}
+
+.radio-group {
+    margin-left: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.radio-group label {
+    font-size: 11px;
+    margin-left: 2px;
+}
+
+.ekle-btn-container {
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.ekle-btn {
+    background: linear-gradient(to bottom, #4a90e2, #0056b3);
+    color: white;
+    border: none;
+    width: 120px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    gap: 8px;
+}
+
+.ekle-btn:hover {
+    background: linear-gradient(to bottom, #5aa0f2, #1066c3);
+}
+
+.depo-right {
+    position: absolute;
+    right: 15px;
+    top: 135px;
+    width: 160px;
+}
+
+.tabs-container {
+    background: white;
+    padding: 10px;
+    border: 1px solid #ddd;
+    min-height: 200px;
+}
+
+.tab-content-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 600px;
+}
+
+.form-group-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 60px;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-group-row label {
+    font-weight: bold;
+    font-size: 12px;
+    text-align: right;
+}
+
+.small-input {
+    width: 50px;
+    border: 1px solid #ccc;
+    padding: 4px;
+}
+
+.double-select {
+    grid-template-columns: 200px 1fr 1fr 60px;
+}

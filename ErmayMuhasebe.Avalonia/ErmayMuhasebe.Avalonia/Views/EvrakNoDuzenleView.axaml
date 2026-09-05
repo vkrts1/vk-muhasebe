@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.EvrakNoDuzenleView"
+             x:DataType="vm:EvrakNoDuzenleViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#266B7280">
+          <ic:SymbolIcon Symbol="NumberSymbol" Foreground="#6B7280" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Evrak Seri ve No Yapılandırma" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Fatura ve makbuzlar için kullanılacak yeni seri ve başlangıç numaralarını belirleyin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, 400" ColumnSpacing="25">
+       <!-- Serial List -->
+       <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="10" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <DataGrid ItemsSource="{Binding Seriler}" AutoGenerateColumns="False">
+             <DataGrid.Columns>
+                <DataGridTextColumn Header="Evrak Türü" Binding="{Binding EvrakTipi}" IsReadOnly="True" Width="2*"/>
+                <DataGridTemplateColumn Header="Seri (Prefiks)" Width="150">
+                    <DataTemplate>
+                        <TextBox Text="{Binding Seri}" HorizontalAlignment="Stretch" BorderThickness="0" Background="Transparent" Foreground="White"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Sıradaki No" Width="150">
+                    <DataTemplate>
+                        <NumericUpDown Value="{Binding SiradakiNo}"  ShowButtonSpinner="False" BorderThickness="0" Background="Transparent"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn>
+             </DataGrid.Columns>
+          </DataGrid>
+       </Border>
+
+       <!-- Helper / Save -->
+       <StackPanel Grid.Column="1" Spacing="20">
+          <Border Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+             <StackPanel Spacing="20">
+                <TextBlock Text="İşlem Özeti" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                <TextBlock Text="Değişiklik yaptıktan sonra 'Kaydet' butonuna basın. Bu işlemden sonra kesilecek ilk evrak belirttiğiniz numaradan başlayacaktır." 
+                           FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap"/>
+                
+                <Separator Background="#15FFFFFF"/>
+
+                <Button Command="{Binding KaydetCommand}" Classes="SideButton Info" Height="50" HorizontalAlignment="Stretch" Background="#6B7280">
+                   <TextBlock Text="TÜMÜNÜ KAYDET" FontWeight="Bold"/>
+                </Button>
+
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#10B981" FontSize="12" TextAlignment="Center" TextWrapping="Wrap"/>
+             </StackPanel>
+          </Border>
+       </StackPanel>
+    </Grid>
+  </Grid>
+</UserControl>

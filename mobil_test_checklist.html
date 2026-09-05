@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ermay Muhasebe — Mobil Versiyon Test & Eksiklik Checklist Mini App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --bg-card: #111827;
+            --bg-card-hover: #1f293d;
+            --bg-input: #1a2234;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.18);
+            
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --text-dim: #6b7280;
+            
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --accent-purple: #8b5cf6;
+            
+            --status-not-tested: #4b5563;
+            --status-pass: #10b981;
+            --status-fail: #ef4444;
+            --status-warn: #f59e0b;
+            --status-na: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.5;
+            padding-bottom: 60px;
+        }
+
+        h1, h2, h3, h4, .brand-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* App Container */
+        .container {
+            max-width: 1350px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-badge {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 22px;
+            color: white;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Stats Cards Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-hover);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--card-accent, var(--accent-blue));
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Overall Progress Bar */
+        .progress-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .progress-percent {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .progress-track {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 99px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .fill-pass { background: var(--status-pass); }
+        .fill-fail { background: var(--status-fail); }
+        .fill-warn { background: var(--status-warn); }
+        .fill-na { background: var(--status-na); }
+
+        /* Filter Controls */
+        .controls-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 14px 10px 38px;
+            color: var(--text-main);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        select.filter-select {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 9px 14px;
+            color: var(--text-main);
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select.filter-select:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .chip-btn {
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chip-btn.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        /* Modules & Checklist Accordion/Grid */
+        .module-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+
+        .module-section:hover {
+            border-color: var(--border-hover);
+        }
+
+        .module-header {
+            padding: 18px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.01);
+            user-select: none;
+        }
+
+        .module-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .module-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .module-name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .module-count {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .module-meta {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .module-mini-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .mini-bar {
+            width: 80px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .mini-fill {
+            height: 100%;
+            background: var(--accent-green);
+        }
+
+        .toggle-icon {
+            font-size: 14px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .module-section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .module-section.collapsed .module-body {
+            display: none;
+        }
+
+        .module-body {
+            border-top: 1px solid var(--border-color);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Checklist Items */
+        .check-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .check-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .check-item.status-pass { border-left: 4px solid var(--status-pass); }
+        .check-item.status-fail { border-left: 4px solid var(--status-fail); background: rgba(239, 68, 68, 0.04); }
+        .check-item.status-warn { border-left: 4px solid var(--status-warn); background: rgba(245, 158, 11, 0.04); }
+        .check-item.status-na { border-left: 4px solid var(--status-na); }
+
+        .item-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .item-info {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .item-header-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        .item-id {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .item-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .risk-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 99px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .item-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .item-expected {
+            font-size: 12px;
+            color: var(--accent-cyan);
+            margin-top: 4px;
+            background: rgba(6, 182, 212, 0.06);
+            padding: 6px 10px;
+            border-radius: 8px;
+            border-left: 2px solid var(--accent-cyan);
+        }
+
+        /* Status Select Buttons */
+        .status-selector {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-input);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-btn {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status-btn.active[data-status="pass"] {
+            background: var(--status-pass);
+            color: white;
+        }
+        .status-btn.active[data-status="fail"] {
+            background: var(--status-fail);
+            color: white;
+        }
+        .status-btn.active[data-status="warn"] {
+            background: var(--status-warn);
+            color: black;
+        }
+        .status-btn.active[data-status="na"] {
+            background: var(--status-na);
+            color: white;
+        }
+        .status-btn.active[data-status="none"] {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        /* Note Input Area */
+        .item-note-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .note-input {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: var(--text-main);
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .note-input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        /* Modal for Markdown Report */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hover);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 850px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-close:hover {
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-body textarea {
+            width: 100%;
+            height: 380px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            color: #86efac;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            outline: none;
+            resize: none;
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--accent-green);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <div class="header-title">
+            <div class="logo-badge">EM</div>
+            <div>
+                <h1>Ermay Muhasebe — Mobil Test & Eksiklik Checklist</h1>
+                <p>React Native Expo Mobil Uygulaması Adım Adım Birebir Test Paneli</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openReportModal()">
+                📋 Hata Raporu Oluştur (Markdown)
+            </button>
+            <button class="btn" onclick="exportJSON()">
+                💾 JSON Dışa Aktar
+            </button>
+            <button class="btn" onclick="importJSON()">
+                📂 JSON İçe Aktar
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">
+                🔄 Sıfırla
+            </button>
+        </div>
+    </header>
+
+    <!-- Stats Overview Dashboard -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--card-accent: var(--accent-blue)">
+            <div class="stat-label">Toplam Test</div>
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-sub">Atomik test maddesi</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--status-pass)">
+            <div class="stat-label">Başarılı (Pass)</div>
+            <div class="stat-value" style="color: var(--status-pass)" id="stat-pass">0</div>
+            <div class="stat-sub" id="stat-pass-pct">%0 tamamlandı</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--status-fail)">
+            <div class="stat-label">Hatalı / Eksik (Fail)</div>
+            <div class="stat-value" style="color: var(--status-fail)" id="stat-fail">0</div>
+            <div class="stat-sub" id="stat-fail-sub">Tespit edilen hata</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--status-warn)">
+            <div class="stat-label">Kısmi / Uyarı</div>
+            <div class="stat-value" style="color: var(--status-warn)" id="stat-warn">0</div>
+            <div class="stat-sub">İyileştirme gerekli</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--accent-purple)">
+            <div class="stat-label">Masaüstü Riskli</div>
+            <div class="stat-value" style="color: #c084fc" id="stat-risk">0</div>
+            <div class="stat-sub">Kritik mimari fark</div>
+        </div>
+    </div>
+
+    <!-- Overall Progress Bar -->
+    <div class="progress-card">
+        <div class="progress-header">
+            <div class="progress-title">Genel Test İlerleme Oranı</div>
+            <div class="progress-percent" id="progress-text">%0</div>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill fill-pass" id="fill-pass" style="width: 0%"></div>
+            <div class="progress-fill fill-fail" id="fill-fail" style="width: 0%"></div>
+            <div class="progress-fill fill-warn" id="fill-warn" style="width: 0%"></div>
+            <div class="progress-fill fill-na" id="fill-na" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- Filters & Search Bar -->
+    <div class="controls-card">
+        <div class="search-box">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" id="searchInput" placeholder="Test maddelerinde arayın (örn. Cari, PDF, Fatura, Kur)..." oninput="applyFilters()">
+        </div>
+        
+        <div class="filter-group">
+            <span class="filter-label">Modül:</span>
+            <select class="filter-select" id="moduleFilter" onchange="applyFilters()">
+                <option value="all">Tüm Modüller</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-label">Durum:</span>
+            <select class="filter-select" id="statusFilter" onchange="applyFilters()">
+                <option value="all">Tüm Durumlar</option>
+                <option value="none">⚪ Test Edilmedi</option>
+                <option value="pass">✅ Başarılı (Pass)</option>
+                <option value="fail">❌ Hatalı / Eksik (Fail)</option>
+                <option value="warn">⚠️ Kısmi / Uyarı</option>
+                <option value="na">➖ Kapsam Dışı</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <button class="chip-btn" id="riskOnlyBtn" onclick="toggleRiskOnly()">🚨 Sadece Masaüstü Riskli Maddeler</button>
+        </div>
+    </div>
+
+    <!-- Container for Module Accordions -->
+    <div id="modulesContainer"></div>
+</div>
+
+<!-- Modal for Exporting Markdown Report -->
+<div class="modal-backdrop" id="reportModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📋 Mobil Versiyon Test & Hata Raporu (Markdown)</h3>
+            <button class="modal-close" onclick="closeReportModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                Aşağıdaki raporda test sonuçlarınız, bulunan hatalar, notlarınız ve masaüstü parite riskleri otomatik derlenmiştir. Kopyalayıp projeye kaydedebilirsiniz.
+            </p>
+            <textarea id="reportTextarea" readonly></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeReportModal()">Kapat</button>
+            <button class="btn btn-primary" onclick="copyReportText()">
+                📄 Metni Kopyala
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden File Input for Import -->
+<input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="handleImportFile(event)">
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">İşlem başarıyla gerçekleştirildi!</div>
+
+<script>
+// --- MASTER TEST DATA SCHEMA ---
+const masterModules = [
+    {
+        id: "mod-auth",
+        icon: "🔑",
+        name: "1. Kimlik Doğrulama, Oturum & Güvenlik",
+        items: [
+            {
+                id: "AUTH-01",
+                title: "Giriş Ekranı (LoginScreen) — Firma Kodu & Yıl Girişi",
+                desc: "Firma Kodu ve Mali Yıl girilerek uygulamaya başarılı şekilde giriş yapabiliyor mu?",
+                expected: "RTDB `companies/{tenant}/years/{yil}` şemasına doğru bağlanmalı.",
+                risk: "DB Secret URL'de taşınıyor"
+            },
+            {
+                id: "AUTH-02",
+                title: "Database Secret & Şifre Doğrulama",
+                desc: "Hatalı DB secret / şifre girildiğinde kullanıcıya net uyarı veriyor mu?",
+                expected: "Geçersiz token/secret için alert gösterilmeli."
+            },
+            {
+                id: "AUTH-03",
+                title: "Beni Hatırla & AsyncStorage Kalıcılığı",
+                desc: "Uygulama kapatılıp tekrar açıldığında son girilen firma kodu ve ayarlar saklanıyor mu?",
+                expected: "AsyncStorage'dan otomatik dolmalı."
+            },
+            {
+                id: "AUTH-04",
+                title: "Kilit Ekranı (LockScreen) & Oturum Zaman Aşımı",
+                desc: "Arka plana alınıp tekrar girildiğinde kilit ekranı veya PIN soruyor mu?",
+                expected: "Masaüstünde 30 dk pasiflik aşımı var; mobilde kilit mantığı çalışmalı."
+            },
+            {
+                id: "AUTH-05",
+                title: "Güvenlik — Cleartext HTTP Trafik Kontrolü",
+                desc: "Android manifest `usesCleartextTraffic: true` durumu LAN dışı HTTPS kullanımını engelliyor mu?",
+                expected: "Production'da HTTPS zorunlu olmalı.",
+                risk: "KRİTİK GÜVENLİK RİSKİ"
+            }
+        ]
+    },
+    {
+        id: "mod-dashboard",
+        icon: "📊",
+        name: "2. Dashboard & Özet Ekranı (DashboardScreen)",
+        items: [
+            {
+                id: "DASH-01",
+                title: "KPI Kartları Hesaplama Doğruluğu",
+                desc: "Toplam Alacak, Toplam Borç, Kasa/Banka Bakiyesi ve Günlük Satış kartları doğru hesaplanıyor mu?",
+                expected: "Masaüstü `DashboardViewModel` rakamları ile birebir tutmalı."
+            },
+            {
+                id: "DASH-02",
+                title: "Stok Kritik Seviye Uyumsuzluğu Kontrolü",
+                desc: "Dashboard'da stok uyarısı `minSeviye` alanını mı yoksa `kritikSeviye` alanını mı okuyor?",
+                expected: "Masaüstü `StokKart.MinSeviye` kullanır. Uyumsuz alan adı veriyi 0 gösterebilir.",
+                risk: "Alan Adı Uyumsuzluğu"
+            },
+            {
+                id: "DASH-03",
+                title: "Son İşlemler Listesi & Hızlı Butonlar",
+                desc: "Son eklenen fatura/hareketler anında listeleniyor mu? Hızlı Cari/Fatura ekleme butonları çalışıyor mu?",
+                expected: "Tıklanınca ilgili moda veya pupe ekrana yönlendirmeli."
+            },
+            {
+                id: "DASH-04",
+                title: "2.5 Saniye Realtime Polling & Pil Yükü",
+                desc: "Veriler her 2.5 saniyede bir güncellenirken UI donması veya aşırı ısınma yaşanıyor mu?",
+                expected: "Arka plana geçildiğinde polling durmalı.",
+                risk: "Polling / Performans Yükü"
+            },
+            {
+                id: "DASH-05",
+                title: "Pull-to-Refresh & Çevrimdışı Durum Bildirimi",
+                desc: "Ekranı aşağı çekince veriler zorla yenileniyor mu? İnternet yoksa kullanıcı uyarılıyor mu?",
+                expected: "Yenileme göstergesi ve çevrimdışı banner çıkmalı."
+            }
+        ]
+    },
+    {
+        id: "mod-cariler",
+        icon: "👥",
+        name: "3. Cari Hesaplar Modülü (CarilerScreen)",
+        items: [
+            {
+                id: "CARI-01",
+                title: "Cari Arama (Ad, Kod, Vergi No) & Filtreleme",
+                desc: "Cari listesinde anlık arama ve Müşteri/Tedarikçi/Tümü filtreleri doğru çalışıyor mu?",
+                expected: "Türkçe karakter uyumlu hızlı filtreleme yapılmalı."
+            },
+            {
+                id: "CARI-02",
+                title: "Yeni Cari Kartı Oluşturma & Doğrulama",
+                desc: "Zorunlu alanlar (Unvan, Kod) boş bırakıldığında doğrulama uyarısı veriyor mu?",
+                expected: "RTDB `Cariler/{id}` altına PascalCase kaydedilmeli."
+            },
+            {
+                id: "CARI-03",
+                title: "Cari Düzenleme ve Silme İşlemleri",
+                desc: "Mevcut carinin bilgileri güncellenip silinebiliyor mu?",
+                expected: "Hareketi olan carilerin silinmesi engellenmeli veya uyarı verilmeli."
+            },
+            {
+                id: "CARI-04",
+                title: "Cari Detay — Bakiye, Alacak, Borç & İletişim Butonları",
+                desc: "Cari detayında Telefon Arama, WhatsApp Mesajı Gönderme ve Harita butonları çalışıyor mu?",
+                expected: "Expo Linking API ile doğru uygulamayı açmalı."
+            },
+            {
+                id: "CARI-05",
+                title: "Hızlı Tahsilat / Ödeme Girişi Modal'ı",
+                desc: "Cari detayından hızlı nakit/banka tahsilatı girilince Cari Bakiye ve Kasa anında güncelleniyor mu?",
+                expected: "Finans hareketi ile Cari hareketi eş zamanlı yazılmalı."
+            },
+            {
+                id: "CARI-06",
+                title: "Cari Yaşlandırma & Risk Limiti Uyarıları",
+                desc: "Vadesi geçmiş alacak yaşlandırması (0-30, 31-60 vb.) doğru hesaplanıyor mu? Risk limiti aşımında uyarı veriyor mu?",
+                expected: "Masaüstü yaşlandırma mantığı ile birebir örtüşmeli."
+            },
+            {
+                id: "CARI-07",
+                title: "Araçlar — Cari Birleştirme (Bakiye & Hareket Aktarımı)",
+                desc: "İki cari birleştirildiğinde `CariHareketler` ve geçmiş faturalar da yeni cariye taşınıyor mu?",
+                expected: "Masaüstünde tam taşıma var; mobilde sadece borç/alacak toplamı taşınırsa veri tutarsızlığı olur.",
+                risk: "Eksik Veri Taşıma Riski"
+            }
+        ]
+    },
+    {
+        id: "mod-stoklar",
+        icon: "📦",
+        name: "4. Stok Kartları & Envanter (StoklarScreen & StokGrup)",
+        items: [
+            {
+                id: "STOK-01",
+                title: "Stok Listesi Arama & Barkod Filtreleme",
+                desc: "Stok adı, stok kodu veya barkod ile hızlı arama doğru çalışıyor mu?",
+                expected: "Küçük/büyük harf duyarsız arama yapmalı."
+            },
+            {
+                id: "STOK-02",
+                title: "Kritik Stok Filtresi & Uyumsuzluk Kontrolü",
+                desc: "Kritik stoktaki ürünleri filtreleyince `minSeviye` alanı doğru okunuyor mu?",
+                expected: "Masaüstü `MinSeviye` ile eşleşmeli.",
+                risk: "Alan Adı Uyumsuzluğu"
+            },
+            {
+                id: "STOK-03",
+                title: "Yeni Stok Kartı Oluşturma (Fotoğraf, Fiyat, KDV)",
+                desc: "Alış/Satış fiyatı, KDV oranı ve Stok Grubu seçilerek stok eklenebiliyor mu?",
+                expected: "RTDB `Stoklar/{id}` altına yazılmalı."
+            },
+            {
+                id: "STOK-04",
+                title: "Kamera ile Barkod Okuma",
+                desc: "Cihazın kamerası ile ürün barkodu taratıldığında doğru stok kartı bulunuyor mu?",
+                expected: "Expo BarCodeScanner / Camera API doğru izin almalı."
+            },
+            {
+                id: "STOK-05",
+                title: "Ağırlıklı Ortalama Maliyet Hesaplaması",
+                desc: "Alış faturaları girdikçe stok maliyeti doğru güncelleniyor mu?",
+                expected: "Masaüstü `OrtalamaAlisFiyati` mantığı geçerli olmalı."
+            },
+            {
+                id: "STOK-06",
+                title: "Stok Grupları Yönetimi (StokGrupScreen)",
+                desc: "Yeni stok grubu/kategorisi eklenebiliyor ve düzenlenebiliyor mu?",
+                expected: "Stok eklerken bu gruplar listede çıkmalı."
+            },
+            {
+                id: "STOK-07",
+                title: "Fiziksel Stok Sayım & Düzeltme (StokSayim)",
+                desc: "Fiziksel sayım yapılarak stok miktarları güncellenebiliyor mu?",
+                expected: "Sayım farkı fişi veya stok güncellemesi oluşmalı."
+            }
+        ]
+    },
+    {
+        id: "mod-faturalar",
+        icon: "🧾",
+        name: "5. Faturalar Modülü (FaturalarScreen & FaturaForm)",
+        items: [
+            {
+                id: "FAT-01",
+                title: "Fatura Listesi (Satış / Alış Filtresi & Arama)",
+                desc: "Satış ve Alış faturaları sekmelerle ayrılıyor mu? Tarih ve tutar aramaları doğru mu?",
+                expected: "Tarihe göre yeniden eskiye sıralanmalı."
+            },
+            {
+                id: "FAT-02",
+                title: "Yeni Fatura Oluşturma (FaturaFormScreen) — Cari & Stok Seçimi",
+                desc: "Cari seçilip stok kalemleri eklenebiliyor mu? Miktar ve Birim Fiyat değiştirilebiliyor mu?",
+                expected: "Kalem eklendikçe otomatik tutar hesaplanmalı."
+            },
+            {
+                id: "FAT-03",
+                title: "Matrah, KDV, İskonto & Genel Toplam Hesaplama Doğruluğu",
+                desc: "KDV dahil/hariç seçenekleri ve iskonto oranları doğru hesaplanıyor mu?",
+                expected: "Masaüstü fatura matematiği ile kuruşu kuruşuna aynı olmalı."
+            },
+            {
+                id: "FAT-04",
+                title: "Fatura Kaydetme — Atomik Stok & Cari Bakiye Güncellemesi",
+                desc: "Fatura kaydedilince Stok miktarı düşüp/artıyor ve Cari bakiye tek adımda güncelleniyor mu?",
+                expected: "Network kopmasında kısmi yazma olmamalı (Masaüstünde tek Transaction).",
+                risk: "KRİTİK: Atomiklik Riski"
+            },
+            {
+                id: "FAT-05",
+                title: "E-Arşiv / E-Fatura Durum Bayrağı",
+                desc: "Faturada E-Arşiv/E-Fatura bilgisi gösteriliyor ve değiştirilebiliyor mu?",
+                expected: "Masaüstü e-belge durumu ile uyumlu olmalı."
+            },
+            {
+                id: "FAT-06",
+                title: "Fatura PDF Önizleme & Paylaşım",
+                desc: "Fatura detayından PDF üretilip WhatsApp veya e-posta ile paylaşılabiliyor mu?",
+                expected: "Functions API PDF servisi yanıt vermeli.",
+                risk: "PDF Server Endpoint Bağımlılığı"
+            },
+            {
+                id: "FAT-07",
+                title: "Fatura İptali & Silme İşlemi",
+                desc: "Fatura iptal edildiğinde stoklar ve cari bakiye otomatik eski haline geri çekiliyor mu?",
+                expected: "Ters hareket veya stok iadesi yapılmalı."
+            }
+        ]
+    },
+    {
+        id: "mod-finans",
+        icon: "💳",
+        name: "6. Finans, Kasa, Banka & Çek/Senet (FinansScreen)",
+        items: [
+            {
+                id: "FIN-01",
+                title: "Kasa Yönetimi — Kasa Listesi & Bakiye Takibi",
+                desc: "Nakit kasalar ve mevcut bakiyeler doğru gösteriliyor mu?",
+                expected: "Kasa hareketleri toplamı bakiye ile eşleşmeli."
+            },
+            {
+                id: "FIN-02",
+                title: "Banka & Hesap Yönetimi — IBAN & EFT/Havale",
+                desc: "Banka hesapları, IBAN bilgileri ve banka bakiyeleri doğru mu?",
+                expected: "Gelen/giden havaleler banka bakiyesini güncellemeli."
+            },
+            {
+                id: "FIN-03",
+                title: "Kredi Kartı / POS İşlemleri",
+                desc: "POS cihazlarından yapılan tahsilatlar ve KK hesap bakiyeleri izlenebiliyor mu?",
+                expected: "KK komisyon ve taksit dökümü doğru olmalı."
+            },
+            {
+                id: "FIN-04",
+                title: "Çek & Senet Portföyü — Durum Yönetimi",
+                desc: "Alınan/Verilen çeklerin durumu (Portföyde, Tahsil Edildi, Ciro Edildi, Karşılıksız) güncellenebiliyor mu?",
+                expected: "Çek ciro edildiğinde hedef cariye borç/alacak yazılmalı."
+            },
+            {
+                id: "FIN-05",
+                title: "Çek Görseli Yükleme & Görüntüleme",
+                desc: "Çek fotoğrafı çekilip veya galeriden seçilip saklanabiliyor ve görüntülenebiliyor mu?",
+                expected: "Fotoğraf URL veya base64 kaydı sorunsuz yüklenmeli."
+            },
+            {
+                id: "FIN-06",
+                title: "Finansal İşlem Atomikliği (Tahsilat / Ödeme / Dekont)",
+                desc: "Tek işlemde Kasa + Banka + Cari Hareket güncellenirken hata oluşursa rollback oluyor mu?",
+                expected: "Masaüstü `FinansService.SaveTransactionAsync` mantığı gibi atomik olmalı.",
+                risk: "KRİTİK: Atomiklik Riski"
+            }
+        ]
+    },
+    {
+        id: "mod-siparisler",
+        icon: "📋",
+        name: "7. Siparişler Modülü (SiparislerScreen)",
+        items: [
+            {
+                id: "SIP-01",
+                title: "Sipariş Listesi (Alınan / Verilen Siparişler)",
+                desc: "Siparişler durumuna göre (Bekliyor, Onaylandı, Teslim Edildi) filtrelenebiliyor mu?",
+                expected: "Tarih sıralaması doğru olmalı."
+            },
+            {
+                id: "SIP-02",
+                title: "Yeni Sipariş Oluşturma & Düzenleme",
+                desc: "Cari ve ürünler seçilerek sipariş kaydedilebiliyor mu?",
+                expected: "RTDB `Siparisler` düğümüne yazılmalı."
+            },
+            {
+                id: "SIP-03",
+                title: "Sipariş → Faturaya Dönüştürme İşlemi",
+                desc: "Sipariş detayından 'Faturaya Dönüştür' denildiğinde FaturaFormScreen verilerle açılıyor mu?",
+                expected: "Fatura oluştuktan sonra sipariş durumu 'Faturaya Dönüştü' olmalı.",
+                risk: "Çoklu Yazma / Kısmi Kayıt Riski"
+            }
+        ]
+    },
+    {
+        id: "mod-teklifler",
+        icon: "📜",
+        name: "8. Teklifler Modülü (TekliflerScreen)",
+        items: [
+            {
+                id: "TEK-01",
+                title: "Teklif Listesi & Durum Takibi",
+                desc: "Teklifler (Hazırlandı, Gönderildi, Onaylandı, Reddedildi) doğru takip ediliyor mu?",
+                expected: "Durum renkleri ve sayaçlar tutmalı."
+            },
+            {
+                id: "TEK-02",
+                title: "Yeni Teklif Oluşturma & PDF Paylaşım",
+                desc: "Müşteriye teklif hazırlanıp PDF olarak WhatsApp veya e-postadan paylaşılabiliyor mu?",
+                expected: "Expo Sharing ile PDF dosyası gönderilmeli."
+            },
+            {
+                id: "TEK-03",
+                title: "Teklif → Siparişe Dönüştürme İşlemi",
+                desc: "Onaylanan teklif tek tıkla Siparişe dönüştürülebiliyor mu?",
+                expected: "Teklif içeriği yeni Sipariş olarak kopyalanmalı."
+            }
+        ]
+    },
+    {
+        id: "mod-vade",
+        icon: "⏰",
+        name: "9. Vade Takip & Hatırlatıcılar (VadeTakipScreen)",
+        items: [
+            {
+                id: "VAD-01",
+                title: "Vadesi Geçen Alacak & Borç Listesi",
+                desc: "Bugün, Bu Hafta ve Vadesi Geçmiş ödeme/tahsilatlar doğru listeleniyor mu?",
+                expected: "Vade tarihine göre renklendirme yapılmalı."
+            },
+            {
+                id: "VAD-02",
+                title: "Vade Erteleme & Takvim Widget Entegrasyonu",
+                desc: "Vade tarihi ertelenebiliyor ve cihaz takvimine hatırlatıcı eklenebiliyor mu?",
+                expected: "Yeni vade tarihi RTDB'ye kaydedilmeli."
+            },
+            {
+                id: "VAD-03",
+                title: "Çek / Senet Vade Uyarısı",
+                desc: "Vadesi yaklaşan çekler uyarı listesinde çıkıyor mu?",
+                expected: "Masaüstü bildirim motoru uyarısıyla eşleşmeli."
+            }
+        ]
+    },
+    {
+        id: "mod-raporlar",
+        icon: "📈",
+        name: "10. Raporlar Modülü (RaporlarScreen)",
+        items: [
+            {
+                id: "RAP-01",
+                title: "Mevcut 15 Mobil Raporunun Çalışma Kontrolü",
+                desc: "Cari Bakiye, Stok Mevcudu, Nakit Akış, Ürün Karlılık vb. 15 rapor ekranı verileri doğru getiriyor mu?",
+                expected: "Hesaplama mantıkları masaüstü ile birebir tutmalı."
+            },
+            {
+                id: "RAP-02",
+                title: "Eksik 16 Masaüstü Raporunun Kontrolü",
+                desc: "Masaüstünde olan ama mobilde olmayan 16 rapor (Gelir Tablosu, DSO, FIFO Yaşlandırma, ABC vb.) mobilde var mı?",
+                expected: "Eksik raporlar raporda işaretlenmeli.",
+                risk: "Masaüstü 31 Rapor vs Mobil 15 Rapor"
+            },
+            {
+                id: "RAP-03",
+                title: "Rapor PDF Üretimi & Functions Endpoint Uyumsuzluğu",
+                desc: "Mobildeki `consolidated_report`, `stok_status_report` vb. URL'leri `ErmayMuhasebe.Functions` endpoint'leri ile eşleşiyor mu?",
+                expected: "Endpoint isimleri `fatura, generic, consolidated, stok-list` şeklinde Functions API ile eşleşmeli.",
+                risk: "KRİTİK: Endpoint Uyumsuzluğu"
+            },
+            {
+                id: "RAP-04",
+                title: "Müşteri Karlılık Hesaplama Mantığı",
+                desc: "Müşteri karlılığı hesaplanırken sabit %70 maliyet mi yoksa gerçek ortalama alış fiyatı mı kullanılıyor?",
+                expected: "Masaüstü gibi gerçek `OrtalamaAlisFiyati` ile hesaplanmalı.",
+                risk: "Varsayım / Hatalı Maliyet Hesabı"
+            }
+        ]
+    },
+    {
+        id: "mod-kanban",
+        icon: "📌",
+        name: "11. Kanban & Görev Panosu (KanbanScreen)",
+        items: [
+            {
+                id: "KAN-01",
+                title: "Görev Kartı Ekleme, Sürükleme & Durum Değiştirme",
+                desc: "Yapılacak, Devam Ediyor, Tamamlandı sütunları arası görev taşınabiliyor mu?",
+                expected: "Görev durumu RTDB'de anında güncellenmeli."
+            },
+            {
+                id: "KAN-02",
+                title: "RTDB Düğüm Adı Çakışması Kontrolü",
+                desc: "Kanban görevleri RTDB'de `Notes` düğümü altında mı tutuluyor?",
+                expected: "Masaüstü `Notes` düğümünü basit notlar için kullanır. Kanban görevleri `Gorevler` veya `KanbanTask` düğümüne taşınmalı.",
+                risk: "Veri Çakışması Riski"
+            }
+        ]
+    },
+    {
+        id: "mod-araclar",
+        icon: "🧮",
+        name: "12. Maliyet Hesaplama & Pratik Araçlar (AraclarScreen)",
+        items: [
+            {
+                id: "ARC-01",
+                title: "Maliyet Hesaplama Simülatörü",
+                desc: "Ham madde, işçilik, KDV ve kar marjı girilerek birim satış fiyatı doğru hesaplanıyor mu?",
+                expected: "Hesap makinesi çıktısı tutmalı."
+            },
+            {
+                id: "ARC-02",
+                title: "Canlı Kurlar — TCMB API vs Simülasyon Kontrolü",
+                desc: "Canlı döviz kurları TCMB API'den mi çekiliyor yoksa sabit taban + rastgele sapma simülasyonu mu?",
+                expected: "Masaüstü gerçek TCMB API kullanır; mobilde de gerçek veri olmalı.",
+                risk: "Sahte / Simüle Veri"
+            },
+            {
+                id: "ARC-03",
+                title: "Sistem Sağlığı & Firebase Bağlantı Testi",
+                desc: "Sistem sağlığı ekranı gerçek sunucu ping/bağlantı durumunu mu gösteriyor?",
+                expected: "Gerçek RTDB bağlantı süresi ölçülmeli."
+            },
+            {
+                id: "ARC-04",
+                title: "Veri Yedekleme & Geri Yükleme Kapsamı",
+                desc: "Yedek al deyince tüm iş verileri (Cariler, Faturalar) mi yedekleniyor yoksa sadece Firma Profili mi?",
+                expected: "Tüm RTDB yedeklenmeli.",
+                risk: "Eksik Yedek Kapsamı"
+            }
+        ]
+    },
+    {
+        id: "mod-ayarlar",
+        icon: "⚙️",
+        name: "13. Ayarlar & Firma Profili (AyarlarScreen)",
+        items: [
+            {
+                id: "AYAR-01",
+                title: "Firma Bilgileri Düzenleme (Logo, Unvan, Vergi Dairesi)",
+                desc: "Firma profili güncellendiğinde tüm ekranlara ve PDF'lere yansıyor mu?",
+                expected: "RTDB `FirmaProfili` güncellenmeli."
+            },
+            {
+                id: "AYAR-02",
+                title: "PDF Sunucu URL Yapılandırması",
+                desc: "PDF üretici sunucu IP/URL adresi ayarlardan değiştirilebiliyor mu?",
+                expected: "Sabit `192.168.1.103` yerine dinamik veya prod URL olmalı.",
+                risk: "Sabit IP / Prod Kırılma Riski"
+            },
+            {
+                id: "AYAR-03",
+                title: "Önbellek Temizleme & Veri Sıfırlama",
+                desc: "Local cache temizlendiğinde uygulama çökmeksizin yeniden başlatılabiliyor mu?",
+                expected: "AsyncStorage güvenle temizlenmeli."
+            }
+        ]
+    },
+    {
+        id: "mod-offline",
+        icon: "📶",
+        name: "14. Çevrimdışı (Offline), Ağ & Performans",
+        items: [
+            {
+                id: "OFF-01",
+                title: "Çevrimdışı (Offline) Davranış & Uygulama Tepkisi",
+                desc: "İnternet kesildiğinde uygulama çöküyor mu yoksa çevrimdışı uyarısı verip lokal veriyi gösteriyor mu?",
+                expected: "Masaüstünde SQLite var; mobilde çevrimdışı önbellek veya net hata mesajı olmalı.",
+                risk: "Offline Destek / Önbellek Yok"
+            },
+            {
+                id: "OFF-02",
+                title: "Farklı Ekran Boyutları & Responsive Düzen",
+                desc: "Küçük ekranlı telefonlarda ve tabletlerde metin kayması veya buton çakışması oluyor mu?",
+                expected: "ScrollViews ve responsive kart düzeni sorunsuz çalışmalı."
+            },
+            {
+                id: "OFF-03",
+                title: "Hata Yakalama (Error Boundary) Kontrolü",
+                desc: "Beklenmeyen JS hatasında uygulamanın tamamı mı kapanıyor yoksa kurtarma ekranı çıkıyor mu?",
+                expected: "React Error Boundary yakalamalı."
+            }
+        ]
+    }
+];
+
+// --- APP STATE & LOCALSTORAGE ---
+const STORAGE_KEY = 'ermay_mobile_test_checklist_v1';
+let appState = {
+    statuses: {}, // itemId -> 'none' | 'pass' | 'fail' | 'warn' | 'na'
+    notes: {}     // itemId -> string
+};
+
+let currentFilterModule = 'all';
+let currentFilterStatus = 'all';
+let filterRiskOnly = false;
+let searchQuery = '';
+
+// --- INITIALIZATION ---
+function init() {
+    loadState();
+    renderModuleSelectOptions();
+    renderChecklist();
+    updateStats();
+}
+
+function loadState() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            appState = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error("LocalStorage load error:", e);
+    }
+}
+
+function saveState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    } catch (e) {
+        console.error("LocalStorage save error:", e);
+    }
+}
+
+// --- RENDER FUNCTIONS ---
+function renderModuleSelectOptions() {
+    const select = document.getElementById('moduleFilter');
+    masterModules.forEach(mod => {
+        const opt = document.createElement('option');
+        opt.value = mod.id;
+        opt.textContent = mod.name;
+        select.appendChild(opt);
+    });
+}
+
+function renderChecklist() {
+    const container = document.getElementById('modulesContainer');
+    container.innerHTML = '';
+
+    masterModules.forEach(mod => {
+        // Module level filtering
+        if (currentFilterModule !== 'all' && currentFilterModule !== mod.id) {
+            return;
+        }
+
+        // Filter items inside module
+        const filteredItems = mod.items.filter(item => {
+            const itemStatus = appState.statuses[item.id] || 'none';
+            
+            if (currentFilterStatus !== 'all' && currentFilterStatus !== itemStatus) {
+                return false;
+            }
+            if (filterRiskOnly && !item.risk) {
+                return false;
+            }
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                const matchTitle = item.title.toLowerCase().includes(q);
+                const matchDesc = item.desc.toLowerCase().includes(q);
+                const matchId = item.id.toLowerCase().includes(q);
+                const matchRisk = item.risk ? item.risk.toLowerCase().includes(q) : false;
+                const matchNote = (appState.notes[item.id] || '').toLowerCase().includes(q);
+                if (!matchTitle && !matchDesc && !matchId && !matchRisk && !matchNote) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if (filteredItems.length === 0 && (searchQuery || currentFilterStatus !== 'all' || filterRiskOnly)) {
+            return;
+        }
+
+        // Build Module Section
+        const modEl = document.createElement('div');
+        modEl.className = 'module-section';
+        modEl.id = `section-${mod.id}`;
+
+        // Module Stats
+        let modPassCount = 0;
+        mod.items.forEach(it => {
+            if (appState.statuses[it.id] === 'pass') modPassCount++;
+        });
+        const modPct = Math.round((modPassCount / mod.items.length) * 100);
+
+        modEl.innerHTML = `
+            <div class="module-header" onclick="toggleModule('${mod.id}')">
+                <div class="module-title-wrap">
+                    <div class="module-icon">${mod.icon}</div>
+                    <div>
+                        <div class="module-name">${mod.name}</div>
+                        <div class="module-count">${filteredItems.length} / ${mod.items.length} madde gösteriliyor</div>
+                    </div>
+                </div>
+                <div class="module-meta">
+                    <div class="module-mini-progress">
+                        <span>%${modPct}</span>
+                        <div class="mini-bar"><div class="mini-fill" style="width: ${modPct}%"></div></div>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+            </div>
+            <div class="module-body" id="body-${mod.id}">
+                ${filteredItems.map(item => createItemHTML(item)).join('')}
+            </div>
+        `;
+
+        container.appendChild(modEl);
+    });
+
+    if (container.children.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding: 60px 20px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color)">
+                <p style="font-size: 18px; color: var(--text-muted);">Aramanıza veya filtrelerinize uygun test maddesi bulunamadı.</p>
+                <button class="btn" style="margin-top: 14px;" onclick="resetFilters()">Filtreleri Temizle</button>
+            </div>
+        `;
+    }
+}
+
+function createItemHTML(item) {
+    const status = appState.statuses[item.id] || 'none';
+    const note = appState.notes[item.id] || '';
+
+    return `
+        <div class="check-item status-${status}" id="item-${item.id}">
+            <div class="item-main">
+                <div class="item-info">
+                    <div class="item-header-row">
+                        <span class="item-id">${item.id}</span>
+                        <span class="item-title">${item.title}</span>
+                        ${item.risk ? `<span class="risk-badge">🚨 ${item.risk}</span>` : ''}
+                    </div>
+                    <div class="item-desc">${item.desc}</div>
+                    ${item.expected ? `<div class="item-expected">💡 <b>Beklenen Davranış / Masaüstü Paritesi:</b> ${item.expected}</div>` : ''}
+                </div>
+                <div class="status-selector">
+                    <button class="status-btn ${status === 'pass' ? 'active' : ''}" data-status="pass" onclick="setItemStatus('${item.id}', 'pass')">✅ Pass</button>
+                    <button class="status-btn ${status === 'fail' ? 'active' : ''}" data-status="fail" onclick="setItemStatus('${item.id}', 'fail')">❌ Fail</button>
+                    <button class="status-btn ${status === 'warn' ? 'active' : ''}" data-status="warn" onclick="setItemStatus('${item.id}', 'warn')">⚠️ Uyarı</button>
+                    <button class="status-btn ${status === 'na' ? 'active' : ''}" data-status="na" onclick="setItemStatus('${item.id}', 'na')">➖ N/A</button>
+                    <button class="status-btn ${status === 'none' ? 'active' : ''}" data-status="none" onclick="setItemStatus('${item.id}', 'none')">⚪ Temizle</button>
+                </div>
+            </div>
+            <div class="item-note-row">
+                <input type="text" class="note-input" placeholder="Bu test için özel not veya bulunan hata detayını buraya yazın..." value="${escapeHTML(note)}" onchange="setItemNote('${item.id}', this.value)">
+            </div>
+        </div>
+    `;
+}
+
+function escapeHTML(str) {
+    return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function toggleModule(modId) {
+    const el = document.getElementById(`section-${modId}`);
+    if (el) {
+        el.classList.toggle('collapsed');
+    }
+}
+
+// --- STATE MUTATION FUNCTIONS ---
+function setItemStatus(itemId, newStatus) {
+    if (newStatus === 'none') {
+        delete appState.statuses[itemId];
+    } else {
+        appState.statuses[itemId] = newStatus;
+    }
+    saveState();
+
+    // Fast UI update
+    const itemEl = document.getElementById(`item-${itemId}`);
+    if (itemEl) {
+        itemEl.className = `check-item status-${newStatus}`;
+        const btns = itemEl.querySelectorAll('.status-btn');
+        btns.forEach(btn => {
+            if (btn.getAttribute('data-status') === newStatus) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    updateStats();
+}
+
+function setItemNote(itemId, noteValue) {
+    if (!noteValue.trim()) {
+        delete appState.notes[itemId];
+    } else {
+        appState.notes[itemId] = noteValue.trim();
+    }
+    saveState();
+}
+
+// --- STATS CALCULATION ---
+function updateStats() {
+    let total = 0;
+    let pass = 0;
+    let fail = 0;
+    let warn = 0;
+    let na = 0;
+    let riskCount = 0;
+
+    masterModules.forEach(mod => {
+        mod.items.forEach(item => {
+            total++;
+            if (item.risk) riskCount++;
+            const st = appState.statuses[item.id] || 'none';
+            if (st === 'pass') pass++;
+            else if (st === 'fail') fail++;
+            else if (st === 'warn') warn++;
+            else if (st === 'na') na++;
+        });
+    });
+
+    const testedTotal = pass + fail + warn + na;
+    const passPct = total > 0 ? Math.round((pass / total) * 100) : 0;
+    const failPct = total > 0 ? Math.round((fail / total) * 100) : 0;
+    const warnPct = total > 0 ? Math.round((warn / total) * 100) : 0;
+    const naPct = total > 0 ? Math.round((na / total) * 100) : 0;
+
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-pass').textContent = pass;
+    document.getElementById('stat-pass-pct').textContent = `%${passPct} Tamamlandı (${pass}/${total})`;
+    document.getElementById('stat-fail').textContent = fail;
+    document.getElementById('stat-fail-sub').textContent = fail > 0 ? `${fail} test başarısız` : 'Hata yok';
+    document.getElementById('stat-warn').textContent = warn;
+    document.getElementById('stat-risk').textContent = riskCount;
+
+    document.getElementById('progress-text').textContent = `%${passPct}`;
+    document.getElementById('fill-pass').style.width = `${passPct}%`;
+    document.getElementById('fill-fail').style.width = `${failPct}%`;
+    document.getElementById('fill-warn').style.width = `${warnPct}%`;
+    document.getElementById('fill-na').style.width = `${naPct}%`;
+}
+
+// --- FILTERS ---
+function applyFilters() {
+    searchQuery = document.getElementById('searchInput').value.trim();
+    currentFilterModule = document.getElementById('moduleFilter').value;
+    currentFilterStatus = document.getElementById('statusFilter').value;
+    renderChecklist();
+}
+
+function toggleRiskOnly() {
+    filterRiskOnly = !filterRiskOnly;
+    const btn = document.getElementById('riskOnlyBtn');
+    if (filterRiskOnly) {
+        btn.classList.add('active');
+    } else {
+        btn.classList.remove('active');
+    }
+    renderChecklist();
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('moduleFilter').value = 'all';
+    document.getElementById('statusFilter').value = 'all';
+    filterRiskOnly = false;
+    document.getElementById('riskOnlyBtn').classList.remove('active');
+    applyFilters();
+}
+
+// --- MARKDOWN REPORT GENERATOR ---
+function openReportModal() {
+    const modal = document.getElementById('reportModal');
+    const textarea = document.getElementById('reportTextarea');
+    
+    textarea.value = generateMarkdownReport();
+    modal.classList.add('active');
+}
+
+function closeReportModal() {
+    document.getElementById('reportModal').classList.remove('active');
+}
+
+function generateMarkdownReport() {
+    let total = 0, pass = 0, fail = 0, warn = 0, na = 0, notTested = 0;
+    
+    masterModules.forEach(m => m.items.forEach(it => {
+        total++;
+        const st = appState.statuses[it.id] || 'none';
+        if (st === 'pass') pass++;
+        else if (st === 'fail') fail++;
+        else if (st === 'warn') warn++;
+        else if (st === 'na') na++;
+        else notTested++;
+    }));
+
+    const dateStr = new Date().toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    let md = `# 📱 Ermay Muhasebe — Mobil Versiyon Test & Eksiklik Raporu\n\n`;
+    md += `> **Tarih:** ${dateStr}\n`;
+    md += `> **Test Durumu:** ${pass}/${total} Tamamlandı (%${Math.round((pass/total)*100)})\n\n`;
+    
+    md += `## 📊 Genel Özet Tablosu\n\n`;
+    md += `| Metrik | Sayı | Oran |\n`;
+    md += `|---|---|---|\n`;
+    md += `| Toplam Test Maddesi | ${total} | %100 |\n`;
+    md += `| ✅ Başarılı (Pass) | ${pass} | %${Math.round((pass/total)*100)} |\n`;
+    md += `| ❌ Hatalı / Eksik (Fail) | ${fail} | %${Math.round((fail/total)*100)} |\n`;
+    md += `| ⚠️ Kısmi / Uyarı (Warn) | ${warn} | %${Math.round((warn/total)*100)} |\n`;
+    md += `| ➖ Kapsam Dışı (N/A) | ${na} | %${Math.round((na/total)*100)} |\n`;
+    md += `| ⚪ Test Edilmedi | ${notTested} | %${Math.round((notTested/total)*100)} |\n\n`;
+
+    // Failed Items Section
+    md += `## ❌ Tespit Edilen Hatalar ve Eksiklikler (Fail Listesi)\n\n`;
+    let failItemsExist = false;
+
+    masterModules.forEach(mod => {
+        const failedInMod = mod.items.filter(it => appState.statuses[it.id] === 'fail');
+        if (failedInMod.length > 0) {
+            failItemsExist = true;
+            md += `### ${mod.name}\n`;
+            failedInMod.forEach(it => {
+                const note = appState.notes[it.id] ? ` — **Not:** ${appState.notes[it.id]}` : '';
+                const riskBadge = it.risk ? ` \`[RİSK: ${it.risk}]\`` : '';
+                md += `- **[${it.id}] ${it.title}**${riskBadge}${note}\n  - *Açıklama:* ${it.desc}\n`;
+            });
+            md += `\n`;
+        }
+    });
+
+    if (!failItemsExist) {
+        md += `*Henüz ❌ (Fail) olarak işaretlenmiş bir hata bulunmuyor.*\n\n`;
+    }
+
+    // Warnings Section
+    md += `## ⚠️ İyileştirme ve Uyarı Gerektiren Maddeler\n\n`;
+    let warnItemsExist = false;
+    masterModules.forEach(mod => {
+        const warnInMod = mod.items.filter(it => appState.statuses[it.id] === 'warn');
+        if (warnInMod.length > 0) {
+            warnItemsExist = true;
+            md += `### ${mod.name}\n`;
+            warnInMod.forEach(it => {
+                const note = appState.notes[it.id] ? ` — **Not:** ${appState.notes[it.id]}` : '';
+                md += `- **[${it.id}] ${it.title}**${note}\n`;
+            });
+            md += `\n`;
+        }
+    });
+
+    if (!warnItemsExist) {
+        md += `*Uyarı veya kısmi olarak işaretlenmiş madde bulunmuyor.*\n\n`;
+    }
+
+    // Critical Architecture & Parity Risks
+    md += `## 🚨 Kritik Masaüstü Parite & Mimari Risk Maddeleri\n\n`;
+    masterModules.forEach(mod => {
+        const riskInMod = mod.items.filter(it => it.risk);
+        if (riskInMod.length > 0) {
+            md += `### ${mod.name}\n`;
+            riskInMod.forEach(it => {
+                const st = appState.statuses[it.id] || 'none';
+                const stIcon = st === 'pass' ? '✅' : st === 'fail' ? '❌' : st === 'warn' ? '⚠️' : '⚪';
+                const note = appState.notes[it.id] ? ` — *Not:* ${appState.notes[it.id]}` : '';
+                md += `- ${stIcon} **[${it.id}] ${it.title}** (Risk: \`${it.risk}\`)${note}\n`;
+            });
+            md += `\n`;
+        }
+    });
+
+    return md;
+}
+
+function copyReportText() {
+    const textarea = document.getElementById('reportTextarea');
+    textarea.select();
+    document.execCommand('copy');
+    showToast("📋 Markdown rapor panoya kopyalandı!");
+}
+
+// --- IMPORT / EXPORT / RESET ---
+function exportJSON() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `ermay_mobil_test_checklist_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast("💾 Test verileri JSON olarak indirildi.");
+}
+
+function importJSON() {
+    document.getElementById('importFileInput').click();
+}
+
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (imported && typeof imported === 'object') {
+                appState = imported;
+                saveState();
+                renderChecklist();
+                updateStats();
+                showToast("📂 Test verileri başarıyla içe aktarıldı!");
+            } else {
+                alert("Geçersiz JSON dosyası formatı!");
+            }
+        } catch (err) {
+            alert("JSON okuma hatası: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function resetAll() {
+    if (confirm("Tüm test işaretlemelerini ve notlarınızı sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+        appState = { statuses: {}, notes: {} };
+        saveState();
+        renderChecklist();
+        updateStats();
+        showToast("🔄 Tüm veriler sıfırlandı.");
+    }
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Run App
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

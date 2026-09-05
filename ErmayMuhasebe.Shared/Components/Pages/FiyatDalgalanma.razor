@@ -1,0 +1,138 @@
+@page "/fiyat-dalgalanma"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Fiyat Dalgalanma Raporu (YENİ)</MudText>
+    <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+</div>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">
+            <div class="d-flex justify-space-between align-center">
+                <MudSelect T="StokKart" Label="Ürün Seçin" ValueChanged="OnStokSelected" Variant="Variant.Outlined" Dense="true">
+                    @foreach (var s in stoklar)
+                    {
+                        <MudSelectItem Value="@s">@s.StokAdi</MudSelectItem>
+                    }
+                </MudSelect>
+                @if (selectedStok != null && priceHistory.Any())
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport" Class="ml-4">
+                        Yazdır
+                    </MudButton>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        @if (selectedStok != null)
+        {
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">@selectedStok.StokAdi - Alış Fiyat Değişimi</MudText>
+                <MudTable Items="@priceHistory" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Tarih</MudTh>
+                        <MudTh>Fatura No</MudTh>
+                        <MudTh Style="text-align: right;">Birim Fiyat</MudTh>
+                        <MudTh Style="text-align: right;">Değişim (%)</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                        <MudTd>@context.FaturaNo</MudTd>
+                        <MudTd Style="text-align: right;">@context.Fiyat.ToString("N2") ₺</MudTd>
+                        <MudTd Style="text-align: right;">
+                             <MudText Color="@(context.Degisim >= 0 ? Color.Error : Color.Success)">
+                                 @(context.Degisim == 0 ? "-" : context.Degisim.ToString("N1") + " %")
+                             </MudText>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">Analiz için yukarıdan bir ürün seçiniz.</MudAlert>
+        }
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<StokKart> stoklar = new();
+    private StokKart? selectedStok;
+    private List<PriceData> priceHistory = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        stoklar = await DbService.GetStoklarAsync();
+    }
+
+    private async Task OnStokSelected(StokKart stok)
+    {
+        selectedStok = stok;
+        priceHistory.Clear();
+
+        var faturalar = await DbService.GetFaturalarAsync();
+        var alisFaturlar = faturalar.Where(f => f.Tur == "Alis" || f.Tur == "Alış").ToList();
+
+        decimal previousPrice = 0;
+
+        foreach (var f in alisFaturlar.OrderBy(x => x.Tarih))
+        {
+            var detaylar = await DbService.GetFaturaDetaylarAsync(f.Id);
+            var item = detaylar.FirstOrDefault(d => d.StokId == stok.Id);
+            if (item != null)
+            {
+                decimal degisim = previousPrice == 0 ? 0 : (item.BirimFiyat - previousPrice) / previousPrice * 100;
+                priceHistory.Add(new PriceData 
+                { 
+                    Tarih = f.Tarih, 
+                    FaturaNo = f.FaturaNo ?? "-", 
+                    Fiyat = item.BirimFiyat,
+                    Degisim = degisim
+                });
+                previousPrice = item.BirimFiyat;
+            }
+        }
+        priceHistory = priceHistory.OrderByDescending(x => x.Tarih).ToList();
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Tarih", "Fatura No", "Birim Fiyat", "Değişim (%)" };
+            var rows = priceHistory.Select(p => new[] 
+            { 
+                p.Tarih.ToString("dd.MM.yyyy"), 
+                p.FaturaNo ?? "-", 
+                p.Fiyat.ToString("N2") + " TL",
+                p.Degisim == 0 ? "-" : p.Degisim.ToString("N1") + " %"
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync($"{selectedStok?.StokAdi} - Fiyat Dalgalanma Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("FiyatDalgalanmaRaporu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class PriceData
+    {
+        public DateTime Tarih { get; set; }
+        public string FaturaNo { get; set; } = "";
+        public decimal Fiyat { get; set; }
+        public decimal Degisim { get; set; }
+    }
+}

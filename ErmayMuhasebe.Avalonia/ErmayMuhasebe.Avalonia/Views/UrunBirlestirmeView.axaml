@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:models="using:ErmayMuhasebe.Models"
+             x:Class="ErmayMuhasebe.Avalonia.Views.UrunBirlestirmeView"
+             x:DataType="vm:UrunBirlestirmeViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#26EC4899">
+          <ic:SymbolIcon Symbol="Table" Foreground="#EC4899" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Ürün Birleştirme Sihirbazı" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Mükerrer açılmış stok kartlarını tüm hareketleriyle birlikte tek bir kartta birleştirin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, Auto, *" VerticalAlignment="Top">
+      <!-- Source Item -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+         <StackPanel Spacing="20">
+            <TextBlock Text="KAYNAK ÜRÜN (SİLİNECEK)" FontSize="16" FontWeight="Bold" Foreground="#EF4444" HorizontalAlignment="Center"/>
+            <TextBlock Text="Bu karttaki tüm miktarlar ve hareketler aktarılacak ve bu kart silinecektir." FontSize="12" Foreground="#9CA3AF" TextAlignment="Center" TextWrapping="Wrap"/>
+            
+            <AutoCompleteBox ItemsSource="{Binding Stoklar}" SelectedItem="{Binding KaynakStok, Mode=TwoWay}" ValueMemberBinding="{Binding StokAdi}" Watermark="Silinecek Ürünü Ara..." FilterMode="Contains" MinimumPrefixLength="1">
+                <AutoCompleteBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:StokKart">
+                        <TextBlock Text="{Binding StokAdi}"/>
+                    </DataTemplate>
+                </AutoCompleteBox.ItemTemplate>
+            </AutoCompleteBox>
+
+            <Border Background="#10FFFFFF" CornerRadius="12" Padding="20" Height="150">
+               <StackPanel Spacing="10" IsVisible="{Binding KaynakStok, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <TextBlock Text="{Binding KaynakStok.StokKodu}" Foreground="#9CA3AF" FontSize="12"/>
+                  <TextBlock Text="{Binding KaynakStok.StokAdi}" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding KaynakStok.Miktar, StringFormat='Mevcut: {0} Adet'}" Foreground="#EF4444"/>
+               </StackPanel>
+            </Border>
+         </StackPanel>
+      </Border>
+
+      <!-- Arrow -->
+      <ic:SymbolIcon Grid.Column="1" Symbol="ArrowRight" FontSize="40" Foreground="#9CA3AF" Margin="40,150,40,0" VerticalAlignment="Top"/> 
+
+      <!-- Destination Item -->
+      <Border Grid.Column="2" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+         <StackPanel Spacing="20">
+            <TextBlock Text="HEDEF ÜRÜN (KALACAK)" FontSize="16" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
+            <TextBlock Text="Tüm veriler bu kart altında toplanacak ve bu kart sistemde kalacaktır." FontSize="12" Foreground="#9CA3AF" TextAlignment="Center" TextWrapping="Wrap"/>
+            
+            <AutoCompleteBox ItemsSource="{Binding Stoklar}" SelectedItem="{Binding HedefStok, Mode=TwoWay}" ValueMemberBinding="{Binding StokAdi}" Watermark="Kalacak Ürünü Ara..." FilterMode="Contains" MinimumPrefixLength="1">
+                <AutoCompleteBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:StokKart">
+                        <TextBlock Text="{Binding StokAdi}"/>
+                    </DataTemplate>
+                </AutoCompleteBox.ItemTemplate>
+            </AutoCompleteBox>
+
+            <Border Background="#10FFFFFF" CornerRadius="12" Padding="20" Height="150">
+               <StackPanel Spacing="10" IsVisible="{Binding HedefStok, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <TextBlock Text="{Binding HedefStok.StokKodu}" Foreground="#9CA3AF" FontSize="12"/>
+                  <TextBlock Text="{Binding HedefStok.StokAdi}" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding HedefStok.Miktar, StringFormat='Mevcut: {0} Adet'}" Foreground="#10B981"/>
+               </StackPanel>
+            </Border>
+         </StackPanel>
+      </Border>
+
+      <!-- Bottom Panel -->
+      <Border Grid.Row="1" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Margin="0,450,0,0" Background="#1A1F2937" CornerRadius="20" Padding="30">
+          <Grid ColumnDefinitions="*, Auto">
+             <StackPanel Spacing="5">
+                <TextBlock Text="BİRLEŞTİRME DURUMU" FontSize="12" Foreground="#9CA3AF"/>
+                <TextBlock Text="{Binding StatusMessage}" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+             </StackPanel>
+             <Button Grid.Column="1" Command="{Binding BirlestirCommand}" Classes="SideButton Info" Width="250" Height="50" Background="#EC4899">
+                <TextBlock Text="İŞLEMİ BAŞLAT" FontWeight="Bold"/>
+             </Button>
+          </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

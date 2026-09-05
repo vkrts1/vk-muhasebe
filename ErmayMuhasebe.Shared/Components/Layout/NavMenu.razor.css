@@ -1,0 +1,47 @@
+.bilsoft-nav-menu {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.mud-nav-link {
+    margin: 4px 12px;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-weight: 500;
+}
+
+.mud-nav-link:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: white !important;
+    transform: translateX(4px);
+}
+
+.mud-nav-link.active {
+    background: linear-gradient(90deg, rgba(96, 165, 250, 0.15), transparent) !important;
+    color: #60A5FA !important;
+    font-weight: 700;
+    border-left: 3px solid #60A5FA;
+}
+
+.sidebar-header {
+    padding: 0 24px;
+    margin-bottom: 30px;
+}
+
+.sidebar-title {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.2);
+    text-transform: uppercase;
+}
+
+.nav-section-label {
+    padding: 24px 24px 8px 24px;
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}

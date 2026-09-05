@@ -1,0 +1,99 @@
+@page "/bolge-satis"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@using MudBlazor
+
+<div>
+    <div class="d-flex align-center justify-space-between mb-4">
+        <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary">Bölge Bazlı Satış Raporu</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+            @if(bolgeListesi != null && bolgeListesi.Any())
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                    Yazdır / PDF
+                </MudButton>
+            }
+        </MudStack>
+    </div>
+
+    <MudPaper Class="pa-4 mb-3">
+        <MudAlert Severity="Severity.Info">Bu rapor müşterilerinizin kayıtlı şehir/bölge bilgilerine göre satış dağılımını gösterir.</MudAlert>
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="Hizle" Class="mt-2">Hesapla</MudButton>
+    </MudPaper>
+
+    @if(bolgeListesi != null)
+    {
+        <MudTable Items="@bolgeListesi" Hover="true">
+            <HeaderContent>
+                <MudTh>Şehir / Bölge</MudTh>
+                <MudTh Style="text-align:right">Satış Tutarı</MudTh>
+                <MudTh Style="text-align:right">Yüzde (%)</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.BolgeAd</MudTd>
+                <MudTd Style="text-align:right">@context.Tutar.ToString("C2")</MudTd>
+                <MudTd Style="text-align:right">%@context.Yuzde.ToString("N2")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+
+    @code {
+        private List<BolgeSatisModel>? bolgeListesi;
+
+        private async Task Hizle()
+        {
+            var faturalar = await DbService.GetFaturalarAsync();
+            var cariler = await DbService.GetCarilerAsync();
+            var satislar = faturalar.Where(x => x.Tur == "Satis" || x.Tur == "Satış").ToList();
+            
+            var result = new List<BolgeSatisModel>();
+            decimal toplam = 0;
+
+            foreach(var f in satislar)
+            {
+                var cari = cariler.FirstOrDefault(c => c.Id == f.CariId);
+                var sehir = cari?.Il ?? "Belirtilmemiş";
+                
+                var existing = result.FirstOrDefault(x => x.BolgeAd == sehir);
+                if (existing == null) result.Add(new BolgeSatisModel { BolgeAd = sehir, Tutar = f.GenelToplam });
+                else existing.Tutar += f.GenelToplam;
+                
+                toplam += f.GenelToplam;
+            }
+
+            if (toplam > 0) foreach(var r in result) r.Yuzde = (double)(r.Tutar / toplam * 100);
+            
+            bolgeListesi = result.OrderByDescending(x => x.Tutar).ToList();
+        }
+
+        private async Task PrintReport()
+        {
+            if (bolgeListesi == null || !bolgeListesi.Any()) return;
+            try
+            {
+                var headers = new[] { "Şehir / Bölge", "Satış Tutarı", "Yüzde (%)" };
+                var rows = bolgeListesi.Select(b => new[] 
+                { 
+                    b.BolgeAd, 
+                    b.Tutar.ToString("C2"), 
+                    "%" + b.Yuzde.ToString("N2") 
+                }).ToList();
+                
+                var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Bölge Bazlı Satış Raporu", headers, rows);
+                await FileService.SaveAndOpenFileAsync("BolgeBazliSatis.pdf", pdf, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+            }
+        }
+
+        class BolgeSatisModel { public string BolgeAd { get; set; } = ""; public decimal Tutar { get; set; } public double Yuzde { get; set; } }
+    }
+</div>

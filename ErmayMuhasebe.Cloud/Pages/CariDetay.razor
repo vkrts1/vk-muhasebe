@@ -1,0 +1,329 @@
+@page "/cari-detay/{Id:int}"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager NavManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <!-- HEADER AREA -->
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div class="d-flex align-center gap-4">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Variant="Variant.Outlined" Color="Color.Default" />
+            <div>
+                <MudText Typo="Typo.h5" Class="font-weight-bold">@(_cari?.Unvan ?? "Cari Detay")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Hesap özeti, hareketler ve istatistikler</MudText>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditCari">Düzenle</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Print" OnClick="ExportStatement">Ekstre İndir</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddCard" Color="Color.Success" OnClick="@(() => OpenAction("Tahsilat"))">Tahsilat Al</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Payments" Color="Color.Error" OnClick="@(() => OpenAction("Ödeme"))">Ödeme Yap</MudButton>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="d-flex justify-center mt-12">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (_cari == null)
+    {
+        <MudAlert Severity="Severity.Error">Cari kart bulunamadı.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            <!-- STATS CARDS -->
+            <MudItem xs="12" md="3">
+                <MudPaper Class="pa-6 d-flex flex-column h-100" Elevation="4" Style="border-radius: 16px;">
+                    <MudText Typo="Typo.overline">GÜNCEL BAKİYE</MudText>
+                    <MudText Typo="Typo.h4" Class="font-weight-bold" Color="@(_bakiye >= 0 ? Color.Error : Color.Success)">
+                        @Math.Abs(_bakiye).ToString("N2") ₺
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(_bakiye >= 0 ? "Borçlu Durumda" : "Alacaklı Durumda")</MudText>
+                    
+                    <MudDivider Class="my-4" />
+                    
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Typo="Typo.body2">Toplam Borç</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Error" Class="font-weight-bold">@_cari.Borc.ToString("N2")</MudText>
+                        </div>
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Typo="Typo.body2">Toplam Alacak</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Success" Class="font-weight-bold">@_cari.Alacak.ToString("N2")</MudText>
+                        </div>
+                    </div>
+                    
+                    <MudSpacer />
+                    <div class="pa-4 mt-4" style="background: rgba(0,0,0,0.02); border-radius: 12px;">
+                        <MudText Typo="Typo.caption" Class="d-block mb-1">İLETİŞİM BİLGİLERİ</MudText>
+                        <MudText Typo="Typo.body2">@_cari.Telefon</MudText>
+                        <MudText Typo="Typo.body2">@_cari.Email</MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- CHART AREA -->
+            <MudItem xs="12" md="9">
+                <MudPaper Class="pa-6 h-100" Elevation="4" Style="border-radius: 16px;">
+                    <MudText Typo="Typo.h6" Class="mb-4">Ticari Hacim Analizi (Aylık)</MudText>
+                    <MudChart ChartType="ChartType.Line" ChartSeries="@_areaSeries" XAxisLabels="@_xAxisLabels" Width="100%" Height="300px" ChartOptions="_chartOptions" />
+                </MudPaper>
+            </MudItem>
+
+            <!-- TABS AREA -->
+            <MudItem xs="12">
+                <MudTabs Elevation="4" Rounded="true" Color="Color.Primary" ApplyEffectsToContainer="true" PanelClass="pa-6" Style="border-radius: 16px;">
+                    <MudTabPanel Text="Hareket Kayıtları" Icon="@Icons.Material.Filled.History">
+                        <MudTable Items="@_hareketler" Dense="true" Hover="true" Striped="false" Elevation="0">
+                            <ToolBarContent>
+                                <MudText Typo="Typo.h6">Hareket Dökümü</MudText>
+                                <MudSpacer />
+                                <MudTextField @bind-Value="_searchString" Placeholder="İşlem Ara..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate="true"></MudTextField>
+                            </ToolBarContent>
+                            <HeaderContent>
+                                <MudTh>Tarih</MudTh>
+                                <MudTh>İşlem Türü</MudTh>
+                                <MudTh>Evrak No</MudTh>
+                                <MudTh>Açıklama</MudTh>
+                                <MudTh>Borç (Giriş)</MudTh>
+                                <MudTh>Alacak (Çıkış)</MudTh>
+                                <MudTh>Bakiye</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                                <MudTd>@context.IslemTuru</MudTd>
+                                <MudTd>@context.EvrakNo</MudTd>
+                                <MudTd>@context.Aciklama</MudTd>
+                                <MudTd Style="color: #ef4444; font-weight: 500;">@(context.Borc > 0 ? context.Borc.ToString("N2") : "-")</MudTd>
+                                <MudTd Style="color: #10b981; font-weight: 500;">@(context.Alacak > 0 ? context.Alacak.ToString("N2") : "-")</MudTd>
+                                <MudTd Class="font-weight-bold">@(CalculateRunningBalance(context).ToString("N2"))</MudTd>
+                            </RowTemplate>
+                            <PagerContent>
+                                <MudTablePager />
+                            </PagerContent>
+                        </MudTable>
+                    </MudTabPanel>
+                    
+                    <MudTabPanel Text="Dijital Arşiv" Icon="@Icons.Material.Filled.FolderZip">
+                         <div class="d-flex justify-space-between align-center mb-4">
+                            <MudText Typo="Typo.h6">Müşteri Dosyaları</MudText>
+                            <MudFileUpload T="IBrowserFile" FilesChanged="UploadFile" Accept=".pdf,.jpg,.jpeg,.png">
+                                <ActivatorContent>
+                                    <MudButton HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CloudUpload">DOSYA YÜKLE</MudButton>
+                                </ActivatorContent>
+                            </MudFileUpload>
+                         </div>
+                         
+                         <MudGrid>
+                            @foreach (var file in _belgeler)
+                            {
+                                <MudItem xs="12" sm="6" md="4">
+                                    <MudPaper Class="pa-4 d-flex align-center gap-3" Elevation="2" Style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); background: #1A1D21;">
+                                        <MudIcon Icon="@(file.Tur?.Contains("pdf") == true ? Icons.Material.Filled.PictureAsPdf : Icons.Material.Filled.Image)" 
+                                                 Color="@(file.Tur?.Contains("pdf") == true ? Color.Error : Color.Info)" Size="Size.Large" />
+                                        <div style="flex:1; overflow:hidden">
+                                            <MudText Typo="Typo.body2" Class="font-weight-bold" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@file.Ad</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@file.Boyut - @file.Tarih.ToString("dd.MM.yyyy")</MudText>
+                                        </div>
+                                        <div class="d-flex">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" OnClick="() => DownloadFile(file)" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteFile(file)" />
+                                        </div>
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                            @if (!_belgeler.Any())
+                            {
+                                <MudItem xs="12">
+                                    <MudAlert Severity="Severity.Info">Henüz dosya yüklenmedi.</MudAlert>
+                                </MudItem>
+                            }
+                         </MudGrid>
+                    </MudTabPanel>
+                    <MudTabPanel Text="Özel Notlar" Icon="@Icons.Material.Filled.StickyNote2">
+                         <div style="min-height: 400px; padding: 20px;">
+                             <QuickNotes RelatedType="Cari" RelatedId="@Id" />
+                         </div>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private CariKart? _cari;
+    private List<CariHareket> _hareketler = new();
+    private List<BelgeArsiv> _belgeler = new();
+    private bool _loading = true;
+    private string _searchString = "";
+    private decimal _bakiye => (_cari?.Borc ?? 0) - (_cari?.Alacak ?? 0);
+
+    private List<ChartSeries> _areaSeries = new();
+    private string[] _xAxisLabels = { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" };
+    private ChartOptions _chartOptions = new ChartOptions { InterpolationOption = InterpolationOption.NaturalSpline };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            _cari = await DbService.GetCariAsync(Id);
+            if (_cari != null)
+            {
+                _hareketler = await DbService.GetCariHareketlerAsync(Id);
+                _belgeler = await DbService.GetBelgelerAsync($"CARI_{Id}");
+                PrepareChartData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void PrepareChartData()
+    {
+        var year = DateTime.Now.Year;
+        var borcData = new double[12];
+        var alacakData = new double[12];
+
+        for (int i = 1; i <= 12; i++)
+        {
+            borcData[i - 1] = (double)_hareketler.Where(h => h.Tarih.Year == year && h.Tarih.Month == i).Sum(h => h.Borc);
+            alacakData[i - 1] = (double)_hareketler.Where(h => h.Tarih.Year == year && h.Tarih.Month == i).Sum(h => h.Alacak);
+        }
+
+        _areaSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "İşlem Hacmi (Borç)", Data = borcData },
+            new ChartSeries { Name = "Ödemeler (Alacak)", Data = alacakData }
+        };
+    }
+
+    private async Task EditCari()
+    {
+        if (_cari == null) return;
+        var parameters = new DialogParameters { ["Model"] = _cari };
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<CariKartDialog>("Cari Kartını Düzenle", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            Snackbar.Add("Cari kart başarıyla güncellendi.", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private decimal CalculateRunningBalance(CariHareket current)
+    {
+        return _hareketler.Where(x => x.Tarih <= current.Tarih).Sum(x => x.Borc - x.Alacak);
+    }
+
+    private async Task OpenAction(string type)
+    {
+        var parameters = new DialogParameters { 
+            ["CariId"] = Id, 
+            ["CariUnvan"] = _cari?.Unvan ?? "",
+            ["InitialType"] = type 
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<CariIslemDialog>("Yeni Hareket İşle", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) await LoadData();
+    }
+
+    private async Task ExportStatement()
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"CARİ HESAP EKSTRESİ - {_cari?.Unvan}");
+            sb.AppendLine($"Tarih: {DateTime.Now:dd.MM.yyyy HH:mm}");
+            sb.AppendLine($"Toplam Borç: {_cari?.Borc:N2}");
+            sb.AppendLine($"Toplam Alacak: {_cari?.Alacak:N2}");
+            sb.AppendLine($"Bakiye: {_bakiye:N2}");
+            sb.AppendLine();
+            sb.AppendLine("Tarih;Islem;EvrakNo;Aciklama;Borc;Alacak");
+            
+            foreach(var h in _hareketler)
+            {
+                sb.AppendLine($"{h.Tarih:dd.MM.yyyy};{h.IslemTuru};{h.EvrakNo};{h.Aciklama};{h.Borc};{h.Alacak}");
+            }
+            
+            await JS.InvokeVoidAsync("downloadFile", $"Ekstre_{_cari?.Unvan}_{DateTime.Now:yyyyMMdd}.csv", "text/csv", sb.ToString());
+            Snackbar.Add("Ekstre başarıyla oluşturuldu.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        if (file == null) return;
+        
+        try
+        {
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).ReadAsync(buffer);
+            
+            var belge = new BelgeArsiv
+            {
+                Ad = file.Name,
+                Kategori = $"CARI_{Id}",
+                Tur = file.ContentType,
+                Boyut = $"{(file.Size / 1024.0):N1} KB",
+                Tarih = DateTime.Now,
+                Veri = Convert.ToBase64String(buffer)
+            };
+            
+            await DbService.SaveBelgeAsync(belge);
+            Snackbar.Add($"{file.Name} başarıyla dijital arşive eklendi.", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Dosya yükleme hatası: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DownloadFile(BelgeArsiv belge)
+    {
+        if (string.IsNullOrEmpty(belge.Veri)) return;
+        await JS.InvokeVoidAsync("downloadFile", belge.Ad, belge.Tur, belge.Veri);
+    }
+
+    private async Task DeleteFile(BelgeArsiv belge)
+    {
+        bool? confirm = await DialogService.ShowMessageBox("Dosyayı Sil", $"{belge.Ad} kalıcı olarak silinecektir. Onaylıyor musunuz?", yesText: "Sil", noText: "Vazgeç");
+        if (confirm == true)
+        {
+            await DbService.DeleteBelgeAsync(belge.Id);
+            Snackbar.Add("Dosya silindi.", Severity.Info);
+            await LoadData();
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("/cari");
+}

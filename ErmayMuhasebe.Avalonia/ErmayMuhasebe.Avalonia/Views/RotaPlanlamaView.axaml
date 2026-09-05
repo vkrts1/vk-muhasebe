@@ -1,0 +1,92 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.RotaPlanlamaView"
+             x:DataType="vm:RotaPlanlamaViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#26F59E0B">
+          <!-- <ic:SymbolIcon Symbol="Map" Foreground="#F59E0B" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> --> 
+        </Border>
+        <TextBlock Text="Saha Ekibi ve Dağıtım Rota Planlayıcı" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Günlük teslimat noktalarınızı belirleyin ve rotanızı optimize edin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, 450" ColumnSpacing="25">
+       <!-- Route Stops -->
+       <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <DockPanel>
+             <!-- Add New Section -->
+             <Border DockPanel.Dock="Top" Background="#10FFFFFF" CornerRadius="12" Padding="15" Margin="0,0,0,20">
+                <Grid ColumnDefinitions="80, *, *, Auto" ColumnSpacing="10">
+                   <TextBox Grid.Column="0" Text="{Binding YeniDurakSaat}" Watermark="09:00"/>
+                   <TextBox Grid.Column="1" Text="{Binding YeniDurakIsim}" Watermark="Durak Adı"/>
+                   <TextBox Grid.Column="2" Text="{Binding YeniDurakAdres}" Watermark="Adres/Bölge"/>
+                   <Button Grid.Column="3" Command="{Binding EkleCommand}" Classes="SideButton Info" Background="#10B981" Padding="10,5">
+                      <ic:SymbolIcon Symbol="Add" FontSize="16"/>
+                   </Button>
+                </Grid>
+             </Border>
+
+             <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Duraklar}">
+                   <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                         <Border Background="#0DFFFFFF" CornerRadius="12" Padding="20" Margin="0,0,0,12">
+                            <Grid ColumnDefinitions="Auto, *, Auto, Auto">
+                               <Border Width="40" Height="40" CornerRadius="20" Background="#1AFFFFFF" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding Saat}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#F59E0B"/>
+                               </Border>
+                               
+                               <StackPanel Grid.Column="1" Margin="20,0" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding Isim}" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                                  <TextBlock Text="{Binding Adres}" FontSize="12" Foreground="#9CA3AF"/>
+                               </StackPanel>
+
+                               <CheckBox Grid.Column="2" IsChecked="{Binding ZiyaretEdildi}" IsEnabled="False" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                               
+                               <Button Grid.Column="3" Command="{Binding $parent[UserControl].DataContext.SilCommand}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Padding="5">
+                                    <ic:SymbolIcon Symbol="Delete" Foreground="#EF4444" FontSize="16"/>
+                               </Button>
+                            </Grid>
+                         </Border>
+                      </DataTemplate>
+                   </ItemsControl.ItemTemplate>
+                </ItemsControl>
+             </ScrollViewer>
+          </DockPanel>
+       </Border>
+
+       <!-- Map Placeholder / Summary -->
+       <StackPanel Grid.Column="1" Spacing="20">
+          <Border Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1" Height="300">
+             <Grid>
+                <TextBlock Text="HARİTA GÖRÜNÜMÜ" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.2" FontSize="20" FontWeight="Black"/>
+                <!-- <ic:SymbolIcon Symbol="EarthPath" FontSize="100" Opacity="0.1" HorizontalAlignment="Center" VerticalAlignment="Center"/> --> 
+                <Border Background="#40000000" CornerRadius="10" Padding="15" VerticalAlignment="Bottom" HorizontalAlignment="Stretch">
+                   <TextBlock Text="Coğrafi optimizasyon servisleri aktif." FontSize="11" Foreground="#10B981" HorizontalAlignment="Center"/>
+                </Border>
+             </Grid>
+          </Border>
+
+          <Border Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+             <StackPanel Spacing="15">
+                <TextBlock Text="Operasyon Özeti" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" RowSpacing="10" ColumnSpacing="10">
+                   <TextBlock Grid.Row="0" Grid.Column="0" Text="Ekip:" Foreground="#9CA3AF"/>
+                   <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EkipAdi}" Foreground="White" FontWeight="Bold"/>
+                   <TextBlock Grid.Row="1" Grid.Column="0" Text="Topl. Durak:" Foreground="#9CA3AF"/>
+                   <TextBlock Grid.Row="1" Grid.Column="1" Text="4 Nokta" Foreground="White" FontWeight="Bold"/>
+                </Grid>
+                <Button Classes="SideButton Info" Background="#F59E0B" Height="45" HorizontalAlignment="Stretch">
+                   <TextBlock Text="ROTAYI PAYLAŞ" FontWeight="Bold"/>
+                </Button>
+             </StackPanel>
+          </Border>
+       </StackPanel>
+    </Grid>
+  </Grid>
+</UserControl>

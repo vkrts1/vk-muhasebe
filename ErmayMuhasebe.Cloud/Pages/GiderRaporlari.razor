@@ -1,0 +1,154 @@
+@page "/gider-raporlari"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <!-- HEADER -->
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h5" Class="font-weight-bold">Gider Analizi ve Maliyet Takibi</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">İşletme giderlerinin ve alış faturalarının detaylı analitiği</MudText>
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FileDownload" Color="Color.Info">Excel'e Aktar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick='() => Nav.NavigateTo("/fatura-olustur/Alis")'>Gider Ekle</MudButton>
+        </div>
+    </div>
+    
+    <MudGrid>
+        <!-- KPI CARDS -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-right: 4px solid #ef4444; border-radius: 12px;">
+                <MudText Typo="Typo.overline" Color="Color.Error">BU AY TOPLAM</MudText>
+                <MudText Typo="Typo.h4" Class="font-weight-bold">@TotalThisMonth.ToString("N0") ₺</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Geçen Aya Göre: %12 Azalış</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-right: 4px solid #f59e0b; border-radius: 12px;">
+                <MudText Typo="Typo.overline" Color="Color.Warning">YILLIK TOPLAM</MudText>
+                <MudText Typo="Typo.h4" Class="font-weight-bold">@TotalThisYear.ToString("N0") ₺</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">2024 Mali Yılı</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-right: 4px solid #3b82f6; border-radius: 12px;">
+                <MudText Typo="Typo.overline" Color="Color.Info">ANA TEDARİKÇİ</MudText>
+                <MudText Typo="Typo.h5" Class="font-weight-bold" Style="white-space:nowrap; overflow:hidden;">@TopExpenseName</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Hacim: @TopExpenseAmount.ToString("N0") ₺</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-right: 4px solid #10b981; border-radius: 12px;">
+                <MudText Typo="Typo.overline" Color="Color.Success">PLANLANAN</MudText>
+                <MudText Typo="Typo.h4" Class="font-weight-bold">% 85</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Bütçe Uyumu</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- CHARTS -->
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                <MudText Typo="Typo.h6" Class="mb-4 font-weight-bold">Aylık Gider Trendi</MudText>
+                @if (MonthlySeries != null)
+                {
+                    <MudChart ChartType="ChartType.Bar" ChartSeries="@MonthlySeries" XAxisLabels="@MonthlyLabels" Width="100%" Height="350px" ChartOptions="_barOptions" />
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px; min-height: 400px;">
+                <MudText Typo="Typo.h6" Class="mb-4 font-weight-bold">Gider Dağılımı (Tedarikçi)</MudText>
+                @if (PieData != null)
+                {
+                     <MudChart ChartType="ChartType.Donut" InputData="@PieData" InputLabels="@PieLabels" Width="100%" Height="300px">
+                        <CustomGraphics>
+                            <text class="donut-inner-text" x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="gray" font-family="Inter" font-size="2">Toplam Gider</text>
+                            <text class="donut-inner-text" x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" font-family="Inter" font-weight="bold" font-size="4">@TotalThisYear.ToString("N0") ₺</text>
+                        </CustomGraphics>
+                     </MudChart>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <!-- DATA TABLE -->
+        <MudItem xs="12">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                 <MudText Typo="Typo.h6" Class="mb-4 font-weight-bold">Son Harcamalar ve Alışlar</MudText>
+                 <MudTable Items="@LastExpenses" Dense="true" Hover="true" Bordered="false" Striped="false" Elevation="0">
+                     <HeaderContent>
+                         <MudTh>Tarih</MudTh>
+                         <MudTh>Tedarikçi</MudTh>
+                         <MudTh>Fatura No</MudTh>
+                         <MudTh>Açıklama</MudTh>
+                         <MudTh>Tutar</MudTh>
+                         <MudTh>Durum</MudTh>
+                     </HeaderContent>
+                     <RowTemplate>
+                         <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                         <MudTd Class="font-weight-medium">@context.CariUnvan</MudTd>
+                         <MudTd>@context.FaturaNo</MudTd>
+                         <MudTd>@context.Aciklama</MudTd>
+                         <MudTd Style="color: #ef4444; font-weight: bold;">@context.GenelToplam.ToString("N2") ₺</MudTd>
+                         <MudTd>
+                             <MudChip T="string" Color="@(context.Odenen >= context.GenelToplam ? Color.Success : Color.Warning)" Size="Size.Small" Variant="Variant.Text">
+                                 @(context.Odenen >= context.GenelToplam ? "Ödendi" : "Bekliyor")
+                             </MudChip>
+                         </MudTd>
+                     </RowTemplate>
+                     <PagerContent>
+                         <MudTablePager />
+                     </PagerContent>
+                 </MudTable>
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+
+@code {
+    private List<ChartSeries> MonthlySeries = new();
+    private string[] MonthlyLabels = Array.Empty<string>();
+    private double[] PieData = Array.Empty<double>();
+    private string[] PieLabels = Array.Empty<string>();
+
+    private List<Fatura> LastExpenses = new();
+    private decimal TotalThisMonth = 0;
+    private decimal TotalThisYear = 0;
+    private string TopExpenseName = "Yükleniyor...";
+    private decimal TopExpenseAmount = 0;
+
+    private ChartOptions _barOptions = new ChartOptions { YAxisFormat = "N0", ShowLegend = false };
+
+    protected override async Task OnInitializedAsync()
+    {
+        MonthlySeries = await DbService.GetMonthlyExpenseDataAsync();
+        MonthlyLabels = await DbService.GetMonthlyExpenseLabelsAsync();
+
+        var pieDataList = await DbService.GetExpenseDistributionDataAsync();
+        PieData = pieDataList.ToArray();
+        var pieLabelsList = await DbService.GetExpenseDistributionLabelsAsync();
+        PieLabels = pieLabelsList.ToArray();
+
+        var allInvoices = await DbService.GetFaturalarAsync();
+        var expenses = allInvoices.Where(f => f.Tur == "Alış").ToList();
+
+        var today = DateTime.Now;
+        TotalThisMonth = expenses.Where(e => e.Tarih.Month == today.Month && e.Tarih.Year == today.Year).Sum(e => e.GenelToplam);
+        TotalThisYear = expenses.Where(e => e.Tarih.Year == today.Year).Sum(e => e.GenelToplam);
+
+        var topExpenseGroup = expenses.GroupBy(e => e.CariUnvan).OrderByDescending(g => g.Sum(x => x.GenelToplam)).FirstOrDefault();
+        if (topExpenseGroup != null)
+        {
+            TopExpenseName = topExpenseGroup.Key ?? "-";
+            TopExpenseAmount = topExpenseGroup.Sum(x => x.GenelToplam);
+        }
+
+        LastExpenses = expenses.OrderByDescending(f => f.Tarih).Take(20).ToList();
+    }
+}

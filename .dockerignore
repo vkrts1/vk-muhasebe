@@ -1,0 +1,10 @@
+**/.git
+**/.vs
+**/.vscode
+**/.agent
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/.expo
+scratch

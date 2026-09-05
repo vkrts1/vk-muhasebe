@@ -1,0 +1,981 @@
+@page "/cariler"
+@* Updated: 2026-01-28 00:08 - Exact Avalonia Layout Match *@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@using System.Threading.Tasks
+@inject ErmayMuhasebe.Cloud.ViewModels.CariListViewModel ViewModel
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager NavManager
+@inject UiService UiService
+@inject IJSRuntime JS
+@implements IDisposable
+@inject ClientAuthService AuthService
+
+<style>
+    /* Scalable sidebar - fits viewport without scrollbar */
+    .cari-sidebar-scaled {
+        background: #111417;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 14px;
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    /* Actions section: takes remaining space, distributes items evenly */
+    .cari-sidebar-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        justify-content: space-between;
+    }
+
+    /* All direct children of actions section must be shrinkable */
+    .cari-sidebar-actions > * {
+        flex-shrink: 1;
+        min-height: 0;
+    }
+
+    /* Override action-capsule fixed height inside this sidebar */
+    .cari-sidebar-scaled .action-capsule {
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 5px 10px;
+        font-size: 10px;
+        flex-shrink: 1;
+    }
+
+    /* Keep icons from collapsing */
+    .cari-sidebar-scaled .action-capsule .mud-icon-root {
+        flex-shrink: 0;
+    }
+
+    /* Totals section: pinned at bottom, compact spacing */
+    .cari-sidebar-totals {
+        flex-shrink: 0;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .cari-sidebar-totals .total-row-label,
+    .cari-sidebar-totals .total-row-value {
+        font-size: 11px;
+    }
+</style>
+
+<div class="fade-in d-flex flex-grow-1 flex-column cari-page-container" style="height: 100%; min-height: 0; overflow: hidden;" @onclick="HideContextMenu">
+    <div class="row m-0 g-4 h-100 pb-4" style="min-height: 0;">
+        <!-- LEFT COLUMN: TABLES -->
+        <div class="col-lg-9 d-flex flex-column gap-4 min-h-0 h-100" style="min-height: 0;">
+            <!-- SECTION: CARI BILGILERI -->
+            <div class="desktop-panel d-flex flex-column overflow-hidden" style="flex: 1; min-height: 0;">
+                <!-- Header with Search & Pager -->
+                <div class="desktop-panel-header px-4 py-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <MudIcon Icon="@Icons.Material.Outlined.People" Size="Size.Small" Style="color: #60A5FA;" />
+                        <span class="header-text blue-text" style="text-transform: none;">Cari Bilgileri</span>
+                    </div>
+
+                    <!-- Search Box & Pager -->
+                    <div class="d-flex align-items-center gap-3 flex-grow-1 justify-content-end" style="max-width: 600px;">
+                        <div class="desktop-search-pill" style="flex-grow: 1; justify-content: flex-start;">
+                            <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" Style="color: rgba(255,255,255,0.4);" />
+                            <input type="text" placeholder="Cari Ünvan veya Kod ile Ara..." 
+                                   @bind-value="ViewModel.SearchString" @bind-value:event="oninput" @onkeyup="HandleSearchKeyUp"
+                                   class="desktop-search-input" style="width: 100%;" />
+                        </div>
+
+                        <!-- Filter Icon (Image has a filter-like icon) -->
+                        <div class="pager-arrow" style="background: rgba(255,255,255,0.05); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                            <MudIcon Icon="@Icons.Material.Filled.FilterList" Size="Size.Small" />
+                        </div>
+
+                        <!-- Pager -->
+                        <div class="desktop-pager-pill d-flex align-items-center">
+                            <button @onclick="ViewModel.PreviousPageAsync" disabled="@(!ViewModel.CanPreviousPage)" class="pager-arrow">
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small" />
+                            </button>
+                            <span class="pager-text">@ViewModel.PagerInfo</span>
+                            <button @onclick="ViewModel.NextPageAsync" disabled="@(!ViewModel.CanNextPage)" class="pager-arrow">
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 ml-4">
+                        <span class="total-label">Toplam:</span>
+                        <span class="total-value">@ViewModel.TotalCount</span>
+                    </div>
+                </div>
+
+                <!-- Table Area -->
+                <div class="desktop-table-container flex-grow-1">
+                    @if (ViewModel.IsLoading && !ViewModel.Cariler.Any())
+                    {
+                        <div class="skeleton-table">
+                            @for(int i=0; i<10; i++) { <div class="skeleton-row"></div> }
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="desktop-data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 120px;">Grup</th>
+                                    <th>Ünvan</th>
+                                    <th style="text-align: right; width: 160px;">Bakiye</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var cari in ViewModel.Cariler)
+                                {
+                                    <tr class="@(ViewModel.SelectedCari?.Id == cari.Id ? "selected" : "")" 
+                                        @onclick="() => { ViewModel.SelectedCari = cari; HideContextMenu(); }"
+                                        @oncontextmenu:preventDefault="true"
+                                        @oncontextmenu="(e) => ShowContextMenu(e, cari)">
+                                        <td>
+                                            <span class="desktop-badge @(cari.Grup == "Müşteri" ? "badge-blue" : "badge-orange")">
+                                                @cari.Grup
+                                            </span>
+                                        </td>
+                                        <td class="unvan-cell">@cari.Unvan</td>
+                                        <td style="text-align: right; font-weight: 700; font-size: 0.95rem; color: @(cari.Bakiye >= 0 ? "#10B981 !important" : "#EF4444 !important")">
+                                            @cari.Bakiye.ToString("N2") ₺
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+
+            <!-- SECTION: CARI ISLEMLER -->
+            <div class="desktop-panel d-flex flex-column overflow-hidden" style="height: 40%; min-height: 250px;">
+                <div class="desktop-panel-header px-4 py-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <MudIcon Icon="@Icons.Material.Outlined.History" Size="Size.Small" Style="color: #60A5FA;" />
+                        <span class="header-text blue-text" style="font-size: 12px; text-transform: none;">Cari İşlemler (Ekstre)</span>
+                    </div>
+                </div>
+
+                <div class="desktop-table-container flex-grow-1">
+                    <table class="desktop-data-table small-font">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Tarih</th>
+                                <th style="width: 150px;">İşlem Türü</th>
+                                <th style="width: 120px;">Evrak No</th>
+                                <th>Açıklama</th>
+                                <th style="text-align: right; width: 100px;">Borç</th>
+                                <th style="text-align: right; width: 100px;">Alacak</th>
+                                <th style="text-align: right; width: 100px;">Bakiye</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewModel.SelectedCari != null)
+                            {
+                                @foreach (var hareket in ViewModel.CariHareketler)
+                                {
+                                    <tr class="@(ViewModel.SelectedHareket?.Id == hareket.Id ? "selected-movement" : "")"
+                                        @onclick="() => { ViewModel.SelectedHareket = hareket; HideContextMenu(); }"
+                                        @oncontextmenu:preventDefault="true" 
+                                        @oncontextmenu="(e) => ShowMovementContextMenu(e, hareket)">
+                                        <td class="text-dim">@hareket.Tarih.ToString("dd.MM.yyyy")</td>
+                                        <td class="font-bold">@hareket.IslemTuru</td>
+                                        <td class="text-dim">@hareket.EvrakNo</td>
+                                        <td class="text-dim">@hareket.Aciklama</td>
+                                        <td class="text-right" style="color: #EF4444 !important;">@(hareket.Borc > 0 ? hareket.Borc.ToString("N2") : "")</td>
+                                        <td class="text-right" style="color: #10B981 !important;">@(hareket.Alacak > 0 ? hareket.Alacak.ToString("N2") : "")</td>
+                                        <td class="text-right font-bold" style="color: white;">@hareket.KalanBakiye.ToString("N2")</td>
+                                    </tr>
+                                }
+                                @if (!ViewModel.CariHareketler.Any())
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center py-8 text-dim">Hareket bulunamadı.</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-8 text-dim">Detayları görmek için cari seçiniz.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: ACTION SIDEBAR -->
+        <div class="col-lg-3 h-100" style="min-height: 0;">
+            <div class="cari-sidebar-scaled">
+                <div class="cari-sidebar-actions">
+                    <div class="section-label" style="font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 700;">HIZLI İŞLEMLER</div>
+                    
+                    <!-- Group 1: New / Edit -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button class="action-capsule primary w-100" @onclick="OpenAddDialog">
+                                <MudIcon Icon="@Icons.Material.Outlined.PersonAdd" Size="Size.Small" /> <span style="color: white;">Yeni</span>
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="action-capsule w-100" @onclick="OpenEditDialog" disabled="@(ViewModel.SelectedCari == null)">
+                                <MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /> <span style="color: white;">Düzenle</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="action-capsule danger w-100" @onclick="ConfirmDeleteCari" disabled="@(ViewModel.SelectedCari == null)">
+                        <MudIcon Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" /> <span style="color: white;">Cari Kartı Sil</span>
+                    </button>
+
+                    <!-- Group 2: Fatura -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button class="action-capsule success w-100" @onclick="ViewModel.OpenSatisFaturasi" disabled="@(ViewModel.SelectedCari == null)">
+                                <MudIcon Icon="@Icons.Material.Outlined.LocalOffer" Size="Size.Small" /> <span style="color: white;">Satış</span>
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="action-capsule warning w-100" @onclick="ViewModel.OpenAlisFaturasi" disabled="@(ViewModel.SelectedCari == null)">
+                                <MudIcon Icon="@Icons.Material.Outlined.ShoppingCart" Size="Size.Small" /> <span style="color: white;">Alış</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Group 3: Finance -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button class="action-capsule success w-100" @onclick="ViewModel.TahsilatYap" disabled="@(ViewModel.SelectedCari == null)">
+                                <MudIcon Icon="@Icons.Material.Outlined.Payments" Size="Size.Small" /> <span style="color: white;">Tahsilat</span>
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="action-capsule warning w-100" @onclick="ViewModel.OdemeYap" disabled="@(ViewModel.SelectedCari == null)">
+                                <MudIcon Icon="@Icons.Material.Outlined.AccountBalanceWallet" Size="Size.Small" /> <span style="color: white;">Ödeme</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="action-capsule primary w-100" @onclick="ViewModel.Alacaklandir" disabled="@(ViewModel.SelectedCari == null)">
+                        + Alacaklandır (F5)
+                    </button>
+                    <button class="action-capsule warning w-100" @onclick="ViewModel.Borclandir" disabled="@(ViewModel.SelectedCari == null)">
+                        - Borçlandır (F6)
+                    </button>
+
+                    <!-- Group 4: Reports -->
+                    <button class="action-capsule w-100" @onclick="() => ViewModel.HesapEkstresiAsync()" disabled="@(ViewModel.SelectedCari == null)">
+                        <MudIcon Icon="@Icons.Material.Outlined.Description" Size="Size.Small" /> <span style="color: white;">Ekstre (F1)</span>
+                    </button>
+                    <button class="action-capsule w-100" @onclick="() => ViewModel.DetayliHesapEkstresiAsync()" disabled="@(ViewModel.SelectedCari == null)">
+                        <MudIcon Icon="@Icons.Material.Outlined.Assignment" Size="Size.Small" /> <span style="color: white;">Detaylı Ekstre</span>
+                    </button>
+                    
+                    <button class="action-capsule success w-100" @onclick="ViewModel.ExportToExcelAsync">
+                        <MudIcon Icon="@Icons.Material.Outlined.GridOn" Size="Size.Small" /> <span style="color: white;">Excel</span>
+                    </button>
+                </div>
+
+                <div class="cari-sidebar-totals">
+                    <div class="section-label" style="margin-bottom: 4px;">TOPLAMLAR</div>
+                    <div class="d-flex justify-content-between" style="margin-bottom: 2px;">
+                        <span class="total-row-label">Müşteri</span>
+                        <span class="total-row-value">@ViewModel.MüşteriBakiye.ToString("N2") ₺</span>
+                    </div>
+                    <div class="d-flex justify-content-between" style="margin-bottom: 4px;">
+                        <span class="total-row-label">Tedarikçi</span>
+                        <span class="total-row-value">@ViewModel.TedarikçiBakiye.ToString("N2") ₺</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between" style="margin-bottom: 1px;">
+                        <span class="total-row-label">Borç</span>
+                        <span class="total-row-value" style="color: #EF4444;">@ViewModel.ToplamBorc.ToString("N2") ₺</span>
+                    </div>
+                    <div class="d-flex justify-content-between" style="margin-bottom: 6px;">
+                        <span class="total-row-label">Alacak</span>
+                        <span class="total-row-value" style="color: #10B981;">@ViewModel.ToplamAlacak.ToString("N2") ₺</span>
+                    </div>
+                    
+                    <!-- Big Total Box (Dynamic Color based on Balance) -->
+                    <div class="final-status-card rounded-xl text-center" 
+                         style="background: @(ViewModel.Bakiye >= 0 ? "#10B981" : "#F44336"); box-shadow: 0 4px 15px rgba(0,0,0,0.3); padding: 10px 16px;">
+                        <div class="status-bakiye text-white" style="font-size: 24px; font-weight: 900;">@ViewModel.Bakiye.ToString("N2") ₺</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@* Simplified with Centralized Context Menu *@
+
+@if (ViewModel.IsTransactionDialogVisible)
+{
+    <div class="premium-dialog-overlay fade-in" style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0,0,0,0.65) !important; backdrop-filter: blur(4px) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 99990 !important;">
+        <div class="cari-border" style="width: 600px; background: #161B22; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.8); border-radius: 16px; overflow: hidden;">
+            <!-- Header -->
+            <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@(ViewModel.TransactionMethod == "Kredi Kartı" || ViewModel.TransactionMethod == "Havale/EFT" ? Icons.Material.Filled.AccountBalance : Icons.Material.Filled.Wallet)" Style="color: white; font-size: 28px;" />
+                    </div>
+                    <div>
+                        <div style="color: white; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">
+                            @(ViewModel.TransactionMethod == "Kredi Kartı" ? "Yeni Kredi Kartı İşlemi" : 
+                              ViewModel.TransactionMethod == "Havale/EFT" ? "Yeni Havale / EFT İşlemi" : 
+                              ViewModel.TransactionTitle)
+                        </div>
+                        <div style="color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 500;">İşlem detaylarını aşağıdan yönetebilirsiniz</div>
+                    </div>
+                </div>
+                <button @onclick="ViewModel.CloseTransactionDialog" style="width: 36px; height: 36px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                </button>
+            </div>
+
+            <div style="padding: 30px;">
+                <!-- Common: İşlem Yöntemi -->
+                <div class="mb-4">
+                    <label class="form-label">İşlem Yöntemi</label>
+                    <div class="select-wrapper">
+                        <select @bind="ViewModel.TransactionMethod" class="dark-input">
+                            <option value="Nakit">Nakit</option>
+                            <option value="Kredi Kartı">Kredi Kartı</option>
+                            <option value="Havale/EFT">Havale/EFT</option>
+                            <option value="Çek">Çek</option>
+                        </select>
+                        <div class="select-arrow">▼</div>
+                    </div>
+                </div>
+
+                @if (ViewModel.TransactionMethod == "Kredi Kartı" || ViewModel.TransactionMethod == "Havale/EFT")
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">İşlem Tarihi</label>
+                            <input type="text" @bind="ViewModel.TransactionDateStr" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Tutar (₺)</label>
+                            <input type="number" @bind="ViewModel.TransactionAmount" class="dark-input" style="font-weight: 700;" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Müşteri (Tahsil Edilen)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" value="@ViewModel.SelectedCari?.Unvan" class="dark-input" readonly />
+                            <button class="action-btn-outline" style="padding: 0 20px;" @onclick="ViewModel.OpenMusteriSecimDialog">🔍 Seç</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">@(ViewModel.TransactionMethod == "Kredi Kartı" ? "Banka" : "Banka Adı")</label>
+                            <input type="text" @bind="ViewModel.KkBanka" class="dark-input" placeholder="@(ViewModel.TransactionMethod == "Havale/EFT" ? "Örn: Garanti BBVA" : "Banka adı...")" />
+                        </div>
+                        <div>
+                            <label class="form-label">@(ViewModel.TransactionMethod == "Kredi Kartı" ? "Kart No (Son 4)" : "Hesap No / IBAN")</label>
+                            <input type="text" @bind="ViewModel.KkKartNo" class="dark-input" placeholder="@(ViewModel.TransactionMethod == "Havale/EFT" ? "TR..." : "XXXX")" />
+                        </div>
+                    </div>
+
+                    @if (ViewModel.SelectedCari?.Grup != "Tedarikçi")
+                    {
+                        <div class="mb-4">
+                            <label class="form-label">Yönlendirilen Tedarikçi (Opsiyonel)</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" value="@ViewModel.KkYonlendirilenTedarikci" class="dark-input" placeholder="Seçiniz (Opsiyonel)..." readonly />
+                                <button class="action-btn-outline" style="padding: 0 20px; color: #60A5FA; border-color: rgba(96, 165, 250, 0.3);" @onclick="ViewModel.OpenTedarikciSecimDialog">👤 Seç</button>
+                            </div>
+                        </div>
+                    }
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Durum</label>
+                            <div class="select-wrapper">
+                                <select @bind="ViewModel.KkDurum" class="dark-input">
+                                    <option value="Portföyde">Portföyde</option>
+                                    <option value="Tedarikçiye Verildi">Tedarikçiye Verildi</option>
+                                    <option value="Tahsil Edildi">Tahsil Edildi</option>
+                                </select>
+                                <div class="select-arrow">▼</div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">@(ViewModel.TransactionMethod == "Kredi Kartı" ? "Onay Kodu" : "Dekont No")</label>
+                            <input type="text" @bind="ViewModel.KkOnayKodu" class="dark-input" placeholder="Dekont No / Referans..." />
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">İşlem Hesabı (@(ViewModel.TransactionMethod == "Kredi Kartı" ? "POS / Banka" : "Banka Hesabı"))</label>
+                            <div class="select-wrapper">
+                                <select @bind="ViewModel.SelectedKasaId" class="dark-input" style="border-color: #60A5FA;">
+                                    <option value="0">--- Seçiniz ---</option>
+                                    @foreach (var kasa in ViewModel.AvailableKasalar)
+                                    {
+                                        <option value="@kasa.Id">@kasa.BankaAdi (@kasa.DovizTuru)</option>
+                                    }
+                                </select>
+                                <div class="select-arrow">▼</div>
+                            </div>
+                            @if (!ViewModel.AvailableKasalar.Any())
+                            {
+                                <div style="color: #EF4444; font-size: 10px; margin-top: 4px;">⚠️ Tanımlı banka hesabı bulunamadı! Ayarlar > Banka Kartları kısmından ekleyiniz.</div>
+                            }
+                        </div>
+                        <div>
+                            <label class="form-label">Açıklama</label>
+                            <input type="text" @bind="ViewModel.TransactionDescription" class="dark-input" placeholder="Kısa not..." />
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 2fr 3fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">@(ViewModel.TransactionMethod == "Kredi Kartı" ? "Slip Görseli" : "Dekont Görseli / PDF")</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" value="@(string.IsNullOrEmpty(ViewModel.KkSlipPath) ? "Dosya..." : "Dosya Seçildi")" class="dark-input" readonly style="font-size: 12px;" />
+                                <button class="action-btn-outline" style="padding: 0 15px; color: #00C2FF; border-color: rgba(0, 194, 255, 0.3);" @onclick='() => JS.InvokeVoidAsync("clickElement", "slipUpload")'>📎 Seç</button>
+                                <InputFile id="slipUpload" OnChange="OnSlipFileChanged" style="display:none" />
+                            </div>
+                        </div>
+                        <div>
+                             <!-- Spacer -->
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    /* NAKIT FORM (EXISTING SIMPLIFIED) */
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">İşlem Tarihi</label>
+                            <input type="text" @bind="ViewModel.TransactionDateStr" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Tutar (₺)</label>
+                            <input type="number" @bind="ViewModel.TransactionAmount" class="dark-input" style="font-weight: 700;" />
+                        </div>
+                    </div>
+
+                    @if (ViewModel.IsKasaSelectionVisible)
+                    {
+                        <div class="mb-4">
+                            <label class="form-label">İşlem Hesabı (Kasa)</label>
+                            <div class="select-wrapper">
+                                <select @bind="ViewModel.SelectedKasaId" class="dark-input">
+                                    <option value="0">--- Seçiniz ---</option>
+                                    @foreach (var kasa in ViewModel.AvailableKasalar)
+                                    {
+                                        <option value="@kasa.Id">@kasa.BankaAdi (@kasa.DovizTuru)</option>
+                                    }
+                                </select>
+                                <div class="select-arrow">▼</div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mb-4">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label class="form-label" style="margin-bottom: 0;">Açıklama</label>
+                            <div style="display: flex; align-items: center; cursor: pointer; gap: 8px;" @onclick="() => ViewModel.IsAcilisFisi = !ViewModel.IsAcilisFisi">
+                                <div style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid @(ViewModel.IsAcilisFisi ? "#00C2FF" : "rgba(255,255,255,0.3)"); display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                                    @if (ViewModel.IsAcilisFisi)
+                                    {
+                                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #00C2FF;"></div>
+                                    }
+                                </div>
+                                <span style="font-size: 13px; color: @(ViewModel.IsAcilisFisi ? "#00C2FF" : "rgba(255,255,255,0.7)"); font-weight: 500;">Açılış Fişi (Devir)</span>
+                            </div>
+                        </div>
+                        <input type="text" @bind="ViewModel.TransactionDescription" class="dark-input" placeholder="İşlem hakkında kısa bir açıklama..." />
+                    </div>
+                }
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                    <button @onclick="ViewModel.CloseTransactionDialog" class="action-btn-outline" style="justify-content: center;">Vazgeç</button>
+                    <button @onclick="ViewModel.SaveTransactionAsync" class="action-btn-filled" style="justify-content: center;">İşlemi Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ViewModel.CheckHelper != null && ViewModel.CheckHelper.IsEditFormVisible)
+{
+    @* ÇEK FORM OVERLAY *@
+    <div class="premium-dialog-overlay fade-in" style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0,0,0,0.65) !important; backdrop-filter: blur(4px) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 99990 !important;">
+        <div class="cari-border" style="width: 900px; background: #161B22; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.8); border-radius: 16px; overflow: hidden;">
+            <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Wallet" Style="color: #60A5FA; font-size: 24px;" />
+                    <div style="font-size: 18px; font-weight: 800; color: white;">@ViewModel.CheckHelper.EditTitle</div>
+                </div>
+                <button @onclick="ViewModel.CheckHelper.CloseEditForm" style="width: 36px; height: 36px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                </button>
+            </div>
+
+            <div style="padding: 30px; display: grid; grid-template-columns: 3fr 2fr; gap: 40px;">
+                <!-- Left: Form -->
+                <div>
+                    <!-- Grid: Cari (2) | Method (1) | CekTuru (1) | IslemTuru (1) -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Cari Hesap</label>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="action-btn-outline" style="width: 100%; border-color: #60A5FA; color: #60A5FA; justify-content: center; gap: 8px;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /> @ViewModel.CheckHelper.EditCariUnvan
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">İşlem Yöntemi</label>
+                            <div class="select-wrapper">
+                                <select @bind="ViewModel.TransactionMethod" class="dark-input">
+                                    <option value="Nakit">Nakit</option>
+                                    <option value="Kredi Kartı">Kredi Kartı</option>
+                                    <option value="Havale/EFT">Havale/EFT</option>
+                                    <option value="Çek">Çek</option>
+                                </select>
+                                <div class="select-arrow">▼</div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">Çek Türü</label>
+                            <div class="select-wrapper">
+                                <select @bind="ViewModel.CheckHelper.EditCekTuru" class="dark-input">
+                                    <option value="Alınan">Alınan</option>
+                                    <option value="Verilen">Verilen</option>
+                                </select>
+                                <div class="select-arrow">▼</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Asıl Borçlu (Cari harici ise belirtin)</label>
+                        <input type="text" @bind="ViewModel.CheckHelper.EditAsilBorclu" class="dark-input" />
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Vade Tarihi</label>
+                            <input type="date" value="@(ViewModel.CheckHelper.EditVadeTarihi.ToString("yyyy-MM-dd"))" @onchange="@(e => { if (e.Value != null && DateTime.TryParse(e.Value.ToString(), out var dt)) ViewModel.CheckHelper.EditVadeTarihi = dt; })" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Tutar (₺)</label>
+                            <input type="number" @bind="ViewModel.CheckHelper.EditTutar" class="dark-input" style="font-weight: 700;" />
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Banka</label>
+                            <input type="text" @bind="ViewModel.CheckHelper.EditBanka" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Şube</label>
+                            <input type="text" @bind="ViewModel.CheckHelper.EditSube" class="dark-input" />
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="mb-4">
+                        <div>
+                            <label class="form-label">Seri No</label>
+                            <input type="text" @bind="ViewModel.CheckHelper.EditSeriNo" class="dark-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Portföy No (Otomatik)</label>
+                            <input type="text" @bind="ViewModel.CheckHelper.EditPortfoyNo" class="dark-input" readonly />
+                        </div>
+                    </div>
+
+                    @if (ViewModel.SelectedCari?.Grup != "Tedarikçi")
+                    {
+                        <div class="mb-4">
+                            <label class="form-label">Yönlendirilen Tedarikçi (Opsiyonel)</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" value="@ViewModel.CheckHelper.EditYonlendirilenCariUnvan" class="dark-input" placeholder="Seçiniz (Opsiyonel)..." readonly />
+                                <button class="action-btn-outline" style="padding: 0 20px; color: #60A5FA; border-color: rgba(96, 165, 250, 0.3);" @onclick="ViewModel.OpenTedarikciSecimDialog">👤 Seç</button>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mb-4">
+                        <label class="form-label">Açıklama</label>
+                        <input type="text" @bind="ViewModel.CheckHelper.EditAciklama" class="dark-input" style="height: 60px;" />
+                    </div>
+                    
+                    <button @onclick="ViewModel.CheckHelper.SaveCekAsync" class="action-btn-filled" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #065f46 0%, #059669 100%); border-color: #10B981; margin-top: 10px; color: white;">
+                        <MudIcon Icon="@Icons.Material.Filled.Save" Size="Size.Small" Class="mr-2"/> ÇEKİ VERİTABANINA KAYDET
+                    </button>
+                </div>
+
+                <!-- Right: Images -->
+                <div style="display: flex; flex-direction: column; gap: 20px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px dashed rgba(255,255,255,0.1);">
+                    <div style="text-align: center; color: white; font-weight: 700; font-size: 12px; margin-bottom: 5px;">Çek Ön Yüzü</div>
+                    <div style="flex: 1; background: #161B22; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 150px;">
+                        <MudIcon Icon="@Icons.Material.Filled.AddPhotoAlternate" Style="font-size: 32px; color: rgba(255,255,255,0.2);" />
+                        <span style="font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 5px;">Ön yüz eklenmedi</span>
+                    </div>
+                    <button class="action-btn-outline" style="border-color: #00C2FF; color: #00C2FF; justify-content: center; font-size: 12px; padding: 10px;" @onclick='() => JS.InvokeVoidAsync("clickElement", "checkFrontUpload")'>
+                        <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" Class="mr-2"/> Ön Yüz Seç
+                    </button>
+                    <InputFile id="checkFrontUpload" OnChange="OnCheckFrontFileChanged" style="display:none" />
+
+                    <div style="height: 1px; background: rgba(255,255,255,0.1);"></div>
+
+                    <div style="text-align: center; color: white; font-weight: 700; font-size: 12px; margin-bottom: 5px;">Çek Arka Yüzü</div>
+                    <div style="flex: 1; background: #161B22; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 150px;">
+                        <MudIcon Icon="@Icons.Material.Filled.AddPhotoAlternate" Style="font-size: 32px; color: rgba(255,255,255,0.2);" />
+                        <span style="font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 5px;">Arka yüz eklenmedi</span>
+                    </div>
+                    <button class="action-btn-outline" style="border-color: #00C2FF; color: #00C2FF; justify-content: center; font-size: 12px; padding: 10px;" @onclick='() => JS.InvokeVoidAsync("clickElement", "checkBackUpload")'>
+                        <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" Class="mr-2"/> Arka Yüz Seç
+                    </button>
+                    <InputFile id="checkBackUpload" OnChange="OnCheckBackFileChanged" style="display:none" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ViewModel.IsEkstreOptionVisible)
+{
+    <div class="premium-dialog-overlay fade-in" style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0,0,0,0.8) !important; backdrop-filter: blur(4px) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 99990 !important;">
+        <div class="cari-border" style="width: 400px; background: #161B22; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; overflow: hidden;">
+            <div style="padding: 25px 20px; background: #252A31; display: grid; grid-template-columns: 1fr auto; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Description" Style="font-size: 24px; color: #FF5252;" />
+                    <div style="color: white; font-size: 18px; font-weight: 800;">@ViewModel.EkstreTitle</div>
+                </div>
+                @if (ViewModel.IsDetayliEkstre)
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Style="font-size: 20px; color: rgba(255,255,255,0.5);" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Description" Style="font-size: 20px; color: rgba(255,255,255,0.5);" />
+                }
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 25px 20px;">
+                <button @onclick="ViewModel.PreviewEkstre" style="height: 100px; border-radius: 12px; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25); color: white; font-weight: 800; text-transform: uppercase;">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Style="font-size: 28px; color: #60A5FA;" />
+                        <span style="font-size: 12px;">GÖRÜNTÜLE</span>
+                    </div>
+                </button>
+                <button @onclick="() => ViewModel.DownloadEkstreAsync(null)" style="height: 100px; border-radius: 12px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: white; font-weight: 800; text-transform: uppercase;">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Download" Style="font-size: 28px; color: #10B981;" />
+                        <span style="font-size: 12px;">İNDİR</span>
+                    </div>
+                </button>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.07); padding: 15px 20px; text-align: center;">
+                <button @onclick="ViewModel.CloseEkstreOption" style="background: transparent; border: none; color: #888; font-size: 12px; font-weight: 600; cursor: pointer;">
+                    Pencereyi Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+    <!-- CARİ SEÇİM MODAL (Kredi Kartı / EFT / Çek için) -->
+    @if (ViewModel.IsCariSelectionVisible)
+    {
+        <div class="premium-dialog-overlay fade-in" style="z-index: 100000;">
+            <div class="desktop-grid-wrapper" style="width: 500px; background: #1A1D21; border-radius: 20px; padding: 0;">
+                <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="desktop-title">Cari Hesap Seçimi</h3>
+                    <button @onclick="ViewModel.CloseCariSelection" style="background: transparent; border: none; color: white;">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" />
+                    </button>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="mb-3">
+                         <input type="text" class="dark-input" placeholder="Cari Ünvan / Kod ile ara..." 
+                               @bind:event="oninput" @bind="ViewModel.SearchString" />
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="desktop-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Cari Ünvan</th>
+                                    <th class="text-end">Bakiye</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ViewModel.FilteredCarilerForSelection != null)
+                                {
+                                    @foreach (var c in ViewModel.FilteredCarilerForSelection)
+                                    {
+                                        <tr class="clickable" @onclick="() => ViewModel.SelectCariForTransaction(c)">
+                                            <td>@c.Unvan</td>
+                                            <td class="text-end fw-bold">@c.Bakiye.ToString("N2")</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+@code {
+
+    protected override async Task OnInitializedAsync() {
+        ViewModel.PropertyChanged += (s, e) => {
+             if (e.PropertyName == nameof(ViewModel.ErrorMessage) && !string.IsNullOrEmpty(ViewModel.ErrorMessage))
+             {
+                 Snackbar.Add(ViewModel.ErrorMessage, Severity.Error);
+             }
+             if (e.PropertyName == nameof(ViewModel.SuccessMessage) && !string.IsNullOrEmpty(ViewModel.SuccessMessage))
+             {
+                 Snackbar.Add(ViewModel.SuccessMessage, Severity.Success);
+             }
+             if (e.PropertyName == nameof(ViewModel.StatusMessage) && !string.IsNullOrEmpty(ViewModel.StatusMessage))
+             {
+                 Snackbar.Add(ViewModel.StatusMessage, Severity.Info);
+             }
+             InvokeAsync(StateHasChanged);
+        };
+        UiService.OnEscapePressed += HandleEscape;
+        await ViewModel.LoadCarilerAsync();
+
+        // Handle direct selection from Query String
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        var query = uri.Query;
+        if (!string.IsNullOrEmpty(query) && query.Contains("selectId="))
+        {
+            var parts = query.TrimStart('?').Split('&');
+            var selectPart = parts.FirstOrDefault(p => p.StartsWith("selectId="));
+            if (selectPart != null && int.TryParse(selectPart.Split('=')[1], out int id))
+            {
+                var cari = ViewModel.Cariler.FirstOrDefault(c => c.Id == id);
+                if (cari != null)
+                {
+                    ViewModel.SelectedCari = cari;
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private void ShowContextMenu(MouseEventArgs e, CariKart cari)
+    {
+        ViewModel.SelectedCari = cari;
+        var items = new List<UiService.ContextMenuItem>
+        {
+            new UiService.ContextMenuItem { Text = "Satış", Icon = Icons.Material.Filled.ShoppingCart, Action = () => { ViewModel.OpenSatisFaturasi(); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { Text = "Alış", Icon = Icons.Material.Filled.LocalShipping, Action = () => { ViewModel.OpenAlisFaturasi(); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { IsDivider = true },
+            new UiService.ContextMenuItem { Text = "Tahsilat", Icon = Icons.Material.Filled.MonetizationOn, Action = () => { ViewModel.TahsilatYap(); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { Text = "Ödeme", Icon = Icons.Material.Filled.Payments, Action = () => { ViewModel.OdemeYap(); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { IsDivider = true },
+            new UiService.ContextMenuItem { Text = "Alacaklandır", Icon = Icons.Material.Filled.Add, Action = () => { ViewModel.Alacaklandir(); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { Text = "Borçlandır", Icon = Icons.Material.Filled.Remove, Action = () => { ViewModel.Borclandir(); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { IsDivider = true },
+            new UiService.ContextMenuItem { Text = "Ekstre", Icon = Icons.Material.Filled.Description, Action = async () => await ViewModel.HesapEkstresiAsync() },
+            new UiService.ContextMenuItem { Text = "Detaylı Ekstre", Icon = Icons.Material.Filled.Assignment, Action = async () => await ViewModel.DetayliHesapEkstresiAsync() },
+            new UiService.ContextMenuItem { Text = "Cari Yaşlandırma", Icon = Icons.Material.Filled.History, Action = async () => await ViewModel.CariYaslandirmaAsync() }
+        };
+        UiService.ShowContextMenu(e.ClientX, e.ClientY, items);
+    }
+
+    private void ShowMovementContextMenu(MouseEventArgs e, CariHareket hareket)
+    {
+        ViewModel.SelectedHareket = hareket;
+        var items = new List<UiService.ContextMenuItem>
+        {
+            new UiService.ContextMenuItem { Text = "Düzenle", Icon = Icons.Material.Filled.Edit, Action = async () => await ViewModel.EditTransactionAsync() }
+        };
+        if (AuthService.IsAdmin)
+        {
+            items.Add(new UiService.ContextMenuItem { Text = "Sil", Icon = Icons.Material.Filled.Delete, IsDanger = true, Action = async () => await ConfirmDeleteMovement(ViewModel.SelectedHareket) });
+        }
+        items.Add(new UiService.ContextMenuItem { IsDivider = true });
+        items.Add(new UiService.ContextMenuItem { Text = "Görüntüle", Icon = Icons.Material.Filled.Visibility, Action = async () => await ViewModel.ViewTransactionAsync() });
+        
+        UiService.ShowContextMenu(e.ClientX, e.ClientY, items);
+    }
+
+    private void HideContextMenu() => UiService.HideContextMenu();
+
+    private async Task<bool> HandleEscape()
+    {
+        // Centralized context menu is already handled by UiService.NotifyEscapePressedAsync
+
+        if (ViewModel.IsCariSelectionVisible)
+        {
+            ViewModel.CloseCariSelection();
+            StateHasChanged();
+            return true;
+        }
+
+        if (ViewModel.IsCariEkleVisible)
+        {
+            ViewModel.CloseDialog();
+            StateHasChanged();
+            return true;
+        }
+
+        if (ViewModel.IsTransactionDialogVisible)
+        {
+            ViewModel.CloseTransactionDialog();
+            StateHasChanged();
+            return true;
+        }
+
+        if (ViewModel.CheckHelper.IsEditFormVisible)
+        {
+            ViewModel.CheckHelper.IsEditFormVisible = false;
+            StateHasChanged();
+            return true;
+        }
+
+        if (ViewModel.IsEkstreOptionVisible)
+        {
+            ViewModel.IsEkstreOptionVisible = false;
+            StateHasChanged();
+            return true;
+        }
+
+        if (ViewModel.SelectedCari != null)
+        {
+            ViewModel.SelectedCari = null;
+            ViewModel.SelectedHareket = null;
+            StateHasChanged();
+            return true;
+        }
+
+        await Task.CompletedTask;
+        return false;
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e) {
+        if (e.Key == "Enter") await ViewModel.LoadCarilerAsync();
+    }
+
+    private async Task OnSlipFileChanged(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(10 * 1024 * 1024).ReadAsync(buffer);
+            ViewModel.KkSlipPath = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnCheckFrontFileChanged(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(10 * 1024 * 1024).ReadAsync(buffer);
+            ViewModel.CheckHelper.EditGorselYoluOn = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnCheckBackFileChanged(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(10 * 1024 * 1024).ReadAsync(buffer);
+            ViewModel.CheckHelper.EditGorselYoluArka = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmDeleteCari() {
+        if (ViewModel.SelectedCari == null) return;
+        
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Silme Onayı",
+            $"{ViewModel.SelectedCari.Unvan} ünvanlı cariyi silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+
+        if (confirm == true)
+        {
+            await ViewModel.DeleteCariAsync();
+            Snackbar.Add("Cari kart başarıyla silindi", Severity.Success);
+        }
+    }
+
+    private async Task OpenAddDialog()
+    {
+        var parameters = new DialogParameters { ["Model"] = new CariKart() };
+        var options = new DialogOptions { NoHeader = true, MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<CariKartDialog>("Yeni Cari Kart", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            await ViewModel.LoadCarilerAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenEditDialog()
+    {
+        if (ViewModel.SelectedCari == null) return;
+        var parameters = new DialogParameters { ["Model"] = ViewModel.SelectedCari };
+        var options = new DialogOptions { NoHeader = true, MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<CariKartDialog>("Cari Kart Düzenle", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled)
+        {
+            await ViewModel.LoadCarilerAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmDeleteMovement(CariHareket? hareket)
+    {
+        if (hareket == null) return;
+        bool? confirm = await DialogService.ShowMessageBox(
+            "İşlem Silinecek", 
+            "Bu işlemi silmek istediğinize emin misiniz? (Fatura ise fatura da silinecektir)", 
+            yesText: "Sil", cancelText: "Vazgeç");
+
+        if (confirm == true)
+        {
+            ViewModel.SelectedHareket = hareket;
+            await ViewModel.DeleteTransactionAsync();
+            Snackbar.Add("İşlem başarıyla silindi", Severity.Success);
+        }
+    }
+}

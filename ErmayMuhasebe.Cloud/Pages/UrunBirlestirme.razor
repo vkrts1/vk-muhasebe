@@ -1,0 +1,377 @@
+@page "/urun-birlestirme"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Repositories
+@inject ISnackbar Snackbar
+@inject IUnitOfWork Uow
+
+<div class="desktop-sync-container">
+    <!-- Ambient Background Glows -->
+    <div class="bg-glow bg-glow-blue"></div>
+
+    <div class="content-wrapper">
+        <!-- Header Section -->
+        <div class="header-section mb-10">
+            <div class="header-icon-box pink">
+                <MudIcon Icon="@Icons.Material.Filled.GridOn" Style="font-size: 26px; color: #EC4899;" />
+            </div>
+            <div class="header-content">
+                <h1 class="page-title">Ürün Birleştirme Sihirbazı</h1>
+                <p class="page-subtitle">Mükerrer açılmış stok kartlarını tüm hareketleriyle birlikte tek bir kartta birleştirin.</p>
+            </div>
+        </div>
+
+        <!-- Wizard Grid -->
+        <div class="merge-wizard-grid">
+            <!-- Source Card -->
+            <div class="merge-card flex-col">
+                <h3 class="card-label color-red">KAYNAK ÜRÜN (SİLİNECEK)</h3>
+                <p class="card-desc">Bu karttaki tüm miktarlar ve hareketler aktarılacak ve bu kart silinecektir.</p>
+                
+                <div class="mb-4 position-relative w-100" style="position: relative; width: 100%; display: block;">
+                    <MudAutocomplete T="StokKart" 
+                                     Placeholder="Silinecek Ürünü Ara..." 
+                                     Value="_kaynakStok" 
+                                     ValueChanged="OnKaynakChanged"
+                                     SearchFunc="@SearchStok"
+                                     ToStringFunc="@(s => s?.StokAdi)"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Class="custom-search-input"
+                                     AnchorOrigin="Origin.BottomLeft"
+                                     TransformOrigin="Origin.TopLeft"
+                                     Dense="true" />
+                </div>
+
+                <div class="detail-display-box @(_kaynakStok == null ? "empty" : "")">
+                    @if (_kaynakStok != null)
+                    {
+                        <div class="stok-info">
+                            <span class="stok-code">@_kaynakStok.StokKodu</span>
+                            <h4 class="stok-name">@_kaynakStok.StokAdi</h4>
+                            <span class="stok-qty red-text">Mevcut: @_kaynakStok.Miktar Adet</span>
+                        </div>
+                    }
+                </div>
+                
+                <!-- Left Footer inside card -->
+                <div class="status-box mt-auto">
+                    <span class="status-lbl">BİRLEŞTİRME DURUMU</span>
+                    <div class="status-msg">@_statusMessage</div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="mid-arrow">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                </svg>
+            </div>
+
+            <!-- Destination Card -->
+            <div class="merge-card flex-col">
+                <h3 class="card-label color-green">HEDEF ÜRÜN (KALACAK)</h3>
+                <p class="card-desc">Tüm veriler bu kart altında toplanacak ve bu kart sistemde kalacaktır.</p>
+
+                <div class="mb-4 position-relative w-100" style="position: relative; width: 100%; display: block;">
+                    <MudAutocomplete T="StokKart" 
+                                     Placeholder="Kalacak Ürünü Ara..." 
+                                     Value="_hedefStok" 
+                                     ValueChanged="OnHedefChanged"
+                                     SearchFunc="@SearchStok"
+                                     ToStringFunc="@(s => s?.StokAdi)"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Class="custom-search-input"
+                                     AnchorOrigin="Origin.BottomLeft"
+                                     TransformOrigin="Origin.TopLeft"
+                                     Dense="true" />
+                </div>
+
+                <div class="detail-display-box @(_hedefStok == null ? "empty" : "")">
+                    @if (_hedefStok != null)
+                    {
+                        <div class="stok-info">
+                            <span class="stok-code">@_hedefStok.StokKodu</span>
+                            <h4 class="stok-name">@_hedefStok.StokAdi</h4>
+                            <span class="stok-qty green-text">Mevcut: @_hedefStok.Miktar Adet</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Right Footer inside card -->
+                <div class="mt-auto d-flex justify-end">
+                    <MudButton Variant="Variant.Filled" 
+                               Class="merge-btn"
+                               OnClick="StartMergeProcess"
+                               Disabled="@(_kaynakStok == null || _hedefStok == null || _isProcessing)">
+                        @(_isProcessing ? "İŞLENİYOR..." : "İŞLEMİ BAŞLAT")
+                    </MudButton>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .desktop-sync-container {
+        padding: 30px !important;
+        background-color: #0d1117;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .bg-glow {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(120px);
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.15;
+    }
+
+    .bg-glow-blue {
+        width: 500px;
+        height: 500px;
+        background: #3B82F6;
+        top: 30%;
+        left: -200px;
+    }
+
+    .content-wrapper {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    /* Header Styling */
+    .header-section {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .header-icon-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-icon-box.pink { background: rgba(236, 72, 153, 0.15); }
+
+    .page-title { font-size: 28px; font-weight: 700; margin: 0; }
+    .page-subtitle { font-size: 14px; color: #9ca3af; margin: 4px 0 0 0; }
+
+    /* Card Styling */
+    .merge-wizard-grid {
+        display: grid;
+        grid-template-columns: 1fr Auto 1fr;
+        gap: 0;
+        align-items: start;
+        margin-top: 10px;
+    }
+
+    .merge-card {
+        background: #161b22;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 40px;
+        min-height: 540px;
+    }
+    
+    .flex-col {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .card-label {
+        font-size: 16px;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+    }
+
+    .card-label.color-red { color: #ef4444; }
+    .card-label.color-green { color: #10b981; }
+
+    .card-desc {
+        font-size: 12px;
+        color: #9ca3af;
+        text-align: center;
+        margin-bottom: 25px;
+        padding: 0 10%;
+    }
+
+    /* Input Styling */
+    .custom-search-input .mud-input-outlined {
+        background: #111821 !important;
+        border-radius: 24px !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .custom-search-input .mud-input-slot {
+        font-size: 13px !important;
+    }
+
+    .detail-display-box {
+        background: #1c2128;
+        border-radius: 15px;
+        height: 240px;
+        margin-top: 10px;
+        display: flex;
+        align-items: flex-start;
+        padding: 25px;
+        transition: all 0.3s;
+    }
+
+    .detail-display-box.empty {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .stok-info { width: 100%; }
+    .stok-code { font-size: 12px; color: #9ca3af; display: block; margin-bottom: 5px; }
+    .stok-name { font-size: 20px; font-weight: 700; color: white; margin-bottom: 12px; line-height: 1.2; }
+    .stok-qty { font-size: 15px; font-weight: 700; }
+    .red-text { color: #ef4444; }
+    .green-text { color: #10b981; }
+
+    /* Middle Arrow */
+    .mid-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 180px 30px 0 30px;
+    }
+
+    /* Footer Element Styles */
+    .status-box { display: flex; flex-direction: column; gap: 4px; }
+    .status-lbl { font-size: 11px; font-weight: 700; color: #6b7280; letter-spacing: 0.5px; }
+    .status-msg { font-size: 16px; font-weight: 600; color: white; margin-top: 4px; }
+
+    .merge-btn {
+        background: linear-gradient(to right, #EC4899, #00d2ff) !important;
+        color: white !important;
+        height: 48px !important;
+        padding: 0 45px !important;
+        border-radius: 24px !important;
+        font-weight: 900 !important;
+        font-size: 14px !important;
+        box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2) !important;
+        text-transform: none !important;
+        letter-spacing: 0.5px !important;
+        border: none !important;
+    }
+
+    .merge-btn:hover { background: linear-gradient(to right, #d61f69, #00bced) !important; }
+    .merge-btn:disabled { opacity: 0.5; background: #374151 !important; box-shadow: none !important; }
+
+    @@media (max-width: 1000px) {
+        .merge-wizard-grid { grid-template-columns: 1fr; }
+        .mid-arrow { transform: rotate(90deg); padding: 20px 0; }
+        .merge-card { min-height: auto; gap: 40px; }
+    }
+</style>
+
+@code {
+    private StokKart? _kaynakStok;
+    private StokKart? _hedefStok;
+    private List<StokKart> _allStoklar = new();
+    private string _statusMessage = "Birleştirilecek ürünleri seçin.";
+    private bool _isProcessing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _allStoklar = await Uow.Stoklar.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Hata: Ürünler yüklenemedi. {ex.Message}";
+            Snackbar.Add($"Veri yükleme hatası: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Task<IEnumerable<StokKart>> SearchStok(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value)) return Task.FromResult<IEnumerable<StokKart>>(_allStoklar);
+        return Task.FromResult(_allStoklar.Where(x => (x.StokAdi ?? "").Contains(value, StringComparison.OrdinalIgnoreCase) || 
+                                      (x.StokKodu ?? "").Contains(value, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private void OnKaynakChanged(StokKart stok)
+    {
+        _kaynakStok = stok;
+        CheckValidity();
+    }
+
+    private void OnHedefChanged(StokKart stok)
+    {
+        _hedefStok = stok;
+        CheckValidity();
+    }
+
+    private void CheckValidity()
+    {
+        if (_kaynakStok != null && _hedefStok != null)
+        {
+            if (_kaynakStok.Id == _hedefStok.Id)
+            {
+                _statusMessage = "Hata: Aynı ürünler seçilemez!";
+            }
+            else
+            {
+                _statusMessage = "İşlem başlatılmaya hazır.";
+            }
+        }
+        else
+        {
+            _statusMessage = "Birleştirilecek ürünleri seçin.";
+        }
+    }
+
+    private async Task StartMergeProcess()
+    {
+        if (_kaynakStok == null || _hedefStok == null || _kaynakStok.Id == _hedefStok.Id) return;
+
+        _isProcessing = true;
+        _statusMessage = "Birleştirme başlatıldı...";
+        StateHasChanged();
+
+        try
+        {
+            await Uow.Stoklar.MergeStokAsync(_kaynakStok.Id, _hedefStok.Id);
+            
+            _statusMessage = "İşlem Başarılı! Ürünler birleştirildi.";
+            Snackbar.Add("Ürünler başarıyla birleştirildi.", Severity.Success);
+            
+            _kaynakStok = null;
+            _hedefStok = null;
+            _allStoklar = await Uow.Stoklar.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = "Hata: " + ex.Message;
+            Snackbar.Add("Hata: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+}

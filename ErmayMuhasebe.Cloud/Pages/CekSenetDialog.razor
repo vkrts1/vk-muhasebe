@@ -1,0 +1,172 @@
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="6">
+                <MudSelect T="string" Label="Kayıt Türü" @bind-Value="Type" Variant="Variant.Outlined" Disabled="true" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
+                    <MudSelectItem Value='@("Cek")'>Çek Girişi</MudSelectItem>
+                    <MudSelectItem Value='@("Senet")'>Senet Girişi</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6">
+                <MudTextField T="string" Label="Portföy No" @bind-Value="PortfoyNo" Variant="Variant.Outlined" ReadOnly="true" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudAutocomplete T="CariKart" Label="Müşteri (Cari)" @bind-Value="SelectedCari" 
+                                 SearchFunc="@SearchCaris" ToStringFunc="@(c => c?.Unvan ?? "")"
+                                 Variant="Variant.Outlined" Required="true" 
+                                 AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter"
+                                 AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" />
+            </MudItem>
+
+            @if (Type == "Cek")
+            {
+                <MudItem xs="6">
+                    <MudTextField T="string" Label="Çek No" @bind-Value="CekModel.CekNo" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker Label="Vade Tarihi" @bind-Date="_vadeTarihi" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField T="string" Label="Banka" @bind-Value="CekModel.Banka" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField T="string" Label="Şube" @bind-Value="CekModel.Sube" Variant="Variant.Outlined" />
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="6">
+                    <MudTextField T="string" Label="Senet No" @bind-Value="SenetModel.SenetNo" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker Label="Vade Tarihi" @bind-Date="_vadeTarihi" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField T="string" Label="Asıl Borçlu" @bind-Value="SenetModel.Borclu" Variant="Variant.Outlined" />
+                </MudItem>
+            }
+
+            <MudItem xs="12">
+                <MudNumericField T="decimal" Label="Tutar" @bind-Value="Tutar" Variant="Variant.Outlined" Required="true" 
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" HideSpinButtons="true" />
+            </MudItem>
+            
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Açıklama" @bind-Value="Aciklama" Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string Type { get; set; } = "Cek";
+    [Parameter] public object? Model { get; set; }
+
+    private Cek CekModel = new Cek();
+    private Senet SenetModel = new Senet();
+    private CariKart? SelectedCari;
+    private decimal Tutar = 0;
+    private string PortfoyNo = "";
+    private string Aciklama = "";
+    private DateTime? _vadeTarihi = DateTime.Now.AddMonths(1);
+
+    private List<CariKart> _allCaris = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allCaris = await DbService.GetCarilerAsync();
+        
+        if (Model != null)
+        {
+            if (Type == "Cek" && Model is Cek c)
+            {
+                CekModel = c;
+                Tutar = c.Tutar;
+                PortfoyNo = c.PortfoyNo ?? "";
+                Aciklama = c.Aciklama ?? "";
+                _vadeTarihi = c.VadeTarihi;
+                SelectedCari = _allCaris.FirstOrDefault(x => x.Id == c.CariId);
+            }
+            else if (Type == "Senet" && Model is Senet s)
+            {
+                SenetModel = s;
+                Tutar = s.Tutar;
+                PortfoyNo = s.PortfoyNo ?? "";
+                Aciklama = s.Aciklama ?? "";
+                _vadeTarihi = s.VadeTarihi;
+                SelectedCari = _allCaris.FirstOrDefault(x => x.Id == s.CariId);
+            }
+        }
+        
+        if (string.IsNullOrEmpty(PortfoyNo))
+        {
+            PortfoyNo = (Type == "Cek" ? "P-" : "S-") + new Random().Next(1000, 9999);
+        }
+    }
+
+    private async Task<IEnumerable<CariKart>> SearchCaris(string value, CancellationToken token)
+    {
+        await Task.Yield();
+        if (string.IsNullOrEmpty(value)) return _allCaris;
+        return _allCaris.Where(x => x.Unvan?.Contains(value, StringComparison.OrdinalIgnoreCase) == true);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        if (SelectedCari == null)
+        {
+            Snackbar.Add("Lütfen bir müşteri seçin.", Severity.Warning);
+            return;
+        }
+
+        if (Tutar <= 0)
+        {
+            Snackbar.Add("Lütfen geçerli bir tutar giriniz.", Severity.Warning);
+            return;
+        }
+
+        if (Type == "Cek")
+        {
+            if (string.IsNullOrWhiteSpace(CekModel.CekNo)) { Snackbar.Add("Çek No boş olamaz.", Severity.Warning); return; }
+            CekModel.CariId = SelectedCari.Id;
+            CekModel.CariUnvan = SelectedCari.Unvan;
+            CekModel.Tutar = Tutar;
+            CekModel.PortfoyNo = PortfoyNo;
+            CekModel.VadeTarihi = _vadeTarihi ?? DateTime.Now.AddMonths(1);
+            CekModel.Aciklama = Aciklama;
+            CekModel.Durum = "Portföyde";
+            await DbService.SaveCekAsync(CekModel);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(SenetModel.SenetNo)) { Snackbar.Add("Senet No boş olamaz.", Severity.Warning); return; }
+            SenetModel.CariId = SelectedCari.Id;
+            SenetModel.CariUnvan = SelectedCari.Unvan;
+            SenetModel.Tutar = Tutar;
+            SenetModel.PortfoyNo = PortfoyNo;
+            SenetModel.VadeTarihi = _vadeTarihi ?? DateTime.Now.AddMonths(1);
+            SenetModel.Aciklama = Aciklama;
+            SenetModel.Durum = "Portföyde";
+            if (string.IsNullOrEmpty(SenetModel.Borclu)) SenetModel.Borclu = SelectedCari.Unvan;
+            await DbService.SaveSenetAsync(SenetModel);
+        }
+
+        Snackbar.Add($"{ (Type == "Cek" ? "Çek" : "Senet") } girişi yapıldı.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

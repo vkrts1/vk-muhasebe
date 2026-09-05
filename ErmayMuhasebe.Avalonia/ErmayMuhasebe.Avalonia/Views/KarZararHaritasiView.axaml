@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.KarZararHaritasiView"
+             x:DataType="vm:KarZararHaritasiViewModel">
+  <Grid RowDefinitions="Auto, Auto, *" Margin="30">
+    <!-- Header -->
+    <StackPanel Spacing="5" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#2622C55E">
+          <ic:SymbolIcon Symbol="Map" Foreground="#22C55E" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Kâr/Zarar Isı Haritası" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Şehir bazlı kârlılık dağılımı ve bölgesel ticaret hacmi analizi." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <!-- Top Stats -->
+    <Grid Grid.Row="1" ColumnDefinitions="*, *, *, *" Margin="0,0,0,20">
+        <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="15" Padding="20" Margin="0,0,10,0" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <StackPanel Spacing="5">
+                <TextBlock Text="TOPLAM SATIŞ" FontSize="11" Foreground="#94A3B8" FontWeight="Bold"/>
+                <TextBlock Text="{Binding TotalSales, StringFormat='{}{0:N2} ₺'}" FontSize="22" FontWeight="Black" Foreground="#60A5FA"/>
+            </StackPanel>
+        </Border>
+        <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="15" Padding="20" Margin="10,0" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <StackPanel Spacing="5">
+                <TextBlock Text="TOPLAM MALİYET" FontSize="11" Foreground="#94A3B8" FontWeight="Bold"/>
+                <TextBlock Text="{Binding TotalCost, StringFormat='{}{0:N2} ₺'}" FontSize="22" FontWeight="Black" Foreground="#F59E0B"/>
+            </StackPanel>
+        </Border>
+        <Border Grid.Column="2" Background="{DynamicResource PanelBrush}" CornerRadius="15" Padding="20" Margin="10,0" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <StackPanel Spacing="5">
+                <TextBlock Text="NET KÂR" FontSize="11" Foreground="#94A3B8" FontWeight="Bold"/>
+                <TextBlock Text="{Binding TotalProfit, StringFormat='{}{0:N2} ₺'}" FontSize="22" FontWeight="Black" Foreground="#22C55E"/>
+            </StackPanel>
+        </Border>
+        <Border Grid.Column="3" Background="{DynamicResource PanelBrush}" CornerRadius="15" Padding="20" Margin="10,0,0,0" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <StackPanel Spacing="5">
+                <TextBlock Text="AKTİF ŞEHİR" FontSize="11" Foreground="#94A3B8" FontWeight="Bold"/>
+                <TextBlock Text="{Binding Stats.Count}" FontSize="22" FontWeight="Black" Foreground="White"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*, 350">
+        <!-- Visual Presentation (Heatmap Representation) -->
+        <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Margin="0,0,15,0" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <Grid>
+               <TextBlock Text="Şehir Bazlı Isı Dağılımı" Foreground="#33FFFFFF" FontSize="40" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.1"/>
+               
+               <ItemsControl ItemsSource="{Binding Stats}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="120" Height="100" Margin="10" CornerRadius="12" BorderThickness="1" BorderBrush="#22FFFFFF">
+                            <Border.Background>
+                                <SolidColorBrush Color="#22C55E" Opacity="0.1"/>
+                            </Border.Background>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="5">
+                                <TextBlock Text="{Binding Sehir}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding Profit, StringFormat='{}{0:N0} ₺'}" FontSize="16" FontWeight="Black" Foreground="#22C55E" HorizontalAlignment="Center"/>
+                                <Border Height="4" Width="60" CornerRadius="2" Background="#0B0D12">
+                                    <Border HorizontalAlignment="Left" Height="4" Background="#22C55E" Width="40"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+               </ItemsControl>
+            </Grid>
+        </Border>
+
+        <!-- Sidebar List -->
+        <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="20" BorderBrush="#22FFFFFF" BorderThickness="1">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="ŞEHİR SIRALAMASI" FontSize="12" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,15"/>
+                
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Stats}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="0,10" BorderBrush="#11FFFFFF" BorderThickness="0,0,0,1">
+                                    <Grid ColumnDefinitions="*, Auto">
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="{Binding Sehir}" FontWeight="SemiBold" FontSize="14"/>
+                                            <ProgressBar Value="{Binding Profit}" Minimum="0" Maximum="{Binding $parent[UserControl].DataContext.MaxProfit}" 
+                                                         Height="4" Foreground="#22C55E" Background="#0B0D12" BorderThickness="0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
+                                            <TextBlock Text="{Binding Profit, StringFormat='{}{0:N2} ₺'}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#22C55E"/>
+                                            <TextBlock Text="{Binding SatisToplam, StringFormat='Satış: {0:N0}'}" HorizontalAlignment="Right" FontSize="10" Foreground="#64748B"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+  </Grid>
+</UserControl>

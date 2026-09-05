@@ -1,0 +1,101 @@
+@page "/en-cok-satanlar"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+    <div class="d-flex align-center justify-space-between mb-4">
+        <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary">En Çok Satan Ürünler</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+            @if(liste != null && liste.Any())
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                    Yazdır / PDF
+                </MudButton>
+            }
+        </MudStack>
+    </div>
+
+    <MudPaper Class="pa-4 mb-3">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="Yukle">Analiz Et</MudButton>
+    </MudPaper>
+
+    @if(liste != null)
+    {
+        <MudTable Items="@liste" Hover="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Sıra</MudTh>
+                <MudTh>Ürün Adı</MudTh>
+                <MudTh Style="text-align:right">Satış Miktarı</MudTh>
+                <MudTh Style="text-align:right">Toplam Tutar</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@(liste.IndexOf(context) + 1)</MudTd>
+                <MudTd>@context.UrunAdi</MudTd>
+                <MudTd Style="text-align:right">@context.Miktar.ToString("N0")</MudTd>
+                <MudTd Style="text-align:right">@context.Tutar.ToString("C2")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+
+    @code {
+        private List<SatisOzet>? liste;
+
+        private async Task Yukle()
+        {
+            var faturalar = await DbService.GetFaturalarAsync();
+            var satislar = faturalar.Where(x => x.Tur == "Satis" || x.Tur == "Satış").ToList();
+            var result = new List<SatisOzet>();
+
+            foreach(var f in satislar)
+            {
+                var detaylar = await DbService.GetFaturaDetaylarAsync(f.Id);
+                foreach(var d in detaylar)
+                {
+                    var stokAdi = d.StokAdi ?? "İsimsiz Ürün";
+                    var existing = result.FirstOrDefault(x => x.UrunAdi == stokAdi);
+                    if (existing == null)
+                    {
+                        result.Add(new SatisOzet { UrunAdi = stokAdi, Miktar = d.Miktar, Tutar = d.Tutar });
+                    }
+                    else
+                    {
+                        existing.Miktar += d.Miktar;
+                        existing.Tutar += d.Tutar;
+                    }
+                }
+            }
+
+            liste = result.OrderByDescending(x => x.Miktar).Take(20).ToList();
+        }
+
+        private async Task PrintReport()
+        {
+            if (liste == null) return;
+            try
+            {
+                var headers = new[] { "Sıra", "Ürün Adı", "Satış Miktarı", "Toplam Tutar" };
+                var rows = liste.Select((x, index) => new[] 
+                { 
+                    (index + 1).ToString(),
+                    x.UrunAdi ?? "İsimsiz", 
+                    x.Miktar.ToString("N2"),
+                    x.Tutar.ToString("C2")
+                }).ToList();
+                
+                var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("En Çok Satan Ürünler", headers, rows);
+                await FileService.SaveAndOpenFileAsync("EnCokSatanlar.pdf", pdf, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+            }
+        }
+
+        class SatisOzet { public string UrunAdi { get; set; } = ""; public double Miktar { get; set; } public decimal Tutar { get; set; } }
+    }

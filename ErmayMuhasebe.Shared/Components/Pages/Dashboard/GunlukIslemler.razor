@@ -1,0 +1,38 @@
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Models
+@inject DatabaseService DbService
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-4">Günlük İşlemler</MudText>
+    <MudList T="string" Dense="true">
+        @if (islemler == null || !islemler.Any())
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Bugün henüz işlem yok.</MudText>
+        }
+        else
+        {
+            @foreach (var item in islemler)
+            {
+                <MudListItem T="string" Icon="@GetIcon(item.Tur ?? "")">
+                    <div class="d-flex justify-space-between">
+                        <MudText Typo="Typo.body2">@item.CariUnvan</MudText>
+                        <MudText Typo="Typo.body2"  Color="@GetColor(item.Tur ?? "")">@item.GenelToplam.ToString("C2")</MudText>
+                    </div>
+                </MudListItem>
+            }
+        }
+    </MudList>
+</MudPaper>
+
+@code {
+    private List<Fatura> islemler = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await DbService.GetFaturalarAsync();
+        islemler = all.Where(f => f.Tarih.Date == DateTime.Today).OrderByDescending(f => f.Id).Take(5).ToList();
+    }
+
+    private string GetIcon(string tur) => tur == "Satis" ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward;
+    private Color GetColor(string tur) => tur == "Satis" ? Color.Success : Color.Error;
+}

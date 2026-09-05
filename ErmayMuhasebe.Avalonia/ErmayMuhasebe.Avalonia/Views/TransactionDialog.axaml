@@ -1,0 +1,265 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:models="clr-namespace:ErmayMuhasebe.Models;assembly=ErmayMuhasebe.Shared"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="800"
+             x:Class="ErmayMuhasebe.Avalonia.Views.TransactionDialog"
+             x:DataType="vm:CariListViewModel">
+
+    <UserControl.Resources>
+        <conv:ValueToTextConverter x:Key="ValueToTextConverter"/>
+    </UserControl.Resources>
+
+    <Grid Background="#CC000000">
+       <Border Background="#080A0C" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="16" 
+               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="15"
+               MinWidth="450" MaxWidth="600" MinHeight="400" MaxHeight="680"
+               Padding="0" BoxShadow="0 10 40 0 #AA000000">
+          <Grid RowDefinitions="Auto, *">
+             
+               <!-- Header -->
+               <Border Grid.Row="0" Background="#050607" Padding="20,12" CornerRadius="16,16,0,0">
+                  <Grid ColumnDefinitions="Auto, *, Auto">
+                     <Border Grid.Column="0" Width="40" Height="40" CornerRadius="8" Background="{DynamicResource GradientAccentBrush}" Margin="0,0,12,0">
+                         <ic:SymbolIcon Symbol="BuildingBank" FontSize="22" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                     </Border>
+                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                         <TextBlock Text="{Binding IsHavaleEFT, Converter={StaticResource ValueToTextConverter}, ConverterParameter='Yeni Havale / EFT İşlemi|Yeni Kredi Kartı İşlemi'}" 
+                                    IsVisible="{Binding !IsStandardTransaction}" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                         <TextBlock Text="{Binding TransactionTitle}" IsVisible="{Binding IsStandardTransaction}" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                         <TextBlock Text="İşlem detaylarını aşağıdan yönetebilirsiniz" FontSize="11" Foreground="#AAA" Margin="0,2,0,0"/>
+                     </StackPanel>
+                     <Button Grid.Column="2" Command="{Binding CloseTransactionDialogCommand}" 
+                             Background="#0E1113" Width="30" Height="30" CornerRadius="15" Padding="0" VerticalAlignment="Top">
+                         <ic:SymbolIcon Symbol="Dismiss" FontSize="14" Foreground="#DDD"/>
+                     </Button>
+                  </Grid>
+               </Border>
+
+              <!-- Main Content (Single StackPanel to prevent overlapping) -->
+              <StackPanel Grid.Row="1" Margin="20,12" Spacing="6" VerticalAlignment="Stretch">
+                  
+                  <!-- Validation Messages for Transactions -->
+                  <StackPanel Margin="0,0,0,4" Spacing="4" IsVisible="{Binding SuccessMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                     <Border Background="#1A51CF66" BorderBrush="#4051CF66" BorderThickness="1" CornerRadius="8" Padding="12,6">
+                         <StackPanel Orientation="Horizontal" Spacing="8">
+                             <ic:SymbolIcon Symbol="CheckmarkCircle" Foreground="#51CF66" FontSize="16"/>
+                             <TextBlock Text="{Binding SuccessMessage}" Foreground="#51CF66" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                         </StackPanel>
+                     </Border>
+                  </StackPanel>
+                  
+                  <StackPanel Margin="0,0,0,4" Spacing="4" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                     <Border Background="#1AFF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1" CornerRadius="8" Padding="12,6">
+                         <StackPanel Orientation="Horizontal" Spacing="8">
+                             <ic:SymbolIcon Symbol="DismissCircle" Foreground="#FF6B6B" FontSize="16"/>
+                             <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                         </StackPanel>
+                     </Border>
+                  </StackPanel>
+                  
+                  <StackPanel Margin="0,0,0,4" Spacing="4" IsVisible="{Binding WarningMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                     <Border Background="#1AFFA500" BorderBrush="#40FFA500" BorderThickness="1" CornerRadius="8" Padding="12,6">
+                         <StackPanel Orientation="Horizontal" Spacing="8">
+                             <ic:SymbolIcon Symbol="Warning" Foreground="#FFA500" FontSize="16"/>
+                             <TextBlock Text="{Binding WarningMessage}" Foreground="#FFA500" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                         </StackPanel>
+                     </Border>
+                  </StackPanel>
+
+                  <!-- Method Selection -->
+                  <StackPanel Spacing="3" Margin="0,0,0,8">
+                        <TextBlock Text="İşlem Yöntemi" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                        <ComboBox SelectedItem="{Binding TransactionMethod}" HorizontalAlignment="Stretch" 
+                                  Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center">
+                            <sys:String>Nakit</sys:String>
+                            <sys:String>Kredi Kartı</sys:String>
+                            <sys:String>Havale/EFT</sys:String>
+                            <sys:String>Çek</sys:String>
+                        </ComboBox>
+                  </StackPanel>
+                   
+                   <!-- STANDARD FORM (Nakit) -->
+                   <StackPanel IsVisible="{Binding IsStandardTransaction}" Spacing="8">
+                      <!-- Row 1: Date & Amount -->
+                      <Grid ColumnDefinitions="*, 15, *">
+                         <StackPanel Spacing="3">
+                            <TextBlock Text="İşlem Tarihi" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                            <TextBox Text="{Binding TransactionDateStr}" Watermark="GG.AA.YYYY" 
+                                     Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF"
+                                     VerticalContentAlignment="Center"/>
+                         </StackPanel>
+      
+                         <StackPanel Grid.Column="2" Spacing="3">
+                            <TextBlock Text="Tutar" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                             <NumericUpDown Value="{Binding TransactionAmount}" Minimum="0" ShowButtonSpinner="False"
+                                            Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF"
+                                            VerticalContentAlignment="Center"/>
+                         </StackPanel>
+                      </Grid>
+      
+                      <!-- Row 2: Account Selection -->
+                      <StackPanel Spacing="3" IsVisible="{Binding IsKasaSelectionVisible}">
+                         <TextBlock Text="İşlem Hesabı / Kasa" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                         <ComboBox ItemsSource="{Binding AvailableKasalar}" 
+                                   SelectedItem="{Binding SelectedKasaForTransaction}"
+                                   HorizontalAlignment="Stretch" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center">
+                             <ComboBox.ItemTemplate>
+                                 <DataTemplate x:DataType="models:BankaKart">
+                                     <Grid ColumnDefinitions="Auto, *, Auto">
+                                         <ic:SymbolIcon Symbol="BuildingBank" FontSize="14" Foreground="#60A5FA" Margin="0,0,8,0" IsVisible="{Binding KartTuru, Converter={x:Static ObjectConverters.NotEqual}, ConverterParameter='Kasa'}"/>
+                                         <ic:SymbolIcon Symbol="Money" FontSize="14" Foreground="#10B981" Margin="0,0,8,0" IsVisible="{Binding KartTuru, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Kasa'}"/>
+                                         <TextBlock Grid.Column="1" Text="{Binding BankaAdi}" VerticalAlignment="Center" FontSize="12"/>
+                                         <TextBlock Grid.Column="2" Text="{Binding GuncelBakiye, StringFormat='{}{0:N2} ₺'}" Foreground="#888" FontSize="10" VerticalAlignment="Center"/>
+                                     </Grid>
+                                 </DataTemplate>
+                             </ComboBox.ItemTemplate>
+                         </ComboBox>
+                      </StackPanel>
+
+                     <!-- Row: Forwarded Supplier (For Cash) -->
+                     <StackPanel Spacing="3" IsVisible="{Binding SelectedCari.Grup, Converter={x:Static ObjectConverters.NotEqual}, ConverterParameter='Tedarikçi'}">
+                         <TextBlock Text="Yönlendirilen Tedarikçi (Opsiyonel)" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                         <Grid ColumnDefinitions="*, 8, Auto">
+                             <TextBox Text="{Binding KkYonlendirilenTedarikci}" Watermark="Seçiniz (Opsiyonel)..." IsReadOnly="True" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                             <Button Grid.Column="2" Command="{Binding OpenTedarikciSecimDialogCommand}" Width="80" Height="34" Classes="SideButton Info" CornerRadius="18" Padding="0">
+                                 <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                     <ic:SymbolIcon Symbol="PeopleSearch" FontSize="14"/> 
+                                     <TextBlock Text="Seç" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                 </StackPanel>
+                             </Button>
+                         </Grid>
+                     </StackPanel>
+
+                      <!-- Row 3: Description -->
+                      <StackPanel Spacing="3">
+                         <Grid ColumnDefinitions="*, Auto">
+                             <TextBlock Text="Açıklama" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0" VerticalAlignment="Center"/>
+                             <CheckBox IsChecked="{Binding IsAcilisFisi}" Grid.Column="1" Content="Açılış Fişi (Devir)" FontSize="11" Foreground="#60A5FA" Padding="8,0,0,0" VerticalAlignment="Center" Margin="10,0,0,0" HorizontalAlignment="Right"/>
+                         </Grid>
+                         <TextBox Text="{Binding TransactionDescription}" Watermark="İşlem hakkında kısa bir açıklama..." 
+                                  Height="45" AcceptsReturn="True" TextWrapping="Wrap" 
+                                  CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF"
+                                  VerticalContentAlignment="Top" Padding="10"/>
+                      </StackPanel>
+                   </StackPanel>
+                   
+                   <!-- KREDI KARTI / HAVALE EFT FORM (Shared Layout) -->
+                   <StackPanel IsVisible="{Binding !IsStandardTransaction}" Spacing="6">
+                        <!-- Row 1: Date & Amount -->
+                        <Grid ColumnDefinitions="*, 15, *">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="İşlem Tarihi" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                                <TextBox Text="{Binding TransactionDateStr}" Watermark="GG.AA.YYYY" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="3">
+                                <TextBlock Text="Tutar (₺)" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                                <NumericUpDown Value="{Binding TransactionAmount}" ShowButtonSpinner="False" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+      
+                        <!-- Row 2: Customer Selection -->
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Müşteri (Tahsil Edilen)" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                            <Grid ColumnDefinitions="*, 8, Auto">
+                                <TextBox Text="{Binding SelectedCari.Unvan}" IsReadOnly="True" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center" Opacity="0.8"/>
+                                <Button Grid.Column="2" Command="{Binding OpenMusteriSecimDialogCommand}" Width="80" Height="34" Classes="SideButton Secondary" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="18" Padding="0">
+                                    <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                        <ic:SymbolIcon Symbol="Search" FontSize="14"/>
+                                        <TextBlock Text="Seç" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                       
+                        <!-- Row 3: Bank & Card/IBAN -->
+                        <Grid ColumnDefinitions="*, 15, *">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Banka Adı" IsVisible="{Binding IsHavaleEFT}" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                                <TextBlock Text="Banka" IsVisible="{Binding IsKrediKarti}" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                                <TextBox Text="{Binding KkBanka}" Watermark="{Binding IsHavaleEFT, Converter={StaticResource ValueToTextConverter}, ConverterParameter='Örn: Garanti BBVA|Banka adı...'}" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="3">
+                                <TextBlock Text="Hesap No / IBAN" IsVisible="{Binding IsHavaleEFT}" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                                <TextBlock Text="Kart No (Son 4)" IsVisible="{Binding IsKrediKarti}" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                                <TextBox Text="{Binding KkKartNo}" Watermark="{Binding IsHavaleEFT, Converter={StaticResource ValueToTextConverter}, ConverterParameter='TR...|XXXX'}" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                        
+                        <!-- Row 4: Forwarded Supplier -->
+                        <StackPanel Spacing="3" IsVisible="{Binding SelectedCari.Grup, Converter={x:Static ObjectConverters.NotEqual}, ConverterParameter='Tedarikçi'}">
+                            <TextBlock Text="Yönlendirilen Tedarikçi (Opsiyonel)" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                            <Grid ColumnDefinitions="*, 8, Auto">
+                                <TextBox Text="{Binding KkYonlendirilenTedarikci}" Watermark="Seçiniz (Opsiyonel)..." IsReadOnly="True" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                                <Button Grid.Column="2" Command="{Binding OpenTedarikciSecimDialogCommand}" Width="80" Height="34" Classes="SideButton Info" CornerRadius="18" Padding="0">
+                                    <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                        <ic:SymbolIcon Symbol="PeopleSearch" FontSize="14"/> 
+                                        <TextBlock Text="Seç" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                       
+                        <!-- Row 5: Status & Auth/Receipt No -->
+                         <Grid ColumnDefinitions="*, 15, *" RowDefinitions="Auto, Auto">
+                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Durum" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0,2,4"/>
+                             <Grid Grid.Row="0" Grid.Column="2" Height="17">
+                                 <TextBlock Text="Dekont No" IsVisible="{Binding IsHavaleEFT}" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                                 <TextBlock Text="Onay Kodu" IsVisible="{Binding IsKrediKarti}" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                             </Grid>
+                             
+                             <ComboBox Grid.Row="1" Grid.Column="0" SelectedItem="{Binding KkDurum}" HorizontalAlignment="Stretch" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center">
+                                 <sys:String>Portföyde</sys:String>
+                                 <sys:String>Bankaya Geçti</sys:String>
+                                 <sys:String>Tedarikçiye Verildi</sys:String>
+                             </ComboBox>
+                             <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding KkOnayKodu}" Watermark="Dekont / Onay..." Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                         </Grid>
+       
+                         <!-- Row 6: Attachment & Detail Description -->
+                         <Grid ColumnDefinitions="*, 15, *" RowDefinitions="Auto, Auto">
+                             <Grid Grid.Row="0" Grid.Column="0" Height="17">
+                                 <TextBlock Text="Dekont Görseli / PDF" IsVisible="{Binding IsHavaleEFT}" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                                 <TextBlock Text="Slip Görseli" IsVisible="{Binding IsKrediKarti}" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0"/>
+                             </Grid>
+                             <TextBlock Grid.Row="0" Grid.Column="2" Text="Açıklama" FontSize="11" Foreground="#888" FontWeight="SemiBold" Margin="2,0,2,4"/>
+                             
+                             <Grid Grid.Row="1" Grid.Column="0" ColumnDefinitions="*, 8, Auto">
+                                 <TextBox Text="{Binding KkSlipPath}" Watermark="Dosya..." IsReadOnly="True" Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                                 <Button Grid.Column="2" Classes="SideButton Info" Click="UploadSlip_Click" Width="80" Height="34" CornerRadius="18" Padding="0">
+                                      <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                                         <ic:SymbolIcon Symbol="Attach" FontSize="14"/> 
+                                         <TextBlock Text="Seç" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                      </StackPanel>
+                                 </Button>
+                             </Grid>
+                             <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding TransactionDescription}" Watermark="Kısa not..." Height="34" CornerRadius="8" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" VerticalContentAlignment="Center"/>
+                         </Grid>
+                   </StackPanel>
+                     
+                    <!-- Footer Buttons (Inside the main stack, will never overlap!) -->
+                    <StackPanel Spacing="10" Margin="0,12,0,0">
+                       <Grid ColumnDefinitions="*, 15, *">
+                           <Button Grid.Column="0" Command="{Binding CloseTransactionDialogCommand}" 
+                                   Classes="SideButton Secondary" Height="36" HorizontalAlignment="Stretch" CornerRadius="18"
+                                   BorderThickness="1" BorderBrush="#44FFFFFF" Background="Transparent">
+                                <TextBlock Text="Vazgeç" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                           </Button>
+                           <Button Grid.Column="2" Command="{Binding SaveTransactionCommand}" 
+                                   Classes="SideButton Info" Height="36" HorizontalAlignment="Stretch" CornerRadius="18">
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="İşlemi Kaydet" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                           </Button>
+                       </Grid>
+                    </StackPanel>
+              </StackPanel>
+          </Grid>
+       </Border>
+    </Grid>
+</UserControl>

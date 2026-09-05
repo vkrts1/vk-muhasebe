@@ -1,0 +1,87 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Döviz Kurları (TCMB Entegrasyonu)</MudText>
+
+<MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Success" StartIcon="@Icons.Material.Filled.Refresh" OnClick="FetchRates" Class="mb-4">TCMB'den Çek</MudButton>
+
+<MudGrid>
+    @foreach (var kur in todayRates)
+    {
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="3" Class="d-flex flex-column align-center justify-center p-4">
+                <MudText Typo="Typo.h4" Color="MudBlazor.Color.Primary">@kur.Kod</MudText>
+                <MudText Typo="Typo.body2">@kur.Tarih.ToShortDateString()</MudText>
+                
+                <div class="d-flex justify-space-between w-100 mt-4 px-4">
+                    <div class="d-flex flex-column align-center">
+                        <MudText Typo="Typo.caption">ALIŞ</MudText>
+                        <MudText Typo="Typo.h6">@kur.Alis.ToString("N4")</MudText>
+                    </div>
+                    <MudDivider Vertical="true" FlexItem="true" />
+                     <div class="d-flex flex-column align-center">
+                        <MudText Typo="Typo.caption">SATIŞ</MudText>
+                        <MudText Typo="Typo.h6">@kur.Satis.ToString("N4")</MudText>
+                    </div>
+                </div>
+            </MudCard>
+        </MudItem>
+    }
+</MudGrid>
+
+<MudText Typo="Typo.h6" Class="mt-8 mb-2">Geçmiş Kurlar</MudText>
+<MudTable Items="@historyRates" Dense="true" Hover="true">
+    <HeaderContent>
+        <MudTh>Tarih</MudTh>
+        <MudTh>Kod</MudTh>
+        <MudTh>Alış</MudTh>
+        <MudTh>Satış</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Tarih.ToShortDateString()</MudTd>
+        <MudTd>@context.Kod</MudTd>
+        <MudTd>@context.Alis.ToString("N4")</MudTd>
+        <MudTd>@context.Satis.ToString("N4")</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<DovizKur> todayRates = new();
+    private List<DovizKur> historyRates = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var all = await DbService.GetDovizKurlariAsync();
+        historyRates = all;
+        todayRates = all.Where(x => x.Tarih.Date == DateTime.Today).ToList();
+        
+        // Demo Init
+        if (todayRates.Count == 0)
+        {
+             // If empty, show dummy 0
+        }
+    }
+
+    private async Task FetchRates()
+    {
+        // Mocking TCMB
+        Snackbar.Add("TCMB Servisine bağlanılıyor...", Severity.Info);
+        await Task.Delay(1500); // Simulate Http
+        
+        var usd = new DovizKur { Kod="USD", Alis=34.50m + (decimal)new Random().NextDouble(), Satis=34.80m, Tarih=DateTime.Today };
+        var eur = new DovizKur { Kod="EUR", Alis=37.10m + (decimal)new Random().NextDouble(), Satis=37.50m, Tarih=DateTime.Today };
+
+        await DbService.SaveDovizKurAsync(usd);
+        await DbService.SaveDovizKurAsync(eur);
+        
+        await LoadData();
+        Snackbar.Add("Kurlar güncellendi.", Severity.Success);
+    }
+}

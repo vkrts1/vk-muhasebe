@@ -1,0 +1,94 @@
+@page "/barkod-sihirbazi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">Barkod Basım Sihirbazı</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Etiket Ayarları</MudText>
+            
+            <MudSelect T="string" Label="Etiket Türü" Variant="Variant.Outlined" FullWidth="true" Class="mb-3" @bind-Value="etiketTuru">
+                <MudSelectItem Value="@("Raf Etiketi (Küçük)")">Raf Etiketi (Küçük)</MudSelectItem>
+                <MudSelectItem Value="@("Ürün Barkodu (Kod128)")">Ürün Barkodu (Kod128)</MudSelectItem>
+                <MudSelectItem Value="@("Fiyat Etiketi (Büyük)")">Fiyat Etiketi (Büyük)</MudSelectItem>
+            </MudSelect>
+
+            <MudNumericField @bind-Value="kopyaSayisi" Label="Her Üründen Kaç Adet?" Variant="Variant.Outlined" Min="1" Class="mb-4" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" FullWidth="true" OnClick="StokEkle" Class="mb-2">
+                Barkod Eklenecek Ürün Seç
+            </MudButton>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Print" FullWidth="true" OnClick="BasimiBaslat" Disabled="@(!seciliUrunler.Any())">
+                Basımı Başlat (PDF)
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Basılacak Ürünler</MudText>
+            <MudTable Items="@seciliUrunler" Hover="true" Dense="true" Striped="true" Bordered="true">
+                <HeaderContent>
+                    <MudTh>Kod</MudTh>
+                    <MudTh>Ürün Adı</MudTh>
+                    <MudTh>Barkod</MudTh>
+                    <MudTh>Fiyat</MudTh>
+                    <MudTh>İşlem</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.StokKodu</MudTd>
+                    <MudTd>@context.StokAdi</MudTd>
+                    <MudTd>@context.Barkod</MudTd>
+                    <MudTd>@context.SatisFiyati.ToString("N2")</MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => seciliUrunler.Remove(context))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+            @if (!seciliUrunler.Any())
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2">Basılacak ürün seçilmedi.</MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string etiketTuru = "Raf Etiketi (Küçük)";
+    private int kopyaSayisi = 1;
+    private List<StokKart> seciliUrunler = new();
+
+    private async Task StokEkle()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.StokSecDialog>("Stok Seç", options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            var stok = result.Data as StokKart;
+            if (stok != null)
+            {
+                if (seciliUrunler.Any(p => p.Id == stok.Id))
+                {
+                    Snackbar.Add("Bu ürün zaten listede var.", Severity.Warning);
+                }
+                else
+                {
+                    seciliUrunler.Add(stok);
+                }
+            }
+        }
+    }
+
+    private void BasimiBaslat()
+    {
+        Snackbar.Add($"{seciliUrunler.Count} ürün için barkod dosyası hazırlandı ve PDF olarak kaydedildi. (Simülasyon)", Severity.Success);
+    }
+}

@@ -1,0 +1,402 @@
+@page "/banka-detay/{Id:int}"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@inject BankaDetayViewModel ViewModel
+@inject ISnackbar Snackbar
+@inject UiService UiService
+@implements IDisposable
+
+<div class="desktop-sync-container fade-in">
+    <!-- TOP TABS (NAV) -->
+    <div class="finans-tabs-wrapper mb-4">
+        <div class="desktop-tab-bar">
+            <button class="tab-btn" @onclick='() => ViewModel.GoBack()'>
+                <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" />
+                <span>Nakit</span>
+            </button>
+            <button class="tab-btn" @onclick='() => ViewModel.GoBack()'>
+                <MudIcon Icon="@Icons.Material.Filled.Money" Size="Size.Small" />
+                <span>Çek</span>
+            </button>
+            <button class="tab-btn" @onclick='() => ViewModel.GoBack()'>
+                <MudIcon Icon="@Icons.Material.Filled.CreditCard" Size="Size.Small" />
+                <span>Kredi Kartı</span>
+            </button>
+            <button class="tab-btn active">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
+                <span>Havale / EFT</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- HEADER SECTION -->
+    <div class="desktop-grid-header mb-4">
+        <div class="header-left">
+            <button class="refresh-btn me-2" @onclick="ViewModel.GoBack" title="Geri">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" />
+            </button>
+            <div class="icon-box-primary indigo">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
+            </div>
+            <div>
+                <h2 class="desktop-title">@ViewModel.BankaAdi</h2>
+                <p class="desktop-subtitle">Hesap Hareketleri ve Detaylı Ekstre</p>
+            </div>
+        </div>
+
+        <div class="text-end">
+            <div class="desktop-subtitle" style="font-weight: bold; text-align: right;">Hesap Bakiyesi</div>
+            <div class="value-display fw-800" style="font-size: 24px; color: #10B981;">
+                @ViewModel.GuncelBakiye.ToString("N2") <span style="font-size: 14px; opacity: 0.8;">@ViewModel.DovizTuru</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN TABLE -->
+    <div class="desktop-grid-wrapper">
+        <table class="desktop-table">
+            <thead>
+                <tr>
+                    <th style="width: 150px;">Tarih</th>
+                    <th style="width: 150px;">İşlem Türü</th>
+                    <th>Cari / Açıklama</th>
+                    <th class="text-end" style="width: 120px;">Giren</th>
+                    <th class="text-end" style="width: 120px;">Çıkan</th>
+                    <th class="text-end" style="width: 100px;">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!ViewModel.Hareketler.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div style="opacity: 0.3;">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Large" Class="mb-2" />
+                                <p>Bu hesaba ait hareket bulunamadı.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var h in ViewModel.Hareketler)
+                    {
+                        <tr class="desktop-row">
+                            <td>@h.Tarih.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@h.IslemTuru</td>
+                            <td>@h.Aciklama</td>
+                            <td class="text-end @(h.Giren > 0 ? "fw-bold text-success" : "")">
+                                @(h.Giren > 0 ? h.Giren.ToString("N2") : "")
+                            </td>
+                            <td class="text-end @(h.Cikan > 0 ? "fw-bold text-danger" : "")">
+                                @(h.Cikan > 0 ? h.Cikan.ToString("N2") : "")
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="icon-action-btn" @onclick="() => ViewModel.OpenEditTransactionDialog(h)" title="Düzenle">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                    </button>
+                                    <button class="icon-action-btn danger" @onclick="() => ConfirmDeleteHareket(h)" title="Sil">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Transaction Edit Dialog (Premium Style) -->
+@if (ViewModel.IsTransactionDialogVisible)
+{
+    <div class="premium-dialog-overlay fade-in">
+        <div class="desktop-grid-wrapper" style="width: 500px; background: #111417; border-radius: 24px; padding: 0;">
+            <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="icon-box-primary indigo">
+                        <MudIcon Icon="@Icons.Material.Filled.EditNote" />
+                    </div>
+                    <div>
+                        <h2 class="desktop-title">@ViewModel.TransactionTitle</h2>
+                        <p class="desktop-subtitle">İşlem detaylarını güncelle</p>
+                    </div>
+                </div>
+                <button @onclick="ViewModel.CloseTransactionDialog" style="width: 34px; height: 34px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                </button>
+            </div>
+
+            <div style="padding: 30px;">
+                <div class="mb-4">
+                    <label class="form-label">Tarih</label>
+                    <input type="text" @bind="ViewModel.TransactionDateStr" class="dark-input" readonly="@ViewModel.IsReadOnly" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">İşlem Türü</label>
+                    <input type="text" @bind="ViewModel.TransactionType" class="dark-input" readonly />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Tutar</label>
+                    <input type="number" @bind="ViewModel.TransactionAmount" class="dark-input h4 fw-bold" style="color: #60A5FA !important;" readonly="@ViewModel.IsReadOnly" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Açıklama</label>
+                    <textarea @bind="ViewModel.TransactionDescription" rows="3" class="dark-input" readonly="@ViewModel.IsReadOnly"></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 mt-4">
+                    <button @onclick="ViewModel.CloseTransactionDialog" class="action-btn-outline" style="width: auto; padding: 0 30px;">Vazgeç</button>
+                    @if (!ViewModel.IsReadOnly)
+                    {
+                        <button @onclick="ViewModel.SaveTransactionAsync" class="action-btn-filled" style="width: auto; padding: 0 40px;">Kaydet</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        UiService.OnEscapePressed += HandleEscape;
+        await ViewModel.InitializeAsync(Id);
+    }
+
+    private async Task<bool> HandleEscape()
+    {
+        if (ViewModel.IsTransactionDialogVisible)
+        {
+            ViewModel.CloseTransactionDialog();
+            StateHasChanged();
+            return true;
+        }
+        await Task.CompletedTask;
+        return false;
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+
+    private async Task ConfirmDeleteHareket(BankaHareket? h)
+    {
+        await ViewModel.DeleteHareketAsync(h);
+        Snackbar.Add("İşlem başarıyla silindi", Severity.Success);
+    }
+}
+
+<style>
+    .desktop-sync-container {
+        padding: 20px 40px 20px 75px !important;
+        color: white;
+        background-color: #0B0D12;
+        min-height: 100vh;
+    }
+
+    .desktop-tab-bar {
+        background: #1A1D21;
+        padding: 6px;
+        border-radius: 12px;
+        display: flex;
+        gap: 5px;
+        width: fit-content;
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        color: #AAAAAA;
+        padding: 8px 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .tab-btn.active {
+        background: #4F46E5;
+        color: white;
+    }
+
+    .desktop-grid-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .icon-box-primary {
+        width: 40px;
+        height: 40px;
+        background: #4F46E5;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    .icon-box-primary.indigo { background: #4F46E5; }
+
+    .desktop-title {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0;
+        color: white;
+    }
+
+    .desktop-subtitle {
+        font-size: 11px;
+        color: #AAAAAA;
+        margin: 0;
+    }
+
+    .desktop-grid-wrapper {
+        background: #1D2633;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+    }
+
+    .desktop-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .desktop-table thead tr {
+        background: rgba(34, 29, 93, 0.63);
+        height: 40px;
+    }
+
+    .desktop-table th {
+        color: #60A5FA;
+        font-weight: 800;
+        text-align: left;
+        padding: 0 15px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .desktop-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: #CBD5E1;
+    }
+
+    .desktop-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .icon-action-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        color: #60A5FA;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .icon-action-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        transform: translateY(-1px);
+    }
+
+    .icon-action-btn.danger { color: #FF416C; }
+
+    .refresh-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .premium-dialog-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+    }
+
+    .form-label {
+        display: block !important;
+        color: rgba(255, 255, 255, 0.5) !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .dark-input {
+        width: 100% !important;
+        min-height: 45px !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        padding: 12px 16px !important;
+        color: white !important;
+        font-size: 14px !important;
+        box-sizing: border-box !important;
+    }
+
+    .action-btn-outline {
+        background: transparent !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        color: white !important;
+        height: 48px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .action-btn-filled {
+        background: linear-gradient(135deg, #4F46E5 0%, #3730A3 100%) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        color: white !important;
+        height: 48px;
+        cursor: pointer;
+        font-weight: 700;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+    }
+
+    .fw-800 { font-weight: 800; }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+</style>

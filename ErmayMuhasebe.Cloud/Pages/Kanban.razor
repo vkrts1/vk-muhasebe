@@ -1,0 +1,390 @@
+@page "/kanban"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@inject KanbanViewModel VM
+@inject ISnackbar Snackbar
+
+<div class="fade-in d-flex flex-grow-1 flex-column @(_editTask != null ? "with-sidebar" : "") kanban-page-container" style="overflow: hidden; padding: 20px;">
+
+    
+    <div class="desktop-panel d-flex flex-column flex-grow-1" style="padding: 24px; min-height: 0;">
+        <!-- Header -->
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; flex-shrink: 0;">
+            <div class="d-flex align-items-center gap-4">
+                <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); color: #818CF8; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Medium" />
+                </div>
+                <div>
+                    <h2 style="font-size: 18px; font-weight: 700; color: white; margin: 0; padding-bottom: 4px; letter-spacing: 0.5px;">Görev ve İş Takip Panosu (Kanban)</h2>
+                    <div style="color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 500;">Ekibinizin günlük işlerini ve önceliklerini görsel bir pano üzerinden yönetin.</div>
+                </div>
+            </div>
+        </div>
+
+        @if (VM.Loading)
+        {
+            <div class="d-flex justify-center my-10">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </div>
+        }
+        else
+        {
+            <div class="kanban-board-wrapper" style="display: flex; gap: 20px; flex-grow: 1; min-height: 0;">
+                
+                <!-- YAPILACAKLAR -->
+                <div style="flex: 1; background: #0A0A0A; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 100px; background: radial-gradient(ellipse at top, rgba(255,255,255,0.03), transparent); pointer-events: none;"></div>
+                    
+                    <div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 800; letter-spacing: 1px; flex-shrink: 0; z-index: 1;">
+                        YAPILACAKLAR
+                    </div>
+                    
+                    <div style="padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex-grow: 1; z-index: 1;" class="custom-scroll">
+                        <div style="display: flex; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 4px; align-items: center;">
+                            <input @bind="VM.NewTaskTitle" @onkeyup="HandleKeyUp" type="text" placeholder="Yeni görev ekle..." style="flex-grow: 1; background: transparent; border: none; color: white; padding: 8px 12px; font-size: 13px; outline: none;" />
+                            <button @onclick="AddTaskInline" style="background: #818CF8; border: none; width: 32px; height: 32px; border-radius: 6px; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; opacity: @(string.IsNullOrWhiteSpace(VM.NewTaskTitle) ? "0.5" : "1");">
+                                <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                            </button>
+                        </div>
+                        
+                        @foreach(var item in VM.Todo)
+                        {
+                            <div class="task-card" @onclick="() => StartEdit(item)" style="cursor: pointer;">
+                                <span class="task-priority-pill" style="background: @(item.Color + "15"); color: @item.Color; border: 1px solid @(item.Color + "30")">@item.Priority</span>
+                                <div class="task-title" style="padding-right: 60px;">@item.Title</div>
+                                <div class="task-user mb-4">@(string.IsNullOrEmpty(item.User) ? "Atanmadı" : item.User)</div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <button class="task-action-btn" @onclick="() => VM.Delete(item)">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Delete" Style="color: rgba(239, 68, 68, 0.8);" Size="Size.Small" />
+                                    </button>
+                                    <button class="task-action-btn" @onclick="() => VM.MoveToNext(item)">
+                                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Style="color: #60A5FA;" Size="Size.Small" />
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- DEVAM EDENLER -->
+                <div style="flex: 1; background: #0A0A0A; border: 1px solid rgba(245,158,11,0.1); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 150px; background: radial-gradient(ellipse at top, rgba(245,158,11,0.05), transparent); pointer-events: none;"></div>
+                    
+                    <div style="padding: 20px; text-align: center; color: #F59E0B; font-size: 11px; font-weight: 800; letter-spacing: 1px; flex-shrink: 0; z-index: 1;">
+                        DEVAM EDENLER
+                    </div>
+                    
+                    <div style="padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex-grow: 1; z-index: 1;" class="custom-scroll">
+                        @foreach(var item in VM.InProgress)
+                        {
+                            <div class="task-card" @onclick="() => StartEdit(item)" style="cursor: pointer; border-color: rgba(245,158,11,0.1);">
+                                <span class="task-priority-pill" style="background: @(item.Color + "15"); color: @item.Color; border: 1px solid @(item.Color + "30")">@item.Priority</span>
+                                <div class="task-title" style="padding-right: 60px;">@item.Title</div>
+                                <div class="task-user mb-4">@(string.IsNullOrEmpty(item.User) ? "Atanmadı" : item.User)</div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div class="d-flex gap-1">
+                                        <button class="task-action-btn" @onclick="() => VM.Delete(item)">
+                                            <MudIcon Icon="@Icons.Material.Outlined.Delete" Style="color: rgba(239, 68, 68, 0.8);" Size="Size.Small" />
+                                        </button>
+                                        <button class="task-action-btn" @onclick="() => VM.MoveToPrev(item)">
+                                            <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Style="color: rgba(255, 255, 255, 0.4);" Size="Size.Small" />
+                                        </button>
+                                    </div>
+                                    <button class="task-action-btn" style="border: 1px solid rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.05);" @onclick="() => VM.MoveToNext(item)">
+                                        <MudIcon Icon="@Icons.Material.Filled.Check" Style="color: #10B981;" Size="Size.Small" />
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- TAMAMLANDI -->
+                <div style="flex: 1; background: #0A0A0A; border: 1px solid rgba(16,185,129,0.1); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 150px; background: radial-gradient(ellipse at top, rgba(16,185,129,0.05), transparent); pointer-events: none;"></div>
+                    
+                    <div style="padding: 20px; text-align: center; color: #10B981; font-size: 11px; font-weight: 800; letter-spacing: 1px; flex-shrink: 0; z-index: 1;">
+                        TAMAMLANANLAR
+                    </div>
+                    
+                    <div style="padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex-grow: 1; z-index: 1;" class="custom-scroll">
+                        @foreach(var item in VM.Done)
+                        {
+                            <div class="task-card" @onclick="() => StartEdit(item)" style="cursor: pointer; opacity: 0.7; border-color: rgba(16,185,129,0.1);">
+                                <span class="task-priority-pill" style="background: rgba(16, 185, 129, 0.1); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2)">Tamamlandı</span>
+                                <div class="task-title" style="padding-right: 60px; text-decoration: line-through; color: rgba(255,255,255,0.5);">@item.Title</div>
+                                <div class="task-user mb-4">@(string.IsNullOrEmpty(item.User) ? "Atanmadı" : item.User)</div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div class="d-flex gap-1">
+                                        <button class="task-action-btn" @onclick="() => VM.Delete(item)">
+                                            <MudIcon Icon="@Icons.Material.Outlined.Delete" Style="color: rgba(239, 68, 68, 0.8);" Size="Size.Small" />
+                                        </button>
+                                        <button class="task-action-btn" @onclick="() => VM.MoveToPrev(item)">
+                                            <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Style="color: rgba(255, 255, 255, 0.4);" Size="Size.Small" />
+                                        </button>
+                                    </div>
+                                    <MudIcon Icon="@Icons.Material.Filled.DoneAll" Style="color: #10B981; opacity: 0.5;" Size="Size.Small" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        }
+    </div>
+
+    <!-- Task Detail Sidebar -->
+    @if (_editTask != null)
+    {
+        <div class="kanban-sidebar pa-8">
+            <div class="d-flex align-center justify-space-between mb-8">
+                <MudText Typo="Typo.h5" Style="font-weight: 900; color: white;">GÖREV DETAYI</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => _editTask = null" Size="Size.Small" />
+            </div>
+
+            <div class="d-flex flex-column gap-6">
+                <div>
+                    <label class="sidebar-label">GÖREV BAŞLIĞI</label>
+                    <input type="text" class="premium-input-dark" @bind="_editTask.Title" />
+                </div>
+
+                <div>
+                    <label class="sidebar-label">AÇIKLAMA</label>
+                    <textarea class="premium-input-dark" style="height: 150px; resize: none;" @bind="_editTask.Description" placeholder="Detaylı açıklama girin..."></textarea>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-6">
+                        <label class="sidebar-label">ÖNCELİK</label>
+                        <select class="premium-input-dark" @bind="_editTask.Priority">
+                            <option value="Kritik">Kritik</option>
+                            <option value="Yüksek">Yüksek</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Düşük">Düşük</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="sidebar-label">SORUMLU</label>
+                        <input type="text" class="premium-input-dark" @bind="_editTask.User" />
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SaveEdit" Style="height: 55px; border-radius: 12px; font-weight: 900;">DEĞİŞİKLİKLERİ KAYDET</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" Class="mt-2" OnClick="async () => { await VM.Delete(_originalTask!); _editTask = null; }">GÖREVİ SİL</MudButton>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .task-card {
+        background: #111111;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+        padding: 16px;
+        position: relative;
+        transition: all 0.2s;
+    }
+    .task-card:hover {
+        background: rgba(15, 23, 42, 0.6);
+        border-color: rgba(255,255,255,0.1) !important;
+    }
+    .task-title {
+        color: white;
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 4px;
+        width: 100%;
+        word-break: break-all;
+    }
+    .task-user {
+        color: rgba(255,255,255,0.5);
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .task-priority-pill {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .task-action-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .task-action-btn:hover {
+        background: rgba(255,255,255,0.05) !important;
+    }
+    .custom-scroll::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+    }
+
+    .with-sidebar { padding-right: 420px !important; }
+    
+    .kanban-sidebar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 400px;
+        background: #080808;
+        border-left: 1px solid rgba(255,255,255,0.08);
+        z-index: 100;
+        box-shadow: -20px 0 50px rgba(0,0,0,0.5);
+        animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.3);
+        margin-bottom: 8px;
+        display: block;
+        letter-spacing: 1px;
+    }
+
+    .premium-input-dark {
+        width: 100%;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: white;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+    .premium-input-dark:focus { border-color: #3B82F6; background: rgba(255,255,255,0.05); }
+
+    @@keyframes slideInRight {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+</style>
+
+@if (_showAddDialog)
+{
+    <div class="glass-overlay fade-in">
+        <div class="glass-panel pa-8 border-white-5" style="width: 450px;">
+            <h3 class="h5 fw-black text-white mb-6">YENİ GÖREV EKLE</h3>
+            
+            <div class="d-flex flex-column gap-6">
+                <div>
+                    <label class="smaller text-muted d-block mb-2">GÖREV BAŞLIĞI</label>
+                    <input type="text" class="premium-input-dark" @bind="VM.NewTaskTitle" placeholder="Ne yapılması gerekiyor?" />
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-6">
+                        <label class="smaller text-muted d-block mb-2">ÖNCELİK</label>
+                        <select class="premium-input-dark" @bind="VM.NewTaskPriority">
+                            <option value="Kritik">Kritik</option>
+                            <option value="Yüksek">Yüksek</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Düşük">Düşük</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="smaller text-muted d-block mb-2">SORUMLU</label>
+                        <input type="text" class="premium-input-dark" @bind="VM.NewTaskUser" />
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-3 mt-4">
+                    <button class="action-btn-large blue-border" @onclick="() => _showAddDialog = false" style="flex:1">VAZGEÇ</button>
+                    <button class="action-btn-large" @onclick="AddTask" style="flex:2; background: #3B82F6; border: none;">EKLE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    private bool _showAddDialog = false;
+    private BoardItem? _editTask;
+    private BoardItem? _originalTask;
+
+    private void StartEdit(BoardItem task)
+    {
+        _originalTask = task;
+        // Clone for editing
+        _editTask = new BoardItem(task.Title, task.User, task.Priority, task.Color, task.Description);
+    }
+
+    private async Task SaveEdit()
+    {
+        if (_originalTask != null && _editTask != null)
+        {
+            // Update color based on priority
+            string newColor = _editTask.Priority switch { "Kritik" => "#EF4444", "Yüksek" => "#F59E0B", "Normal" => "#3B82F6", _ => "#10B981" };
+            var updated = _editTask with { Color = newColor };
+            
+            await VM.UpdateTask(_originalTask, updated);
+            _editTask = null;
+            Snackbar.Add("Görev güncellendi.", Severity.Success);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VM.LoadDataAsync();
+    }
+
+    private async Task AddTaskInline()
+    {
+        if (!string.IsNullOrWhiteSpace(VM.NewTaskTitle))
+        {
+            VM.NewTaskPriority = "Normal";
+            VM.NewTaskUser = "Admin";
+            await AddTask();
+        }
+    }
+    
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AddTaskInline();
+        }
+    }
+
+    private async Task AddTask()
+    {
+        if (string.IsNullOrWhiteSpace(VM.NewTaskTitle))
+        {
+            Snackbar.Add("Başlık boş olamaz.", Severity.Warning);
+            return;
+        }
+        await VM.AddNewTask();
+        Snackbar.Add("Görev başarıyla eklendi.", Severity.Success);
+    }
+}

@@ -1,0 +1,129 @@
+@page "/tahsilat-suresi-dso"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Tahsilat Süresi (DSO) Raporu (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+            Yazdır / PDF
+        </MudButton>
+    </MudStack>
+</div>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">Days Sales Outstanding (DSO), bir satışın ortalama kaç günde nakde (tahsilata) dönüştüğünü ölçer.</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudTable Items="@dsoData" Dense="true" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Cari Ünvan</MudTh>
+                <MudTh Style="text-align: right;">Topl. Satış</MudTh>
+                <MudTh Style="text-align: right;">Topl. Tahsilat</MudTh>
+                <MudTh Style="text-align: right;">Ortalama Tahsilat Süresi</MudTh>
+                <MudTh Style="text-align: right;">Performans</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Unvan</MudTd>
+                <MudTd Style="text-align: right;">@context.ToplamSatis.ToString("N2") ₺</MudTd>
+                <MudTd Style="text-align: right;">@context.ToplamTahsilat.ToString("N2") ₺</MudTd>
+                <MudTd Style="text-align: right;"><strong>@context.OrtalamaGun Gün</strong></MudTd>
+                <MudTd Style="text-align: right;">
+                    <MudText Color="@(context.OrtalamaGun <= 30 ? Color.Success : context.OrtalamaGun <= 60 ? Color.Warning : Color.Error)">
+                        @(context.OrtalamaGun <= 30 ? "Hızlı" : context.OrtalamaGun <= 60 ? "Orta" : "Yavaş")
+                    </MudText>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<DSOData> dsoData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var cariler = await DbService.GetCarilerAsync();
+        var hareketler = await DbService.GetCariHareketleriAsync_All();
+
+        foreach(var c in cariler)
+        {
+            var cHareketler = hareketler.Where(h => h.CariId == c.Id).OrderBy(h => h.Tarih).ToList();
+            if(!cHareketler.Any()) continue;
+
+            var satislar = cHareketler.Where(h => h.Borc > 0).ToList();
+            var tahsilatlar = cHareketler.Where(h => h.Alacak > 0).ToList();
+
+            if (!satislar.Any() || !tahsilatlar.Any()) continue;
+
+            double toplamGun = 0;
+            int count = 0;
+
+            foreach(var s in satislar)
+            {
+                var ilkTahsilat = tahsilatlar.Where(t => t.Tarih >= s.Tarih).FirstOrDefault();
+                if (ilkTahsilat != null)
+                {
+                    toplamGun += (ilkTahsilat.Tarih - s.Tarih).TotalDays;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                dsoData.Add(new DSOData
+                {
+                    Unvan = c.Unvan ?? "",
+                    ToplamSatis = satislar.Sum(h => h.Borc),
+                    ToplamTahsilat = tahsilatlar.Sum(h => h.Alacak),
+                    OrtalamaGun = (int)(toplamGun / count)
+                });
+            }
+        }
+        dsoData = dsoData.OrderByDescending(x => x.OrtalamaGun).ToList();
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Müşteri Ünvan", "Topl. Satış", "Topl. Tahsilat", "Ort. Süre", "Perf." };
+            var rows = dsoData.Select(d => new[] 
+            { 
+                d.Unvan, 
+                d.ToplamSatis.ToString("C2"), 
+                d.ToplamTahsilat.ToString("C2"),
+                d.OrtalamaGun.ToString() + " Gün",
+                d.OrtalamaGun <= 30 ? "Hızlı" : d.OrtalamaGun <= 60 ? "Orta" : "Yavaş"
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Tahsilat Süresi (DSO) Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("TahsilatSuresi.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class DSOData
+    {
+        public string Unvan { get; set; } = "";
+        public decimal ToplamSatis { get; set; }
+        public decimal ToplamTahsilat { get; set; }
+        public int OrtalamaGun { get; set; }
+    }
+}

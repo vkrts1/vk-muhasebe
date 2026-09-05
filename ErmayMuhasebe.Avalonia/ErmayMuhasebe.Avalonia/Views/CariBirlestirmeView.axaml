@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:models="using:ErmayMuhasebe.Models"
+             x:Class="ErmayMuhasebe.Avalonia.Views.CariBirlestirmeView"
+             x:DataType="vm:CariBirlestirmeViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <!-- Header -->
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#263B82F6">
+          <ic:SymbolIcon Symbol="Merge" Foreground="#3B82F6" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Cari Birleştirme Sihirbazı" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Mükerrer açılmış cari kartları tüm hareketleri, bakiyeleri ve belgeleriyle birlikte tek bir kartta birleştirin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, Auto, *" VerticalAlignment="Top">
+      <!-- Source Item -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+         <StackPanel Spacing="20">
+            <TextBlock Text="KAYNAK CARİ (SİLİNECEK)" FontSize="16" FontWeight="Bold" Foreground="#EF4444" HorizontalAlignment="Center"/>
+            <TextBlock Text="Bu karttaki tüm borç, alacak ve hareketler aktarılacak ve bu kart silinecektir." FontSize="12" Foreground="#9CA3AF" TextAlignment="Center" TextWrapping="Wrap"/>
+            
+            <AutoCompleteBox ItemsSource="{Binding Cariler}" SelectedItem="{Binding KaynakCari, Mode=TwoWay}" ValueMemberBinding="{Binding Unvan}" Watermark="Silinecek Cariyi Ara..." FilterMode="Contains" MinimumPrefixLength="1">
+                <AutoCompleteBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:CariKart">
+                        <TextBlock Text="{Binding Unvan}"/>
+                    </DataTemplate>
+                </AutoCompleteBox.ItemTemplate>
+            </AutoCompleteBox>
+
+            <Border Background="#10FFFFFF" CornerRadius="12" Padding="20" Height="150">
+               <StackPanel Spacing="10" IsVisible="{Binding KaynakCari, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <TextBlock Text="{Binding KaynakCari.CariKod}" Foreground="#9CA3AF" FontSize="12"/>
+                  <TextBlock Text="{Binding KaynakCari.Unvan}" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding KaynakCari.Bakiye, StringFormat='Güncel Bakiye: {0:N2} ₺'}" Foreground="#EF4444"/>
+               </StackPanel>
+            </Border>
+         </StackPanel>
+      </Border>
+
+      <!-- Arrow -->
+      <ic:SymbolIcon Grid.Column="1" Symbol="ArrowRight" FontSize="40" Foreground="#9CA3AF" Margin="40,150,40,0" VerticalAlignment="Top"/> 
+
+      <!-- Destination Item -->
+      <Border Grid.Column="2" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+         <StackPanel Spacing="20">
+            <TextBlock Text="HEDEF CARİ (KALACAK)" FontSize="16" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
+            <TextBlock Text="Tüm veriler bu kart altında toplanacak ve bu kart sistemde kalacaktır." FontSize="12" Foreground="#9CA3AF" TextAlignment="Center" TextWrapping="Wrap"/>
+            
+            <AutoCompleteBox ItemsSource="{Binding Cariler}" SelectedItem="{Binding HedefCari, Mode=TwoWay}" ValueMemberBinding="{Binding Unvan}" Watermark="Kalacak Cariyi Ara..." FilterMode="Contains" MinimumPrefixLength="1">
+                <AutoCompleteBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:CariKart">
+                        <TextBlock Text="{Binding Unvan}"/>
+                    </DataTemplate>
+                </AutoCompleteBox.ItemTemplate>
+            </AutoCompleteBox>
+
+            <Border Background="#10FFFFFF" CornerRadius="12" Padding="20" Height="150">
+               <StackPanel Spacing="10" IsVisible="{Binding HedefCari, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <TextBlock Text="{Binding HedefCari.CariKod}" Foreground="#9CA3AF" FontSize="12"/>
+                  <TextBlock Text="{Binding HedefCari.Unvan}" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding HedefCari.Bakiye, StringFormat='Güncel Bakiye: {0:N2} ₺'}" Foreground="#10B981"/>
+               </StackPanel>
+            </Border>
+         </StackPanel>
+      </Border>
+
+      <!-- Bottom Panel -->
+      <Border Grid.Row="1" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Margin="0,450,0,0" Background="#1A1F2937" CornerRadius="20" Padding="30">
+          <Grid ColumnDefinitions="*, Auto">
+             <StackPanel Spacing="5">
+                <TextBlock Text="BİRLEŞTİRME DURUMU" FontSize="12" Foreground="#9CA3AF"/>
+                <TextBlock Text="{Binding StatusMessage}" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+             </StackPanel>
+             <Button Grid.Column="1" Command="{Binding BirlestirCommand}" Classes="SideButton Info" Width="250" Height="50" Background="#3B82F6">
+                <TextBlock Text="BİRLEŞTİRMEYİ BAŞLAT" FontWeight="Bold"/>
+             </Button>
+          </Grid>
+      </Border>
+    </Grid>
+    
+    <!-- Loading/Status Overlays -->
+    <Panel Grid.RowSpan="2" IsVisible="{Binding IsLoading}" Background="#44000000">
+        <ProgressBar IsIndeterminate="True"/>
+    </Panel>
+  </Grid>
+</UserControl>

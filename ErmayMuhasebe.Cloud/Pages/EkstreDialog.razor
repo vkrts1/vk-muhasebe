@@ -1,0 +1,50 @@
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <div style="display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 16px; background: #252A31;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.Description" Style="color: #FF5252; font-size: 24px;" />
+                <MudText Typo="Typo.h6" Style="font-weight: 800; color: white;">Hesap Ekstresi</MudText>
+            </div>
+            <MudIcon Icon="@Icons.Material.Filled.Assignment" Style="color: rgba(255,255,255,0.5); font-size: 20px;" />
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div style="padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <button class="mud-button-root mud-button mud-button-filled mud-button-filled-size-large" 
+                    style="height: 100px; border-radius: 12px; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25); color: white; font-weight: 800; text-transform: uppercase;"
+                    @onclick="() => Submit(false)">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Visibility" Style="font-size: 28px; color: #60A5FA;" />
+                    <span style="font-size: 12px;">GÖRÜNTÜLE</span>
+                </div>
+            </button>
+            <button class="mud-button-root mud-button mud-button-filled mud-button-filled-size-large" 
+                    style="height: 100px; border-radius: 12px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: white; font-weight: 800; text-transform: uppercase;"
+                    @onclick="() => Submit(true)">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Download" Style="font-size: 28px; color: #10B981;" />
+                    <span style="font-size: 12px;">İNDİR</span>
+                </div>
+            </button>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div style="width: 100%; text-align: center; padding: 12px; background: rgba(255,255,255,0.07);">
+            <MudButton OnClick="Cancel" Variant="Variant.Text" Style="color: #888; font-weight: 600;">Pencereyi Kapat</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public bool IsDetailed { get; set; } = false;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit(bool isDownload)
+    {
+        MudDialog.Close(DialogResult.Ok(new { IsDownload = isDownload, IsDetailed = IsDetailed }));
+    }
+}

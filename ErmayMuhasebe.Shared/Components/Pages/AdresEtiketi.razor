@@ -1,0 +1,116 @@
+@page "/adres-etiketi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Adres Etiketi Yazdırma</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6" Class="mb-3">Etiket Bilgileri</MudText>
+    
+    <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Secondary" OnClick="CariBul" StartIcon="@Icons.Material.Filled.Search" Class="mb-3">
+        Cari Seç / Bul
+    </MudButton>
+
+    <MudTextField @bind-Value="unvan" Label="Firma Unvanı" Variant="Variant.Outlined" Class="mb-3" />
+    <MudTextField @bind-Value="adSoyad" Label="Ad Soyad" Variant="Variant.Outlined" Class="mb-3" />
+    <MudTextField @bind-Value="adres" Label="Adres" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+    <MudTextField @bind-Value="ilIlce" Label="İl / İlçe" Variant="Variant.Outlined" Class="mb-3" />
+    <MudTextField @bind-Value="postaKodu" Label="Posta Kodu" Variant="Variant.Outlined" Class="mb-3" />
+    <MudTextField @bind-Value="telefon" Label="Telefon" Variant="Variant.Outlined" Class="mb-3" />
+    
+    <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="OnizlemeGoster" FullWidth="true">
+        Önizleme Göster
+    </MudButton>
+</MudPaper>
+    </MudItem>
+    
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Etiket Önizleme (10x15 cm)</MudText>
+            
+            @if(onizleme)
+            {
+                <div style="border: 2px dashed #666; padding: 20px; background: white; color: black; width: 100%; min-height: 200px;">
+                    <MudText Typo="Typo.h6"><b>@unvan</b></MudText>
+                    <MudText Typo="Typo.body1">@adSoyad</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">@adres</MudText>
+                    <MudText Typo="Typo.body2">@ilIlce @postaKodu</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">Tel: @telefon</MudText>
+                </div>
+                
+                <MudButton Variant="Variant.Outlined" Color="MudBlazor.Color.Primary" Class="mt-3" FullWidth="true" OnClick="AdresEtiketiYazdir" StartIcon="@Icons.Material.Filled.Print">
+                    PDF Olarak Yazdır (Aç)
+                </MudButton>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    Bilgileri doldurun ve "Önizleme Göster" butonuna tıklayın.
+                </MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@inject IDialogService DialogService
+
+@code {
+    private string unvan = "";
+    private string adSoyad = "";
+    private string adres = "";
+    private string ilIlce = "";
+    private string postaKodu = "";
+    private string telefon = "";
+    private bool onizleme = false;
+    
+    private async Task CariBul()
+    {
+        var options = new DialogOptions 
+        { 
+            MaxWidth = MaxWidth.Large, 
+            FullWidth = true,
+            CloseButton = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Dialogs.CariSecDialog>("Cari Seç", options);
+        var result = await dialog.Result;
+        
+        if (result != null && !result.Canceled && result.Data is CariKart secilenCari)
+        {
+            unvan = secilenCari.Unvan ?? "";
+            adSoyad = secilenCari.Yetkili ?? "";
+            adres = secilenCari.Adres ?? "";
+            ilIlce = (secilenCari.Il ?? "") + " / " + (secilenCari.Ilce ?? "");
+            postaKodu = ""; // Modelde yoksa boş
+            telefon = secilenCari.Telefon ?? "";
+            Snackbar.Add("Cari bilgileri yüklendi", Severity.Success);
+        }
+    }
+
+    private void OnizlemeGoster()
+    {
+        onizleme = true;
+    }
+
+    private async Task AdresEtiketiYazdir()
+    {
+        try
+        {
+            var pdfBytes = await PdfService.GenerateAdresEtiketiPdfBytesAsync(unvan ?? "", adSoyad ?? "", adres ?? "", ilIlce ?? "", postaKodu ?? "", telefon ?? "");
+            var fileName = $"AdresEtiketi_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            await FileService.SaveAndOpenFileAsync(fileName, pdfBytes, "application/pdf");
+            
+            Snackbar.Add("Etiket PDF olarak oluşturuldu.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

@@ -1,0 +1,124 @@
+@page "/musteri-ltv"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Müşteri Sadakat (LTV) Raporu (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+            Yazdır / PDF
+        </MudButton>
+    </MudStack>
+</div>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">Customer Lifetime Value (LTV), bir müşterinin işletmenize kazandırdığı toplam brüt karı ifade eder.</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudTable Items="@ltvData" Dense="true" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Cari Ünvan</MudTh>
+                <MudTh>İlk İşlem</MudTh>
+                <MudTh>Fatura Sayısı</MudTh>
+                <MudTh Style="text-align: right;">Toplam Ciro</MudTh>
+                <MudTh Style="text-align: right;">Tahmini Kar</MudTh>
+                <MudTh Style="text-align: right;">LTV Puanı</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Unvan</MudTd>
+                <MudTd>@context.İlkIslem.ToString("dd.MM.yyyy")</MudTd>
+                <MudTd>@context.FaturaSayisi Adet</MudTd>
+                <MudTd Style="text-align: right;">@context.ToplamCiro.ToString("N2") ₺</MudTd>
+                <MudTd Style="text-align: right;"><strong>@context.TahminiKar.ToString("N2") ₺</strong></MudTd>
+                <MudTd Style="text-align: right;">
+                    <MudRating SelectedValue="@context.StarRate" ReadOnly="true" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<LTVResult> ltvData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var cariler = await DbService.GetCarilerAsync();
+        var faturalar = await DbService.GetFaturalarAsync();
+        var satisFaturalari = faturalar.Where(f => f.Tur == "Satis" || f.Tur == "Satış").ToList();
+
+        foreach (var c in cariler)
+        {
+            var cFaturalar = satisFaturalari.Where(f => f.CariId == c.Id).OrderBy(f => f.Tarih).ToList();
+            if (!cFaturalar.Any()) continue;
+
+            decimal totalCiro = cFaturalar.Sum(f => f.GenelToplam);
+            decimal tahminiKar = totalCiro * 0.15m; // %15 kar varsayımı
+
+            ltvData.Add(new LTVResult
+            {
+                Unvan = c.Unvan ?? "Bilinmeyen",
+                İlkIslem = cFaturalar.First().Tarih,
+                FaturaSayisi = cFaturalar.Count,
+                ToplamCiro = totalCiro,
+                TahminiKar = tahminiKar
+            });
+        }
+
+        decimal maxKar = ltvData.Any() ? ltvData.Max(x => x.TahminiKar) : 1;
+        foreach(var item in ltvData)
+        {
+            item.StarRate = (int)((double)item.TahminiKar / (double)maxKar * 5);
+            if (item.StarRate == 0 && item.TahminiKar > 0) item.StarRate = 1;
+        }
+
+        ltvData = ltvData.OrderByDescending(x => x.TahminiKar).ToList();
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Müşteri Ünvan", "İlk İşlem", "Fat. Sayısı", "Topl. Ciro", "Tahm. Kar", "LTV Puanı" };
+            var rows = ltvData.Select(d => new[] 
+            { 
+                d.Unvan, 
+                d.İlkIslem.ToString("dd.MM.yyyy"), 
+                d.FaturaSayisi.ToString(),
+                d.ToplamCiro.ToString("C2"),
+                d.TahminiKar.ToString("C2"),
+                d.StarRate.ToString() + "/5"
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Müşteri Sadakat (LTV) Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("MusteriLTV.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class LTVResult
+    {
+        public string Unvan { get; set; } = "";
+        public DateTime İlkIslem { get; set; }
+        public int FaturaSayisi { get; set; }
+        public decimal ToplamCiro { get; set; }
+        public decimal TahminiKar { get; set; }
+        public int StarRate { get; set; }
+    }
+}

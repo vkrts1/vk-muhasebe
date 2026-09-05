@@ -1,0 +1,262 @@
+@page "/raporlar-menu"
+@using MudBlazor
+@inject NavigationManager Nav
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+
+<style>
+    .rapor-container {
+        padding: 40px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .rapor-header-gradient {
+        background: linear-gradient(90deg, #60A5FA 0%, #00D2FF 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 38px;
+        font-weight: 900;
+        letter-spacing: -1px;
+    }
+
+    .rapor-card {
+        background: rgba(30, 34, 40, 0.6) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 24px !important;
+        padding: 25px;
+        height: 245px;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .rapor-card:hover {
+        background: rgba(30, 34, 40, 0.8) !important;
+        border-color: rgba(96, 165, 250, 0.5) !important;
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4) !important;
+    }
+
+    .category-badge {
+        background: rgba(96, 165, 250, 0.1);
+        color: #60A5FA;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .report-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(96, 165, 250, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-goster {
+        background: #60A5FA !important;
+        color: white !important;
+        border-radius: 21px !important;
+        font-weight: 800 !important;
+        font-size: 11px !important;
+        padding: 8px 30px !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .rapor-search-bar {
+        background: rgba(29, 33, 37, 0.6) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 12px !important;
+        padding: 4px 16px;
+        width: 350px;
+    }
+</style>
+
+<div class="rapor-container animate-fade-in">
+    @* 1. TOP HEADER *@
+    <div class="d-flex align-center justify-space-between mb-12">
+        <div>
+            <MudText Class="rapor-header-gradient">İş Analiz Merkezi</MudText>
+            <MudText Style="color: rgba(255,255,255,0.5); font-size: 16px; font-weight: 500;">İşletmenizin geleceğini verilerle şekillendirin.</MudText>
+        </div>
+
+        <div class="d-flex align-center gap-4">
+            <div class="rapor-search-bar">
+                <MudTextField @bind-Value="searchString" Placeholder="Rapor kategorisi veya adı..." 
+                               Variant="Variant.Text" Margin="Margin.Dense" 
+                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                               AdornmentColor="Color.Info" Immediate="true" />
+            </div>
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" 
+                       StartIcon="@Icons.Material.Filled.AutoGraph" 
+                       Style="border-radius: 12px; padding: 10px 20px; font-weight: 700;"
+                       OnClick="PrintAllReports">360° KOMPLE RAPOR</MudButton>
+        </div>
+    </div>
+
+    @* 2. REPORTS GRID *@
+    <MudGrid Spacing="6">
+        @foreach (var report in filteredReports)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <div class="rapor-card cursor-pointer" @onclick="@(() => Nav.NavigateTo(report.Url))">
+                    <div class="d-flex align-center mb-4">
+                        <div class="report-icon-box mr-4">
+                            <MudIcon Icon="@report.Icon" Color="Color.Info" Size="Size.Medium" />
+                        </div>
+                        <MudText Style="font-weight: 900; font-size: 16px; line-height: 1.2; color: white;">@report.Title</MudText>
+                    </div>
+
+                    <div style="flex-grow: 1;">
+                        <MudText Style="color: rgba(255,255,255,0.5); font-size: 13px; line-height: 1.5;">@report.Description</MudText>
+                    </div>
+
+                    <div class="d-flex align-center justify-space-between">
+                        <span class="category-badge">@report.Category</span>
+                        <MudButton Class="btn-goster" Variant="Variant.Filled" OnClick="@(() => Nav.NavigateTo(report.Url))">GÖSTER</MudButton>
+                    </div>
+                </div>
+            </MudItem>
+        }
+    </MudGrid>
+</div>
+
+@code {
+    private string searchString = "";
+    
+    private List<ReportItem> reports = new()
+    {
+        new("Genel Özet", "Finansal", "raporlar", Icons.Material.Filled.Dashboard, "İşletmenin genel mali özetini gösterir."),
+        new("Cari Bakiye Raporu", "Cari Hesap", "cari-bakiye-raporu", Icons.Material.Filled.AccountBalanceWallet, "Müşteri ve tedarikçi bakiyeleri."),
+        new("Cari Hareket Dökümü", "Cari Hesap", "cari-hareket-dokumu", Icons.Material.Filled.ListAlt, "Cari hesapların işlem detayları."),
+        new("Vadesi Geçmiş Alacaklar", "Cari Hesap", "vadesi-gecmis-alacaklar", Icons.Material.Filled.TimerOff, "Ödeme süresi geçmiş tahsilatlar."),
+        new("Stok Mevcudu", "Stok", "stok-mevcudu", Icons.Material.Filled.Inventory, "Güncel stok miktarları ve değerleri."),
+        new("Stok Hareketleri", "Stok", "stok-hareketleri", Icons.Material.Filled.SwapVert, "Giriş-çıkış stok hareket dökümü."),
+        new("Stok Devir Hızı", "Stok", "stok-devir", Icons.Material.Filled.Speed, "Stokların dönüşüm hızı analizi."),
+        new("Karlılık Raporu", "Karlılık", "gelir-tablosu", Icons.Material.Filled.ShowChart, "Ürün ve müşteri bazlı kar/zarar analizi."),
+        new("Bütçe / Hedef Takibi", "Stratejik", "butce-hedef", Icons.Material.Filled.TrackChanges, "Aylık hedeflere ulaşma durumu."),
+        new("Hareketsiz Cariler", "Cari Hesap", "hareketsiz-cariler", Icons.Material.Filled.PersonOff, "Son 6 aydır işlem görmeyen cari hesaplar."),
+        new("Kritik Stok Seviyesi", "Stok", "kritik-stok", Icons.Material.Filled.Warning, "Minimum seviyenin altındaki ürünler."),
+        new("Ölü Stok Raporu", "Stok", "olu-stok", Icons.Material.Filled.Inventory2, "Satışı olmayan beklemedeki stoklar."),
+        new("Gelir Tablosu", "Finansal", "gelir-tablosu", Icons.Material.Filled.AccountBalance, "Dönemsel gelir ve gider özeti."),
+        new("Nakit Akış Analizi", "Finansal", "nakit-akis-tablosu", Icons.Material.Filled.TrendingUp, "Nakit giriş ve çıkışlarının projeksiyonu.")
+    };
+
+    private IEnumerable<ReportItem> filteredReports => 
+        string.IsNullOrWhiteSpace(searchString) 
+            ? reports 
+            : reports.Where(r => r.Title.Contains(searchString, StringComparison.OrdinalIgnoreCase) || 
+                                 r.Category.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+    private async Task PrintAllReports()
+    {
+        try
+        {
+            Snackbar.Add("Tüm işletme verileri analiz ediliyor...", Severity.Info);
+            StateHasChanged();
+
+            var sections = new List<ReportSection>();
+
+            // 1. DATA COLLECTION
+            var allCaris = await DbService.GetCarilerAsync();
+            var allStoklar = await DbService.GetStoklarAsync();
+            var allFaturalar = await DbService.GetFaturalarAsync();
+            var allHareketler = await DbService.GetCariHareketleriAsync_All();
+            var stats = await DbService.GetDashboardStatsAsync();
+            var budgetGoals = await DbService.GetYillikSatisHedefleriAsync();
+
+            // 2. BUILD SECTIONS
+            
+            // S1: GENEL DURUM
+            sections.Add(new ReportSection { 
+                Title = "1. GENEL FİNANSAL GÖRÜNÜM", 
+                Headers = new[] { "Kalem", "Tutar/Değer" }, 
+                Rows = new List<string[]> {
+                    new[] { "Toplam Cari Alacak", stats.ToplamAlacak.ToString("N2") + " ₺" },
+                    new[] { "Toplam Cari Borç", stats.ToplamBorc.ToString("N2") + " ₺" },
+                    new[] { "Aylık Satış Hacmi", stats.AylikCiro.ToString("N2") + " ₺" },
+                    new[] { "Kritik Stok Kalemi", stats.KritikStokSayisi.ToString() + " Adet" }
+                }
+            });
+
+            // S2: CARİ RİSK ANALİZİ (Borçlu Cariler)
+            var s2Rows = allCaris.Where(c => c.Bakiye < 0).OrderBy(c => c.Bakiye).Take(15)
+                .Select(c => new[] { c.Unvan ?? "", Math.Abs(c.Bakiye).ToString("N2") + " ₺", "BORÇLU" }).ToList();
+            sections.Add(new ReportSection { 
+                Title = "2. CARİ RİSK ANALİZİ (EN YÜKSEK BORÇLU HESAPLAR)", 
+                Headers = new[] { "Ünvan", "Bakiye", "Durum" }, 
+                Rows = s2Rows 
+            });
+
+            // S3: ALACAK YAŞLANDIRMA (Alacaklı Cariler)
+            var s3Rows = allCaris.Where(c => c.Bakiye > 0).OrderByDescending(c => c.Bakiye).Take(15)
+                .Select(c => new[] { c.Unvan ?? "", c.Bakiye.ToString("N2") + " ₺", "ALACAKLI" }).ToList();
+            sections.Add(new ReportSection { 
+                Title = "3. ALACAK ANALİZİ (EN YÜKSEK ALACAKLI HESAPLAR)", 
+                Headers = new[] { "Ünvan", "Bakiye", "Durum" }, 
+                Rows = s3Rows 
+            });
+
+            // S4: ENVANTER DEĞERLEME
+            var totalInvValue = allStoklar.Sum(s => s.Miktar * (double)s.AlisFiyati);
+            var s4Rows = allStoklar.OrderByDescending(s => s.Miktar * (double)s.AlisFiyati).Take(15)
+                .Select(s => new[] { s.StokAdi ?? "", s.Miktar.ToString("N1"), (s.Miktar * (double)s.AlisFiyati).ToString("N2") + " ₺" }).ToList();
+            sections.Add(new ReportSection { 
+                Title = $"4. ENVANTER DEĞERLEME (Toplam Değer: {totalInvValue:N2} ₺)", 
+                Headers = new[] { "Ürün", "Miktar", "Toplam Değer" }, 
+                Rows = s4Rows 
+            });
+
+            // S5: KRİTİK STOK LİSTESİ
+            var s5Rows = allStoklar.Where(s => s.Miktar <= 10).OrderBy(s => s.Miktar).Take(15) // Simplified logic
+                .Select(s => new[] { s.StokAdi ?? "", s.Miktar.ToString("N1"), "KRİTİK" }).ToList();
+            sections.Add(new ReportSection { 
+                Title = "5. KRİTİK SEVİYEYE DÜŞEN ÜRÜNLER", 
+                Headers = new[] { "Ürün", "Mevcut", "Durum" }, 
+                Rows = s5Rows 
+            });
+
+            // S6: SATIŞ PERFORMANSI (Son Faturalar)
+            var s6Rows = allFaturalar.Where(f => f.Tur == "Satis" || f.Tur == "Satış").OrderByDescending(f => f.Tarih).Take(15)
+                .Select(f => new[] { f.Tarih.ToShortDateString(), f.CariUnvan ?? "", f.GenelToplam.ToString("N2") + " ₺" }).ToList();
+            sections.Add(new ReportSection { 
+                Title = "6. SON SATIŞ OPERASYONLARI", 
+                Headers = new[] { "Tarih", "Müşteri", "Tutar" }, 
+                Rows = s6Rows 
+            });
+
+            // S7: HEDEF GERÇEKLEŞME (BÜTÇE)
+            var s7Rows = budgetGoals.Select(g => new[] { g.Yil.ToString(), g.Aciklama ?? "Genel", g.HedefTutari.ToString("N2") + " ₺" }).ToList();
+            sections.Add(new ReportSection { 
+                Title = "7. YILLIK SATIŞ HEDEFLERİ VE BÜTÇE", 
+                Headers = new[] { "Yıl", "Açıklama", "Hedef Tutar" }, 
+                Rows = s7Rows 
+            });
+
+            // 3. GENERATE PDF
+            var pdf = await PdfService.GenerateConsolidatedReportPdfBytesAsync("360 DERECE İŞLETME ANALİZ VE PERFORMANS RAPORU", sections);
+            await FileService.SaveAndOpenFileAsync($"Komple_Analiz_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
+            
+            Snackbar.Add("Entegre rapor paketi başarıyla hazırlandı.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Rapor oluşturulurken hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public record ReportItem(string Title, string Category, string Url, string Icon, string Description);
+}

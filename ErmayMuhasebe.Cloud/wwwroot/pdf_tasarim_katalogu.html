@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ermay Muhasebe - PDF Tasarım Kataloğu</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .category-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            margin: 60px 0 30px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+            display: inline-block;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 40px;
+        }
+
+        /* Tasarım Kartı Temel Yapısı */
+        .design-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+
+        .design-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        .preview-area {
+            height: 500px;
+            overflow: hidden;
+            padding: 20px;
+            background: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .pdf-mockup {
+            width: 100%;
+            height: 100%;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            font-size: 10px;
+        }
+
+        .card-info {
+            padding: 25px;
+            background: white;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .card-info h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: #0f172a;
+        }
+
+        .card-info p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        /* --- STİLLER --- */
+
+        /* 1. Midnight Pro (Dark Mode) */
+        .style-midnight {
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .style-midnight .mockup-header {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .style-midnight .accent {
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        .style-midnight table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .style-midnight th {
+            text-align: left;
+            border-bottom: 1px solid #334155;
+            padding: 8px;
+            color: #94a3b8;
+        }
+
+        .style-midnight td {
+            padding: 8px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        /* 2. Glassmorphism */
+        .style-glass {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            padding: 30px !important;
+        }
+
+        .style-glass .pdf-inner {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            height: 100%;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* 3. Swiss Clean */
+        .style-swiss {
+            font-family: 'Helvetica', sans-serif;
+        }
+
+        .style-swiss .title {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .style-swiss .grid-line {
+            border-top: 4px solid black;
+            margin-bottom: 10px;
+        }
+
+        /* 4. Royal Navy */
+        .style-royal {
+            border-top: 15px solid #1e3a8a;
+        }
+
+        .style-royal .header-box {
+            background: #f1f5f9;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #1e3a8a;
+        }
+
+        /* 5. Emerald Finance */
+        .style-emerald .badge-green {
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .style-emerald th {
+            background: #f0fdf4;
+        }
+
+        /* 6. Bold Contrast */
+        .style-bold-header .header-black {
+            background: black;
+            color: white;
+            padding: 30px;
+            margin: -20px -20px 20px -20px;
+        }
+
+        /* 7. Nordic Minimal */
+        .style-nordic {
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            color: #444;
+        }
+
+        .style-nordic th {
+            font-weight: 600;
+            color: #000;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+
+        /* 8. Retro Ledger */
+        .style-retro {
+            font-family: 'Roboto Mono', monospace;
+            background: #fffcf5;
+        }
+
+        .style-retro table {
+            border: 1px solid #888;
+        }
+
+        .style-retro th,
+        .style-retro td {
+            border: 1px solid #ccc;
+        }
+
+        /* 9. Future Tech */
+        .style-tech {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+        }
+
+        .style-tech .scanner-line {
+            height: 2px;
+            background: rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 10px #0f0;
+            margin-bottom: 10px;
+        }
+
+        /* 10. Zen Ivory */
+        .style-zen {
+            background: #fafaf9;
+        }
+
+        .style-zen .card-info-box {
+            border: 1px solid #e7e5e4;
+            border-radius: 0;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* Badge styles for all */
+        .badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 8px;
+            font-weight: 600;
+        }
+
+        .bg-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .bg-red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .bg-green {
+            background: #dcfce7;
+            color: #166534;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>PDF Tasarım Kataloğu</h1>
+            <p>Ermay Muhasebe için hazırlanmış 20 adet premium PDF tasarım konsepti.</p>
+        </header>
+
+        <!-- MODERN SEÇENEKLER -->
+        <h2 class="category-title">Modern & Teknoloji</h2>
+        <div class="grid">
+            <!-- 1 -->
+            <div class="design-card" onclick="alert('Midnight Pro Seçildi')">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-midnight">
+                        <div class="mockup-header">
+                            <div style="display:flex; justify-content:space-between">
+                                <span class="accent">ERMAY S.A.</span>
+                                <span>25.02.2026</span>
+                            </div>
+                            <h2 style="font-size:18px; margin-top:10px">Müşteri Ekstresi</h2>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>İşlem</th>
+                                    <th>Borç</th>
+                                    <th>Alacak</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>10.02</td>
+                                    <td>SATIŞ</td>
+                                    <td class="accent">₺1.200</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>12.02</td>
+                                    <td>TAHSİLAT</td>
+                                    <td>-</td>
+                                    <td>₺1.200</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Midnight Pro</h3>
+                    <p>Koyu mod sevenler için derin lacivert ve elektrik mavisi vurgular. Siber güvenlik ve teknoloji
+                        odaklı işletmeler için ideal.</p>
+                </div>
+            </div>
+
+            <!-- 2 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-glass">
+                        <div class="pdf-inner">
+                            <h1 style="color:#6366f1">GLASSMORPHISM</h1>
+                            <p style="margin-bottom:15px; font-size:8px">Modern web estetiği, buzlu cam efekti ve canlı
+                                gradyanlar.</p>
+                            <div
+                                style="height:50px; background:rgba(255,255,255,0.5); border-radius:10px; margin-bottom:10px">
+                            </div>
+                            <div style="height:100px; background:rgba(255,255,255,0.3); border-radius:10px"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Arctic Glass</h3>
+                    <p>Cam efekti ve yarı saydam katmanlar. Kreatif ajanslar ve modern startuplar için eşsiz bir
+                        görünüm.</p>
+                </div>
+            </div>
+
+            <!-- 3 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-tech">
+                        <div class="scanner-line"></div>
+                        <h2 style="text-shadow: 0 0 5px #0f0; margin-bottom:15px">SYS_EXTRACT_v4.0</h2>
+                        <div style="border: 1px solid #0f0; padding:10px">
+                            [DATA_STREAM]: CARI_HAREKET_LOG<br>
+                            > 24.02.26 | FTR_992 | +45,000.00<br>
+                            > 25.02.26 | PYMT_RCV | -12,500.00<br>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Neon Cyber</h3>
+                    <p>Matrix stili, terminal görünümü. Yazılım evleri ve teknoloji meraklısı firmalar için nostaljik ve
+                        havalı.</p>
+                </div>
+            </div>
+
+            <!-- 4 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup"
+                        style="background: linear-gradient(to bottom, #4f46e5 80px, white 80px); color: white;">
+                        <h2 style="padding: 20px 0 0 20px">Dinamik Gradyan</h2>
+                        <div
+                            style="background:white; margin:20px; height:200px; border-radius:12px; box-shadow:0 10px 20px rgba(0,0,0,0.1); padding:15px; color:#333">
+                            <div style="height:10px; width:40%; background:#eee; margin-bottom:10px"></div>
+                            <div style="height:10px; width:60%; background:#eee"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Gradient Wave</h3>
+                    <p>Header kısmında akışkan renk geçişleri. Enerjik, dinamik ve profesyonel bir denge.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- KURUMSAL SEÇENEKLER -->
+        <h2 class="category-title">Kurumsal & Güven</h2>
+        <div class="grid">
+            <!-- 5 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-royal">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:20px">
+                            <div style="width:50px; height:50px; background:#1e3a8a; border-radius:4px"></div>
+                            <div style="text-align:right">
+                                <h3 style="color:#1e3a8a">ERMAY S.A.</h3>
+                                <p>Tekstilkent G2 Blok</p>
+                            </div>
+                        </div>
+                        <div class="header-box">
+                            <p><b>MÜŞTERİ:</b> VOLKAN TEKSTİL</p>
+                            <p><b>BAKİYE:</b> ₺123.450,00</p>
+                        </div>
+                        <table style="width:100%">
+                            <tr style="background:#1e3a8a; color:white">
+                                <th>Tarih</th>
+                                <th>Açıklama</th>
+                                <th>Tutar</th>
+                            </tr>
+                            <tr style="background:#f8fafc">
+                                <td>10.02</td>
+                                <td>Satış Faturası</td>
+                                <td>1.500</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Royal Navy</h3>
+                    <p>Klasik bankacılık ve kurumsal finans estetiği. Güven veren, ağırbaşlı lacivert tonları.</p>
+                </div>
+            </div>
+
+            <!-- 6 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-emerald">
+                        <div
+                            style="color:#059669; border-bottom:2px solid #059669; padding-bottom:5px; margin-bottom:15px">
+                            <h2 style="font-size:16px">FİNANSAL ÖZET</h2>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px">
+                            <div style="background:#f0fdf4; padding:10px">Satış: <b style="color:#059669">450k</b></div>
+                            <div style="background:#fef2f2; padding:10px">Ödeme: <b style="color:#dc2626">200k</b></div>
+                        </div>
+                        <span class="badge-green">Kredi Limiti Uygun</span>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Emerald Trust</h3>
+                    <p>Paranın ve büyümenin rengi olan yeşil tonları. Pozitif finansal iletişimi destekleyen ferah
+                        tasarım.</p>
+                </div>
+            </div>
+
+            <!-- 7 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-bold-header">
+                        <div class="header-black">
+                            <h3>ERMAY MUHASEBE</h3>
+                            <p style="font-size:8px; opacity:0.7">PROFESYONEL CARİ EKSTRE</p>
+                        </div>
+                        <div style="padding:10px">
+                            <h2 style="font-size:18px; letter-spacing:2px">SAYIN VOLKAN K.</h2>
+                            <div style="height:2px; background:black; width:50px; margin:10px 0"></div>
+                            <p>Aşağıda cari hesabınıza ait detaylar yer almaktadır.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Executive Contrast</h3>
+                    <p>Yüksek kontrastlı siyah-beyaz tasarım. Otoriter, net ve prestij odaklı butik işletmeler için.</p>
+                </div>
+            </div>
+
+            <!-- 8 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup" style="border-right: 40px solid #f1f5f9; padding-right:0">
+                        <h2 style="font-family:'Playfair Display', serif; font-size:22px; margin-bottom:20px">Detaylı
+                            Rapor</h2>
+                        <div style="padding-right:20px">
+                            <div style="height:1px; background:#ddd; margin-bottom:10px"></div>
+                            <p><i>Heritage Style - Financial Reporting</i></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Heritage Classic</h3>
+                    <p>Serif fontlar ve asimetrik boşluklar. Geleneksel değerleri modern tasarımla birleştiren lüks
+                        segment.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MİNİMALİST SEÇENEKLER -->
+        <h2 class="category-title">Minimalist & Saf</h2>
+        <div class="grid">
+            <!-- 9 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-swiss">
+                        <div class="grid-line"></div>
+                        <h1 class="title">STATEMENT<br>2026/02</h1>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; font-size:8px">
+                            <div>ERMAY S.A.<br>ISTANBUL</div>
+                            <div style="text-align:right">CUSTOMER: 4492<br>VOLKAN</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Swiss Helvetica</h3>
+                    <p>İsviçre grafik tasarım ekolü. Matematiksel düzen, kalın başlıklar ve kusursuz boşluklar.
+                        Zamansızdır.</p>
+                </div>
+            </div>
+
+            <!-- 10 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-nordic">
+                        <h2 style="font-size:12px; margin-bottom:30px">Account Overview</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Date</th>
+                                    <th style="text-align:right">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Invoice #1</td>
+                                    <td>01 Feb</td>
+                                    <td style="text-align:right">400.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Payment</td>
+                                    <td>05 Feb</td>
+                                    <td style="text-align:right">-200.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Nordic Air</h3>
+                    <p>Ultra-hafif fontlar ve maksimum sadelik. "Az çoktur" felsefesini benimseyen modern yapılar için.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 11 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-zen">
+                        <div class="card-info-box">
+                            <h3 style="font-size:10px">ERMAY</h3>
+                            <p style="font-size:7px">Soft Ivory Finish</p>
+                        </div>
+                        <div style="height:100px; border-left: 1px solid #e7e5e4; padding-left:15px">
+                            <p>Minimalist ve sıcak tonlar.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Zen Ivory</h3>
+                    <p>Sıcak kemik rengi arka plan ve yumuşak gri detaylar. Göz yormayan, insan odaklı finans raporlama.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 12 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup"
+                        style="display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px solid #eee;">
+                        <h1 style="font-size:40px; color:#ddd; margin-bottom:10px">01</h1>
+                        <h2 style="font-weight:900; letter-spacing:10px">ERMAY</h2>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Monospace Bold</h3>
+                    <p>Kodlama estetiği ile muhasebeyi birleştirir. Tüm sayıların hizalı olduğu, veri odaklı brutalist
+                        yaklaşım.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- YARATICI SEÇENEKLER -->
+        <h2 class="category-title">Yaratıcı & Fonksiyonel</h2>
+        <div class="grid">
+            <!-- 13 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup">
+                        <div style="display:flex; gap:5px; margin-bottom:15px">
+                            <span class="badge bg-blue" style="font-size:10px">SATIŞ: ₺45.000</span>
+                            <span class="badge bg-red" style="font-size:10px">BORÇ: ₺12.000</span>
+                            <span class="badge bg-green" style="font-size:10px">TAHSİLAT: ₺33.000</span>
+                        </div>
+                        <div
+                            style="height:150px; background:#f1f5f9; border-radius:15px; border:2px dashed #cbd5e1; display:flex; justify-content:center; align-items:center; color:#94a3b8">
+                            INFOGRAPHIC SECTION
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Vibrant Infographic</h3>
+                    <p>Verileri infografik rozetlerle sunar. Müşterinin durumunu tek bakışta anlamasını sağlar.</p>
+                </div>
+            </div>
+
+            <!-- 14 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup" style="background:#f8fafc; padding:0">
+                        <div style="background:#4f46e5; height:5px"></div>
+                        <div style="padding:20px">
+                            <div style="display:grid; grid-template-columns:30px 1fr; gap:10px; margin-bottom:10px">
+                                <div style="height:30px; background:#4f46e5; border-radius:8px"></div>
+                                <div
+                                    style="height:30px; background:white; border-radius:8px; border:1px solid #e2e8f0; padding:8px; font-size:8px">
+                                    ERMAY MUHASEBE</div>
+                            </div>
+                            <div
+                                style="background:white; border-radius:12px; border:1px solid #e2e8f0; height:150px; padding:15px">
+                                <div style="height:10px; background:#f1f5f9; margin-bottom:8px"></div>
+                                <div style="height:10px; background:#f1f5f9; width:70%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Material Cards</h3>
+                    <p>Modern uygulama arayüzü gibi kartlı yapı. Mobil uygulamadan alınmış gibi modern ve düzenli.</p>
+                </div>
+            </div>
+
+            <!-- 15 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup" style="background:white; border: 2px solid #000;">
+                        <div
+                            style="background:black; color:white; padding:5px; text-align:center; font-size:12px; font-weight:900">
+                            MASTER LIST v1.0</div>
+                        <table style="width:100%">
+                            <tr>
+                                <td style="border: 2px solid #000">DATE</td>
+                                <td style="border: 2px solid #000">DESC</td>
+                                <td style="border: 2px solid #000">SUM</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 2px solid #000">10/02</td>
+                                <td style="border: 2px solid #000">INVOICE</td>
+                                <td style="border: 2px solid #000">5.000</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Brutalist Grid</h3>
+                    <p>Kalın siyah çizgiler, dev fontlar. Dikkat çekici, cesur ve endüstriyel bir duruş.</p>
+                </div>
+            </div>
+
+            <!-- 16 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup" style="background:#111; color:#fff">
+                        <div style="border-left: 2px solid #f97316; padding-left:10px; margin-bottom:20px">
+                            <h2 style="color:#f97316">CARBON FLOW</h2>
+                        </div>
+                        <div style="background:#222; padding:10px; border-radius:4px">
+                            <p style="color:#666">Performance Report</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Carbon Fiber</h3>
+                    <p>Koyu gri tonları ve turuncu vurgular. Spor otomobil estetiği, yüksek performans hissi.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- KLASİK SEÇENEKLER -->
+        <h2 class="category-title">Klasik & Fonksiyonel</h2>
+        <div class="grid">
+            <!-- 17 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup style-retro">
+                        <div style="text-align:center; margin-bottom:20px; border-bottom:1px double #000; padding:10px">
+                            <h1 style="font-size:14px">ERMAY CARI LISTESI</h1>
+                        </div>
+                        <table style="width:100%">
+                            <tr>
+                                <th>ACC_ID</th>
+                                <th>DATE</th>
+                                <th>DEBIT</th>
+                                <th>CREDIT</th>
+                            </tr>
+                            <tr>
+                                <td>C001</td>
+                                <td>20.02</td>
+                                <td>14.00</td>
+                                <td>0.00</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Vintage Ledger</h3>
+                    <p>Eski daktilo ve defter tutma estetiği. Güvenilirlik ve köklü geçmiş duygusunu ön plana çıkarır.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 18 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup" style="padding:0">
+                        <div
+                            style="background:#f1f5f9; height:30px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #ddd">
+                            Header Info</div>
+                        <div style="padding:15px">
+                            <table style="width:100%; border:1px solid #ddd">
+                                <tr style="background:#eee">
+                                    <td>Col A</td>
+                                    <td>Col B</td>
+                                </tr>
+                                <tr>
+                                    <td>Data 1</td>
+                                    <td>Data 2</td>
+                                </tr>
+                                <tr style="background:#f9f9f9">
+                                    <td>Data 3</td>
+                                    <td>Data 4</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Compact ERP</h3>
+                    <p>Maksimum veri yoğunluğu. Çok fazla hareket içeren hesaplar için en okunabilir ve klasik yapı.</p>
+                </div>
+            </div>
+
+            <!-- 19 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup" style="border: 1px solid #94a3b8;">
+                        <div style="display:flex; height:100%">
+                            <div
+                                style="width:30px; background:#94a3b8; color:white; display:flex; align-items:center; justify-content:center; writing-mode: vertical-rl; transform: rotate(180deg);">
+                                OFFICIAL REPORT
+                            </div>
+                            <div style="flex:1; padding:15px">
+                                <h2>ERMAY</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Industrial Grey</h3>
+                    <p>Gri tonları ve dikey başlık alanı. Mimari çizimler gibi net, düzenli ve profesyonel.</p>
+                </div>
+            </div>
+
+            <!-- 20 -->
+            <div class="design-card">
+                <div class="preview-area">
+                    <div class="pdf-mockup" style="background:#fff;">
+                        <div style="border:5px solid #eee; height:100%; padding:20px">
+                            <h1 style="text-align:center; color:#ccc">LOGO</h1>
+                            <div style="margin-top:50px">
+                                <div style="height:2px; background:#eee"></div>
+                                <div style="height:2px; background:#eee; margin:10px 0"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3>Clean Border</h3>
+                    <p>Kalın çerçeveli, ferah ve odaklayıcı. Klasik tasarımın en sade ve şık hali.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // İleride seçim yapıldığında aksiyon almak için
+        document.querySelectorAll('.design-card').forEach(card => {
+            card.addEventListener('click', function () {
+                const name = this.querySelector('h3').innerText;
+                if (confirm(name + ' tasarımını uygulamak istediğinize emin misiniz?')) {
+                    alert(name + ' parametreleri sisteme yükleniyor...');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

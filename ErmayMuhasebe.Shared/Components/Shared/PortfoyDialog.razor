@@ -1,0 +1,55 @@
+@using MudBlazor
+@using ErmayMuhasebe.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Model.FirmaIsmi" Label="Firma İsmi" Variant="Variant.Outlined" Required="true" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudTextField @bind-Value="Model.VKN" Label="VKN" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudTextField @bind-Value="Model.VergiDairesi" Label="Vergi Dairesi" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudTextField @bind-Value="Model.GSM" Label="GSM Numarası" Variant="Variant.Outlined" />
+            </MudItem>
+             <MudItem xs="6">
+                <MudTextField @bind-Value="Model.Telefon" Label="Telefon Numarası" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Model.Email" Label="E-posta Adresi" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Model.WebSitesi" Label="İnternet Sitesi" Variant="Variant.Outlined" />
+            </MudItem>
+             <MudItem xs="12">
+                <MudTextField @bind-Value="Model.Adres" Label="Adres" Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+             <MudItem xs="6">
+                <MudTextField @bind-Value="Model.Il" Label="İl" Variant="Variant.Outlined" />
+            </MudItem>
+             <MudItem xs="6">
+                <MudTextField @bind-Value="Model.Ilce" Label="İlçe" Variant="Variant.Outlined" />
+            </MudItem>
+             <MudItem xs="12">
+                <MudTextField @bind-Value="Model.Sektor" Label="Sektör" Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public PortfoyKart Model { get; set; } = new();
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(Model));
+    void Cancel() => MudDialog.Cancel();
+}

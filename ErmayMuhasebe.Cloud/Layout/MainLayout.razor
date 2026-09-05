@@ -1,0 +1,891 @@
+@inherits LayoutComponentBase
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientAuthService AuthService
+@inject ClientDatabaseService DbService
+@inject ErmayMuhasebe.Services.IFirebaseService FirebaseService
+@inject NavigationManager Nav
+@inject UiService UiService
+@inject ISnackbar Snackbar
+@inject ErmayMuhasebe.Services.IYearContext YearContext
+@inject ISyncLocalStorageService LocalStorage
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject IDialogService DialogService
+@inject I18nService L
+@inject ErmayMuhasebe.Services.DovizService DovizService
+
+<MudThemeProvider Theme="_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+@if (!AuthService.IsAuthenticated)
+{
+    <MudLayout>
+        <MudMainContent Class="d-flex align-center justify-center fade-in" Style="height: 100%; background: radial-gradient(circle at 50% 50%, #101010 0%, #000000 100%);">
+             <div class="glass-login pa-10 d-flex flex-column align-center gap-8" style="width: 440px; border-radius: 32px;">
+                 <div class="logo-container-large">
+                     <div class="glow-effect"></div>
+                     <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Large" Style="font-size: 72px; color: #3b82f6; z-index: 2;" />
+                 </div>
+                 <div class="text-center">
+                    <MudText Typo="Typo.h3" Style="font-weight: 900; color: white; letter-spacing: 3px; font-family: 'Inter', sans-serif;">ERMAY</MudText>
+                    <MudText Typo="Typo.subtitle1" Style="color: rgba(255,255,255,0.5); font-weight: 600; letter-spacing: 1px;">Cloud Edition 2.0</MudText>
+                 </div>
+                 
+                 <div class="pin-input-wrapper w-100">
+                     <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.4); font-weight: 700; margin-left: 12px; margin-bottom: 4px; display: block;">ERİŞİM PIN KODU</MudText>
+                     <MudTextField @bind-Value="pinCode" Label="" Variant="Variant.Outlined" InputType="InputType.Password" 
+                                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" FullWidth="true" 
+                                   OnKeyDown="@CheckEnter" 
+                                   Style="background: rgba(255,255,255,0.03); color: white; border-radius: 16px;" 
+                                   Placeholder="****"
+                                   MaxLength="4" />
+                 </div>
+                 
+                 <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="DoLogin" 
+                            Style="height: 64px; border-radius: 16px; font-weight: 900; font-size: 1.2rem; background: linear-gradient(90deg, #3b82f6, #8b5cf6); box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);">
+                    GİRİŞ YAP
+                 </MudButton>
+                 
+                 <div class="d-flex justify-center align-center gap-2">
+                     <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.3);">Sürüm: v2.45 stable</MudText>
+                 </div>
+                 
+                  @if(!string.IsNullOrEmpty(error))
+                 {
+                     <MudAlert Severity="Severity.Error" Dense="true" Variant="Variant.Filled" Class="rounded-lg">@error</MudAlert>
+                 }
+                 <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.3); margin-top: 20px;">© 2026 Ermay Muhasebe V2 Cloud Edition</MudText>
+             </div>
+        </MudMainContent>
+    </MudLayout>
+}
+else if (_isYearSelectionVisible)
+{
+    <MudLayout>
+        <MudMainContent Class="d-flex align-center justify-center fade-in" Style="height: 100%; background: radial-gradient(circle at 50% 50%, #101010 0%, #000000 100%);">
+             <div class="glass-login pa-10 d-flex flex-column align-center gap-8" style="width: 480px; border-radius: 32px;">
+                 <div class="text-center">
+                    <MudText Typo="Typo.h4" Style="font-weight: 900; color: white; letter-spacing: 1px;">ÇALIŞMA YILI SEÇİMİ</MudText>
+                    <MudText Typo="Typo.subtitle1" Style="color: rgba(255,255,255,0.5); font-weight: 600;">Devam etmek için bir yıl seçin</MudText>
+                 </div>
+                 
+                 <div class="w-100 mt-4">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-height: 300px; overflow-y: auto; padding: 4px;">
+                        @foreach (var year in _availableYears)
+                        {
+                            <button @onclick="() => SelectYear(year)" 
+                                    class="@(selectedYear == year ? "year-btn-active" : "year-btn")"
+                                    style="cursor: pointer; border: none; width: 100%;">
+                                <span style="font-size: 20px; font-weight: 900;">@year</span>
+                                <span style="font-size: 10px; font-weight: 700; opacity: 0.6; letter-spacing: 1px;">ÇALIŞMA YILI</span>
+                                @if (selectedYear == year)
+                                {
+                                    <div class="active-dot"></div>
+                                }
+                            </button>
+                        }
+                    </div>
+                 </div>
+
+                 <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="FinalizeLogin" 
+                            Style="height: 64px; border-radius: 16px; font-weight: 900; font-size: 1.2rem; background: linear-gradient(90deg, #8b5cf6, #d946ef);">
+                    UYGULAMAYI BAŞLAT
+                 </MudButton>
+             </div>
+        </MudMainContent>
+    </MudLayout>
+}
+else
+{
+    <MudLayout>
+        <MudAppBar Elevation="0" Color="Color.Inherit" Fixed="true" Style="height: 50px !important; border-bottom: 1px solid rgba(255,255,255,0.06); background: var(--surface-color) !important;">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" Size="Size.Small" />
+            <MudText Typo="Typo.h6" Class="ml-3 font-weight-bold" Style="font-size: 16px; letter-spacing: 0.5px;">ERMAY MUHASEBE</MudText>
+            
+            <div class="ms-8 d-none d-md-flex">
+                <a href="/yil-secimi" class="year-badge">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="me-2" />
+                    <span>@YearContext.CurrentYear MALİ YILI</span>
+                </a>
+            </div>
+
+            <MudSpacer />
+            
+            <div class="d-flex align-center gap-2 mr-2">
+                 <MudButton OnClick="() => Nav.NavigateTo(Nav.Uri)" Class="user-badge px-3">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Size="Size.Medium" Class="me-2" />
+                    <span>ADMIN</span>
+                 </MudButton>
+            </div>
+        </MudAppBar>
+        
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="0" ClipMode="DrawerClipMode.Always" 
+                   Variant="DrawerVariant.Responsive" Breakpoint="Breakpoint.Md"
+                   Width="var(--sidebar-width)"
+                   Style="border-right: 1px solid rgba(255,255,255,0.05);">
+            <NavMenu />
+            <div style="opacity:0.2; font-size:9px; padding:15px; position:absolute; bottom:0; width:100%; text-align:center;">PREMIUM v1.0.3</div>
+        </MudDrawer>
+        
+        <MudMainContent>
+            <div class="desktop-view-port">
+                <div class="page-container" @key="@Nav.Uri">
+                    @Body
+                </div>
+            </div>
+            
+            <ContextMenuContainer />
+
+            <div class="premium-footer">
+                <div class="footer-left">
+                    @foreach (var itemId in (_pendingItemsOrder ?? _itemsOrder))
+                    {
+                        var currentId = itemId;
+                        <div draggable="true" 
+                             @ondragstart="@(() => HandleDragStart(currentId))"
+                             @ondragenter="@(() => HandleDragEnter(currentId))"
+                             @ondragend="@HandleDragEnd"
+                             ondragover="event.preventDefault();"
+                             class="@(currentId == _draggingId ? "footer-drag-item dragging" : "footer-drag-item")"
+                             style="cursor: grab;">
+                            @switch (currentId)
+                            {
+                                case "Version":
+                                    if (_showVersion)
+                                    {
+                                        <div class="footer-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.BookmarkBorder" Size="Size.Small" />
+                                            <span>1.2.5 LTS</span>
+                                        </div>
+                                    }
+                                    break;
+                                case "User":
+                                    if (_showUser)
+                                    {
+                                        <div class="footer-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.PersonOutline" Size="Size.Small" />
+                                            <span>Kullanıcı: Admin</span>
+                                        </div>
+                                    }
+                                    break;
+                                case "SyncStatus":
+                                    if (_showSyncStatus)
+                                    {
+                                        <div class="footer-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.CloudDone" Size="Size.Small" Style="color: #4ade80;" />
+                                            <span>Bulut Eşitlendi</span>
+                                        </div>
+                                    }
+                                    break;
+                                case "ConnectionStatus":
+                                    if (_showConnectionStatus)
+                                    {
+                                        <div class="footer-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Wifi" Size="Size.Small" Style="color: #3b82f6;" />
+                                            <span>Çevrimiçi</span>
+                                        </div>
+                                    }
+                                    break;
+                                case "ExchangeRates":
+                                    if (_showExchangeRates)
+                                    {
+                                        <div class="footer-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" />
+                                            <span>@_liveExchangeRates</span>
+                                        </div>
+                                    }
+                                    break;
+                                case "SystemUsage":
+                                    if (_showSystemUsage)
+                                    {
+                                        <div class="footer-item" style="opacity: 0.8;">
+                                            <MudIcon Icon="@Icons.Material.Filled.DeveloperBoard" Size="Size.Small" Style="margin-right: 6px;"/>
+                                            <span>@_liveSystemUsage</span>
+                                        </div>
+                                    }
+                                    break;
+                                case "DateTime":
+                                    if (_showDateTime)
+                                    {
+                                        <div class="footer-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" />
+                                            <span>@_liveDateTime</span>
+                                        </div>
+                                    }
+                                    break;
+                                case "Copyright":
+                                    if (_showCopyright)
+                                    {
+                                        <div class="footer-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" />
+                                            <span>ERMAY Bilişim A.Ş. © 2025</span>
+                                        </div>
+                                    }
+                                    break;
+                            }
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(_customLeftText))
+                    {
+                        <div class="footer-item">
+                            <span>@_customLeftText</span>
+                        </div>
+                    }
+                </div>
+                    <div class="footer-right" style="display: flex; align-items: center; gap: 12px; margin-right: 20px;">
+                        @if (_isStatusBarEditMode)
+                        {
+                            <MudButton OnClick="SaveStatusBarEdit" Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" Style="font-weight: bold; height: 24px;">KAYDET</MudButton>
+                            <MudButton OnClick="CancelStatusBarEdit" Variant="Variant.Filled" Color="Color.Error" Size="Size.Small" Style="font-weight: bold; height: 24px;">VAZGEÇ</MudButton>
+                        }
+
+
+                        @if (!string.IsNullOrEmpty(_customRightText))
+                        {
+                            <span style="opacity: 0.6;">@_customRightText</span>
+                        }
+                    </div>
+            </div>
+        </MudMainContent>
+    </MudLayout>
+}
+
+<style>
+    /* Combine all styles at the end */
+    .glass-login {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(40px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8);
+    }
+    
+    .premium-breadcrumb {
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        height: 40px;
+        display: flex;
+        align-items: center;
+        padding: 0 40px 0 75px;
+    }
+
+    .breadcrumb-pill {
+        padding: 2px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50px;
+        font-size: 10px;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.4);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .year-btn {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 16px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        width: 100%;
+        border: none;
+    }
+    .year-btn:hover {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.2);
+        transform: translateY(-2px);
+    }
+    .footer-left {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .footer-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .footer-drag-item {
+        transition: all 0.2s ease;
+    }
+
+    .footer-drag-item.dragging {
+        opacity: 0.4;
+        transform: scale(0.95);
+    }
+    
+    .footer-right {
+        display: flex;
+        align-items: center;
+    }
+
+    .year-badge {
+        background: rgba(59, 130, 246, 0.1);
+        padding: 5px 15px;
+        border-radius: 12px;
+        color: #60A5FA;
+        font-size: 12px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        text-decoration: none !important;
+        transition: all 0.2s;
+    }
+    .year-badge:hover {
+        background: rgba(59, 130, 246, 0.2);
+        transform: translateY(-1px);
+    }    
+    .year-btn-active {
+        background: rgba(139, 92, 246, 0.2);
+        border: 2px solid #8b5cf6;
+        border-radius: 16px;
+        padding: 15px; 
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        position: relative;
+        width: 100%;
+    }
+    .active-dot {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        background: #8b5cf6;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #8b5cf6;
+    }
+
+    /* STRICT ANTI-SCROLL INJECTION GLOBAL (Active in Desktop Mode Only) */
+    html:not(.mobile-mode), body:not(.mobile-mode) {
+        overflow: hidden !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        touch-action: none; /* Prevent scroll on touch devices in desktop mode */
+    }
+    body:not(.mobile-mode) .mud-layout {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        width: 100% !important;
+        position: relative;
+        display: flex;
+    }
+
+    body:not(.mobile-mode) .mud-main-content {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+        position: relative;
+    }
+    
+    body:not(.mobile-mode) .desktop-view-port {
+        overflow: hidden !important;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: 100%;
+        position: relative;
+    }
+
+    /* PREMIUM SIDEBAR SCROLLING */
+    .mud-drawer-content, 
+    .mud-drawer-inner,
+    .nav-groups {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        height: 100% !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Custom Scrollbar for Sidebar and Containers */
+    .mud-drawer-content::-webkit-scrollbar,
+    .mud-drawer-inner::-webkit-scrollbar,
+    .nav-groups::-webkit-scrollbar {
+        width: 5px;
+    }
+    .mud-drawer-content::-webkit-scrollbar-track,
+    .mud-drawer-inner::-webkit-scrollbar-track,
+    .nav-groups::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .mud-drawer-content::-webkit-scrollbar-thumb,
+    .mud-drawer-inner::-webkit-scrollbar-thumb,
+    .nav-groups::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+    }
+    .mud-drawer-content::-webkit-scrollbar-thumb:hover,
+    .nav-groups::-webkit-scrollbar-thumb:hover {
+        background: rgba(59, 130, 246, 0.25);
+    }
+    
+    /* Responsive... */
+    html.mobile-mode, body.mobile-mode {
+        overflow-y: auto !important;
+        position: static !important;
+        height: auto !important;
+    }
+</style>
+
+@code {
+    bool _drawerOpen = true;
+    bool _isDarkMode = true;
+    string pinCode = "";
+    string error = "";
+    private bool _isYearSelectionVisible = false;
+    private List<int> _availableYears = new();
+    private int selectedYear;
+    private List<BreadcrumbItem> _breadcrumbItems = new();
+
+    // Status Bar Settings (Web Parity)
+    private bool _showVersion = true;
+    private bool _showUser = true;
+    private bool _showBranch = true;
+    private bool _showSystemStatus = true;
+    private bool _showCopyright = true;
+    private bool _showExchangeRates = false;
+    private bool _showDateTime = false;
+    private bool _showSystemUsage = false;
+    private bool _showSyncStatus = true;
+    private bool _showConnectionStatus = true;
+    private List<string> _itemsOrder = new() { "Version", "User", "SyncStatus", "ConnectionStatus", "ExchangeRates", "SystemUsage", "DateTime", "Copyright" };
+    private string _customLeftText = "";
+    private string _customRightText = "";
+    private string _ideBranchName = "Main*";
+    private string _ideStatusText = "Sistem Hazır";
+
+    private string _liveDateTime = "";
+    private string _liveSystemUsage = "";
+    private string _liveExchangeRates = "";
+    private System.Threading.Timer? _liveUpdateTimer;
+
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#3b82f6",
+            Secondary = "#8b5cf6",
+            AppbarBackground = "#ffffff",
+            Background = "#f8fafc",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff",
+            TextPrimary = "#1e293b",
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#0061FF", 
+            Secondary = "#60A5FA",
+            Background = "#050505", 
+            Surface = "#050505",    
+            AppbarBackground = "#050505",
+            DrawerBackground = "#030405",
+            TextPrimary = "#FFFFFF",
+            TextSecondary = "#94A3B8",
+            Divider = "rgba(255, 255, 255, 0.05)",
+            Success = "#51CF66",
+            Info = "#0061FF",
+            Warning = "#FFA500",
+            Error = "#FF6B6B"
+        },
+        LayoutProperties = new LayoutProperties()
+        {
+            DefaultBorderRadius = "12px",
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        // Configure Typography
+        string[] fontParams = new[] { "Inter", "Roboto", "Helvetica", "Arial", "sans-serif" };
+        _theme.Typography.Default.FontFamily = fontParams;
+        _theme.Typography.Body1.FontFamily = fontParams;
+        _theme.Typography.Body2.FontFamily = fontParams;
+        _theme.Typography.H1.FontFamily = fontParams;
+        _theme.Typography.H2.FontFamily = fontParams;
+        _theme.Typography.H3.FontFamily = fontParams;
+        _theme.Typography.H4.FontFamily = fontParams;
+        _theme.Typography.H5.FontFamily = fontParams;
+        _theme.Typography.H6.FontFamily = fontParams;
+        _theme.Typography.Subtitle1.FontFamily = fontParams;
+        _theme.Typography.Subtitle2.FontFamily = fontParams;
+        _theme.Typography.Button.FontFamily = fontParams;
+        _theme.Typography.Caption.FontFamily = fontParams;
+        _theme.Typography.Overline.FontFamily = fontParams;
+
+        AuthService.CheckAuth();
+        LoadBarSettings();
+        UpdateBreadcrumbs();
+        Nav.LocationChanged += (s, e) => UpdateBreadcrumbs();
+        UiService.OnThemeChanged += LoadBarSettings;
+        UiService.OnBarSettingsChanged += LoadBarSettings;
+        
+        _liveUpdateTimer = new System.Threading.Timer(async _ => 
+        {
+            await UpdateLiveStatusBarInfo();
+        }, null, 0, 1000);
+    }
+
+    private async Task UpdateLiveStatusBarInfo()
+    {
+        bool changed = false;
+        
+        if (_showDateTime)
+        {
+            var newTime = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
+            if (_liveDateTime != newTime) { _liveDateTime = newTime; changed = true; }
+        }
+
+        if (_showSystemUsage)
+        {
+            var usage = "Web/WASM Context";
+            if (_liveSystemUsage != usage) { _liveSystemUsage = usage; changed = true; }
+        }
+
+        if (_showExchangeRates && (DateTime.Now.Second == 0 || string.IsNullOrEmpty(_liveExchangeRates)))
+        {
+            try 
+            {
+                var usd = await DovizService.GetLiveRateAsync("USD");
+                var eur = await DovizService.GetLiveRateAsync("EUR");
+                var rates = $"USD: {usd:N2} | EUR: {eur:N2}";
+                if (_liveExchangeRates != rates) { _liveExchangeRates = rates; changed = true; }
+            }
+            catch { }
+        }
+
+        if (changed) await InvokeAsync(StateHasChanged);
+    }
+
+    private void LoadBarSettings()
+    {
+        try
+        {
+            if (LocalStorage.ContainKey("sb_show_version")) _showVersion = LocalStorage.GetItem<bool>("sb_show_version");
+            if (LocalStorage.ContainKey("sb_show_user")) _showUser = LocalStorage.GetItem<bool>("sb_show_user");
+            if (LocalStorage.ContainKey("sb_show_branch")) _showBranch = LocalStorage.GetItem<bool>("sb_show_branch");
+            if (LocalStorage.ContainKey("sb_show_status")) _showSystemStatus = LocalStorage.GetItem<bool>("sb_show_status");
+            if (LocalStorage.ContainKey("sb_show_copyright")) _showCopyright = LocalStorage.GetItem<bool>("sb_show_copyright");
+            if (LocalStorage.ContainKey("sb_show_exchange")) _showExchangeRates = LocalStorage.GetItem<bool>("sb_show_exchange");
+            if (LocalStorage.ContainKey("sb_show_datetime")) _showDateTime = LocalStorage.GetItem<bool>("sb_show_datetime");
+            if (LocalStorage.ContainKey("sb_show_usage")) _showSystemUsage = LocalStorage.GetItem<bool>("sb_show_usage");
+            if (LocalStorage.ContainKey("sb_show_sync")) _showSyncStatus = LocalStorage.GetItem<bool>("sb_show_sync");
+            if (LocalStorage.ContainKey("sb_show_conn")) _showConnectionStatus = LocalStorage.GetItem<bool>("sb_show_conn");
+            if (LocalStorage.ContainKey("sb_items_order")) _itemsOrder = LocalStorage.GetItem<List<string>>("sb_items_order") ?? _itemsOrder;
+            if (LocalStorage.ContainKey("sb_custom_left")) _customLeftText = LocalStorage.GetItem<string>("sb_custom_left") ?? "";
+            if (LocalStorage.ContainKey("sb_custom_right")) _customRightText = LocalStorage.GetItem<string>("sb_custom_right") ?? "";
+            if (LocalStorage.ContainKey("sb_ide_branch")) _ideBranchName = LocalStorage.GetItem<string>("sb_ide_branch") ?? "Main*";
+            if (LocalStorage.ContainKey("sb_ide_status")) _ideStatusText = LocalStorage.GetItem<string>("sb_ide_status") ?? "Sistem Hazır";
+            
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private void UpdateBreadcrumbs()
+    {
+        _breadcrumbItems.Clear();
+        // Root item removed as per request to clean up dashboard
+        
+        var uri = Nav.ToBaseRelativePath(Nav.Uri);
+        if (!string.IsNullOrEmpty(uri))
+        {
+            var parts = uri.Split('?')[0].Split('/');
+            foreach (var part in parts)
+            {
+                if (string.IsNullOrEmpty(part)) continue;
+                _breadcrumbItems.Add(new BreadcrumbItem(part.ToUpper(), href: part));
+            }
+        }
+        StateHasChanged();
+    }
+
+    private async Task OpenMobileSearch()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, FullScreen = true, NoHeader = true };
+        await DialogService.ShowAsync<MobileSearchDialog>("Arama", options);
+    }
+
+    private async Task<IEnumerable<GlobalSearchResult>> SearchGlobalAsync(string value, CancellationToken token)
+    {
+        return await DbService.GlobalSearchAsync(value);
+    }
+
+    private void OnSearchResultSelected(GlobalSearchResult? result)
+    {
+        if (result == null) return;
+        if (result.Type == "Cari") Nav.NavigateTo($"/cariler?selectId={result.Id}");
+        else if (result.Type == "Stok") Nav.NavigateTo($"/stoklar?selectId={result.Id}");
+        else if (result.Type == "Fatura") Nav.NavigateTo($"/faturalar?id={result.Id}");
+        else if (result.Type == "Siparis") Nav.NavigateTo($"/siparisler?id={result.Id}");
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    void DoLogin()
+    {
+        if (AuthService.Login(pinCode))
+        {
+            error = "";
+            ShowYearSelection();
+        }
+        else
+        {
+            error = "Hatalı PIN Kodu!";
+        }
+    }
+
+    private async void ShowYearSelection()
+    {
+        _availableYears = await FirebaseService.GetAvailableYearsAsync();
+        selectedYear = _availableYears.FirstOrDefault();
+        if (selectedYear == 0) selectedYear = DateTime.Now.Year;
+        
+        _isYearSelectionVisible = true;
+        StateHasChanged();
+    }
+
+    private void SelectYear(int year)
+    {
+        selectedYear = year;
+        StateHasChanged();
+    }
+
+    private void FinalizeLogin()
+    {
+        YearContext.CurrentYear = selectedYear;
+        _isYearSelectionVisible = false;
+        StateHasChanged();
+    }
+
+    void CheckEnter(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            DoLogin();
+        }
+    }
+
+    void DoLogout()
+    {
+        AuthService.Logout();
+    }
+
+    private DotNetObjectReference<MainLayout>? _objRef;
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initDesktopBehavior", _objRef);
+            await JS.InvokeVoidAsync("historyManagement.registerBackListener", _objRef);
+
+            // Apply saved scaling with aggressive safety
+            try 
+            {
+                double scale = 1.0;
+                bool autoScale = true;
+                if (LocalStorage.ContainKey("auto_scale_enabled"))
+                {
+                    autoScale = LocalStorage.GetItem<bool>("auto_scale_enabled");
+                }
+
+                if (LocalStorage.ContainKey("app_scale"))
+                {
+                    var scaleVal = LocalStorage.GetItem<object>("app_scale");
+                    if (scaleVal != null && double.TryParse(scaleVal.ToString()?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var s))
+                    {
+                        scale = s;
+                        // If scale is not 1.0, we might have manual scaling, but if autoScale is on, it takes precedence in JS
+                    }
+                }
+
+                // If it's manual mode, we pass the saved scale. If auto mode, JS ignores the scale param.
+                await JS.InvokeVoidAsync("applyAppScaling", scale, autoScale);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERMAY scaling error: {ex.Message}");
+                // Absolute fallback to prevent black screen
+                try { await JS.InvokeVoidAsync("applyAppScaling", 1.0, false); } catch { }
+            }
+
+            // --- Background Sync Loop (Offline-First Management) ---
+            _ = Task.Run(async () => 
+            {
+                while (true)
+                {
+                    await Task.Delay(30000); // Check every 30 seconds
+                    if (AuthService.IsAuthenticated)
+                    {
+                        try 
+                        { 
+                            await FirebaseService.ProcessSyncQueueAsync(); 
+                        } 
+                        catch { /* Silent fail in background */ }
+                    }
+                }
+            });
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnExternalBack()
+    {
+        // Feature disabled due to lack of Dialogs collection support in this version
+        await Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task HandleGlobalShortcut(string key)
+    {
+        switch (key)
+        {
+            case "Esc":
+                // 1. Notify custom overlays (Context menus etc.) 
+                if (await UiService.NotifyEscapePressedAsync()) return;
+
+                // 2. Desktop Parity: Navigate Back / Home
+                // Desktop: if (History.Count > 0) Pop(); else if (CurrentPage != Dashboard) go Dashboard;
+                
+                string currentPath = new Uri(Nav.Uri).AbsolutePath.ToLower().TrimEnd('/');
+                
+                // Known module roots
+                var moduleRoots = new[] { "/stoklar", "/cariler", "/faturalar", "/teklifler", "/siparisler", "/finans", "/raporlar", "/ayarlar", "/araclar" };
+                bool isAtModuleRoot = moduleRoots.Contains(currentPath);
+
+                if (currentPath != "" && currentPath != "/")
+                {
+                    if (isAtModuleRoot)
+                    {
+                        // If at module root, ESC goes to Dashboard (exact desktop parity)
+                        Nav.NavigateTo("/");
+                    }
+                    else
+                    {
+                        // Otherwise try history back
+                        await JS.InvokeVoidAsync("history.back");
+                    }
+                }
+                break;
+            case "KeyK":
+                // 3. CTRL + K Shortcut for Search
+                await OpenMobileSearch();
+                break;
+            case "F1":
+                // ...
+                break;
+        }
+    }
+
+    [JSInvokable]
+    public void HandleRightClick(object data)
+    {
+        // Global Right Click Handler Hook
+        // Could be used for background menu etc.
+    }
+
+    private bool _isStatusBarEditMode = false;
+    private List<string>? _pendingItemsOrder;
+
+    private void StartStatusBarEdit()
+    {
+        _pendingItemsOrder = new List<string>(_itemsOrder);
+        _isStatusBarEditMode = true;
+    }
+
+    private async Task SaveStatusBarEdit()
+    {
+        if (_pendingItemsOrder != null)
+        {
+            _itemsOrder = new List<string>(_pendingItemsOrder);
+            LocalStorage.SetItem("sb_items_order", _itemsOrder);
+        }
+        _isStatusBarEditMode = false;
+        _pendingItemsOrder = null;
+    }
+
+    private void CancelStatusBarEdit()
+    {
+        _isStatusBarEditMode = false;
+        _pendingItemsOrder = null;
+    }
+
+    private string _draggingId = "";
+    private void HandleDragStart(string id) => _draggingId = id;
+    
+    private void HandleDragEnter(string targetId)
+    {
+        if (string.IsNullOrEmpty(_draggingId) || _draggingId == targetId) return;
+        
+        // Live reorder logic
+        var list = _pendingItemsOrder ?? new List<string>(_itemsOrder);
+        int oldIndex = list.IndexOf(_draggingId);
+        int newIndex = list.IndexOf(targetId);
+        
+        if (oldIndex != -1 && newIndex != -1)
+        {
+            list.RemoveAt(oldIndex);
+            list.Insert(newIndex, _draggingId);
+            
+            _pendingItemsOrder = list;
+            _isStatusBarEditMode = true; // Automatically enter edit mode on drag
+            StateHasChanged();
+        }
+    }
+
+    private void HandleDragEnd()
+    {
+        // Don't clear draggingId immediately if we want a smooth finish, 
+        // but here it's fine
+        _draggingId = "";
+        StateHasChanged();
+    }
+
+    private void HandleDrop(string targetId)
+    {
+        // Drop is now handled by DragEnter for 'live' effect,
+        // but we can keep it for final cleanup if needed.
+        _draggingId = "";
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _objRef?.Dispose();
+        _liveUpdateTimer?.Dispose();
+        UiService.OnThemeChanged -= LoadBarSettings;
+        UiService.OnBarSettingsChanged -= LoadBarSettings;
+        await Task.CompletedTask;
+    }
+}

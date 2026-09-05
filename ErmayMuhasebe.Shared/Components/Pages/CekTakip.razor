@@ -1,0 +1,266 @@
+@page "/cek-takip"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Nav
+@using ErmayMuhasebe.Shared.Components.Dialogs
+
+<style>
+    .cek-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .cek-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card-inner {
+        padding: 20px;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .status-pill {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .action-btn {
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        padding: 8px 24px !important;
+        text-transform: none !important;
+    }
+</style>
+
+<div class="cek-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="cek-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(167, 139, 250, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.ConfirmationNumber" Color="Color.Tertiary" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Çek & Senet Takibi</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Portföydeki değerli evrakların yönetimi ve vadeleri.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-3">
+                 <MudButton Variant="Variant.Filled" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Add" Class="action-btn" OnClick="@(() => YeniCekEkle("Musteri"))">MÜŞTERİ ÇEKİ AL</MudButton>
+                 <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" Class="action-btn" OnClick="@(() => YeniCekEkle("Kendi"))">ÇEK ÇIKIŞI YAP</MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. STATS *@
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="4">
+            <div class="glass-card stat-card-inner">
+                 <div class="d-flex align-center gap-3 mb-2">
+                     <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Success" Size="Size.Small"/>
+                     <MudText Style="font-size: 11px; font-weight: 800; color: #34D399; opacity: 0.8;">PORTFÖYDEKİ ÇEKLER</MudText>
+                 </div>
+                 <MudText Style="font-size: 26px; font-weight: 900; color: white;">@portfoyTutar.ToString("N2") ₺</MudText>
+                 <MudText Style="font-size: 11px; opacity: 0.4;">@musteriCekleri.Count(c => c.Durum == "Portfoy") adet bekleyen</MudText>
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+             <div class="glass-card stat-card-inner">
+                 <div class="d-flex align-center gap-3 mb-2">
+                     <MudIcon Icon="@Icons.Material.Filled.Output" Color="Color.Error" Size="Size.Small"/>
+                     <MudText Style="font-size: 11px; font-weight: 800; color: #F87171; opacity: 0.8;">ÖDENECEK BORÇ ÇEKLERİ</MudText>
+                 </div>
+                 <MudText Style="font-size: 26px; font-weight: 900; color: white;">@kendiCekTutar.ToString("N2") ₺</MudText>
+                 <MudText Style="font-size: 11px; opacity: 0.4;">@kendiCekleri.Count(c => c.Durum == "Portfoy") adet ödenecek</MudText>
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+             <div class="glass-card stat-card-inner">
+                 <div class="d-flex align-center gap-3 mb-2">
+                     <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small"/>
+                     <MudText Style="font-size: 11px; font-weight: 800; color: #FBBF24; opacity: 0.8;">BU HAFTA VADESİ GELEN</MudText>
+                 </div>
+                 <MudText Style="font-size: 26px; font-weight: 900; color: white;">@buHaftaTutar.ToString("N2") ₺</MudText>
+                 <MudText Style="font-size: 11px; opacity: 0.4;">Yaklaşan ödeme/tahsilat</MudText>
+            </div>
+        </MudItem>
+    </MudGrid>
+
+    @* 3. MAIN CONTENT *@
+    <div class="glass-card">
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Color="Color.Transparent" SliderColor="Color.Tertiary">
+            <MudTabPanel Text="MÜŞTERİ ÇEKLERİ (ALACAK)" Style="font-weight: 700;">
+                 <div class="mt-4">
+                     <MudTable Items="@musteriCekleri" Dense="true" Hover="true" Class="compact-table" Style="background: transparent;">
+                        <HeaderContent>
+                            <MudTh>VADE</MudTh>
+                            <MudTh>ÇEK NO</MudTh>
+                            <MudTh>BANKA</MudTh>
+                            <MudTh>ALINAN CARİ</MudTh>
+                            <MudTh Style="text-align:right;">TUTAR</MudTh>
+                            <MudTh Style="text-align:center;">DURUM</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <div style="font-weight: 700; color: white;">@context.VadeTarihi.ToString("dd.MM.yyyy")</div>
+                                <div style="font-size: 10px; opacity: 0.5;">@(GetKalanGunText(context.VadeTarihi))</div>
+                            </MudTd>
+                            <MudTd>@context.CekNo</MudTd>
+                            <MudTd>@context.Banka</MudTd>
+                            <MudTd>@context.CariUnvan</MudTd>
+                            <MudTd Style="text-align:right; font-weight: 900; color: #34D399;">@context.Tutar.ToString("N2") ₺</MudTd>
+                            <MudTd Style="text-align:center;">
+                                <span class="status-pill" style="@GetStatusStyle(context.Durum)">@context.Durum?.ToUpper()</span>
+                            </MudTd>
+                            <MudTd Style="text-align:right;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Inherit" OnClick="@(() => EditCek(context))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                 </div>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="KENDİ ÇEKLERİMİZ (BORÇ)" Style="font-weight: 700;">
+                <div class="mt-4">
+                    <MudTable Items="@kendiCekleri" Dense="true" Hover="true" Class="compact-table" Style="background: transparent;">
+                        <HeaderContent>
+                            <MudTh>VADE</MudTh>
+                            <MudTh>ÇEK NO</MudTh>
+                            <MudTh>BANKA</MudTh>
+                            <MudTh>VERİLEN CARİ</MudTh>
+                            <MudTh Style="text-align:right;">TUTAR</MudTh>
+                            <MudTh Style="text-align:center;">DURUM</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <div style="font-weight: 700; color: white;">@context.VadeTarihi.ToString("dd.MM.yyyy")</div>
+                                <div style="font-size: 10px; opacity: 0.5;">@(GetKalanGunText(context.VadeTarihi))</div>
+                            </MudTd>
+                            <MudTd>@context.CekNo</MudTd>
+                            <MudTd>@context.Banka</MudTd>
+                            <MudTd>@context.CariUnvan</MudTd>
+                            <MudTd Style="text-align:right; font-weight: 900; color: #F87171;">@context.Tutar.ToString("N2") ₺</MudTd>
+                            <MudTd Style="text-align:center;">
+                                <span class="status-pill" style="@GetStatusStyle(context.Durum)">@context.Durum?.ToUpper()</span>
+                            </MudTd>
+                            <MudTd Style="text-align:right;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Inherit" OnClick="@(() => EditCek(context))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </div>
+            </MudTabPanel>
+        </MudTabs>
+    </div>
+</div>
+
+@code {
+    private List<Cek> musteriCekleri = new();
+    private List<Cek> kendiCekleri = new();
+    
+    private decimal portfoyTutar => musteriCekleri.Where(c => c.Durum == "Portfoy").Sum(c => c.Tutar);
+    private decimal kendiCekTutar => kendiCekleri.Where(c => c.Durum == "Portfoy").Sum(c => c.Tutar);
+    private decimal buHaftaTutar;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var allCekler = await DbService.GetCekSenetlerAsync();
+        musteriCekleri = allCekler.Where(c => c.CekTuru == "Musteri").OrderBy(c => c.VadeTarihi).ToList();
+        kendiCekleri = allCekler.Where(c => c.CekTuru == "Kendi").OrderBy(c => c.VadeTarihi).ToList();
+        
+        var nextWeek = DateTime.Today.AddDays(7);
+        buHaftaTutar = allCekler.Where(c => c.Durum == "Portfoy" && c.VadeTarihi <= nextWeek && c.VadeTarihi >= DateTime.Today).Sum(c => c.Tutar);
+    }
+
+    private async Task YeniCekEkle(string tur)
+    {
+        var yeniCek = new Cek { CekTuru = tur, Durum = "Portfoy", VadeTarihi = DateTime.Now };
+        var parameters = new DialogParameters { ["Model"] = yeniCek };
+        
+        var dialog = await DialogService.ShowAsync<CekDialog>($"Yeni {tur} Çeki", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is Cek cek)
+        {
+            await DbService.SaveCekSenetAsync(cek);
+            Snackbar.Add("Çek başarıyla kaydedildi.", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private async Task EditCek(Cek cek)
+    {
+        var parameters = new DialogParameters { ["Model"] = cek };
+        
+        var dialog = await DialogService.ShowAsync<CekDialog>("Çek Düzenle", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is Cek updatedCek)
+        {
+            await DbService.SaveCekSenetAsync(updatedCek);
+            Snackbar.Add("Çek güncellendi.", Severity.Success);
+            await LoadData();
+        }
+    }
+    
+    // Status Styles
+    private string GetStatusStyle(string? durum)
+    {
+        return durum switch
+        {
+            "Portfoy" => "background: rgba(96, 165, 250, 0.1); color: #60A5FA;",
+            "Bankaya" => "background: rgba(167, 139, 250, 0.1); color: #A78BFA;",
+            "Tahsil" => "background: rgba(52, 211, 153, 0.1); color: #34D399;",
+            "Odendi" => "background: rgba(52, 211, 153, 0.1); color: #34D399;",
+            "Iade" => "background: rgba(248, 113, 113, 0.1); color: #F87171;",
+            "Ciro" => "background: rgba(251, 191, 36, 0.1); color: #FBBF24;",
+            _ => "background: rgba(255, 255, 255, 0.1); color: white;"
+        };
+    }
+
+    private string GetKalanGunText(DateTime vade)
+    {
+        var kalan = (vade.Date - DateTime.Today).Days;
+        if (kalan < 0) return $"{Math.Abs(kalan)} GÜN GECİKTİ";
+        if (kalan == 0) return "BUGÜN";
+        return $"{kalan} Gün Kaldı";
+    }
+}

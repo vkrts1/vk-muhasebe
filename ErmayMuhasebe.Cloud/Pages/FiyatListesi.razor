@@ -1,0 +1,234 @@
+@page "/fiyat-listesi"
+@using MudBlazor
+@inject NavigationManager Nav
+
+<div class="premium-container fade-in">
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-center mb-10">
+        <div>
+            <h1 class="h2 fw-black mb-1 text-white">Dijital Katalog Tasarımcısı</h1>
+            <p class="text-muted mb-0">Ürünlerinizi profesyonel bir katalog veya fiyat listesi haline getirin.</p>
+        </div>
+        <div class="d-flex gap-3">
+             <button class="action-btn-large blue-border" @onclick='() => Nav.NavigateTo("araclar")'>
+                <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Class="mr-2" /> GERİ DÖN
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-6">
+        <!-- SETTINGS PANEL -->
+        <div class="col-md-4">
+            <div class="glass-panel border-white-5 pa-8 h-100">
+                <div class="d-flex align-center gap-3 mb-6">
+                    <div class="icon-box-small bg-primary-10">
+                        <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Color="Color.Primary" Size="Size.Small" />
+                    </div>
+                    <h3 class="h6 fw-bold text-white mb-0">Tasarım Ayarları</h3>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="smaller text-muted d-block mb-2">Katalog Başlığı</label>
+                    <input type="text" class="premium-input-dark" @bind="katalogBasligi" placeholder="Örn: 2026 KIŞ KATALOĞU" />
+                </div>
+
+                <div class="mb-6">
+                    <label class="smaller text-muted d-block mb-2">Görsel Tema</label>
+                    <div class="premium-select-wrapper">
+                        <select class="premium-input-dark" @onchange="OnTemaChanged">
+                            @foreach (var tema in _temalar)
+                            {
+                                <option value="@tema.Isim">@tema.Isim</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <MudCheckBox @bind-Value="showPrices" Label="Fiyatları Katalogda Göster" Color="Color.Primary" T="bool" Dense="true" />
+                </div>
+
+                <button class="action-btn-large w-100" @onclick="GeneratePdf" style="background: var(--premium-gradient); border: none;">
+                    <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Class="mr-2" /> PDF KATALOG OLUŞTUR
+                </button>
+            </div>
+        </div>
+
+        <!-- PREVIEW PANEL -->
+        <div class="col-md-8">
+            <div class="preview-scroll-container">
+                <div class="preview-canvas-wrapper shadow-2xl">
+                    <!-- A4 Aspect Ratio Container -->
+                    <div class="a4-page">
+                        <!-- Dynamic Header -->
+                        <div class="a4-header" style="background-color: @seciliTema.PrimaryColor">
+                             <div class="pa-10">
+                                <span class="text-white opacity-70 smaller fw-bold tracking-widest text-uppercase">ERMAY ÜRÜN REHBERİ</span>
+                                <h1 class="h1 text-white fw-black mt-2">@katalogBasligi</h1>
+                             </div>
+                        </div>
+
+                        <!-- Products Grid -->
+                        <div class="pa-10">
+                            <div class="row g-6">
+                                @for (int i = 1; i <= 4; i++)
+                                {
+                                    <div class="col-6">
+                                        <div class="preview-product-card">
+                                            <div class="product-image-placeholder">
+                                                <MudIcon Icon="@Icons.Material.Filled.Image" Size="Size.Large" Class="opacity-30" />
+                                            </div>
+                                            <div class="pa-4">
+                                                <h4 class="fw-bold mb-1" style="color: #333;">Örnek Ürün @i</h4>
+                                                @if (showPrices)
+                                                {
+                                                    <span class="h5 fw-black" style="color: @seciliTema.PrimaryColor">@(i * 150),00 TL</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="a4-footer">
+                            <div class="d-flex justify-content-between align-center px-10">
+                                <span class="smaller text-muted">Ermay Muhasebe & Ticaret Sis.</span>
+                                <span class="smaller text-muted">Sayfa 1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-6">
+                    <p class="smaller text-muted">Önizleme modu: Sayfa görünümü A4 formatındadır.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .premium-container { padding: 40px; }
+    
+    .icon-box-small { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .bg-primary-10 { background: rgba(59, 130, 246, 0.1); }
+
+    .preview-scroll-container {
+        max-height: 800px;
+        overflow-y: auto;
+        padding-right: 15px;
+    }
+
+    .preview-canvas-wrapper {
+        background: #2D3748;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .a4-page {
+        width: 100%;
+        max-width: 595px; /* A4 Ratio */
+        min-height: 842px;
+        background: white;
+        color: #111;
+        position: relative;
+        transform-origin: top center;
+    }
+
+    .a4-header { padding-bottom: 20px; }
+
+    .preview-product-card {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+
+    .product-image-placeholder {
+        height: 160px;
+        background: #F7FAFC;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #A0AEC0;
+    }
+
+    .a4-footer {
+        position: absolute;
+        bottom: 30px;
+        left: 0;
+        right: 0;
+        border-top: 1px solid #EDF2F7;
+        padding-top: 15px;
+    }
+
+    .premium-input-dark { 
+        width: 100%; 
+        background: rgba(255,255,255,0.05); 
+        border: 1px solid rgba(255,255,255,0.1); 
+        border-radius: 10px; 
+        padding: 12px 15px; 
+        color: white; 
+        font-size: 13px; 
+        outline: none;
+    }
+    .premium-input-dark:focus { border-color: #3B82F6; background: rgba(255,255,255,0.08); }
+
+    .premium-select-wrapper { position: relative; }
+    .premium-select-wrapper::after {
+        content: "▼";
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255,255,255,0.3);
+        font-size: 10px;
+        pointer-events: none;
+    }
+
+    /* Hide scrollbar for cleaner look */
+    .preview-scroll-container::-webkit-scrollbar { width: 6px; }
+    .preview-scroll-container::-webkit-scrollbar-track { background: transparent; }
+    .preview-scroll-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+</style>
+
+@code {
+    private string katalogBasligi = "2026 KIŞ KATALOĞU";
+    private bool showPrices = true;
+    
+    public record KatalogTema(string Isim, string PrimaryColor);
+    
+    private List<KatalogTema> _temalar = new()
+    {
+        new("Modern Minimal", "#6366F1"),
+        new("Kurumsal Lacivert", "#1E3A8A"),
+        new("Vibrant Turuncu", "#F97316"),
+        new("Lüks Altın", "#B2952E"),
+        new("Zümrüt Yeşil", "#059669"),
+        new("Premium Siyah", "#1A202C")
+    };
+
+    private KatalogTema seciliTema = new("Modern Minimal", "#6366F1");
+
+    protected override void OnInitialized()
+    {
+        seciliTema = _temalar[0];
+    }
+
+    private void OnTemaChanged(ChangeEventArgs e)
+    {
+        var temaIsmi = e.Value?.ToString();
+        seciliTema = _temalar.FirstOrDefault(t => t.Isim == temaIsmi) ?? _temalar[0];
+    }
+
+    private void GeneratePdf()
+    {
+        // Future implementation for PDF generation
+        // For now, it's a UI placeholder matching Avalonia
+    }
+}

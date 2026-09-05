@@ -1,0 +1,137 @@
+@page "/gider-analizi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using MudBlazor
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h5" Color="Color.Primary">Gider Analiz Raporu (YENİ)</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        @if(data.Any())
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                Yazdır / PDF
+            </MudButton>
+        }
+    </MudStack>
+</div>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Style="height: 400px;">
+            <MudText Typo="Typo.h6" Class="mb-4">Gider Dağılımı (Pasta Grafik)</MudText>
+            @if (data.Any())
+            {
+                <MudChart ChartType="ChartType.Pie" InputData="@chartData" InputLabels="@chartLabels" Width="300px" Height="300px" />
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">Veri bulunamadı.</MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Gider Detayları</MudText>
+            <MudTable Items="@data" Dense="true" Hover="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Kategori</MudTh>
+                    <MudTh Style="text-align: right;">Toplam Tutar</MudTh>
+                    <MudTh Style="text-align: right;">Pay (%)</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Kategori</MudTd>
+                    <MudTd Style="text-align: right;">@context.Tutar.ToString("N2") ₺</MudTd>
+                    <MudTd Style="text-align: right;">% @context.Pay.ToString("N1")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<GiderData> data = new();
+    private double[] chartData = Array.Empty<double>();
+    private string[] chartLabels = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        // Alış Faturaları ve Kasadan Çıkan Paraları (Ödemeler) Kategori bazlı topla
+        var faturalar = await DbService.GetFaturalarAsync();
+        var alisFaturalari = faturalar.Where(f => f.Tur == "Alis" || f.Tur == "Alış").ToList();
+        var satisFaturalari = faturalar.Where(f => f.Tur == "Satis" || f.Tur == "Satış").ToList();
+        
+        var categoryTotals = new Dictionary<string, decimal>();
+        
+        foreach(var f in alisFaturalari)
+        {
+            // Fatura kategorisi varsa onu kullan, yoksa Stok gruplarından çıkarabiliriz ama şimdilik "Alış Faturası" diyelim
+            // Aslında faturalarda kategori yok, ama Stok Kartlarında var. 
+            // Basitlik için fatura detaylarındaki stok kategorilerine göre gruplayalım.
+            var detaylar = await DbService.GetFaturaDetaylarAsync(f.Id);
+            foreach(var d in detaylar)
+            {
+                var stok = await DbService.GetStokAsync(d.StokId);
+                string kat = stok?.Kategori ?? "Diğer";
+                if (!categoryTotals.ContainsKey(kat)) categoryTotals[kat] = 0;
+                categoryTotals[kat] += d.ToplamTutar;
+            }
+        }
+
+        // Kasa/Banka hareketlerindeki giderleri de (Ödeme turleri) ekleyebiliriz.
+        // Ama şimdilik alış faturaları üzerinden bir analiz yapıyoruz.
+
+        decimal total = categoryTotals.Values.Sum();
+        if (total > 0)
+        {
+            data = categoryTotals.Select(x => new GiderData 
+            { 
+                Kategori = x.Key, 
+                Tutar = x.Value, 
+                Pay = (double)(x.Value / total * 100) 
+            }).OrderByDescending(x => x.Tutar).ToList();
+
+            chartData = data.Select(x => (double)x.Tutar).ToArray();
+            chartLabels = data.Select(x => x.Kategori).ToArray();
+        }
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            var headers = new[] { "Kategori", "Toplam Tutar", "Pay (%)" };
+            var rows = data.Select(d => new[] 
+            { 
+                d.Kategori, 
+                d.Tutar.ToString("C2"), 
+                "%" + d.Pay.ToString("N1")
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Gider Analiz Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync("GiderAnalizRaporu.pdf", pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class GiderData
+    {
+        public string Kategori { get; set; } = "";
+        public decimal Tutar { get; set; }
+        public double Pay { get; set; }
+    }
+}

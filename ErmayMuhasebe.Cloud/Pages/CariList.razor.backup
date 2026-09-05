@@ -1,0 +1,750 @@
+@page "/cariler"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@using System.Threading.Tasks
+@inject ErmayMuhasebe.Cloud.ViewModels.CariListViewModel ViewModel
+@inject ISnackbar Snackbar
+
+<div class="cari-layout-container fade-in">
+    <!-- Main Scrollable Area -->
+    <div class="cari-main-body">
+        
+        <!-- Left Column: Panels -->
+        <div class="cari-left-column">
+            <!-- Cari Info Section -->
+            <div class="premium-panel desktop-card d-flex flex-column" style="flex: 1.2; min-height: 0;">
+                <div class="premium-panel-header px-4 py-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="font-size: 14px;">📋</span>
+                        <span class="premium-panel-title">Cari Bilgileri</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="search-pill-container-desktop">
+                            <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" Class="opacity-50" />
+                            <input type="text" class="search-input-desktop" 
+                                   @bind-value="ViewModel.SearchString" @bind-value:event="oninput" 
+                                   placeholder="Cari Ünvan veya Kod İle Ara..." @onkeyup="HandleSearchKeyUp" />
+                        </div>
+                        <div class="header-stats-desktop">
+                            <span class="opacity-50">Toplam:</span>
+                            <span class="fw-bold">@ViewModel.Cariler.Count</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-container-flex">
+                    <table class="premium-table-desktop">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Grup</th>
+                                <th>Ünvan</th>
+                                <th class="text-end" style="width: 150px;">Bakiye</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cari in ViewModel.Cariler)
+                            {
+                                <tr class="@(ViewModel.SelectedCari?.Id == cari.Id ? "selected" : "")" 
+                                    @onclick="() => ViewModel.SelectedCari = cari">
+                                    <td>
+                                        <div class="cari-badge-desktop @(cari.Grup == "Müşteri" ? "musteri" : "tedarikci")">@cari.Grup</div>
+                                    </td>
+                                    <td class="text-white fw-medium">@cari.Unvan</td>
+                                    <td class="text-end fw-bold @(cari.Bakiye >= 0 ? "text-success-desktop" : "text-danger-desktop")">
+                                        @cari.Bakiye.ToString("N3")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Transactions Section -->
+            <div class="premium-panel desktop-card d-flex flex-column mt-4" style="flex: 1; min-height: 0;">
+                <div class="premium-panel-header px-4 py-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="font-size: 14px;">💼</span>
+                        <span class="premium-panel-title">
+                            @(ViewModel.SelectedCari != null ? $"{ViewModel.SelectedCari.Unvan} - Cari İşlemler" : "Cari İşlemler")
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="table-container-flex">
+                    <table class="premium-table-desktop">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Tarih</th>
+                                <th style="width: 130px;">İşlem Türü</th>
+                                <th>Açıklama</th>
+                                <th class="text-end" style="width: 120px;">Borç</th>
+                                <th class="text-end" style="width: 120px;">Alacak</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewModel.SelectedCari == null)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-12">
+                                        <div class="empty-state">
+                                            <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Large" Class="mb-3 opacity-30" />
+                                            <p class="opacity-50">İşlemleri görmek için bir cari seçin</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            else if (!ViewModel.CariHareketler.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-12">
+                                        <div class="empty-state">
+                                            <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Large" Class="mb-3 opacity-30" />
+                                            <p class="opacity-50">Seçili cariye ait hareket bulunamadı</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var hareket in ViewModel.CariHareketler)
+                                {
+                                    <tr class="@(ViewModel.SelectedHareket?.Id == hareket.Id ? "selected" : "")"
+                                        @onclick="() => ViewModel.SelectedHareket = hareket">
+                                        <td>@hareket.Tarih.ToString("dd.MM.yyyy")</td>
+                                        <td>@hareket.IslemTuru</td>
+                                        <td class="text-muted">@hareket.Aciklama</td>
+                                        <td class="text-end">@(hareket.Borc.ToString("N2"))</td>
+                                        <td class="text-end">@(hareket.Alacak.ToString("N2"))</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Sidebar (Fixed Width) -->
+        <div class="cari-right-column">
+            <div class="premium-panel glass-morphism pa-4 d-flex flex-column gap-2 h-100 overflow-auto">
+                <div class="premium-section-title text-center mb-1">İŞLEMLER</div>
+                
+                <!-- Action Grid -->
+                <div class="action-grid">
+                    <button class="action-btn-pill info-pill" @onclick="ViewModel.OpenAddCariDialog">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                        <span>Yeni</span>
+                    </button>
+                    <button class="action-btn-pill success-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" 
+                            @onclick="ViewModel.OpenEditCariDialog" disabled="@(ViewModel.SelectedCari == null)">
+                        <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                        <span>Düzenle</span>
+                    </button>
+                </div>
+
+                <button class="action-btn-wide-pill danger-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" 
+                        @onclick="ConfirmDeleteCari" disabled="@(ViewModel.SelectedCari == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                    <span>Sil</span>
+                </button>
+
+                <div class="action-grid">
+                    <button class="action-btn-pill success-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" 
+                            @onclick="ViewModel.OpenSatisFaturasi" disabled="@(ViewModel.SelectedCari == null)">
+                        <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Size="Size.Small" />
+                        <span>Satış</span>
+                    </button>
+                    <button class="action-btn-pill warning-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" 
+                            @onclick="ViewModel.OpenAlisFaturasi" disabled="@(ViewModel.SelectedCari == null)">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                        <span>Alış</span>
+                    </button>
+                </div>
+
+                <div class="action-grid">
+                    <button class="action-btn-pill success-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" 
+                            @onclick='() => ViewModel.OpenTransactionDialog("Tahsilat")' disabled="@(ViewModel.SelectedCari == null)">
+                        <MudIcon Icon="@Icons.Material.Filled.Paid" Size="Size.Small" />
+                        <span>Tahsilat</span>
+                    </button>
+                    <button class="action-btn-pill warning-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" 
+                            @onclick='() => ViewModel.OpenTransactionDialog("Ödeme")' disabled="@(ViewModel.SelectedCari == null)">
+                        <MudIcon Icon="@Icons.Material.Filled.Send" Size="Size.Small" />
+                        <span>Ödeme</span>
+                    </button>
+                </div>
+
+                <button class="action-btn-wide-pill info-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" disabled="@(ViewModel.SelectedCari == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                    <span>Alacaklandır (F5)</span>
+                </button>
+
+                <button class="action-btn-wide-pill warning-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" disabled="@(ViewModel.SelectedCari == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
+                    <span>Borçlandır (F6)</span>
+                </button>
+
+                <button class="action-btn-wide-pill secondary-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" 
+                        @onclick="ViewModel.HesapEkstresiAsync" disabled="@(ViewModel.SelectedCari == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
+                    <span>Ekstre (F1)</span>
+                </button>
+
+                <button class="action-btn-wide-pill pink-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" 
+                        @onclick="ViewModel.DetayliHesapEkstresiAsync" disabled="@(ViewModel.SelectedCari == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Size="Size.Small" />
+                    <span>Detaylı Ekstre</span>
+                </button>
+
+                <button class="action-btn-wide-pill success-pill shine-effect" @onclick="ViewModel.ExportToExcelAsync">
+                    <MudIcon Icon="@Icons.Custom.FileFormats.FileExcel" Size="Size.Small" />
+                    <span>Excel'e Aktar</span>
+                </button>
+
+                <button class="action-btn-wide-pill secondary-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" disabled="@(ViewModel.SelectedCari == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Size="Size.Small" />
+                    <span>Cari Yaşlandırma</span>
+                </button>
+
+                <button class="action-btn-wide-pill warning-pill @(ViewModel.SelectedCari == null ? "disabled" : "")" disabled="@(ViewModel.SelectedCari == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoGraph" Size="Size.Small" />
+                    <span>Vade Farkı Hesapla</span>
+                </button>
+
+                <div class="mt-2 pt-2">
+                    <!-- Balance Statistics -->
+                    <div class="balance-container">
+                        <div class="balance-header">TOPLAM BAKİYE</div>
+                        
+                        <div class="balance-row">
+                            <span class="label" style="color: #00C2FF;">Müşteri</span>
+                            <span class="value">@ViewModel.MüşteriBakiye.ToString("N2")</span>
+                        </div>
+                        <div class="balance-row">
+                            <span class="label" style="color: #FFA500;">Tedarikçi</span>
+                            <span class="value">@ViewModel.TedarikçiBakiye.ToString("N2")</span>
+                        </div>
+                        
+                        <div class="balance-divider"></div>
+                        
+                        <div class="balance-row">
+                            <span class="label text-danger-bright">Borç</span>
+                            <span class="value text-danger-bright">@ViewModel.ToplamBorc.ToString("N2")</span>
+                        </div>
+                        <div class="balance-row mb-4">
+                            <span class="label text-success-bright">Alacak</span>
+                            <span class="value text-success-bright">@ViewModel.ToplamAlacak.ToString("N2")</span>
+                        </div>
+                        
+                        <!-- Result Box: Matches Desktop -->
+                        <div class="bakiye-box @(ViewModel.Bakiye >= 0 ? "negative" : "positive")">
+                            <div class="amount">@Math.Abs(ViewModel.Bakiye).ToString("N2") ₺</div>
+                            <div class="type">@(ViewModel.Bakiye >= 0 ? "Cari Alacaklı" : "Cari Borçlu")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= Dialogs ================= -->
+
+<!-- Add/Edit Cari Dialog -->
+@if (ViewModel.IsCariEkleVisible)
+{
+    <div class="premium-dialog-overlay fade-in">
+        <div class="premium-dialog glass-morphism p-0 shadow-2xl" style="width: 900px; max-height: 85vh;">
+            <div class="premium-dialog-header d-flex align-items-center justify-content-between p-4 bg-white-5">
+                <div class="d-flex align-items-center gap-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Medium" Class="text-primary-accent" />
+                    <h3 class="m-0 fw-bold">@ViewModel.DialogTitle</h3>
+                </div>
+                <button class="btn-close-premium" @onclick="ViewModel.CloseDialog">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" />
+                </button>
+            </div>
+            
+            <div class="premium-dialog-content p-4 overflow-auto">
+                <div class="row g-4">
+                    <!-- Left: Basic Info -->
+                    <div class="col-md-5">
+                        <div class="premium-section-title mb-3">Temel Bilgiler</div>
+                        <div class="premium-input-group mb-3">
+                            <label>Cari Tipi</label>
+                            <select @bind="ViewModel.EditGrup">
+                                <option value="Müşteri">Müşteri</option>
+                                <option value="Tedarikçi">Tedarikçi</option>
+                            </select>
+                        </div>
+                        <div class="premium-input-group mb-3">
+                            <label>Hesap / Firma Ünvanı</label>
+                            <textarea @bind="ViewModel.EditUnvan" rows="3" placeholder="Tam ünvanı giriniz..."></textarea>
+                        </div>
+                        <div class="premium-input-group mb-3">
+                            <label>Yetkili Kişi</label>
+                            <input type="text" @bind="ViewModel.EditYetkili" placeholder="Ad Soyad" />
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="premium-input-group">
+                                    <label>Vade Günü</label>
+                                    <input type="number" @bind="ViewModel.EditVadeGunu" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="premium-input-group">
+                                    <label>Risk Limiti</label>
+                                    <input type="number" @bind="ViewModel.EditRiskLimiti" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Contact Info -->
+                    <div class="col-md-7 border-start border-white-10 ps-4">
+                        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-3" Class="premium-tabs">
+                            <MudTabPanel Text="İletişim">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <div class="premium-input-group">
+                                            <label>Telefon</label>
+                                            <input type="text" @bind="ViewModel.EditTelefon" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="premium-input-group">
+                                            <label>Cep Telefonu</label>
+                                            <input type="text" @bind="ViewModel.EditCepTelefon" />
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="premium-input-group">
+                                            <label>E-Posta</label>
+                                            <input type="email" @bind="ViewModel.EditEmail" />
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="premium-input-group">
+                                            <label>Adres</label>
+                                            <textarea @bind="ViewModel.EditAdres" rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="premium-input-group">
+                                            <label>İl</label>
+                                            <input type="text" @bind="ViewModel.EditIl" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="premium-input-group">
+                                            <label>İlçe</label>
+                                            <input type="text" @bind="ViewModel.EditIlce" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </MudTabPanel>
+                            <MudTabPanel Text="Mali Bilgiler">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="premium-input-group">
+                                            <label>Vergi No / TCKN</label>
+                                            <input type="text" @bind="ViewModel.EditVergiNo" />
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="premium-input-group">
+                                            <label>Vergi Dairesi</label>
+                                            <input type="text" @bind="ViewModel.EditVergiDairesi" />
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="premium-input-group">
+                                            <label>Cari Kod</label>
+                                            <input type="text" @bind="ViewModel.EditCariKod" />
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="premium-input-group">
+                                            <label>Açılış Bakiyesi</label>
+                                            <input type="number" @bind="ViewModel.EditAcilisBakiye" placeholder="Borç için +, Alacak için -" />
+                                            <small class="opacity-50">Borç (+) | Alacak (-)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </MudTabPanel>
+                        </MudTabs>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="premium-dialog-footer p-4 border-top border-white-10 d-flex justify-content-between align-items-center">
+                <button class="premium-button secondary" @onclick="ViewModel.CloseDialog">Vazgeç</button>
+                <div class="d-flex align-items-center gap-3">
+                    @if (ViewModel.IsLoading)
+                    {
+                        <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
+                    }
+                    <button class="premium-button success shine-effect px-5" @onclick="ViewModel.SaveCariAsync">
+                        <MudIcon Icon="@Icons.Material.Filled.Save" Size="Size.Small" Class="me-2" />
+                        Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Transaction Dialog -->
+@if (ViewModel.IsTransactionDialogVisible)
+{
+    <div class="premium-dialog-overlay fade-in">
+        <div class="premium-dialog glass-morphism p-0 shadow-2xl" style="width: 500px;">
+            <div class="premium-dialog-header p-4 bg-white-5">
+                <h3 class="m-0 fw-bold">@ViewModel.TransactionTitle</h3>
+            </div>
+            
+            <div class="premium-dialog-content p-4">
+                <div class="premium-input-group mb-3">
+                    <label>Yöntem</label>
+                    <select @bind="ViewModel.TransactionMethod">
+                        <option value="Nakit">Nakit</option>
+                        <option value="Kredi Kartı">Kredi Kartı</option>
+                        <option value="Havale/EFT">Havale/EFT</option>
+                        <option value="Çek">Çek</option>
+                    </select>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="premium-input-group">
+                            <label>Tarih</label>
+                            <input type="text" @bind="ViewModel.TransactionDateStr" placeholder="GG.AA.YYYY" />
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="premium-input-group">
+                            <label>Tutar</label>
+                            <input type="number" @bind="ViewModel.TransactionAmount" />
+                        </div>
+                    </div>
+                </div>
+
+                @if (ViewModel.IsKasaSelectionVisible)
+                {
+                    <div class="premium-input-group mb-3">
+                        <label>Hesap / Kasa</label>
+                        <select @bind="ViewModel.SelectedKasaForTransaction">
+                            @foreach (var kasa in ViewModel.AvailableKasalar)
+                            {
+                                <option value="@kasa">@kasa.BankaAdi (@kasa.GuncelBakiye.ToString("N2"))</option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                <div class="premium-input-group">
+                    <label>Açıklama</label>
+                    <textarea @bind="ViewModel.TransactionDescription" rows="2"></textarea>
+                </div>
+            </div>
+            
+            <div class="premium-dialog-footer p-4 border-top border-white-10 d-flex justify-content-end gap-2">
+                <button class="premium-button secondary" @onclick="ViewModel.CloseTransactionDialog">Kapat</button>
+                <button class="premium-button success shine-effect" @onclick="ViewModel.SaveTransactionAsync">Onayla</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Ekstre Option Dialog -->
+@if (ViewModel.IsEkstreOptionVisible)
+{
+    <div class="premium-dialog-overlay fade-in">
+        <div class="premium-dialog glass-morphism p-4 text-center" style="width: 400px;">
+            <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Size="Size.Large" Color="Color.Error" Class="mb-3" />
+            <h3 class="fw-bold mb-4">Hesap Ekstresi Hazır</h3>
+            
+            <div class="d-grid gap-2">
+                <button class="premium-button primary shine-effect p-3" @onclick="ViewModel.PreviewEkstre">
+                    <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Class="me-2" />
+                    Hemen Görüntüle
+                </button>
+                <button class="premium-button success shine-effect p-3" @onclick="() => ViewModel.DownloadEkstreAsync(null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Download" Size="Size.Small" Class="me-2" />
+                    Excel/PDF İndir
+                </button>
+                <button class="premium-button secondary p-3" @onclick="ViewModel.CloseEkstreOption">Kapat</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        await Task.Run(() => ViewModel.Search());
+        StateHasChanged();
+    }
+
+    private string GetGrupClass(string? grup)
+    {
+        if (string.IsNullOrEmpty(grup)) return "secondary";
+        return (grup.Contains("Tedarikçi") || grup.Contains("Satıcı")) ? "warning" : "info";
+    }
+
+    private void HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") ViewModel.Search();
+    }
+
+    private async Task ConfirmDeleteCari()
+    {
+        if (ViewModel.SelectedCari == null) return;
+        
+        // Simulating confirmation
+        await ViewModel.DeleteCariAsync();
+        Snackbar.Add("Cari kart başarıyla silindi", Severity.Success);
+    }
+}
+
+    /* Fixed Viewport Layout - Pixel Perfect Scaling */
+    .cari-layout-container {
+        height: 100%; 
+        width: 100%;
+        padding: 12px 20px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; 
+        box-sizing: border-box;
+    }
+
+    .cari-main-body {
+        display: flex;
+        gap: 16px;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .cari-left-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0; /* Handled by mt-4 on card */
+        height: 100%;
+    }
+
+    .cari-right-column {
+        width: 360px; 
+        flex-shrink: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .table-container-flex {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Dialog Styles */
+    .premium-dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+    }
+
+    .premium-dialog {
+        background: #1A1D21;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        width: 850px !important;
+        max-height: 90vh;
+        overflow: hidden;
+    }
+
+    @@keyframes dialogAppear {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .premium-input-group input, 
+    .premium-input-group select, 
+    .premium-input-group textarea {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        color: white;
+        padding: 10px 14px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    /* Action Buttons Sidebar */
+    .action-btn-pill, .action-btn-wide-pill {
+        background: rgba(30, 35, 40, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50px;
+        color: white;
+        padding: 6px 10px;
+        font-size: 12.5px;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    
+    .action-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    .info-pill { border-color: #00C2FF !important; }
+    .success-pill { border-color: #00FF87 !important; }
+    .warning-pill { border-color: #FFA500 !important; }
+    .danger-pill { border-color: #FF416C !important; }
+
+    /* Sidebar Balance Boxes */
+    .balance-container {
+        background: rgba(10, 12, 14, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 12px 16px;
+        margin-top: 4px;
+    }
+    
+    .bakiye-box { text-align: center; padding: 14px 12px; border-radius: 12px; margin-top: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+    .bakiye-box.positive { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; }
+    .bakiye-box.negative { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white; }
+    .bakiye-box .amount { font-size: 24px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px; }
+    .bakiye-box .type { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 4px; opacity: 0.9; }
+
+    /* Desktop Card Style - Matches Avalonia Figure 2 */
+    .desktop-card {
+        background: #1A1D21;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        overflow: hidden;
+    }
+
+    .premium-panel-header {
+        background: linear-gradient(90deg, rgba(0, 97, 255, 0.25) 0%, rgba(0, 194, 255, 0.15) 100%);
+        border-bottom: 1px solid rgba(96, 165, 250, 0.1);
+    }
+
+    .premium-panel-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #60A5FA;
+        letter-spacing: 0.3px;
+    }
+
+    .search-pill-container-desktop {
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(96, 165, 250, 0.15);
+        border-radius: 20px;
+        padding: 3px 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .search-pill-container-desktop:hover {
+        background: rgba(0,0,0,0.6);
+        border-color: rgba(96, 165, 250, 0.3);
+    }
+
+    .search-input-desktop {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 12px;
+        width: 180px;
+        outline: none;
+    }
+
+    .header-stats-desktop {
+        font-size: 12px;
+        color: white;
+    }
+
+    /* Table Desktop Style */
+    .premium-table-desktop {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .premium-table-desktop thead th {
+        background: #1e252b;
+        color: rgba(255,255,255,0.6);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 10px 16px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .premium-table-desktop tbody tr {
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    
+    .premium-table-desktop tbody tr:hover {
+        background: rgba(96, 165, 250, 0.08) !important;
+    }
+
+    .premium-table-desktop tbody tr:nth-child(even) {
+        background: rgba(255,255,255,0.02);
+    }
+
+    .premium-table-desktop tbody tr.selected {
+        background: rgba(0, 97, 255, 0.25) !important;
+        border-left: 4px solid #0061FF;
+        box-shadow: inset 0 0 20px rgba(0, 97, 255, 0.15);
+    }
+
+    .premium-table-desktop tbody td {
+        padding: 12px 16px;
+        font-size: 13px;
+        vertical-align: middle;
+    }
+
+    .cari-badge-desktop {
+        padding: 3px 10px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        display: inline-block;
+    }
+
+    .cari-badge-desktop.musteri { background: rgba(251, 146, 60, 0.2); color: #FB923C; border: 1px solid rgba(251, 146, 60, 0.4); }
+    .cari-badge-desktop.tedarikci { background: rgba(96, 165, 250, 0.2); color: #60A5FA; border: 1px solid rgba(96, 165, 250, 0.3); }
+
+    .text-success-desktop { color: #10B981; font-weight: 800; font-size: 14px; }
+    .text-danger-desktop { color: #EF4444; font-weight: 800; font-size: 14px; }

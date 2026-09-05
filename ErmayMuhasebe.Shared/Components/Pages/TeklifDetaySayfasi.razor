@@ -1,0 +1,302 @@
+@page "/teklif-detay/{Id:int}"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@using ErmayMuhasebe.Shared.Components.Shared
+@inject DatabaseService DbService
+@inject NavigationManager NavManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <!-- Header -->
+    <div class="d-flex justify-space-between align-center mb-4">
+        <div class="d-flex align-center gap-2">
+            <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Outlined" OnClick="GoBack">Geri Dön</MudButton>
+            <MudText Typo="Typo.h5" Class="ml-2">Teklif Detayı</MudText>
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ShoppingCart" Color="Color.Info" OnClick="ConvertToOrder">Siparişe Aktar</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Receipt" Color="Color.Success" OnClick="ConvertToInvoice">Faturalandır</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Print" OnClick="PrintPdf">Yazdır</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Download" OnClick="DownloadPdf">İndir</MudButton>
+            <!-- Düzenle butonu eklenebilir -->
+        </div>
+    </div>
+
+    @if (teklif == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else
+    {
+        <MudGrid>
+            <!-- Left Info Panel -->
+            <MudItem xs="12" md="5">
+                <MudPaper Class="pa-4" Elevation="3" Style="height: 100%;">
+                    <MudText Typo="Typo.h6" Class="mb-4">Teklif Bilgileri</MudText>
+                    
+                    <MudGrid>
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Teklif No</MudText>
+                            <MudText Typo="Typo.body1" Class="fw-bold">@teklif.TeklifNo</MudText>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Müşteri/Aday</MudText>
+                            <MudText Typo="Typo.body1" Class="fw-bold">@teklif.CariUnvan</MudText>
+                        </MudItem>
+                        
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Tarih</MudText>
+                            <MudText Typo="Typo.body1">@teklif.Tarih.ToShortDateString()</MudText>
+                        </MudItem>
+                        
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">Durum</MudText>
+                            <MudMenu Label="@teklif.Durum" Variant="Variant.Filled" Color="@GetStatusColor(teklif.Durum ?? "")" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Hazırlanıyor"))">Hazırlanıyor</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Gönderildi"))">Gönderildi</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Onaylandı"))">Onaylandı</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateStatus("Reddedildi"))">Reddedildi</MudMenuItem>
+                            </MudMenu>
+                        </MudItem>
+
+                        <MudItem xs="12" Class="mt-4">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Toplam Tutar</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Success" Class="fw-bold">@teklif.GenelToplam.ToString("C2")</MudText>
+                        </MudItem>
+                         <MudItem xs="12">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Açıklama</MudText>
+                            <MudText Typo="Typo.body2">@teklif.Aciklama</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Right Items Panel -->
+            <MudItem xs="12" md="7">
+                <MudPaper Class="pa-4" Elevation="3" Style="height: 100%;">
+                    <MudText Typo="Typo.h6" Class="mb-4">Teklif Kalemleri</MudText>
+                    
+                    <MudTable Items="@detaylar" Dense="true" Hover="true" Bordered="true" Elevation="0" Outlined="true">
+                        <HeaderContent>
+                            <MudTh>Ürün/Hizmet</MudTh>
+                            <MudTh>Miktar</MudTh>
+                            <MudTh>Birim Fiyat</MudTh>
+                            <MudTh>Tutar</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.StokAdi</MudTd>
+                            <MudTd>@context.Miktar</MudTd>
+                            <MudTd>@context.BirimFiyat.ToString("C2")</MudTd>
+                            <MudTd>@context.Tutar.ToString("C2")</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Bottom History Panel -->
+            <MudItem xs="12">
+                <MudPaper Class="pa-4" Elevation="3">
+                    <MudText Typo="Typo.h6" Class="mb-4">Teklif Geçmişi</MudText>
+                    
+                    <MudTimeline TimelinePosition="TimelinePosition.Start">
+                        <MudTimelineItem Color="Color.Success" Size="Size.Small">
+                            <ItemContent>
+                                <MudText Typo="Typo.body1" Class="fw-bold">Teklif Oluşturuldu</MudText>
+                                <MudText Typo="Typo.caption">@teklif.Tarih.ToString("g")</MudText>
+                            </ItemContent>
+                        </MudTimelineItem>
+                        
+                        @if(teklif.Durum == "Onaylandı")
+                        {
+                            <MudTimelineItem Color="Color.Info" Size="Size.Small">
+                                <ItemContent>
+                                    <MudText Typo="Typo.body1" Class="fw-bold">Teklif Onaylandı</MudText>
+                                    <MudText Typo="Typo.caption">Durum güncellendi.</MudText>
+                                </ItemContent>
+                            </MudTimelineItem>
+                        }
+                    </MudTimeline>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Teklif? teklif;
+    private List<TeklifDetay> detaylar = new();
+    private CariKart? cari;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        teklif = await DbService.GetTeklifAsync(Id);
+        if (teklif != null)
+        {
+            detaylar = await DbService.GetTeklifDetaylarAsync(Id);
+            cari = await DbService.GetCariAsync(teklif.CariId);
+        }
+        else
+        {
+            Snackbar.Add("Teklif bulunamadı", Severity.Error);
+            NavManager.NavigateTo("/teklif-listesi");
+        }
+    }
+    
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/teklif-listesi");
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Hazırlanıyor" => Color.Warning,
+            "Gönderildi" => Color.Info,
+            "Onaylandı" => Color.Success,
+            "Reddedildi" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private async Task UpdateStatus(string newStatus)
+    {
+        if (teklif == null) return;
+        teklif.Durum = newStatus;
+        await DbService.SaveTeklifWithDetailsAsync(teklif, detaylar);
+        Snackbar.Add($"Durum güncellendi: {newStatus}", Severity.Success);
+    }
+
+    private async Task DownloadPdf()
+    {
+        if(teklif == null) return;
+        
+        try
+        {
+            var pdfBytes = await PdfService.GenerateTeklifPdfBytesAsync(teklif, detaylar, cari ?? new CariKart { Unvan = teklif.CariUnvan });
+            var fileName = $"Teklif_{teklif.TeklifNo}.pdf";
+            await FileService.SaveAndOpenFileAsync(fileName, pdfBytes, "application/pdf");
+        }
+        catch(Exception ex)
+        {
+             Snackbar.Add($"PDF oluşturulurken hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PrintPdf()
+    {
+        await DownloadPdf();
+    }
+
+    private async Task ConvertToOrder()
+    {
+        if (teklif == null || detaylar.Count == 0) return;
+
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Siparişe Aktar", 
+            "Bu teklifi siparişe aktarmak istediğinize emin misiniz?", 
+            yesText: "Evet", cancelText: "Hayır");
+
+        if (confirm == true)
+        {
+            try
+            {
+                var siparis = new Siparis
+                {
+                    SiparisNo = "S-" + teklif.TeklifNo,
+                    Tarih = DateTime.Now,
+                    CariId = teklif.CariId,
+                    CariUnvan = teklif.CariUnvan,
+                    Aciklama = teklif.Aciklama + " (Tekliften Aktarıldı)",
+                    GenelToplam = teklif.GenelToplam,
+                    Durum = "Bekliyor",
+                    Oncelik = "Orta"
+                };
+
+                var siparisDetaylar = detaylar.Select(d => new SiparisDetay
+                {
+                    StokId = d.StokId,
+                    StokAdi = d.StokAdi ?? "",
+                    Miktar = d.Miktar,
+                    BirimFiyat = d.BirimFiyat,
+                    Birim = "Adet" // TeklifDetay'da Birim yoktu, varsayılan Adet
+                }).ToList();
+
+                await DbService.SaveSiparisWithDetailsAsync(siparis, siparisDetaylar);
+                
+                teklif.Durum = "Onaylandı"; // Siparişe aktarılan teklifi onaylanmış sayabiliriz
+                await DbService.SaveTeklifWithDetailsAsync(teklif, detaylar);
+
+                Snackbar.Add("Teklif başarıyla siparişe aktarıldı!", Severity.Success);
+                NavManager.NavigateTo($"/siparis-detay/{siparis.Id}");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Sipariş oluşturulurken hata: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task ConvertToInvoice()
+    {
+        if (teklif == null || detaylar.Count == 0) return;
+
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Faturalandır", 
+            "Bu teklifi doğrudan faturalandırmak istediğinize emin misiniz?", 
+            yesText: "Evet", cancelText: "Hayır");
+
+        if (confirm == true)
+        {
+            try
+            {
+                var fatura = new Fatura
+                {
+                    FaturaNo = "F-" + teklif.TeklifNo,
+                    Tarih = DateTime.Now,
+                    CariId = teklif.CariId,
+                    CariUnvan = teklif.CariUnvan,
+                    Tur = "Satis",
+                    GenelToplam = teklif.GenelToplam,
+                    AraToplam = teklif.GenelToplam / 1.1m, // Varsayılan %10 KDV hesabı
+                    ToplamKDV = teklif.GenelToplam - (teklif.GenelToplam / 1.1m),
+                    Aciklama = teklif.Aciklama + " (Tekliften Faturalandı)",
+                    BaglantiEvrakNo = teklif.TeklifNo
+                };
+
+                var faturaDetaylar = detaylar.Select(d => new FaturaDetay
+                {
+                    StokId = d.StokId,
+                    StokAdi = d.StokAdi ?? "",
+                    Miktar = d.Miktar,
+                    BirimFiyat = d.BirimFiyat,
+                    KDVOrani = 10, // Varsayılan %10
+                    Birim = "Adet"
+                }).ToList();
+
+                await DbService.SaveFaturaWithDetailsAndTransactionAsync(fatura, faturaDetaylar);
+
+                teklif.Durum = "Faturalandırıldı";
+                await DbService.SaveTeklifWithDetailsAsync(teklif, detaylar);
+
+                Snackbar.Add("Teklif başarıyla faturalandırıldı!", Severity.Success);
+                // Satış faturaları listesine (dokümüne) yönlendir
+                NavManager.NavigateTo("/satis-fatura-dokumu"); 
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Fatura oluşturulurken hata: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}

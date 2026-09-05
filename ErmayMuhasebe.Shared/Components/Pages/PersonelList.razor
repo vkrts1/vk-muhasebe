@@ -1,0 +1,96 @@
+@page "/personel-listesi"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Personel Listesi</MudText>
+
+<MudTable Items="@personeller" Hover="true" Striped="true" Filter="new Func<Personel,bool>(FilterFunc)">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Personeller</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Ara..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="AddPersonel">Yeni Personel</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Ad Soyad</MudTh>
+        <MudTh>Görevi</MudTh>
+        <MudTh>Telefon</MudTh>
+        <MudTh>Email</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Ad @context.Soyad</MudTd>
+        <MudTd>@context.Unvan</MudTd>
+        <MudTd>@context.Telefon</MudTd>
+        <MudTd>@context.Email</MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditPersonel(context))" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="MudBlazor.Color.Error" OnClick="@(() => DeletePersonel(context))" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<Personel> personeller = new();
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        personeller = await DbService.GetPersonelListAsync();
+    }
+
+    private bool FilterFunc(Personel p)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (p.Ad?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (p.Soyad?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        return false;
+    }
+
+    private async Task AddPersonel()
+    {
+        var dialog = await DialogService.ShowAsync<PersonelDialog>("Yeni Personel");
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is Personel p)
+        {
+            await DbService.SavePersonelAsync(p);
+            await LoadData();
+            Snackbar.Add("Personel eklendi", Severity.Success);
+        }
+    }
+
+    private async Task EditPersonel(Personel p)
+    {
+        var parameters = new DialogParameters { ["Model"] = p };
+        var dialog = await DialogService.ShowAsync<PersonelDialog>("Personel Düzenle", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled && result.Data is Personel updated)
+        {
+            await DbService.SavePersonelAsync(updated);
+            await LoadData();
+            Snackbar.Add("Personel güncellendi", Severity.Success);
+        }
+    }
+
+    private async Task DeletePersonel(Personel p)
+    {
+        var confirm = await DialogService.ShowMessageBox("Sil", $"{p.Ad} {p.Soyad} isimli personeli silmek istediğinize emin misiniz?", yesText: "Sil", cancelText: "İptal");
+        if (confirm == true)
+        {
+            await DbService.DeletePersonelAsync(p.Id);
+            await LoadData();
+            Snackbar.Add("Personel silindi", Severity.Success);
+        }
+    }
+}

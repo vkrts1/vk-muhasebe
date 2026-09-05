@@ -1,0 +1,102 @@
+@page "/makbuz-olustur"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IPdfService PdfService
+@inject IFileService FileService
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Tahsilat / Ödeme Makbuzu</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4">
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string" @bind-Value="makbuzTuru" Label="Makbuz Türü" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("Tahsilat")">Tahsilat Makbuzu</MudSelectItem>
+                        <MudSelectItem Value="@("Ödeme")">Ödeme Makbuzu</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string" @bind-Value="makbuzNo" Label="Makbuz No" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker @bind-Date="tarih" Label="Tarih" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="tutar" Label="Tutar (₺)" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField T="string" @bind-Value="cariAdi" Label="Cari Adı" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField T="string" @bind-Value="aciklama" Label="Açıklama" Variant="Variant.Outlined" Lines="3" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="YazdirmaOnizle" FullWidth="true" StartIcon="@Icons.Material.Filled.PictureAsPdf">
+                        PDF Oluştur ve Yazdır
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4" Style="background-color: #f5f5f5;">
+            <MudText Typo="Typo.h6" Class="mb-2">Makbuz Önizleme</MudText>
+            <MudDivider Class="mb-2" />
+            <div style="border: 2px solid #333; padding: 16px; background: white;">
+                <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-2"><b>@makbuzTuru.ToUpper() MAKBUZU</b></MudText>
+                <MudText Typo="Typo.body2">Makbuz No: @makbuzNo</MudText>
+                <MudText Typo="Typo.body2">Tarih: @(tarih?.ToShortDateString() ?? DateTime.Now.ToShortDateString())</MudText>
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.body2"><b>Cari:</b> @cariAdi</MudText>
+                <MudText Typo="Typo.body2"><b>Tutar:</b> @tutar.ToString("C2")</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">@aciklama</MudText>
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.caption" Align="Align.Center">İmza: _______________</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string makbuzTuru = "Tahsilat";
+    private string makbuzNo = "MKB-" + DateTime.Now.Ticks.ToString().Substring(0, 6);
+    private DateTime? tarih = DateTime.Now;
+    private decimal tutar = 0;
+    private string cariAdi = "";
+    private string aciklama = "";
+
+    private async Task YazdirmaOnizle()
+    {
+        if (string.IsNullOrWhiteSpace(cariAdi) || tutar <= 0)
+        {
+            Snackbar.Add("Lütfen Cari Adı ve Geçerli Bir Tutar giriniz.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // PDF Oluştur
+            var pdfBytes = await PdfService.GenerateMakbuzPdfBytesAsync(
+                makbuzTuru.ToUpper() + " MAKBUZU", 
+                cariAdi, 
+                tarih ?? DateTime.Now, 
+                tutar, 
+                aciklama
+            );
+
+            // Dosyayı Kaydet ve Aç (Mobil/Desktop uyumlu)
+            var fileName = $"{makbuzTuru}Makbuzu_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            await FileService.SaveAndOpenFileAsync(fileName, pdfBytes, "application/pdf");
+            
+            Snackbar.Add("Makbuz PDF olarak oluşturuldu.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+}

@@ -1,0 +1,20 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <div style="min-width: 800px; min-height: 500px;">
+            @ChildContent
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Secondary" Variant="Variant.Text">Kapat</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    
+    void Close() => MudDialog.Close(DialogResult.Ok(true));
+}

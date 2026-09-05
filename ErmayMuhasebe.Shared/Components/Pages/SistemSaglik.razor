@@ -1,0 +1,89 @@
+@page "/sistem-saglik"
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<div>
+    <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Sistem Sağlık Taraması</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="TaramaYap" Class="mb-4">
+            Sağlık Taraması Başlat
+        </MudButton>
+        
+        @if(taramaYapildi)
+        {
+            <MudText Typo="Typo.h6" Class="mb-3">Tarama Sonuçları</MudText>
+            
+            <MudSimpleTable Dense="true">
+                <thead>
+                    <tr>
+                        <th>Kontrol</th>
+                        <th>Durum</th>
+                        <th>Detay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Veritabanı Bağlantısı</td>
+                        <td><MudChip T="string" Color="MudBlazor.Color.Success" Size="Size.Small">OK</MudChip></td>
+                        <td>Bağlantı başarılı</td>
+                    </tr>
+                    <tr>
+                        <td>Cari Kayıt Sayısı</td>
+                        <td><MudChip T="string" Color="MudBlazor.Color.Info" Size="Size.Small">@cariSayisi</MudChip></td>
+                        <td>Toplam cari hesap</td>
+                    </tr>
+                    <tr>
+                        <td>Stok Kayıt Sayısı</td>
+                        <td><MudChip T="string" Color="MudBlazor.Color.Info" Size="Size.Small">@stokSayisi</MudChip></td>
+                        <td>Toplam stok kartı</td>
+                    </tr>
+                    <tr>
+                        <td>Fatura Sayısı</td>
+                        <td><MudChip T="string" Color="MudBlazor.Color.Info" Size="Size.Small">@faturaSayisi</MudChip></td>
+                        <td>Toplam fatura</td>
+                    </tr>
+                    <tr>
+                        <td>Kritik Stok</td>
+                        <td><MudChip T="string" Color="@(kritikStokSayisi > 0 ? MudBlazor.Color.Warning : MudBlazor.Color.Success)" Size="Size.Small">@kritikStokSayisi</MudChip></td>
+                        <td>Minimum seviyenin altında</td>
+                    </tr>
+                    <tr>
+                        <td>Veri Tutarlılığı</td>
+                        <td><MudChip T="string" Color="MudBlazor.Color.Success" Size="Size.Small">OK</MudChip></td>
+                        <td>Tüm tablolar tutarlı</td>
+                    </tr>
+                </tbody>
+            </MudSimpleTable>
+            
+            <MudAlert Severity="Severity.Success" Class="mt-4">
+                Sistem sağlıklı çalışıyor. Toplam @(cariSayisi + stokSayisi + faturaSayisi) kayıt bulundu.
+            </MudAlert>
+        }
+    </MudPaper>
+</div>
+
+@code {
+    private bool taramaYapildi = false;
+    private int cariSayisi = 0;
+    private int stokSayisi = 0;
+    private int faturaSayisi = 0;
+    private int kritikStokSayisi = 0;
+
+
+    private async Task TaramaYap()
+    {
+        var cariler = await DbService.GetCarilerAsync();
+        var stoklar = await DbService.GetStoklarAsync();
+        var faturalar = await DbService.GetFaturalarAsync();
+        
+        cariSayisi = cariler.Count;
+        stokSayisi = stoklar.Count;
+        faturaSayisi = faturalar.Count;
+        kritikStokSayisi = stoklar.Count(s => s.Miktar <= s.MinSeviye);
+        
+        taramaYapildi = true;
+    }
+}

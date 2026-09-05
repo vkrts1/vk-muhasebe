@@ -1,0 +1,151 @@
+@page "/haftalik-hedef"
+@using ErmayMuhasebe.Shared.ViewModels
+@inject HaftalikHedefTakipViewModel ViewModel
+@inject NavigationManager Nav
+
+<div class="fade-in p-6" style="height: 100%; overflow-y: auto;">
+    <!-- Header Section -->
+    <div class="d-flex align-center justify-between mb-8">
+        <div class="d-flex align-center gap-4">
+            <div class="header-icon-box" style="background: rgba(0, 97, 255, 0.1); border: 1px solid rgba(0, 97, 255, 0.2); width: 50px; height: 50px; border-radius: 14px; display: flex; align-center; justify-center;">
+                <MudIcon Icon="@Icons.Material.Filled.Flag" Style="color: #60A5FA; font-size: 28px;" />
+            </div>
+            <div>
+                <h1 style="font-size: 24px; font-weight: 900; color: white; margin: 0;">Haftalık Hedef Takibi</h1>
+                <p style="font-size: 13px; color: rgba(255,255,255,0.4); margin: 0;">Satış hedeflerinizi ve gerçekleşme oranlarını buradan takip edin.</p>
+            </div>
+        </div>
+
+        @if (ViewModel.IsWeekListVisible)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ViewModel.OpenNewForm" StartIcon="@Icons.Material.Filled.Add" Class="action-capsule primary">
+                YENİ HEDEF EKLE
+            </MudButton>
+        }
+    </div>
+
+    <!-- Sub-Header / Filters -->
+    <div class="d-flex align-center gap-4 mb-6">
+        @if (ViewModel.IsYearListVisible)
+        {
+            <div class="desktop-search-pill" style="padding: 2px 15px;">
+                <span style="font-size: 12px; color: rgba(255,255,255,0.4);">Yıl Oluştur:</span>
+                <input type="number" @bind="ViewModel.SelectedFilterYil" style="width: 80px; background: transparent; border: none; color: white; outline: none; font-weight: 700;" />
+                <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Size="Size.Small" Color="Color.Info" OnClick="ViewModel.CreateYearlyTargetsAsync" />
+            </div>
+        }
+        else
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="ViewModel.BackToYears" Class="mr-2" />
+            <h2 style="font-size: 18px; font-weight: 700; color: #60A5FA;">@ViewModel.SelectedFilterYil Yılı Hedefleri</h2>
+        }
+    </div>
+
+    <!-- Content Area -->
+    @if (ViewModel.IsYearListVisible)
+    {
+        <div class="row g-4">
+            @foreach (var year in ViewModel.AvailableYears)
+            {
+                <div class="col-md-3">
+                    <div class="glass-panel p-8 d-flex flex-column align-center justify-center gap-4" 
+                         style="cursor: pointer; transition: transform 0.2s;" 
+                         @onclick="() => ViewModel.SelectYear(year)">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Style="font-size: 48px; color: #60A5FA; opacity: 0.5;" />
+                        <span style="font-size: 32px; font-weight: 900; color: white;">@year</span>
+                        <span style="font-size: 12px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;">Haftalık İncele</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var h in ViewModel.Hedefler)
+            {
+                <div class="col-md-3">
+                    <div class="glass-panel p-5 d-flex flex-column gap-3">
+                        <div class="d-flex justify-between align-start">
+                            <div class="d-flex flex-column">
+                                <span style="font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 700;">HAFTA @h.Model.Hafta</span>
+                                <span style="font-size: 15px; font-weight: 800; color: white;">@h.HaftaAdi</span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => ViewModel.OpenEditForm(h)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => ViewModel.DeleteAsync(h)" />
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <div class="d-flex justify-between mb-1">
+                                <span style="font-size: 11px; color: rgba(255,255,255,0.5);">Gerçekleşme Oranı</span>
+                                <span style="font-size: 12px; font-weight: 900; color: @h.Renk;">%@h.Yuzde.ToString("N1")</span>
+                            </div>
+                            <div style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                                <div style="width: @(Math.Min(100, (double)h.Yuzde))%; height: 100%; background: @h.Renk; transition: width 0.5s ease-out;"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-0 mt-2">
+                            <div class="col-6">
+                                <span style="font-size: 10px; color: #F59E0B; font-weight: 800; display: block;">HEDEF</span>
+                                <span style="font-size: 14px; font-weight: 700; color: white;">@h.Model.HedefTutari.ToString("N0") ₺</span>
+                            </div>
+                            <div class="col-6 text-end">
+                                <span style="font-size: 10px; color: #10B981; font-weight: 800; display: block;">GERÇEKLEŞEN</span>
+                                <span style="font-size: 14px; font-weight: 700; color: white;">@h.Gerceklesen.ToString("N0") ₺</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Edit Dialog Overlay -->
+@if (ViewModel.IsEditFormVisible)
+{
+    <div class="glass-overlay">
+        <div class="glass-panel p-8" style="width: 450px;">
+            <h3 class="mb-6 text-center" style="font-size: 20px; font-weight: 800; color: #60A5FA;">@ViewModel.EditTitle</h3>
+            
+            <div class="d-flex flex-column gap-5">
+                <div>
+                    <label style="font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 8px; display: block;">YIL</label>
+                    <input type="number" @bind="ViewModel.EditYil" class="premium-input-dark" />
+                </div>
+                
+                <div>
+                    <label style="font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 8px; display: block;">HAFTA (1-53)</label>
+                    <select @bind="ViewModel.EditHafta" class="premium-input-dark">
+                        @foreach(var w in ViewModel.Haftalar) { <option value="@w">@w. Hafta</option> }
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 8px; display: block;">HEDEF TUTAR (₺)</label>
+                    <input type="number" @bind="ViewModel.EditHedefTutar" class="premium-input-dark" />
+                </div>
+
+                <div class="row g-3 mt-4">
+                    <div class="col-6">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="ViewModel.SaveAsync" Style="height: 50px; border-radius: 12px; font-weight: 800;">KAYDET</MudButton>
+                    </div>
+                    <div class="col-6">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" OnClick="ViewModel.CloseForm" Style="height: 50px; border-radius: 12px; font-weight: 800;">İPTAL</MudButton>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        await ViewModel.LoadDataAsync();
+    }
+}

@@ -1,0 +1,617 @@
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
+using ErmayMuhasebe.Models;
+
+namespace ErmayMuhasebe.Services
+{
+    public class PdfService
+    {
+        public byte[] GenerateMakbuzPdf(string makbuzTipi, string cariUnvan, DateTime tarih, decimal tutar, string aciklama)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+            
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(QuestPDF.Helpers.PageSizes.A5);
+                    page.Margin(2, QuestPDF.Infrastructure.Unit.Centimetre);
+                    page.PageColor(QuestPDF.Helpers.Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(12));
+
+                    page.Header()
+                        .Text(makbuzTipi)
+                        .SemiBold().FontSize(20).FontColor(QuestPDF.Helpers.Colors.Blue.Medium);
+
+                    page.Content()
+                        .PaddingVertical(1, QuestPDF.Infrastructure.Unit.Centimetre)
+                        .Column(x =>
+                        {
+                            x.Spacing(20);
+
+                            x.Item().Text($"Cari: {cariUnvan}");
+                            x.Item().Text($"Tarih: {tarih:dd.MM.yyyy}");
+                            x.Item().Text($"Tutar: {tutar:N2} TL").FontSize(16).SemiBold();
+                            x.Item().Text($"Açıklama: {aciklama}");
+                        });
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            x.Span("Sayfa ");
+                            x.CurrentPageNumber();
+                        });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+
+        public byte[] GenerateCariEkstrePdf(CariKart cari, List<CariHareket> hareketler)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+            
+            var orderedHareketler = hareketler.OrderBy(h => h.Tarih).ThenBy(h => h.Id).ToList();
+            
+            // Running balance calculation
+            var runningBalance = 0m;
+            var rows = new List<dynamic>();
+            foreach(var h in orderedHareketler)
+            {
+               runningBalance += (decimal)(h.Borc - h.Alacak);
+               rows.Add(new { Hareket = h, Bakiye = runningBalance });
+            }
+
+            var toplamBorc = hareketler.Sum(h => h.Borc);
+            var toplamAlacak = hareketler.Sum(h => h.Alacak);
+            var netBakiye = toplamBorc - toplamAlacak;
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(QuestPDF.Helpers.PageSizes.A4);
+                    page.Margin(1.5f, QuestPDF.Infrastructure.Unit.Centimetre);
+                    page.PageColor(QuestPDF.Helpers.Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(9));
+
+                    page.Header()
+                        .Column(headerCol =>
+                        {
+                            // Üst kısım: Tarih ve Firma Adı
+                            headerCol.Item().Row(row =>
+                            {
+                                row.RelativeItem().Text($"{DateTime.Now:dd.MM.yyyy HH:mm}").FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1);
+                                row.RelativeItem().AlignRight().Text("ERMAY").FontSize(8).SemiBold();
+                            });
+                            
+                            // Ana Başlık
+                            headerCol.Item().PaddingTop(10).PaddingBottom(15)
+                                .Text($"Müşteri Ekstresi: {cari.Unvan.ToUpper()}")
+                                .SemiBold().FontSize(14).FontColor(QuestPDF.Helpers.Colors.Black);
+                        });
+
+                    page.Content()
+                        .Column(col =>
+                        {
+                            // Genel Bilgiler Kutusu - Bilsoft Tarzı
+                            col.Item().PaddingBottom(15).Border(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2)
+                                .Column(infoCol => 
+                                {
+                                    // Başlık
+                                    infoCol.Item().Background(QuestPDF.Helpers.Colors.Grey.Lighten4)
+                                        .Padding(8).Text("Genel Bilgiler").SemiBold().FontSize(10);
+                                    
+                                    // İçerik
+                                    infoCol.Item().Padding(10).Column(content =>
+                                    {
+                                        content.Item().PaddingBottom(5).Row(r => 
+                                        {
+                                            r.RelativeItem(1).Text("Müşteri Adı:").FontSize(9);
+                                            r.RelativeItem(3).Text(cari.Unvan).FontSize(9).SemiBold();
+                                        });
+                                        content.Item().PaddingBottom(5).Row(r => 
+                                        {
+                                            r.RelativeItem(1).Text("Toplam Satış:").FontSize(9);
+                                            r.RelativeItem(3).Text($"₺{toplamBorc:N2}").FontSize(9);
+                                        });
+                                        content.Item().PaddingBottom(5).Row(r => 
+                                        {
+                                            r.RelativeItem(1).Text("Toplam Ödeme:").FontSize(9);
+                                            r.RelativeItem(3).Text($"₺{toplamAlacak:N2}").FontSize(9);
+                                        });
+                                        content.Item().Row(r => 
+                                        {
+                                            r.RelativeItem(1).Text("Bakiye:").FontSize(9);
+                                            string bakiyeDurum = netBakiye > 0 ? "(Borçlu)" : (netBakiye < 0 ? "(Alacaklı)" : "");
+                                            r.RelativeItem(3).Text($"₺{Math.Abs(netBakiye):N2} {bakiyeDurum}")
+                                                .FontSize(9).SemiBold()
+                                                .FontColor(netBakiye > 0 ? QuestPDF.Helpers.Colors.Red.Medium : 
+                                                          (netBakiye < 0 ? QuestPDF.Helpers.Colors.Green.Medium : QuestPDF.Helpers.Colors.Black));
+                                        });
+                                    });
+                                });
+                            
+                            // İşlem Detayları Başlığı
+                            col.Item().PaddingBottom(8).Text("İşlem Detayları").SemiBold().FontSize(10);
+
+                            // Tablo - Bilsoft Tarzı
+                            col.Item().Border(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(0.9f);  // Tarih
+                                    columns.RelativeColumn(1.1f);  // İşlem Tipi
+                                    columns.RelativeColumn(2.5f);  // Açıklama
+                                    columns.RelativeColumn(1.2f);  // Ödeme Yöntemi
+                                    columns.RelativeColumn(1f);    // Borç
+                                    columns.RelativeColumn(1f);    // Alacak
+                                    columns.RelativeColumn(1.2f);  // Bakiye
+                                });
+
+                                // Header - Bilsoft Tarzı
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(HeaderStyle).Text("Tarih");
+                                    header.Cell().Element(HeaderStyle).Text("İşlem Tipi");
+                                    header.Cell().Element(HeaderStyle).Text("Açıklama");
+                                    header.Cell().Element(HeaderStyle).Text("Ödeme Yöntemi");
+                                    header.Cell().Element(HeaderStyle).AlignRight().Text("Borç");
+                                    header.Cell().Element(HeaderStyle).AlignRight().Text("Alacak");
+                                    header.Cell().Element(HeaderStyle).AlignRight().Text("Bakiye");
+
+                                    static QuestPDF.Infrastructure.IContainer HeaderStyle(QuestPDF.Infrastructure.IContainer container)
+                                    {
+                                        return container.Background("#f3f4f6").Padding(6)
+                                            .DefaultTextStyle(x => x.SemiBold().FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2));
+                                    }
+                                });
+
+                                // Rows
+                                foreach (var row in rows)
+                                {
+                                    var h = (CariHareket)row.Hareket;
+                                    decimal bak = (decimal)row.Bakiye;
+                                    
+                                    // Ödeme Yöntemi Belirleme
+                                    string odemeYontemi = "-";
+                                    if(h.Aciklama?.Contains("Kredi Kartı", StringComparison.OrdinalIgnoreCase) == true) 
+                                        odemeYontemi = "Kredi Kartı";
+                                    else if(h.Aciklama?.Contains("Nakit", StringComparison.OrdinalIgnoreCase) == true) 
+                                        odemeYontemi = "Nakit";
+                                    else if(h.IslemTuru == "Tahsilat" || h.IslemTuru == "Ödeme") 
+                                        odemeYontemi = "Nakit";
+
+                                    // Badge Color - Bilsoft Tarzı
+                                    string badgeColor = "#e5e7eb";
+                                    string badgeTextColor = QuestPDF.Helpers.Colors.Black;
+                                    
+                                    if(h.IslemTuru.Contains("Satış") || h.IslemTuru == "Borç Dekontu" || h.IslemTuru.Contains("Borçlandır"))
+                                    {
+                                         badgeColor = "#3b82f6"; // Blue
+                                         badgeTextColor = QuestPDF.Helpers.Colors.White;
+                                    }
+                                    else if(h.IslemTuru.Contains("Ödeme") || h.IslemTuru.Contains("Tahsilat") || h.IslemTuru == "Alacak Dekontu" || h.IslemTuru.Contains("Alacaklandır"))
+                                    {
+                                         badgeColor = "#10b981"; // Green
+                                         badgeTextColor = QuestPDF.Helpers.Colors.White;
+                                    }
+
+                                    // Tarih
+                                    table.Cell().Element(CellStyle).Text(h.Tarih.ToString("dd.MM.yyyy")).FontSize(8);
+                                    
+                                    // İşlem Tipi - Badge
+                                    table.Cell().Element(CellStyle).PaddingHorizontal(2).Element(c => 
+                                        c.Background(badgeColor)
+                                        .PaddingHorizontal(6).PaddingVertical(3)
+                                        .AlignCenter()
+                                        .Text(h.IslemTuru).FontColor(badgeTextColor).FontSize(7).SemiBold()
+                                    );
+                                    
+                                    // Açıklama
+                                    table.Cell().Element(CellStyle).Text(h.Aciklama ?? "-").FontSize(8);
+                                    
+                                    // Ödeme Yöntemi
+                                    table.Cell().Element(CellStyle).Text(odemeYontemi).FontSize(8);
+                                    
+                                    // Borç
+                                    table.Cell().Element(CellStyle).AlignRight()
+                                        .Text(h.Borc > 0 ? $"₺{h.Borc:N2}" : "-")
+                                        .FontSize(8)
+                                        .FontColor(h.Borc > 0 ? "#ef4444" : QuestPDF.Helpers.Colors.Black);
+                                    
+                                    // Alacak
+                                    table.Cell().Element(CellStyle).AlignRight()
+                                        .Text(h.Alacak > 0 ? $"₺{h.Alacak:N2}" : "-")
+                                        .FontSize(8)
+                                        .FontColor(h.Alacak > 0 ? "#10b981" : QuestPDF.Helpers.Colors.Black);
+                                    
+                                    // Bakiye
+                                    string bakiyeText = $"₺{Math.Abs(bak):N2}";
+                                    table.Cell().Element(CellStyle).AlignRight()
+                                        .Text(bakiyeText).FontSize(8).SemiBold()
+                                        .FontColor(bak > 0 ? "#ef4444" : (bak < 0 ? "#10b981" : QuestPDF.Helpers.Colors.Black));
+
+                                    static QuestPDF.Infrastructure.IContainer CellStyle(QuestPDF.Infrastructure.IContainer container)
+                                    {
+                                        return container.BorderBottom(1).BorderColor("#e5e7eb").PaddingVertical(6).PaddingHorizontal(4);
+                                    }
+                                }
+                            });
+                        });
+
+                    page.Footer()
+                        .BorderTop(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2)
+                        .PaddingTop(8)
+                        .Row(footerRow =>
+                        {
+                            footerRow.RelativeItem()
+                                .Text("https://a2k-one.vercel.app/customers/VekAV-mE8/extract")
+                                .FontSize(7).FontColor(QuestPDF.Helpers.Colors.Blue.Medium);
+                            
+                            footerRow.RelativeItem().AlignRight()
+                                .DefaultTextStyle(x => x.FontSize(8))
+                                .Text(x =>
+                                {
+                                    x.CurrentPageNumber();
+                                    x.Span("/");
+                                    x.TotalPages();
+                                });
+                        });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+
+        public byte[] GenerateAdresEtiketiPdf(string unvan, string adSoyad, string adres, string ilIlce, string postaKodu, string telefon)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+            
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    // 10cm x 15cm (~A6)
+                    page.Size(QuestPDF.Helpers.PageSizes.A6);
+                    page.Margin(1, QuestPDF.Infrastructure.Unit.Centimetre);
+                    page.PageColor(QuestPDF.Helpers.Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(12));
+
+                    page.Content()
+                        .Column(x =>
+                        {
+                            x.Spacing(10);
+                            
+                            if(!string.IsNullOrEmpty(unvan))
+                                x.Item().Text(unvan).Bold().FontSize(16);
+                            
+                            x.Item().Text(adSoyad).FontSize(14);
+                            
+                            x.Item().PaddingTop(10).Text(adres);
+                            x.Item().Text($"{ilIlce} {postaKodu}");
+                            
+                            if(!string.IsNullOrEmpty(telefon))
+                                x.Item().PaddingTop(10).Text($"Tel: {telefon}");
+                                
+                            // Gönderici Bilgisi (Footer gibi)
+                            x.Item().PaddingTop(20).LineHorizontal(1);
+                            x.Item().PaddingTop(5).Text("GÖNDEREN: ERMAY MUHASEBE").FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                        });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+
+        public byte[] GenerateSiparisPdf(Siparis siparis, List<SiparisDetay> detaylar)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(QuestPDF.Helpers.PageSizes.A4);
+                    page.Margin(2, QuestPDF.Infrastructure.Unit.Centimetre);
+                    page.PageColor(QuestPDF.Helpers.Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10));
+
+                    page.Header()
+                        .Row(row =>
+                        {
+                            row.RelativeItem().Column(col =>
+                            {
+                                col.Item().Text("SİPARİŞ FORMU").FontSize(20).SemiBold().FontColor(QuestPDF.Helpers.Colors.Blue.Medium);
+                                col.Item().Text($"Sipariş No: {siparis.SiparisNo}").FontSize(12);
+                                col.Item().Text($"Tarih: {siparis.Tarih:dd.MM.yyyy}").FontSize(12);
+                            });
+
+                            row.RelativeItem().AlignRight().Column(col =>
+                            {
+                                col.Item().Text("MÜŞTERİ BİLGİLERİ").FontSize(12).SemiBold();
+                                col.Item().Text(siparis.CariUnvan);
+                                if(siparis.TeslimatTarihi.HasValue)
+                                    col.Item().Text($"Teslimat: {siparis.TeslimatTarihi.Value:dd.MM.yyyy}");
+                            });
+                        });
+
+                    page.Content()
+                        .PaddingVertical(1, QuestPDF.Infrastructure.Unit.Centimetre)
+                        .Column(col =>
+                        {
+                            // Tablo Başlığı
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(3); // Ürün
+                                    columns.RelativeColumn(1); // Miktar
+                                    columns.RelativeColumn(1); // Birim
+                                    columns.RelativeColumn(1.5f); // Fiyat
+                                    columns.RelativeColumn(1.5f); // Tutar
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(CellStyle).Text("Ürün / Hizmet");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Miktar");
+                                    header.Cell().Element(CellStyle).Text("Birim");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Birim Fiyat");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Tutar");
+
+                                    static QuestPDF.Infrastructure.IContainer CellStyle(QuestPDF.Infrastructure.IContainer container)
+                                    {
+                                        return container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor("#E0E0E0");
+                                    }
+                                });
+
+                                foreach (var item in detaylar)
+                                {
+                                    table.Cell().Element(CellStyle).Text(item.StokAdi);
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.Miktar.ToString());
+                                    table.Cell().Element(CellStyle).Text(item.Birim ?? "Adet");
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.BirimFiyat.ToString("C2"));
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.Tutar.ToString("C2"));
+
+                                    static QuestPDF.Infrastructure.IContainer CellStyle(QuestPDF.Infrastructure.IContainer container)
+                                    {
+                                        return container.BorderBottom(1).BorderColor("#F5F5F5").PaddingVertical(5);
+                                    }
+                                }
+                            });
+                            
+                            col.Item().PaddingTop(10).AlignRight().Text($"TOPLAM: {siparis.GenelToplam:C2}").FontSize(14).SemiBold();
+                            
+                            if(!string.IsNullOrEmpty(siparis.Aciklama))
+                            {
+                                col.Item().PaddingTop(20).Text("Açıklama:").SemiBold();
+                                col.Item().Text(siparis.Aciklama);
+                            }
+                        });
+
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            x.Span("Sayfa ");
+                            x.CurrentPageNumber();
+                            x.Span(" / ");
+                            x.TotalPages();
+                        });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+
+        public byte[] GenerateTeklifPdf(Teklif teklif, List<TeklifDetay> detaylar)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(QuestPDF.Helpers.PageSizes.A4);
+                    page.Margin(2, QuestPDF.Infrastructure.Unit.Centimetre);
+                    page.PageColor(QuestPDF.Helpers.Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10));
+
+                    page.Header()
+                        .Row(row =>
+                        {
+                            row.RelativeItem().Column(col =>
+                            {
+                                col.Item().Text("FİYAT TEKLİFİ").FontSize(20).SemiBold().FontColor(QuestPDF.Helpers.Colors.Blue.Medium);
+                                col.Item().Text($"Teklif No: {teklif.TeklifNo}").FontSize(12);
+                                col.Item().Text($"Tarih: {teklif.Tarih:dd.MM.yyyy}").FontSize(12);
+                                if(!string.IsNullOrEmpty(teklif.Durum))
+                                    col.Item().Text($"Durum: {teklif.Durum}").FontSize(10).Italic();
+                            });
+
+                            row.RelativeItem().AlignRight().Column(col =>
+                            {
+                                col.Item().Text("SAYIN").FontSize(12).SemiBold();
+                                col.Item().Text(teklif.CariUnvan);
+                            });
+                        });
+
+                    page.Content()
+                        .PaddingVertical(1, QuestPDF.Infrastructure.Unit.Centimetre)
+                        .Column(col =>
+                        {
+                            // Tablo Başlığı
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(3); // Ürün
+                                    columns.RelativeColumn(1); // Miktar
+                                    columns.RelativeColumn(1.5f); // Fiyat
+                                    columns.RelativeColumn(1.5f); // Tutar
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(CellStyle).Text("Ürün / Hizmet");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Miktar");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Birim Fiyat");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Tutar");
+
+                                    static QuestPDF.Infrastructure.IContainer CellStyle(QuestPDF.Infrastructure.IContainer container)
+                                    {
+                                        return container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor("#E0E0E0");
+                                    }
+                                });
+
+                                foreach (var item in detaylar)
+                                {
+                                    table.Cell().Element(CellStyle).Text(item.StokAdi);
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.Miktar.ToString());
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.BirimFiyat.ToString("C2"));
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.Tutar.ToString("C2"));
+
+                                    static QuestPDF.Infrastructure.IContainer CellStyle(QuestPDF.Infrastructure.IContainer container)
+                                    {
+                                        return container.BorderBottom(1).BorderColor("#F5F5F5").PaddingVertical(5);
+                                    }
+                                }
+                            });
+                            
+                            col.Item().PaddingTop(10).AlignRight().Text($"TOPLAM: {teklif.GenelToplam:C2}").FontSize(14).SemiBold();
+                            
+                            if(!string.IsNullOrEmpty(teklif.Aciklama))
+                            {
+                                col.Item().PaddingTop(20).Text("Açıklama:").SemiBold();
+                                col.Item().Text(teklif.Aciklama);
+                            }
+                        });
+
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            x.Span("Sayfa ");
+                            x.CurrentPageNumber();
+                            x.Span(" / ");
+                            x.TotalPages();
+                        });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+        public byte[] GenerateFaturaPdf(Fatura fatura, List<FaturaDetay> detaylar)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(QuestPDF.Helpers.PageSizes.A4);
+                    page.Margin(2, QuestPDF.Infrastructure.Unit.Centimetre);
+                    page.PageColor(QuestPDF.Helpers.Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10));
+
+                    page.Header()
+                        .Row(row =>
+                        {
+                            row.RelativeItem().Column(col =>
+                            {
+                                string baslik = fatura.Tur == "Satis" ? "SATIŞ FATURASI" : "ALIŞ FATURASI";
+                                col.Item().Text(baslik).FontSize(20).SemiBold().FontColor(QuestPDF.Helpers.Colors.Blue.Medium);
+                                col.Item().Text($"Fatura No: {fatura.FaturaNo}").FontSize(12);
+                                col.Item().Text($"Tarih: {fatura.Tarih:dd.MM.yyyy}").FontSize(12);
+                            });
+
+                            row.RelativeItem().AlignRight().Column(col =>
+                            {
+                                col.Item().Text("MÜŞTERİ / TEDARİKÇİ").FontSize(12).SemiBold();
+                                col.Item().Text(fatura.CariUnvan);
+                            });
+                        });
+
+                    page.Content()
+                        .PaddingVertical(1, QuestPDF.Infrastructure.Unit.Centimetre)
+                        .Column(col =>
+                        {
+                            // Tablo Başlığı
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(3); // Stok
+                                    columns.RelativeColumn(1); // Miktar
+                                    columns.RelativeColumn(1); // Birim
+                                    columns.RelativeColumn(1.5f); // Fiyat
+                                    columns.RelativeColumn(1); // KDV
+                                    columns.RelativeColumn(1.5f); // Tutar
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(CellStyle).Text("Ürün / Hizmet");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Miktar");
+                                    header.Cell().Element(CellStyle).Text("Birim");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Birim Fiyat");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("KDV");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Tutar");
+
+                                    static QuestPDF.Infrastructure.IContainer CellStyle(QuestPDF.Infrastructure.IContainer container)
+                                    {
+                                        return container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten1);
+                                    }
+                                });
+
+                                foreach (var item in detaylar)
+                                {
+                                    table.Cell().Element(CellStyle).Text(item.StokAdi);
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.Miktar.ToString());
+                                    table.Cell().Element(CellStyle).Text(item.Birim ?? "");
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.BirimFiyat.ToString("C2"));
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"%{item.KDVOrani}");
+                                    table.Cell().Element(CellStyle).AlignRight().Text(item.ToplamTutar.ToString("C2"));
+
+                                    static QuestPDF.Infrastructure.IContainer CellStyle(QuestPDF.Infrastructure.IContainer container)
+                                    {
+                                        return container.BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).PaddingVertical(5);
+                                    }
+                                }
+                            });
+                            
+                            col.Item().PaddingTop(10).AlignRight().Column(c => 
+                            {
+                                c.Item().Text($"Ara Toplam: {fatura.AraToplam:C2}");
+                                c.Item().Text($"KDV Toplam: {fatura.ToplamKDV:C2}");
+                                c.Item().Text($"GENEL TOPLAM: {fatura.GenelToplam:C2}").FontSize(14).SemiBold().FontColor(QuestPDF.Helpers.Colors.Blue.Darken2);
+                            });
+                            
+                            if(!string.IsNullOrEmpty(fatura.Aciklama))
+                            {
+                                col.Item().PaddingTop(20).Text("Açıklama:").SemiBold();
+                                col.Item().Text(fatura.Aciklama);
+                            }
+                        });
+
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            x.Span("Sayfa ");
+                            x.CurrentPageNumber();
+                            x.Span(" / ");
+                            x.TotalPages();
+                        });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+    }
+}

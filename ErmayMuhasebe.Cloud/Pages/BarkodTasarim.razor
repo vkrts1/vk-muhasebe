@@ -1,0 +1,185 @@
+@page "/barkod-tasarim"
+@using MudBlazor
+@using ErmayMuhasebe.Shared.ViewModels
+@inject BarkodTasarimViewModel ViewModel
+@inject NavigationManager Nav
+
+<div class="premium-container fade-in">
+    <div class="d-flex align-center gap-4 mb-8">
+        <div class="icon-box-large bg-primary-light">
+            <MudIcon Icon="@Icons.Material.Filled.QrCodeScanner" Class="text-primary" Style="font-size: 32px;" />
+        </div>
+        <div>
+            <h1 class="h2 fw-black mb-1 text-white">Barkod ve Etiket Tasarımcısı</h1>
+            <p class="text-muted mb-0">Ürünleriniz için profesyonel barkod etiketleri tasarlayın ve yazdırın.</p>
+        </div>
+    </div>
+
+    <div class="row g-6">
+        <!-- Settings Panel -->
+        <div class="col-lg-4">
+            <div class="glass-panel pa-6 h-100">
+                <h3 class="h5 fw-bold mb-6 text-white border-bottom border-white-10 pb-3">Etiket Ayarları</h3>
+                
+                <div class="mb-6">
+                    <label class="d-block mb-2 text-muted fw-bold small">ÜRÜN SEÇİMİ</label>
+                    <MudAutocomplete T="ErmayMuhasebe.Models.StokKart" 
+                                     @bind-Value="ViewModel.SeciliStok" 
+                                     SearchFunc="@SearchStoklar"
+                                     ToStringFunc="@(s => s?.StokAdi ?? "")"
+                                     Placeholder="Ürün Ara..."
+                                     Variant="Variant.Outlined"
+                                     Class="premium-input-dark"
+                                     Margin="Margin.Dense" />
+                </div>
+
+                <div class="row g-3 mb-6">
+                    <div class="col-6">
+                        <label class="d-block mb-2 text-muted fw-bold small">GENİŞLİK (MM)</label>
+                        <MudNumericField @bind-Value="ViewModel.EtiketGenislik" 
+                                         Min="10" Max="200" 
+                                         Variant="Variant.Outlined" 
+                                         Class="premium-input-dark" 
+                                         Dense="true" />
+                    </div>
+                    <div class="col-6">
+                        <label class="d-block mb-2 text-muted fw-bold small">YÜKSEKLİK (MM)</label>
+                        <MudNumericField @bind-Value="ViewModel.EtiketYukseklik" 
+                                         Min="10" Max="200" 
+                                         Variant="Variant.Outlined" 
+                                         Class="premium-input-dark" 
+                                         Dense="true" />
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <label class="d-block mb-4 text-muted fw-bold small pb-2 border-bottom border-white-5">GÖRÜNÜRLÜK</label>
+                    <div class="d-flex flex-column gap-2">
+                        <MudCheckBox @bind-Value="ViewModel.ShowStokAdi" Label="Ürün Adı Göster" Color="Color.Primary" Margin="Margin.Dense" />
+                        <MudCheckBox @bind-Value="ViewModel.ShowFiyat" Label="Fiyat Göster" Color="Color.Primary" Margin="Margin.Dense" />
+                        <MudCheckBox @bind-Value="ViewModel.ShowBarkodNo" Label="Barkod No Göster" Color="Color.Primary" Margin="Margin.Dense" />
+                    </div>
+                </div>
+
+                <button class="action-btn-large primary-btn w-100 py-4" @onclick="ViewModel.YazdirCommand.Execute">
+                    <MudIcon Icon="@Icons.Material.Filled.Print" Class="mr-2" /> YAZDIR
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="col-lg-8">
+            <div class="glass-panel pa-0 overflow-hidden h-100 d-flex flex-column align-center justify-center" style="min-height: 500px; background: rgba(0,0,0,0.2) !important;">
+                <div class="w-100 pa-4 border-bottom border-white-5 text-center">
+                    <span class="small fw-black text-muted tracking-widest">ÖNİZLEME</span>
+                </div>
+                
+                <div class="flex-grow-1 d-flex align-center justify-center w-100 pa-10">
+                    <div class="label-preview-container" style="width: @(ViewModel.EtiketGenislik * 3.78)px; height: @(ViewModel.EtiketYukseklik * 3.78)px;">
+                        <div class="label-content">
+                            @if (ViewModel.ShowStokAdi)
+                            {
+                                <div class="label-product-name">@(ViewModel.SeciliStok?.StokAdi ?? "Ürün Adı Buraya Gelecek")</div>
+                            }
+                            
+                            <div class="barcode-container">
+                                <div class="barcode-bars"></div>
+                                @if (ViewModel.ShowBarkodNo)
+                                {
+                                    <div class="barcode-text">@(ViewModel.SeciliStok?.Barkod ?? "869000000000")</div>
+                                }
+                            </div>
+
+                            @if (ViewModel.ShowFiyat)
+                            {
+                                <div class="label-price">@((ViewModel.SeciliStok?.SatisFiyati ?? 0).ToString("N2")) TL</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ViewModel.OnNavigatedTo();
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+    }
+
+    private async Task<IEnumerable<ErmayMuhasebe.Models.StokKart>> SearchStoklar(string value, System.Threading.CancellationToken token)
+    {
+        await Task.CompletedTask;
+        if (string.IsNullOrEmpty(value)) return ViewModel.Stoklar;
+        return ViewModel.Stoklar.Where(x => (x.StokAdi ?? "").Contains(value, StringComparison.OrdinalIgnoreCase) || (x.StokKodu ?? "").Contains(value, StringComparison.OrdinalIgnoreCase));
+    }
+}
+
+<style>
+    .label-preview-container {
+        background: white;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .label-content {
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: black;
+        text-align: center;
+    }
+
+    .label-product-name {
+        font-weight: 800;
+        font-size: 1.25em;
+        line-height: 1.1;
+        margin-bottom: 2px;
+        max-width: 90%;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .barcode-container {
+        margin: 4px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 80%;
+    }
+
+    .barcode-bars {
+        background: black;
+        height: 40px;
+        width: 100%;
+        background-image: repeating-linear-gradient(90deg, #000 0, #000 2px, transparent 2px, transparent 4px, #000 4px, #000 5px, transparent 5px, transparent 8px);
+    }
+
+    .barcode-text {
+        font-family: monospace;
+        font-size: 0.7em;
+        margin-top: 1px;
+    }
+
+    .label-price {
+        font-weight: 900;
+        font-size: 1.4em;
+        margin-top: 2px;
+    }
+
+    /* Override MudCheckBox for dark mode consistency */
+    ::deep .mud-checkbox .mud-button-root { color: rgba(255,255,255,0.3) !important; }
+    ::deep .mud-checkbox.mud-checked .mud-button-root { color: var(--primary-color) !important; }
+</style>

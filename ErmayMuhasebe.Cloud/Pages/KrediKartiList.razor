@@ -1,0 +1,425 @@
+@page "/kredi-kartlari"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@inject KrediKartiListViewModel ViewModel
+@inject ISnackbar Snackbar
+@inject UiService UiService
+@implements IDisposable
+
+<div class="desktop-sync-container">
+    <!-- Header -->
+    <div class="desktop-grid-header mb-4">
+        <div class="header-left">
+            <div class="icon-box-primary indigo">
+                <MudIcon Icon="@Icons.Material.Filled.CreditCard" />
+            </div>
+            <div>
+                <h2 class="desktop-title">Kredi Kartı İşlemleri</h2>
+                <p class="desktop-subtitle">Slips, taksitli işlemler ve kartlı tahsilatların yönetimi</p>
+            </div>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div class="d-flex align-items-center gap-3">
+            <div class="filter-item">
+                <label class="form-label mb-0" style="font-size: 10px; color: rgba(255,255,255,0.5);">Başlangıç</label>
+                <input type="date" @bind="ViewModel.FilterBaslangicTarihi" class="dark-input-small" />
+            </div>
+            <div class="filter-item">
+                <label class="form-label mb-0" style="font-size: 10px; color: rgba(255,255,255,0.5);">Bitiş</label>
+                <input type="date" @bind="ViewModel.FilterBitisTarihi" class="dark-input-small" />
+            </div>
+            <div class="filter-item">
+                <label class="form-label mb-0" style="font-size: 10px; color: rgba(255,255,255,0.5);">Durum</label>
+                <select @bind="ViewModel.FilterDurum" class="dark-input-small">
+                    <option value="Hepsi">Tümü</option>
+                    <option value="Portföyde">Portföyde</option>
+                    <option value="Tahsil Edildi">Tahsil Edildi</option>
+                    <option value="Tedarikçiye Verildi">Tedarikçiye Verildi</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label class="form-label mb-0" style="font-size: 10px; color: rgba(255,255,255,0.5);">Arama</label>
+                <input type="text" @bind="ViewModel.FilterText" @bind:event="oninput" placeholder="Müşteri, Banka..." class="dark-input-small" style="width: 150px;" />
+            </div>
+            <button class="desktop-action-btn success-alt px-4" style="height: 38px; margin-top: 15px;" @onclick="ViewModel.GenerateFilteredReportCommand.ExecuteAsync">
+                <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Size="Size.Small" Class="me-2" />
+                Rapor Al
+            </button>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="desktop-action-btn success-alt" @onclick="ViewModel.OpenAddIslemDialog">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                Yeni Slip Kaydı
+            </button>
+            <button class="desktop-action-btn success-alt" @onclick="ViewModel.LoadIslemlerAsync">
+                <MudIcon Icon="@Icons.Material.Filled.Sync" Size="Size.Small" />
+                Yenile
+            </button>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="desktop-grid-wrapper">
+        <table class="desktop-table">
+            <thead>
+                <tr>
+                    <th style="width: 120px;">Tarih</th>
+                    <th>Müşteri / Cari</th>
+                    <th style="width: 150px;">Banka</th>
+                    <th style="width: 150px;">Onay Kodu</th>
+                    <th style="width: 120px;" class="text-end">Tutar</th>
+                    <th style="width: 150px;" class="text-center">Durum</th>
+                    <th style="width: 120px;" class="text-center">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (ViewModel.IsLoading)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                        </td>
+                    </tr>
+                }
+                else if (!ViewModel.Islemler.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 opacity-50">Kredi kartı işlemi bulunamadı.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in ViewModel.Islemler)
+                    {
+                        <tr class="desktop-row @(ViewModel.SelectedIslem == item ? "selected" : "")" @onclick="() => ViewModel.SelectedIslem = item">
+                            <td>@item.Tarih.ToString("dd.MM.yyyy")</td>
+                            <td>
+                                <div class="fw-bold">@item.MusteriUnvan</div>
+                                <div class="small opacity-50">@item.Aciklama</div>
+                            </td>
+                            <td>@item.Banka</td>
+                            <td>@item.OnayKodu</td>
+                            <td class="text-end fw-bold text-success">@item.Tutar.ToString("N2") ₺</td>
+                            <td class="text-center">
+                                <span class="vade-type-badge @(item.Durum == "Tedarikçiye Verildi" ? "outgoing" : "incoming")" style="min-width: 130px;">
+                                    @item.Durum
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="() => ViewModel.OpenEditIslemDialog(item)" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.PictureAsPdf" Size="Size.Small" Color="Color.Warning" OnClick="() => ViewModel.ViewIslemPdfAsync(item)" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => ViewModel.DeleteIslemAsync(item)" />
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (ViewModel.IsEditDialogVisible)
+{
+    <div class="premium-dialog-overlay fade-in">
+        <div class="cari-border glass-morphism p-0 shadow-2xl" style="width: 500px; background: #1A1D21;">
+            <div class="panel-header" style="background: var(--header-bg);">
+                <div class="panel-title">
+                    <MudIcon Icon="@Icons.Material.Filled.CreditCard" Class="me-2" />
+                    @ViewModel.DialogTitle
+                </div>
+                <button class="btn-close-premium" style="background:transparent; border:none; color:white;" @onclick="ViewModel.CloseDialog">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" />
+                </button>
+            </div>
+            
+            <div class="pa-6">
+                <div class="avalonia-form">
+                    <div class="form-group mb-3">
+                        <label style="font-size: 11px; color: var(--accent-blue); font-weight: 700;">Müşteri</label>
+                        <div class="d-flex gap-2">
+                            <input type="text" value="@ViewModel.EditMusteriUnvan" class="avalonia-input flex-grow-1" disabled style="background: rgba(0,0,0,0.5);" />
+                            <button class="side-btn info" style="width: auto; height: 32px;" @onclick="ViewModel.OpenMusteriSecim">Seç</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label style="font-size: 11px; color: var(--accent-blue); font-weight: 700;">Tarih</label>
+                            <input type="text" @bind="ViewModel.EditTarihStr" class="avalonia-input" placeholder="GG.AA.YYYY" />
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 11px; color: var(--accent-blue); font-weight: 700;">Tutar</label>
+                            <input type="number" @bind="ViewModel.EditTutar" class="avalonia-input" />
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label style="font-size: 11px; color: var(--accent-blue); font-weight: 700;">Banka</label>
+                            <input type="text" @bind="ViewModel.EditBanka" class="avalonia-input" />
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 11px; color: var(--accent-blue); font-weight: 700;">Onay Kodu</label>
+                            <input type="text" @bind="ViewModel.EditOnayKodu" class="avalonia-input" />
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label style="font-size: 11px; color: var(--accent-blue); font-weight: 700;">Durum</label>
+                        <select @bind="ViewModel.EditDurum" class="avalonia-input">
+                            <option value="Portföyde">📥 Portföyde</option>
+                            <option value="Tedarikçiye Verildi">📤 Tedarikçiye Verildi</option>
+                            <option value="Tahsil Edildi">✅ Tahsil Edildi</option>
+                            <option value="İptal">❌ İptal</option>
+                        </select>
+                    </div>
+
+                    @if (ViewModel.EditDurum == "Tedarikçiye Verildi")
+                    {
+                        <div class="form-group mb-3 fade-in">
+                            <label style="font-size: 11px; color: var(--accent-orange); font-weight: 700;">Tedarikçi (Ciro Edilen)</label>
+                            <div class="d-flex gap-2">
+                                <input type="text" value="@ViewModel.EditYonlendirilenCariUnvan" class="avalonia-input flex-grow-1" disabled style="background: rgba(0,0,0,0.5);" />
+                                <button class="side-btn warning" style="width: auto; height: 32px;" @onclick="ViewModel.OpenTedarikciSecim">Seç</button>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label style="font-size: 11px; color: var(--accent-blue); font-weight: 700;">Açıklama</label>
+                        <textarea @bind="ViewModel.EditAciklama" rows="2" class="avalonia-input"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pa-4 border-top border-white-5 d-flex justify-content-end gap-3" style="background: rgba(0,0,0,0.1);">
+                <button class="side-btn secondary" style="width: auto; padding: 6px 20px;" @onclick="ViewModel.CloseDialog">Vazgeç</button>
+                <button class="side-btn success" style="width: auto; padding: 6px 30px;" @onclick="ViewModel.SaveIslemAsync">
+                    💾 Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ViewModel.IsCariSecimVisible)
+{
+    <div class="premium-dialog-overlay fade-in" style="z-index: 1000;">
+        <div class="cari-border glass-morphism p-0 shadow-2xl" style="width: 400px; background: #1A1D21;">
+            <div class="panel-header">
+                <div class="panel-title">Cari Kart Seçimi</div>
+                <button class="btn-close-premium" @onclick="() => ViewModel.IsCariSecimVisible = false"><MudIcon Icon="@Icons.Material.Filled.Close" /></button>
+            </div>
+            <div class="pa-4">
+                <input type="text" @bind="ViewModel.CariSearchText" @bind:event="oninput" @onkeyup="ViewModel.SearchCariAsync" 
+                       placeholder="Ara..." class="avalonia-input mb-3" autofocus />
+                <div style="max-height: 300px; overflow-y: auto;">
+                    @foreach (var c in ViewModel.CariListesi)
+                    {
+                        <div class="cari-selection-item" @onclick="() => ViewModel.SelectCari(c)">
+                            <div class="fw-bold">@c.Unvan</div>
+                            <div class="small opacity-50">@c.CariKod | @c.Il/@c.Ilce</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        UiService.OnEscapePressed += HandleEscape;
+    }
+
+    private async Task<bool> HandleEscape()
+    {
+        if (ViewModel.IsCariSecimVisible)
+        {
+            ViewModel.IsCariSecimVisible = false;
+            StateHasChanged();
+            return true;
+        }
+
+        if (ViewModel.IsEditDialogVisible)
+        {
+            ViewModel.CloseDialog();
+            StateHasChanged();
+            return true;
+        }
+
+        await Task.CompletedTask;
+        return false;
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+}
+
+<style>
+    .desktop-sync-container {
+        padding: 20px 40px 20px 60px !important;
+        color: white;
+        background-color: #0B0D12;
+        min-height: 100vh;
+    }
+
+    .desktop-grid-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .icon-box-primary {
+        width: 48px;
+        height: 48px;
+        background: #4F46E5;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    .desktop-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin: 0;
+        color: white;
+    }
+
+    .desktop-subtitle {
+        font-size: 11px;
+        color: #AAAAAA;
+        margin: 0;
+    }
+
+    .desktop-action-btn {
+        height: 32px;
+        border-radius: 20px;
+        border: none;
+        color: white;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 16px;
+        transition: all 0.2s;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .desktop-action-btn.success-alt {
+        background: transparent;
+        border: 1px solid #60A5FA;
+        color: #60A5FA;
+    }
+
+    .desktop-action-btn:hover {
+        background: rgba(96, 165, 250, 0.1);
+    }
+
+    .dark-input-small {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 8px !important;
+        padding: 5px 10px !important;
+        color: white !important;
+        font-size: 13px !important;
+        height: 38px !important;
+        width: 100%;
+        outline: none;
+    }
+    .dark-input-small:focus {
+        border-color: #60A5FA !important;
+    }
+
+    .desktop-grid-wrapper {
+        background: #1D2633;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+    }
+
+    .desktop-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .desktop-table thead tr {
+        background: #221d5da1;
+        height: 36px;
+    }
+
+    .desktop-table th {
+        color: #60A5FA;
+        font-weight: bold;
+        text-align: left;
+        padding: 0 15px;
+        font-size: 11px;
+    }
+
+    .desktop-table td {
+        padding: 10px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: #CBD5E1;
+    }
+
+    .desktop-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+    }
+
+    .desktop-row.selected {
+        background: rgba(96, 165, 250, 0.1);
+    }
+
+    .vade-type-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .vade-type-badge.incoming {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10B981;
+    }
+
+    .vade-type-badge.outgoing {
+        background: rgba(239, 68, 68, 0.15);
+        color: #EF4444;
+    }
+
+    .cari-selection-item {
+        padding: 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .cari-selection-item:hover {
+        background: rgba(96, 165, 250, 0.1);
+    }
+
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>

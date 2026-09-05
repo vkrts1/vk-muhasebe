@@ -1,0 +1,339 @@
+@page "/teklifler"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject UiService UiService
+@inject IJSRuntime JS
+@inject CloudPdfService CloudPdfService
+@inject ClientAuthService AuthService
+@implements IDisposable
+
+<div class="fade-in d-flex flex-grow-1 flex-column teklif-page-container" style="overflow: hidden; padding: 20px;" @onclick="HideContextMenu">
+    
+    <div class="desktop-panel d-flex flex-column flex-grow-1" style="padding: 24px; min-height: 0;">
+        <!-- Header (Responsive & Wrapped) -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-4 mb-6" style="flex-shrink: 0;">
+            <div class="d-flex flex-wrap align-items-center gap-4">
+                <h2 style="font-size: 20px; font-weight: 800; color: white; margin: 0; white-space: nowrap;">Teklifler</h2>
+                <div class="desktop-search-pill" style="width: 100%; max-width: 350px; min-width: 200px;">
+                    <MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" Style="color: rgba(255,255,255,0.4);" />
+                    <input type="text" placeholder="Hızlı Ara..." class="desktop-search-input" style="width: 100%; border: none; background: transparent; color: white; outline: none;" @bind-value="searchString" @bind-value:event="oninput" />
+                </div>
+            </div>
+            
+            <div class="d-flex align-items-center gap-3">
+                <button @onclick="ConvertSelectedToOrder" disabled="@(selectedItem == null || selectedItem.Durum == "Siparişleşti" || selectedItem.Durum == "Siparişe Dönüştü")" style="height: 36px; padding: 0 16px; font-size: 13px; font-weight: 500; border-radius: 18px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; cursor: pointer; transition: all 0.2s; white-space: nowrap;" class="hover-btn custom-sync-btn">
+                    <MudIcon Icon="@Icons.Material.Outlined.Sync" Size="Size.Small" Style="margin-right: 6px; font-size: 16px; margin-bottom: 2px;" /> Siparişe Dönüştür
+                </button>
+                <button @onclick="OpenNewTeklif" style="height: 36px; padding: 0 20px; font-size: 13px; font-weight: 700; border-radius: 18px; border: none; background: #10B981; color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); white-space: nowrap;" class="hover-success-btn">
+                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-1" /> YENİ TEKLİF
+                </button>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="desktop-table-container flex-grow-1" style="overflow-y: auto;">
+            <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="false">
+                <table class="desktop-data-table" style="min-width: 1000px;">
+                    <thead style="position: sticky; top: 0; background: var(--mud-palette-surface); z-index: 1;">
+                        <tr>
+                            <th style="width: 15%; text-align: left;">Tarih</th>
+                            <th style="width: 15%; text-align: left;">Teklif No</th>
+                            <th style="width: 30%; text-align: left;">Cari Ünvan</th>
+                            <th style="width: 10%;"></th>
+                            <th style="width: 15%; text-align: left;">Tutar</th>
+                            <th style="width: 15%; text-align: center;">Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (list == null || !list.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="pa-16 text-center">
+                                    <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.2);">Herhangi bir teklif bulunamadı.</MudText>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in GetFilteredList())
+                            {
+                                <tr class="@(selectedItem?.Id == item.Id ? "selected" : "")" 
+                                    @onclick="() => SelectItem(item)"
+                                    @oncontextmenu="@(e => ShowContextMenu(e, item))"
+                                    @oncontextmenu:preventDefault
+                                    @ondblclick="() => ViewPdf(item)">
+                                    <td style="color: white; font-weight: 500;">@item.Tarih.ToString("dd.MM.yyyy")</td>
+                                    <td style="color: rgba(255,255,255,0.7); font-weight: 500;">@item.TeklifNo</td>
+                                    <td style="color: white; font-weight: 500;">@item.CariUnvan</td>
+                                    <td></td>
+                                    <td class="text-left" style="font-weight: 700; color: white;">
+                                        ₺@item.GenelToplam.ToString("N2")
+                                    </td>
+                                    <td class="text-center">
+                                        <div style="display: inline-flex; align-items: center; justify-content: center; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; width: 80px; @(GetDurumStyle(item.Durum))">
+                                            @item.Durum
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </MudHidden>
+
+            <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+                <div class="pa-4 d-flex flex-column gap-3">
+                    @foreach (var item in GetFilteredList())
+                    {
+                        <div class="mobile-card @(selectedItem?.Id == item.Id ? "selected" : "")" @onclick="() => SelectItem(item)">
+                            <div class="d-flex justify-between mb-2">
+                                <span style="color: rgba(255,255,255,0.7); font-weight: 600; font-size: 12px;">#@item.TeklifNo</span>
+                                <div style="display: inline-flex; align-items: center; justify-content: center; padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; @(GetDurumStyle(item.Durum))">
+                                    @item.Durum
+                                </div>
+                            </div>
+                            <div class="card-title" style="color: white; font-weight: 600;">@item.CariUnvan</div>
+                            <div class="d-flex justify-between align-end mt-2">
+                                <span class="card-meta" style="color: rgba(255,255,255,0.4); font-size: 11px;">@item.Tarih.ToString("dd.MM.yyyy")</span>
+                                <span style="font-weight: 800; color: white; font-size: 1.1rem;">₺@item.GenelToplam.ToString("N2")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </MudHidden>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-btn:hover:not([disabled]) {
+        background: rgba(255,255,255,0.05) !important;
+    }
+    .hover-btn[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .hover-success-btn:hover {
+        background: #059669 !important;
+    }
+    .desktop-search-input::placeholder {
+        color: rgba(255,255,255,0.3);
+    }
+</style>
+
+@* Simplified with Centralized Context Menu *@
+
+@code {
+    private List<Teklif> list = new List<Teklif>();
+    private string searchString = "";
+    private Teklif? selectedItem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        UiService.OnEscapePressed += HandleEscape;
+    }
+
+    private async Task LoadData()
+    {
+        list = await DbService.GetTekliflerAsync();
+        list = list.OrderByDescending(x => x.Tarih).ToList();
+    }
+
+    private void ShowContextMenu(MouseEventArgs e, Teklif item)
+    {
+        selectedItem = item;
+        var items = new List<UiService.ContextMenuItem>
+        {
+            new UiService.ContextMenuItem { Text = "Düzenle", Icon = Icons.Material.Filled.Edit, Action = () => { EditItem(selectedItem); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { Text = "Görüntüle (PDF)", Icon = Icons.Material.Filled.PictureAsPdf, Action = async () => await ViewPdf(selectedItem) },
+            new UiService.ContextMenuItem { Text = "Siparişe Dönüştür", Icon = Icons.Material.Filled.Sync, Action = async () => await ConvertSelectedToOrder() }
+        };
+
+        if (AuthService.IsAdmin)
+        {
+            items.Add(new UiService.ContextMenuItem { IsDivider = true });
+            items.Add(new UiService.ContextMenuItem { Text = "Sil", Icon = Icons.Material.Filled.Delete, IsDanger = true, Action = async () => await DeleteItem(selectedItem) });
+        }
+        UiService.ShowContextMenu(e.ClientX, e.ClientY, items);
+    }
+
+    private void HideContextMenu() => UiService.HideContextMenu();
+
+    private IEnumerable<Teklif> GetFilteredList()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return list;
+        return list.Where(FilterFuncLocal);
+    }
+
+    private bool FilterFuncLocal(Teklif element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.TeklifNo?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.CariUnvan?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.GenelToplam.ToString().Contains(searchString)) return true;
+        return false;
+    }
+
+    private string GetDurumStyle(string? status)
+    {
+        return status switch
+        {
+            "Siparişleşti" => "background-color: #38BDF8; color: #0F172A;",
+            "Siparişe Dönüştü" => "background-color: #38BDF8; color: #0F172A;",
+            "Onaylandı" => "background-color: #10B981; color: white;",
+            "Bekliyor" => "background-color: #F59E0B; color: white;",
+            "Reddedildi" => "background-color: #EF4444; color: white;",
+            _ => "background-color: rgba(255,255,255,0.1); color: white;"
+        };
+    }
+
+    private void OpenNewTeklif() => Nav.NavigateTo("/teklif-olustur");
+    
+    private async Task ViewPdf(Teklif? item)
+    {
+        HideContextMenu();
+        if (item == null) return;
+        
+        var snack = Snackbar.Add("Teklif PDF hazırlanıyor...", Severity.Info);
+        try 
+        {
+            Console.WriteLine($"[TeklifList] ViewPdf tetiklendi: {item.TeklifNo}");
+            var details = await DbService.GetTeklifDetaylarAsync(item.Id);
+            var cari = await DbService.GetCariAsync(item.CariId);
+            
+            // API üzerinden PDF üret
+            var (success, error) = await CloudPdfService.GenerateTeklifPdfAsync(item, details, cari);
+            
+            if (snack != null) Snackbar.Remove(snack);
+            if (!success) 
+            {
+                Snackbar.Add($"PDF Hata: {error}", Severity.Error);
+                Console.WriteLine($"[TeklifList] PDF üretilemedi: {error}");
+            }
+            else
+            {
+                Snackbar.Add("Teklif PDF başarıyla oluşturuldu.", Severity.Success);
+                Console.WriteLine("[TeklifList] PDF isteği başarıyla tamamlandı.");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (snack != null) Snackbar.Remove(snack);
+            var msg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
+            Snackbar.Add($"Sistem Hatası: {msg}", Severity.Error);
+            Console.WriteLine($"[TeklifList] KRİTİK HATA: {ex}");
+        }
+    }
+
+    private void SelectItem(Teklif item)
+    {
+        selectedItem = item;
+        HideContextMenu();
+        StateHasChanged();
+    }
+
+    private async Task ConvertSelectedToOrder()
+    {
+        HideContextMenu();
+        if (selectedItem == null)
+        {
+             Snackbar.Add("Lütfen bir teklif seçiniz.", Severity.Warning);
+             return;
+        }
+
+        if (selectedItem.Durum == "Siparişleşti" || selectedItem.Durum == "Siparişe Dönüştü")
+        {
+             Snackbar.Add("Bu teklif zaten siparişe dönüştürülmüş.", Severity.Info);
+             return;
+        }
+
+        bool confirm = await DialogService.ShowMessageBox(
+            "Siparişe Dönüştür", 
+            $"{selectedItem.TeklifNo} numaralı teklif siparişe dönüştürülsün mü?", 
+            yesText:"Evet", cancelText:"Hayır") ?? false;
+
+        if (!confirm) return;
+
+        try
+        {
+            int newSiparisId = await DbService.ConvertTeklifToSiparisAsync(selectedItem.Id);
+            if (newSiparisId > 0)
+            {
+                Snackbar.Add("Teklif başarıyla siparişe dönüştürüldü.", Severity.Success);
+                await LoadData(); // Refresh list to show updated status
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Dönüştürme işlemi başarısız oldu.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Hata: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteItem(Teklif? item)
+    {
+        HideContextMenu();
+        if (item == null) return;
+        
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Silme Onayı",
+            $"{item.TeklifNo} numaralı teklifi silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+
+        if (confirm == true)
+        {
+            await DbService.DeleteTeklifAsync(item.Id);
+            Snackbar.Add("Teklif silindi.", Severity.Success);
+            await LoadData();
+        }
+    }
+
+    private async Task UpdateStatus(Teklif item, string? newStatus)
+    {
+        if (string.IsNullOrEmpty(newStatus) || item.Durum == newStatus) return;
+        
+        try
+        {
+            item.Durum = newStatus;
+            var details = await DbService.GetTeklifDetaylarAsync(item.Id);
+            await DbService.SaveTeklifWithDetailsAsync(item, details);
+            Snackbar.Add("Durum güncellendi.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void EditItem(Teklif? item)
+    {
+        HideContextMenu();
+        if (item == null) return;
+        Nav.NavigateTo($"/teklif-olustur?Id={item.Id}");
+    }
+
+    private Task<bool> HandleEscape()
+    {
+        return Task.FromResult(false);
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+}
+
+

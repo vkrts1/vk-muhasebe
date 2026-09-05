@@ -1,0 +1,188 @@
+@page "/excel-import"
+@using MiniExcelLibs
+@using System.IO
+@using System.Linq
+@using Microsoft.AspNetCore.Components.Forms
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IFileService FileService
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Excel İçe Aktarım</MudText>
+
+<MudPaper Class="pa-4">
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Excel dosyalarından toplu veri aktarımı yapabilirsiniz. (.xlsx)
+    </MudAlert>
+    
+    <MudSelect T="string" @bind-Value="importTuru" Label="İçe Aktarım Türü" Variant="Variant.Outlined" Class="mb-3">
+        <MudSelectItem Value="@("Cari")">Cari Hesaplar</MudSelectItem>
+        <MudSelectItem Value="@("Stok")">Stok Kartları</MudSelectItem>
+    </MudSelect>
+    
+    <div class="d-flex gap-4">
+        <MudFileUpload T="IBrowserFile" OnFilesChanged="UploadFiles" Accept=".xlsx">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Filled"
+                           Color="MudBlazor.Color.Primary"
+                           StartIcon="@Icons.Material.Filled.CloudUpload">
+                    Excel Dosyası Seç (.xlsx)
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="MudBlazor.Color.Secondary"
+                   StartIcon="@Icons.Material.Filled.Download"
+                   OnClick="DownloadTemplate">
+            Şablon İndir
+        </MudButton>
+    </div>
+
+    @if (yuklenenSatirSayisi > 0)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-3">
+            @yuklenenSatirSayisi adet kayıt başarıyla okundu ve veritabanına eklendi.
+        </MudAlert>
+    }
+</MudPaper>
+
+@code {
+    private string importTuru = "Cari";
+    private int yuklenenSatirSayisi = 0;
+
+    private async Task DownloadTemplate()
+    {
+        try
+        {
+            var columns = importTuru == "Cari" 
+                ? new[] { "Unvan", "Yetkili", "Telefon", "Email", "Adres", "VergiNo", "VergiDairesi" }
+                : new[] { "StokKodu", "StokAdi", "Birim", "Kategori", "AlisFiyati", "SatisFiyati", "KDV" };
+
+            var values = new List<Dictionary<string, object>>();
+            // Add a sample row
+            if (importTuru == "Cari")
+            {
+                values.Add(new Dictionary<string, object>
+                {
+                    ["Unvan"] = "Örnek Şirket Ltd. Şti.",
+                    ["Yetkili"] = "Ahmet Yılmaz",
+                    ["Telefon"] = "05551234567",
+                    ["Email"] = "bilgi@ornek.com",
+                    ["Adres"] = "İstanbul, Türkiye",
+                    ["VergiNo"] = "1234567890",
+                    ["VergiDairesi"] = "Marmara"
+                });
+            }
+            else
+            {
+                values.Add(new Dictionary<string, object>
+                {
+                    ["StokKodu"] = "STK-001",
+                    ["StokAdi"] = "Örnek Ürün",
+                    ["Birim"] = "Adet",
+                    ["Kategori"] = "Genel",
+                    ["AlisFiyati"] = 100,
+                    ["SatisFiyati"] = 150,
+                    ["KDV"] = 20
+                });
+            }
+
+            using var memoryStream = new MemoryStream();
+            MiniExcel.SaveAs(memoryStream, values);
+            var content = memoryStream.ToArray();
+            
+            await FileService.SaveAndOpenFileAsync($"{importTuru}_Sablon.xlsx", content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Şablon oluşturulurken hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task UploadFiles(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        long maxFileSize = 10 * 1024 * 1024; // 10 MB
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxFileSize);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            var rows = MiniExcel.Query(memoryStream, useHeaderRow: true).ToList();
+            int count = 0;
+
+            if (importTuru == "Cari")
+            {
+                foreach (var row in rows)
+                {
+                    // Dynamic object to Dictionary for easier key access if needed, or just dynamic access
+                    // MiniExcel returns Row as IDictionary<string, object> or ExpandoObject
+                    var r = (IDictionary<string, object>)row;
+
+                    var cari = new ErmayMuhasebe.Models.CariKart
+                    {
+                        Unvan = GetValue(r, "Unvan") ?? "Bilinmeyen Cari",
+                        Yetkili = GetValue(r, "Yetkili") ?? "",
+                        Telefon = GetValue(r, "Telefon") ?? "",
+                        Email = GetValue(r, "Email") ?? "",
+                        Adres = GetValue(r, "Adres") ?? "",
+                        VKN = GetValue(r, "VergiNo") ?? "",
+                        VergiDairesi = GetValue(r, "VergiDairesi") ?? "",
+                        Grup = "Musteri" // Varsayılan
+                    };
+                    await DbService.SaveCariAsync(cari);
+                    count++;
+                }
+            }
+            else if (importTuru == "Stok")
+            {
+                foreach (var row in rows)
+                {
+                    var r = (IDictionary<string, object>)row;
+                    
+                    var stok = new ErmayMuhasebe.Models.StokKart
+                    {
+                        StokKodu = GetValue(r, "StokKodu") ?? "STK-" + DateTime.Now.Ticks,
+                        StokAdi = GetValue(r, "StokAdi") ?? "Yeni Stok",
+                        Birim = GetValue(r, "Birim") ?? "Adet",
+                        Kategori = GetValue(r, "Kategori") ?? "Genel",
+                        AlisFiyati = GetDecimal(r, "AlisFiyati"),
+                        SatisFiyati = GetDecimal(r, "SatisFiyati"),
+                        KDV = (int)GetDecimal(r, "KDV")
+                    };
+                    // Barcode etc?
+                    await DbService.SaveStokAsync(stok);
+                    count++;
+                }
+            }
+            
+            yuklenenSatirSayisi = count;
+            Snackbar.Add($"{count} kayıt başarıyla içe aktarıldı.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string? GetValue(IDictionary<string, object> row, string key)
+    {
+        foreach(var k in row.Keys)
+        {
+            if (string.Equals(k, key, StringComparison.OrdinalIgnoreCase)) 
+                return row[k]?.ToString();
+        }
+        return null;
+    }
+    
+    private decimal GetDecimal(IDictionary<string, object> row, string key)
+    {
+        var val = GetValue(row, key);
+        if (decimal.TryParse(val, out decimal d)) return d;
+        return 0;
+    }
+}

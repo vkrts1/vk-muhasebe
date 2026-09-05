@@ -1,0 +1,191 @@
+@page "/stok-hareketleri"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@using MudBlazor
+@using ErmayMuhasebe.Shared.Components.Dialogs
+@inject IDialogService DialogService
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+
+<style>
+    .rapor-container {
+        padding: 30px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .rapor-header-glass {
+        background: rgba(30, 34, 40, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .glass-card {
+        background: rgba(30, 34, 40, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 20px;
+    }
+
+    .compact-table .mud-table-cell {
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+    }
+
+    .action-btn {
+        border-radius: 12px !important;
+        padding: 8px 20px !important;
+        font-weight: 700 !important;
+    }
+</style>
+
+<div class="rapor-container animate-fade-in">
+    @* 1. HEADER *@
+    <div class="rapor-header-glass">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <div class="d-flex align-center gap-4">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.SwapVert" Color="Color.Info" />
+                    </div>
+                    <div>
+                        <MudText Style="font-weight: 900; font-size: 22px; color: white;">Stok Hareketleri</MudText>
+                        <MudText Style="color: rgba(255,255,255,0.4); font-size: 13px;">Giriş, çıkış ve manuel stok düzeltme kayıtları.</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end gap-3">
+                <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Raporlara Dön</MudButton>
+                @if (hareketler.Any())
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Style="border-radius: 12px; font-weight: 700;" OnClick="PrintReport">PDF Raporu</MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 2. ACTION CONTROLS *@
+    <div class="glass-card mb-6">
+        <MudGrid>
+            <MudItem xs="12" md="7">
+                <div class="d-flex gap-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" Class="action-btn" OnClick="@(() => YeniIslem("GİRİŞ"))">Manuel Giriş</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" Class="action-btn" OnClick="@(() => YeniIslem("ÇIKIŞ"))">Manuel Çıkış</MudButton>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="5">
+                 <MudTextField @bind-Value="searchString" Placeholder="Ürün Adı veya Evrak No ile Filtrele..." 
+                               Variant="Variant.Outlined" Adornment="Adornment.Start" 
+                               AdornmentIcon="@Icons.Material.Filled.Search" Class="bg-dark-input" Margin="Margin.Dense" />
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @* 3. DATA TABLE *@
+    <div class="glass-card">
+         <MudTable Items="@filteredHareketler" Hover="true" Dense="true" Class="compact-table" Style="background: transparent;">
+            <HeaderContent>
+                <MudTh>TARİH</MudTh>
+                <MudTh>EVRAK NO</MudTh>
+                <MudTh>İŞLEM TÜRÜ</MudTh>
+                <MudTh>ÜRÜN / HİZMET ADI</MudTh>
+                <MudTh Style="text-align: right;">GİRİŞ (+)</MudTh>
+                <MudTh Style="text-align: right;">ÇIKIŞ (-)</MudTh>
+                <MudTh>BİRİM</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Tarih.ToShortDateString()</MudTd>
+                <MudTd Style="font-size: 11px; opacity: 0.6;">@context.EvrakNo</MudTd>
+                <MudTd>
+                    <span style="font-weight: 800; color: @(context.IslemTuru == "GİRİŞ" ? "#34D399" : "#F87171")">@context.EvrakTuru</span>
+                </MudTd>
+                <MudTd Style="font-weight: 700;">@context.StokAdi</MudTd>
+                <MudTd Style="text-align: right; color: #34D399; font-weight: 800;">
+                    @(context.Giris > 0 ? "+" + context.Giris.ToString("N2") : "-")
+                </MudTd>
+                <MudTd Style="text-align: right; color: #F87171; font-weight: 800;">
+                    @(context.Cikis > 0 ? context.Cikis.ToString("N2") : "-")
+                </MudTd>
+                <MudTd Style="font-size: 11px; opacity: 0.8;">@context.Birim</MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager InfoFormat="@("{first_item}-{last_item} / {all_item}")" RowsPerPageString="Sayfa Başı:" />
+            </PagerContent>
+        </MudTable>
+    </div>
+</div>
+
+@code {
+    private List<StokHareketView> hareketler = new();
+    private string searchString = "";
+
+    private IEnumerable<StokHareketView> filteredHareketler => 
+        string.IsNullOrWhiteSpace(searchString) 
+            ? hareketler 
+            : hareketler.Where(h => (h.StokAdi ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase) || 
+                                   (h.EvrakNo ?? "").Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var list = await DbService.GetStokHareketleriAsync();
+        hareketler = list.OrderByDescending(x => x.Tarih).Select(h => new StokHareketView
+        {
+            Id = h.Id,
+            StokId = h.StokId,
+            EvrakNo = h.EvrakNo,
+            IslemTuru = h.IslemTuru,
+            Tarih = h.Tarih,
+            Birim = h.Birim,
+            EvrakTuru = h.EvrakTuru,
+            StokKodu = h.StokKodu,
+            StokAdi = h.StokAdi,
+            Miktar = h.Miktar,
+            Giris = h.Giren > 0 ? h.Giren : (h.IslemTuru == "GİRİŞ" ? h.Miktar : 0),
+            Cikis = h.Cikan > 0 ? h.Cikan : (h.IslemTuru == "ÇIKIŞ" ? h.Miktar : 0)
+        }).ToList();
+    }
+
+    private async Task YeniIslem(string tur)
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var secDialog = await DialogService.ShowAsync<StokSecDialog>("Stok Seç", options);
+        var secResult = await secDialog.Result;
+        
+        if (secResult is { Canceled: false, Data: StokKart secilenStok })
+        {
+            var parameters = new DialogParameters { ["Stok"] = secilenStok, ["IslemTuru"] = tur };
+            var dialog = await DialogService.ShowAsync<StokHareketDialog>($"Stok {tur} İşlemi", parameters, options);
+            var result = await dialog.Result;
+            
+            if (result is { Canceled: false }) await LoadData();
+        }
+    }
+
+    private async Task PrintReport()
+    {
+        try {
+            var headers = new[] { "Tarih", "Evrak No", "İşlem Türü", "Stok Adı", "Giriş", "Çıkış" };
+            var rows = filteredHareketler.Select(h => new[] { 
+                h.Tarih.ToShortDateString(), h.EvrakNo ?? "", h.EvrakTuru ?? "", h.StokAdi ?? "", 
+                (h.Giris > 0 ? "+" + h.Giris + " " + h.Birim : ""), (h.Cikis > 0 ? "-" + h.Cikis + " " + h.Birim : "")
+            }).ToList();
+            
+            var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Stok Hareketleri Detay Analiz Raporu", headers, rows);
+            await FileService.SaveAndOpenFileAsync($"Stok_Hareket_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
+            Snackbar.Add("Rapor oluşturuldu.", Severity.Success);
+        } catch (Exception ex) {
+            Snackbar.Add($"PDF hatası: {ex.Message}", Severity.Error);
+        }
+    }
+}

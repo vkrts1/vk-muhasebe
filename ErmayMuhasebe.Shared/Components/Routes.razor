@@ -1,0 +1,43 @@
+@using ErmayMuhasebe.Shared.Components.Layout
+@using System.Diagnostics
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+
+@code {
+    protected override void OnInitialized()
+    {
+        Debug.WriteLine(">>> ULTRA-SAFE: Routes.razor OnInitialized");
+        
+        // KRITIK TEHIS: DB ilklendirmesini TAMAMEN kapatiyoruz. 
+        // Eger uygulama hala donuyorsa, sorun %100 WebView2-MAUI katmanindadir.
+        /*
+        _ = Task.Run(async () => 
+        {
+            try 
+            {
+                Debug.WriteLine(">>> BACKGROUND: Initializing Database...");
+                await DbService.InitializeAsync();
+                Debug.WriteLine(">>> BACKGROUND: Database Initialization Success.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($">>> BACKGROUND FATAL ERROR: {ex.Message}");
+            }
+        });
+        */
+        Debug.WriteLine(">>> ULTRA-SAFE: DB Initialization SKIPPED for diagnosis.");
+    }
+}
+
+<Router AppAssembly="@typeof(Routes).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteSelector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p role="alert">Üzgünüz, Aradığınız Sayfa Bulunamadı.</p>
+        </LayoutView>
+    </NotFound>
+</Router>

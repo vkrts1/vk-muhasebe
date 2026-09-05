@@ -1,0 +1,74 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MudBlazor
+@inject DatabaseService DbService
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Model.Baslik" Label="Görev Başlığı" Variant="Variant.Outlined" Class="mb-3" />
+        
+        <MudTextField @bind-Value="Model.Aciklama" Label="Açıklama" Variant="Variant.Outlined" Lines="4" Class="mb-3" />
+        
+        <MudGrid>
+            <MudItem xs="6">
+                <MudSelect T="string" Label="Öncelik" @bind-Value="Model.Oncelik" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("Düşük")">Düşük</MudSelectItem>
+                    <MudSelectItem Value="@("Orta")">Orta</MudSelectItem>
+                    <MudSelectItem Value="@("Yüksek")">Yüksek</MudSelectItem>
+                    <MudSelectItem Value="@("Acil")">Acil</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6">
+                 <MudSelect T="Personel" Label="Atanan Personel" @bind-Value="selectedPersonel" Variant="Variant.Outlined" ToStringFunc="@(p => p != null ? $"{p.Ad} {p.Soyad}" : "")">
+                    @foreach (var p in Personeller)
+                    {
+                        <MudSelectItem Value="@p">@p.Ad @p.Soyad</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                 <MudDatePicker Label="Son Tarih" @bind-Date="bitisTarih" Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public Gorev Model { get; set; } = new();
+    [Parameter] public List<Personel> Personeller { get; set; } = new();
+    
+    private Personel? selectedPersonel;
+    private DateTime? bitisTarih;
+
+    protected override void OnInitialized()
+    {
+        bitisTarih = Model.BitisTarihi == default ? null : Model.BitisTarihi;
+        selectedPersonel = Personeller.FirstOrDefault(p => p.Id == Model.AtananPersonelId);
+        
+        if (string.IsNullOrEmpty(Model.Durum)) Model.Durum = "Yapilacak";
+        if (string.IsNullOrEmpty(Model.Oncelik)) Model.Oncelik = "Orta";
+    }
+
+    void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Baslik)) return;
+
+        if (selectedPersonel != null)
+        {
+            Model.AtananPersonelId = selectedPersonel.Id;
+            Model.AtananPersonelAd = selectedPersonel.Ad + " " + selectedPersonel.Soyad;
+        }
+        
+        if (bitisTarih.HasValue) Model.BitisTarihi = bitisTarih.Value;
+        
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}

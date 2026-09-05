@@ -1,0 +1,496 @@
+@page "/cari"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@using MiniExcelLibs
+@inject DatabaseService DbService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IFileService FileService
+@inject NavigationManager NavigationManager
+
+<style>
+    .cari-page-container {
+        padding: 20px;
+        height: calc(100vh - 64px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: #121212;
+    }
+
+    .glass-panel {
+        background: #1A1A1A;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .panel-header {
+        background: rgba(255, 255, 255, 0.03);
+        padding: 8px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .panel-header-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #3b82f6;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-header-stats {
+        font-size: 11px;
+        color: #888;
+    }
+
+    .sidebar-section-title {
+        font-size: 11px;
+        font-weight: 800;
+        color: #666;
+        text-align: center;
+        letter-spacing: 1px;
+        margin: 15px 0 10px 0;
+    }
+
+    .action-btn {
+        text-transform: none !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        justify-content: flex-start !important;
+        height: 36px !important;
+        border-radius: 6px !important;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .total-box {
+        margin-top: 15px;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        background: #166534;
+        color: white;
+    }
+
+    .total-amount {
+        font-size: 18px;
+        font-weight: 900;
+    }
+
+    .total-label {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        opacity: 0.8;
+    }
+
+    /* Custom Tables */
+    .custom-table {
+        background: transparent !important;
+    }
+
+    .custom-table .mud-table-head {
+        background: rgba(255, 255, 255, 0.02) !important;
+    }
+
+    .custom-table .mud-table-cell {
+        padding: 6px 16px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+        font-size: 12px !important;
+    }
+
+    .custom-table .mud-table-row:hover {
+        background: rgba(255, 255, 255, 0.03) !important;
+    }
+
+    .custom-table .mud-table-row.mud-table-row-selected {
+        background: rgba(59, 130, 246, 0.1) !important;
+    }
+
+    .group-badge {
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 800;
+    }
+</style>
+
+<div class="cari-page-container">
+    <MudGrid Spacing="3" Style="height: 100%;">
+        @* SOL TARAF: TABLOLAR *@
+        <MudItem xs="12" lg="9" Style="height: 100%; display: flex; flex-direction: column; gap: 16px;">
+            @* CARİ BİLGİLERİ TABLOSU *@
+            <div class="glass-panel" style="flex: 1;">
+                <div class="panel-header">
+                    <div class="panel-header-title">
+                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" />
+                        Cari Bilgileri
+                    </div>
+                    <div class="panel-header-stats">Toplam: @cariler.Count</div>
+                </div>
+                <div style="flex: 1; overflow: auto;">
+                    <MudTable T="CariKart" Items="@cariler" Hover="true" Dense="true" FixedHeader="true" 
+                              Filter="new Func<CariKart,bool>(FilterFunc)" SelectedItem="selectedCari" 
+                              SelectedItemChanged="OnCariSelected" Elevation="0" Class="custom-table" OnRowClick="OnRowClick">
+                        <HeaderContent>
+                            <MudTh>Grup</MudTh>
+                            <MudTh>Ünvan</MudTh>
+                            <MudTh Style="text-align:right">Bakiye</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <span class="group-badge" style="background: @(context.Grup == "Müşteri" ? "rgba(59, 130, 246, 0.2)" : "rgba(245, 158, 11, 0.2)"); color: @(context.Grup == "Müşteri" ? "#60A5FA" : "#F59E0B")">
+                                    @context.Grup
+                                </span>
+                            </MudTd>
+                            <MudTd>@context.Unvan</MudTd>
+                            <MudTd Style="@($"text-align:right; font-weight: 700; color: {(context.Bakiye < 0 ? "#F87171" : context.Bakiye > 0 ? "#34D399" : "#CCC")}")">
+                                @context.Bakiye.ToString("N2") ₺
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </div>
+            </div>
+
+            @* CARİ İŞLEMLER TABLOSU *@
+            <div class="glass-panel" style="flex: 1;">
+                <div class="panel-header" style="border-bottom-color: rgba(52, 211, 153, 0.2);">
+                    <div class="panel-header-title" style="color: #34D399;">
+                        <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" />
+                        Cari İşlemler @(selectedCari != null ? $"- {selectedCari.Unvan}" : "")
+                    </div>
+                </div>
+                <div style="flex: 1; overflow: auto;">
+                    @if (selectedCari != null)
+                    {
+                        <MudTable Items="@cariHareketler" Dense="true" Hover="true" FixedHeader="true" Elevation="0" Class="custom-table">
+                            <HeaderContent>
+                                <MudTh>Tarih</MudTh>
+                                <MudTh>İşlem Türü</MudTh>
+                                <MudTh>Açıklama</MudTh>
+                                <MudTh Style="text-align:right">Borç</MudTh>
+                                <MudTh Style="text-align:right">Alacak</MudTh>
+                                <MudTh Style="width:80px; text-align:center">İşlemler</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                                <MudTd>@context.IslemTuru</MudTd>
+                                <MudTd Style="font-size: 11px; opacity: 0.6;">@context.Aciklama</MudTd>
+                                <MudTd Style="text-align:right; color: #F87171;">@(context.Borc > 0 ? context.Borc.ToString("N2") : "-")</MudTd>
+                                <MudTd Style="text-align:right; color: #34D399;">@(context.Alacak > 0 ? context.Alacak.ToString("N2") : "-")</MudTd>
+                                <MudTd Style="text-align:center">
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Visibility" OnClick="() => GoruntuleHareket(context)">Görüntüle</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => DuzenleHareket(context)">Düzenle</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => SilHareket(context)">Sil</MudMenuItem>
+                                    </MudMenu>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-center justify-center" style="height: 100%; opacity: 0.2;">
+                            <MudText Typo="Typo.body2">İşlemleri görmek için bir cari seçin</MudText>
+                        </div>
+                    }
+                </div>
+            </div>
+        </MudItem>
+
+        @* SAĞ TARAF: İŞLEMLER VE ÖZET *@
+        <MudItem xs="12" lg="3" Style="height: 100%;">
+            <div class="glass-panel pa-4" style="height: 100%;">
+                <div class="sidebar-section-title">İŞLEMLER</div>
+                <MudStack Spacing="2">
+                    <div class="d-flex gap-2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Add" Class="action-btn flex-grow-1" OnClick="OpenNewCariDialog">Yeni</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Edit" Class="action-btn flex-grow-1" Disabled="@(selectedCari == null)" OnClick="DuzenCari">Düzenle</MudButton>
+                    </div>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" Class="action-btn" Disabled="@(selectedCari == null)" OnClick="SilCari">Sil</MudButton>
+                    
+                    <MudDivider DividerType="DividerType.Middle" Class="my-2" Style="background: rgba(255,255,255,0.05)" />
+
+                    <div class="d-flex gap-2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ShoppingCart" Class="action-btn flex-grow-1" Disabled="@(selectedCari == null)" OnClick="SatisYap">Satış</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Store" Class="action-btn flex-grow-1" Disabled="@(selectedCari == null)" OnClick="AlisYap">Alış</MudButton>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.AccountBalanceWallet" Class="action-btn flex-grow-1" Disabled="@(selectedCari == null)" OnClick="CaridenTahsilatYap">Tahsilat</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Payments" Class="action-btn flex-grow-1" Disabled="@(selectedCari == null)" OnClick="CariyeOdemeYap">Ödeme</MudButton>
+                    </div>
+
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Add" Class="action-btn" Disabled="@(selectedCari == null)" OnClick="CaridenTahsilatYap">+ Alacaklandır (F5)</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Remove" Class="action-btn" Disabled="@(selectedCari == null)" OnClick="CariyeOdemeYap">- Borçlandır (F6)</MudButton>
+
+                    <MudDivider DividerType="DividerType.Middle" Class="my-2" Style="background: rgba(255,255,255,0.05)" />
+
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.InsertDriveFile" Class="action-btn" Disabled="@(selectedCari == null)" OnClick="CariHesapEkstresi">Ekstre (F1)</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Description" Class="action-btn" Disabled="@(selectedCari == null)" OnClick="DetayliCariHesapEkstresi">Detaylı Ekstre</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.FileDownload" Class="action-btn" OnClick="ExportToExcel">Excel'e Aktar</MudButton>
+
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Timeline" Class="action-btn" Disabled="@(selectedCari == null)">Cari Yaşlandırma</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Calculate" Class="action-btn" Disabled="@(selectedCari == null)">Vade Farkı Hesapla</MudButton>
+                </MudStack>
+
+                <MudSpacer />
+
+                <div class="sidebar-section-title">TOPLAM BAKİYE</div>
+                <div class="pa-2">
+                    <div class="summary-item">
+                        <span style="color: #60A5FA;">Müşteri Bakiyeleri</span>
+                        <span>@cariler.Where(x => x.Grup == "Müşteri").Sum(x => x.Bakiye).ToString("N2")</span>
+                    </div>
+                    <div class="summary-item">
+                        <span style="color: #F59E0B;">Tedarikçi Bakiyeleri</span>
+                        <span>@cariler.Where(x => x.Grup == "Tedarikçi").Sum(x => x.Bakiye).ToString("N2")</span>
+                    </div>
+                    <MudDivider Class="my-2" Style="background: rgba(255,255,255,0.05)" />
+                    <div class="summary-item">
+                        <span style="color: #F87171;">Toplam Borç</span>
+                        <span>@cariler.Where(x => x.Bakiye < 0).Sum(x => x.Bakiye).ToString("N2")</span>
+                    </div>
+                    <div class="summary-item">
+                        <span style="color: #34D399;">Toplam Alacak</span>
+                        <span>@cariler.Where(x => x.Bakiye > 0).Sum(x => x.Bakiye).ToString("N2")</span>
+                    </div>
+
+                    <div class="total-box" style="background: @(cariler.Sum(x => x.Bakiye) >= 0 ? "#166534" : "#991b1b")">
+                        <div class="total-amount">@cariler.Sum(x => x.Bakiye).ToString("N2") ₺</div>
+                        <div class="total-label">@(cariler.Sum(x => x.Bakiye) >= 0 ? "Cari Alacak" : "Cari Borç")</div>
+                    </div>
+                </div>
+            </div>
+        </MudItem>
+    </MudGrid>
+</div>
+
+@code {
+    [Parameter] public string? RequestedOperation { get; set; }
+    private List<CariKart> cariler = new();
+    private CariKart? selectedCari = null;
+    private List<CariHareket> cariHareketler = new();
+    private string searchString = "";
+    private bool _requestedHandled = false;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !string.IsNullOrEmpty(RequestedOperation) && !_requestedHandled)
+        {
+            _requestedHandled = true;
+            if (RequestedOperation == "Satis") await SatisYap();
+            else if (RequestedOperation == "Alis") await AlisYap();
+        }
+    }
+
+    private async Task LoadData() 
+    {
+        cariler = await DbService.GetCarilerAsync();
+        if (selectedCari != null)
+        {
+            selectedCari = cariler.FirstOrDefault(x => x.Id == selectedCari.Id);
+            if (selectedCari != null) LoadCariHareketler();
+        }
+    }
+
+    private bool FilterFunc(CariKart cari)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        return (cari.Unvan?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) || 
+               (cari.VKN?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true);
+    }
+
+    private void OnCariSelected(CariKart? cari)
+    {
+        selectedCari = cari;
+        if (cari != null) LoadCariHareketler();
+    }
+
+    private async void LoadCariHareketler()
+    {
+        if (selectedCari != null) {
+            cariHareketler = await DbService.GetCariHareketleriAsync(selectedCari.Id);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenNewCariDialog()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.CariFormDialog>("Cari Ekle", options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) await LoadData();
+    }
+
+    private async Task DuzenCari()
+    {
+        if (selectedCari == null) return;
+        var parameters = new DialogParameters { ["ExistingCari"] = selectedCari };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.CariFormDialog>("Cari Düzenle", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) await LoadData();
+    }
+
+    private async Task SilCari()
+    {
+        if (selectedCari == null) return;
+        var result = await DialogService.ShowMessageBox("Silme Onayı", "Cari hesabı silmek istediğinize emin misiniz?", "Sil", "İptal");
+        if (result == true) {
+            await DbService.DeleteCariAsync(selectedCari);
+            Snackbar.Add("Cari silindi.", Severity.Info);
+            selectedCari = null;
+            await LoadData();
+        }
+    }
+
+    private async Task SatisYap()
+    {
+        if (selectedCari == null) return;
+        var parameters = new DialogParameters { ["CariUnvan"] = selectedCari.Unvan, ["IslemTipi"] = "Satis" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.FaturaDialog>("Satış", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) { await LoadData(); LoadCariHareketler(); }
+    }
+
+    private async Task AlisYap()
+    {
+        if (selectedCari == null) return;
+        var parameters = new DialogParameters { ["CariUnvan"] = selectedCari.Unvan, ["IslemTipi"] = "Alis" };
+        var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.FaturaDialog>("Alış", parameters, options);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) { await LoadData(); LoadCariHareketler(); }
+    }
+
+    private async Task CaridenTahsilatYap()
+    {
+        if (selectedCari == null) return;
+        var parameters = new DialogParameters { ["CariUnvan"] = selectedCari.Unvan, ["IslemTipi"] = "Tahsilat", ["CariId"] = selectedCari.Id };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.CariIslemDialog>("Tahsilat", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) { await LoadData(); LoadCariHareketler(); }
+    }
+
+    private async Task CariyeOdemeYap()
+    {
+        if (selectedCari == null) return;
+        var parameters = new DialogParameters { ["CariUnvan"] = selectedCari.Unvan, ["IslemTipi"] = "Ödeme", ["CariId"] = selectedCari.Id };
+        var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.CariIslemDialog>("Ödeme", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) { await LoadData(); LoadCariHareketler(); }
+    }
+
+    private async Task CariHesapEkstresi()
+    {
+        if (selectedCari == null) return;
+        try {
+            var hareketler = await DbService.GetCariHareketleriAsync(selectedCari.Id);
+            var pdf = new PdfService().GenerateCariEkstrePdf(selectedCari, hareketler);
+            await FileService.SaveAndOpenFileAsync($"Ekstre_{selectedCari.Unvan}_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
+        } catch (Exception ex) { Snackbar.Add("Hata: " + ex.Message, Severity.Error); }
+    }
+
+    private async Task DetayliCariHesapEkstresi()
+    {
+        if (selectedCari == null) return;
+        try {
+            var hareketler = await DbService.GetCariHareketleriAsync(selectedCari.Id);
+            var faturaIds = hareketler.Where(h => h.FaturaId.HasValue).Select(h => h.FaturaId!.Value).Distinct().ToList();
+            var detayDictionary = new Dictionary<int, List<FaturaDetay>>();
+            foreach(var fid in faturaIds)
+            {
+                var details = await DbService.GetFaturaDetaylarAsync(fid);
+                detayDictionary.Add(fid, details);
+            }
+            var pdf = new PdfService().GenerateDetayliCariEkstrePdf(selectedCari, hareketler, detayDictionary);
+            await FileService.SaveAndOpenFileAsync($"Detayli_Ekstre_{selectedCari.Unvan}_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
+        } catch (Exception ex) { Snackbar.Add("Hata: " + ex.Message, Severity.Error); }
+    }
+
+    private async Task ExportToExcel()
+    {
+        try {
+            var data = cariler.Select(c => new { Unvan = c.Unvan, Grup = c.Grup, Bakiye = c.Bakiye, Telefon = c.Telefon, VKN = c.VKN }).ToList();
+            using var ms = new MemoryStream();
+            ms.SaveAs(data);
+            await FileService.SaveAndOpenFileAsync($"Cari_Listesi_{DateTime.Now:yyyyMMdd}.xlsx", ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            Snackbar.Add("Cari Excel raporu hazırlandı.", Severity.Success);
+        } catch (Exception ex) { Snackbar.Add("Excel Hatası: " + ex.Message, Severity.Error); }
+    }
+
+    private async Task GoruntuleHareket(CariHareket hareket)
+    {
+        if (hareket.IslemTuru.Contains("Fatura"))
+        {
+            var parameters = new DialogParameters { ["ExistingFaturaId"] = hareket.FaturaId, ["ReadOnly"] = true };
+            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+            await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.FaturaDialog>("Fatura Görüntüle", parameters, options);
+        }
+        else
+        {
+            var parameters = new DialogParameters { ["ExistingHareketId"] = hareket.Id, ["ReadOnly"] = true };
+            await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.CariIslemDialog>("İşlem Görüntüle", parameters);
+        }
+    }
+
+    private async Task DuzenleHareket(CariHareket hareket)
+    {
+        if (hareket.IslemTuru.Contains("Fatura"))
+        {
+            var parameters = new DialogParameters { ["ExistingFaturaId"] = hareket.FaturaId };
+            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.FaturaDialog>("Fatura Düzenle", parameters, options);
+            var result = await dialog.Result;
+            if (result != null && !result.Canceled) { await LoadData(); LoadCariHareketler(); }
+        }
+        else
+        {
+            var parameters = new DialogParameters { ["ExistingHareketId"] = hareket.Id };
+            var dialog = await DialogService.ShowAsync<ErmayMuhasebe.Shared.Components.Shared.CariIslemDialog>("İşlem Düzenle", parameters);
+            var result = await dialog.Result;
+            if (result != null && !result.Canceled) { await LoadData(); LoadCariHareketler(); }
+        }
+    }
+
+    private async Task SilHareket(CariHareket hareket)
+    {
+        var result = await DialogService.ShowMessageBox("Silme Onayı", "Bu hareketi silmek istediğinize emin misiniz?", "Sil", "İptal");
+        if (result == true)
+        {
+            if (hareket.IslemTuru.Contains("Fatura") && hareket.FaturaId.HasValue)
+            {
+                await DbService.DeleteFaturaAsync(hareket.FaturaId.Value);
+            }
+            else
+            {
+                await DbService.DeleteCariHareketAsync(hareket.Id);
+            }
+            Snackbar.Add("İşlem silindi.", Severity.Info);
+            await LoadData();
+            LoadCariHareketler();
+        }
+    }
+
+    private void OnRowClick(TableRowClickEventArgs<CariKart> args)
+    {
+        selectedCari = args.Item;
+        LoadCariHareketler();
+    }
+}

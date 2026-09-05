@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             x:Class="ErmayMuhasebe.Avalonia.Views.DovizDonusturucuView"
+             x:DataType="vm:DovizDonusturucuViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="rgba(16, 185, 129, 0.15)">
+          <ic:SymbolIcon Symbol="ArrowSwap" Foreground="#10B981" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Döviz Dönüştürücü ve Varlık Analizi" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Tüm döviz varlıklarınızın toplam değerini görün ve istediğiniz para birimine dönüştürün." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, 400">
+      <!-- Assets List -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="10" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+         <DataGrid ItemsSource="{Binding Varliklar}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Döviz" Binding="{Binding DovizKodu}" Width="80"/>
+                <DataGridTextColumn Header="Miktar" Binding="{Binding Miktar, StringFormat={}{0:N2}}" Width="*"/>
+                <DataGridTextColumn Header="Kur" Binding="{Binding Kur, StringFormat={}{0:N4}}" Width="*"/>
+                <DataGridTextColumn Header="TRY Karşılığı" Binding="{Binding TryKarsiligi, StringFormat={}{0:N2} TL}" Width="150"/>
+            </DataGrid.Columns>
+         </DataGrid>
+      </Border>
+
+      <!-- Conversion Side -->
+      <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" VerticalAlignment="Top">
+         <StackPanel Spacing="25">
+            <TextBlock Text="Dönüşüm Hesabı" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+            
+            <StackPanel Spacing="10">
+               <TextBlock Text="Toplam Değer (TRY)" Foreground="#9CA3AF" FontSize="13"/>
+               <TextBlock Text="{Binding ToplamTry, StringFormat={}{0:N2} TL}" FontSize="24" FontWeight="Bold" Foreground="#10B981"/>
+            </StackPanel>
+
+            <Separator Background="{DynamicResource BorderColor}"/>
+
+            <StackPanel Spacing="8">
+               <TextBlock Text="Hedef Döviz Kodu" Foreground="#9CA3AF" FontSize="12"/>
+               <TextBox Text="{Binding HedefDovizKodu}"/>
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+               <TextBlock Text="Hedef Kur (TRY Bazlı)" Foreground="#9CA3AF" FontSize="12"/>
+               <NumericUpDown Value="{Binding HedefDovizKuru}"  Minimum="0.0001"/>
+            </StackPanel>
+
+            <Border Background="rgba(96, 165, 250, 0.15)" CornerRadius="12" Padding="25" Margin="0,10,0,0">
+               <StackPanel Spacing="10" HorizontalAlignment="Center">
+                  <TextBlock Text="DÖNÜŞTÜRÜLMÜŞ TUTAR" FontSize="12" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                  <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding DonusturulmusTutar, StringFormat={}{0:N2}}" FontSize="32" FontWeight="Black" Foreground="White"/>
+                    <TextBlock Text="{Binding HedefDovizKodu}" FontSize="18" Foreground="#60A5FA" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+                  </StackPanel>
+               </StackPanel>
+            </Border>
+         </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,292 @@
+@page "/bankalar"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@inject BankaListViewModel ViewModel
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject UiService UiService
+@implements IDisposable
+@inject ClientAuthService AuthService
+
+<div class="premium-container fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-8">
+        <div />
+        
+        <div class="d-flex align-center gap-4">
+            <div class="premium-search-box">
+                <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" Class="mr-2" Style="color: rgba(255,255,255,0.3);" />
+                <input type="text" placeholder="Banka veya Şube ara..." 
+                       @bind-value="ViewModel.SearchString" @bind-value:event="oninput" @onkeyup="HandleSearchKeyUp" 
+                       class="premium-search-input" />
+            </div>
+            
+            <button class="action-btn-large green-border" @onclick="ViewModel.OpenAddBankaDialog" style="width: auto; padding: 0 20px;">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" /> YENİ HESAP
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Content (Bank Cards Grid) -->
+        <div class="col-xl-9 col-lg-8">
+            <div class="row g-4">
+                @foreach (var banka in ViewModel.Bankalar)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="bank-card glass-morphism p-4 clickable @(ViewModel.SelectedBanka?.Id == banka.Id ? "selected" : "")" 
+                             @onclick="() => ViewModel.SelectedBanka = banka"
+                             @ondblclick="() => ViewModel.NavigateToDetay(banka)">
+                            
+                            <div class="d-flex justify-content-between align-items-start mb-4">
+                                <div class="bank-logo-box">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Class="text-primary-accent" />
+                                </div>
+                                <div class="text-end">
+                                    <div class="premium-badge info mb-1">@banka.DovizTuru</div>
+                                    <div class="small opacity-50">@banka.SubeAdi</div>
+                                </div>
+                            </div>
+
+                            <h3 class="bank-name mb-1">@banka.BankaAdi</h3>
+                            <div class="bank-iban small opacity-50 mb-4 font-monospace">@banka.IBAN</div>
+
+                            <div class="bank-balance-box p-3 rounded-3 bg-white-5">
+                                <div class="small opacity-70 mb-1">GÜNCEL BAKİYE</div>
+                                <div class="h4 fw-bold m-0 @(banka.GuncelBakiye >= 0 ? "text-success" : "text-danger")">
+                                    @banka.GuncelBakiye.ToString("N2") <span class="small">@banka.DovizTuru</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (!ViewModel.Bankalar.Any())
+                {
+                    <div class="col-12 text-center py-12">
+                        <div class="empty-state-modern">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Style="color: rgba(255,255,255,0.1); font-size: 48px;" />
+                            <p style="color: rgba(255,255,255,0.3); margin-top: 10px; font-size: 14px;">Herhangi bir banka hesabı bulunmuyor.</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Sidebar (Actions & Summary) -->
+        <div class="col-xl-3 col-lg-4">
+            <div class="premium-panel glass-morphism d-flex flex-column gap-3">
+                <div class="premium-section-title mb-1">HESAP İŞLEMLERİ</div>
+
+                <button class="premium-button primary shine-effect w-100 py-3 @(ViewModel.SelectedBanka == null ? "disabled" : "")" 
+                        @onclick="() => ViewModel.NavigateToDetay(null)" disabled="@(ViewModel.SelectedBanka == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="me-2" />
+                    Hesap Detayları
+                </button>
+
+                <button class="premium-button info w-100 @(ViewModel.SelectedBanka == null ? "disabled" : "")" 
+                        @onclick="() => ViewModel.OpenEditBankaDialog(null)" disabled="@(ViewModel.SelectedBanka == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="me-2" />
+                    Düzenle
+                </button>
+
+                <button class="premium-button secondary w-100 @(ViewModel.SelectedBanka == null ? "disabled" : "")" 
+                        @onclick="() => ViewModel.GenerateReportAsync(null)" disabled="@(ViewModel.SelectedBanka == null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="me-2" />
+                    Hesap Ekstresi
+                </button>
+
+                @if (AuthService.IsAdmin)
+                {
+                    <button class="premium-button danger w-100 @(ViewModel.SelectedBanka == null ? "disabled" : "")" 
+                            @onclick="ConfirmDelete" disabled="@(ViewModel.SelectedBanka == null)">
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Class="me-2" />
+                        Hesabı Sil
+                    </button>
+                }
+
+                <div class="premium-divider mt-2"></div>
+                
+                <div class="summary-box p-3 rounded-3 bg-white-5 border-white-10">
+                    <div class="premium-section-title small text-center mb-3">BANKA ÖZETİ</div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="small opacity-70">Toplam Hesap</span>
+                        <span class="fw-bold">@ViewModel.Bankalar.Count</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small opacity-70">Toplam Bakiye (TL)</span>
+                        <span class="fw-bold text-success">@ViewModel.Bankalar.Where(x => x.DovizTuru == "TL").Sum(x => x.GuncelBakiye).ToString("N2") ₺</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Bank Dialog -->
+@if (ViewModel.IsEditDialogVisible)
+{
+    <div class="premium-dialog-overlay fade-in">
+        <div class="premium-dialog glass-morphism p-0 shadow-2xl" style="width: 500px;">
+            <div class="premium-dialog-header p-4 bg-white-5 d-flex justify-content-between align-items-center">
+                <h3 class="m-0 fw-bold">@ViewModel.DialogTitle</h3>
+                <button class="btn-close-premium" @onclick="ViewModel.CloseDialog">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" />
+                </button>
+            </div>
+            
+            <div class="premium-dialog-content p-4">
+                <div class="premium-input-group mb-3">
+                    <label>Banka Adı</label>
+                    <input type="text" @bind="ViewModel.EditBankaAdi" placeholder="Örn: Garanti BBVA" autofocus />
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="premium-input-group">
+                            <label>Şube</label>
+                            <input type="text" @bind="ViewModel.EditSubeAdi" />
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="premium-input-group">
+                            <label>Hesap No</label>
+                            <input type="text" @bind="ViewModel.EditHesapNo" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="premium-input-group mb-3">
+                    <label>IBAN</label>
+                    <input type="text" @bind="ViewModel.EditIban" placeholder="TR..." />
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="premium-input-group">
+                            <label>Döviz</label>
+                            <select @bind="ViewModel.EditDovizTuru">
+                                <option value="TL">TL</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="premium-input-group">
+                            <label>Açılış Bakiyesi</label>
+                            <input type="number" @bind="ViewModel.EditAcilisBakiyesi" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="premium-dialog-footer p-4 border-top border-white-10 d-flex justify-content-end gap-2">
+                <button class="premium-button secondary" @onclick="ViewModel.CloseDialog">Vazgeç</button>
+                <button class="premium-button success shine-effect px-5" @onclick="ViewModel.SaveBankaAsync">
+                    @if (ViewModel.IsLoading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" /> }
+                    Hesabı Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Global shortcut handler
+        UiService.OnEscapePressed += HandleEscape;
+
+        // UI refresh handler
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+
+        // REFRESH DATA from DB to ensure parity
+        await ViewModel.LoadBankalarAsync();
+    }
+
+    private async Task<bool> HandleEscape()
+    {
+        if (ViewModel.IsEditDialogVisible)
+        {
+            ViewModel.CloseDialog();
+            StateHasChanged();
+            return true;
+        }
+        await Task.CompletedTask;
+        return false;
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e) {
+        if (e.Key == "Enter") await ViewModel.LoadBankalarAsync();
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (ViewModel.SelectedBanka == null) return;
+        
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Hesabı Sil",
+            $"{ViewModel.SelectedBanka.BankaAdi} hesabını silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+
+        if (confirm == true)
+        {
+            await ViewModel.DeleteBankaAsync(null);
+            Snackbar.Add("Banka hesabı silindi", Severity.Success);
+        }
+    }
+}
+
+<style>
+    .bank-card {
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        transition: all 0.3s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .bank-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(var(--primary-accent-rgb), 0.3);
+    }
+    .bank-card.selected {
+        background: rgba(var(--primary-accent-rgb), 0.1);
+        border-color: var(--primary-accent);
+    }
+
+    .bank-logo-box {
+        width: 48px;
+        height: 48px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bank-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+    }
+
+    .btn-close-premium {
+        background: rgba(255,255,255,0.05);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>

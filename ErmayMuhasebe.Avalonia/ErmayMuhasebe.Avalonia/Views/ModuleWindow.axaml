@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+        x:Class="ErmayMuhasebe.Avalonia.Views.ModuleWindow"
+        Title="Modül"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BackgroundBrush}"
+        TransparencyLevelHint="AcrylicBlur, Mica, Blur"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        Width="1200" Height="800">
+
+  <Grid RowDefinitions="Auto, *">
+    <!-- Header / Custom Title Bar -->
+    <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" Height="50" BorderBrush="#11FFFFFF" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto, *, Auto">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15" Margin="15,0">
+           <Border Name="ModuleIconBorder" Background="{DynamicResource FluidBlueGradient}" Width="32" Height="32" CornerRadius="8" VerticalAlignment="Center">
+              <ic:SymbolIcon Name="ModuleIcon" Symbol="Box" Foreground="White" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+           </Border>
+           <TextBlock Name="ModuleTitle" Text="Modül Başlığı" FontSize="14" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Window Controls -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+            <Button Classes="WindowControl" Click="MinimizeButton_Click">
+                <ic:SymbolIcon Symbol="Subtract"/>
+            </Button>
+            <Button Classes="WindowControl" Click="MaximizeButton_Click">
+                <ic:SymbolIcon Symbol="Maximize"/>
+            </Button>
+            <Button Classes="WindowControl Close" Click="CloseButton_Click">
+                <ic:SymbolIcon Symbol="Dismiss"/>
+            </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Content -->
+    <ContentControl Grid.Row="1" Name="ModuleContent" Padding="0">
+        <!-- Content will be set from code-behind or binding -->
+    </ContentControl>
+  </Grid>
+</Window>

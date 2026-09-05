@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.VeriTemizlikView"
+             x:DataType="vm:VeriTemizlikViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#2614B8A6">
+          <ic:SymbolIcon Symbol="Broom" Foreground="#14B8A6" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Akıllı Veri Temizleme ve Onarım" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Veritabanındaki tutarsızlıkları, mükerrer kayıtları ve eksik bilgileri otomatik tespit edin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="450, *">
+       <!-- Action Panel -->
+       <Border Grid.Column="0" Margin="0,0,25,0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1" VerticalAlignment="Top">
+          <StackPanel Spacing="25">
+             <TextBlock Text="Kontrol Merkezi" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+             
+             <StackPanel Spacing="10">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#14B8A6" FontWeight="Bold"/>
+                <ProgressBar Value="{Binding Progress}" IsIndeterminate="False" Height="8" CornerRadius="4" Background="#15FFFFFF" Foreground="#14B8A6"/>
+             </StackPanel>
+
+             <Separator Background="#15FFFFFF"/>
+
+             <Button Command="{Binding TaraCommand}" Classes="SideButton Info" Height="55" HorizontalAlignment="Stretch" Background="#14B8A6">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                   <ic:SymbolIcon Symbol="Search" FontSize="20"/> 
+                   <TextBlock Text="SİSTEMİ ŞİMDİ TARA" FontWeight="Bold"/>
+                </StackPanel>
+             </Button>
+
+             <Button Command="{Binding HepsiniDuzeltCommand}" Classes="SideButton Info" Height="55" HorizontalAlignment="Stretch" Background="#3B82F6" Opacity="0.8">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                   <ic:SymbolIcon Symbol="Flash" FontSize="20"/> 
+                   <TextBlock Text="TÜMÜNÜ OTOMATİK DÜZELT" FontWeight="Bold"/>
+                </StackPanel>
+             </Button>
+
+             <Border Background="#10EF4444" CornerRadius="12" Padding="15">
+                <TextBlock Text="Dikkat: Onarım işleminden önce yedek almanız önerilir." 
+                           FontSize="11" Foreground="#EF4444" TextWrapping="Wrap" TextAlignment="Center"/>
+             </Border>
+          </StackPanel>
+       </Border>
+
+       <!-- Results -->
+       <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1">
+          <ScrollViewer>
+             <StackPanel Spacing="15">
+                <TextBlock Text="Tarama Bulguları" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+                
+                <ItemsControl ItemsSource="{Binding Gorevler}">
+                   <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                         <Border Background="#10FFFFFF" CornerRadius="12" Padding="20" Margin="0,0,0,12">
+                            <Grid ColumnDefinitions="*, Auto">
+                               <StackPanel Spacing="5">
+                                  <TextBlock Text="{Binding Isim}" FontWeight="Bold" Foreground="White"/>
+                                  <TextBlock Text="{Binding Aciklama}" FontSize="12" Foreground="#9CA3AF"/>
+                               </StackPanel>
+                               <Border Grid.Column="1" Background="#26EF4444" CornerRadius="10" Padding="10,4" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding BulunanHataCount, StringFormat={}{0} Hata}" FontSize="12" Foreground="#EF4444" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+                         </Border>
+                      </DataTemplate>
+                   </ItemsControl.ItemTemplate>
+                </ItemsControl>
+             </StackPanel>
+          </ScrollViewer>
+       </Border>
+    </Grid>
+  </Grid>
+</UserControl>

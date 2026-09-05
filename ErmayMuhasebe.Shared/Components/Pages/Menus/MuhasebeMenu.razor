@@ -1,0 +1,60 @@
+@page "/muhasebe-menu"
+@using MudBlazor
+
+<MudText Typo="Typo.h5" Class="mb-4 font-weight-bold" Color="Color.Primary">Muhasebe İşlemleri</MudText>
+
+<MudGrid Spacing="3">
+
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="3" Class="d-flex flex-column align-center justify-center pa-4 cursor-pointer hover-effect" @onclick='() => Nav.NavigateTo("cek-takip")'>
+            <MudIcon Icon="@Icons.Material.Filled.Payment" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6">Çek Takip</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="3" Class="d-flex flex-column align-center justify-center pa-4 cursor-pointer hover-effect" @onclick='() => Nav.NavigateTo("kasa-sayim")'>
+            <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6">Kasa Sayım</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="3" Class="d-flex flex-column align-center justify-center pa-4 cursor-pointer hover-effect" @onclick='() => Nav.NavigateTo("gelir-tablosu")'>
+            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6">Gelir Tablosu</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="3" Class="d-flex flex-column align-center justify-center pa-4 cursor-pointer hover-effect" @onclick='() => Nav.NavigateTo("nakit-akis-tablosu")'>
+            <MudIcon Icon="@Icons.Material.Filled.WaterfallChart" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6">Nakit Akış Tablosu</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="3" Class="d-flex flex-column align-center justify-center pa-4 cursor-pointer hover-effect" @onclick='() => Nav.NavigateTo("nakit-tahmin")'>
+            <MudIcon Icon="@Icons.Material.Filled.QueryStats" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6">Nakit Tahmini</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="3" Class="d-flex flex-column align-center justify-center pa-4 cursor-pointer hover-effect" @onclick='() => Nav.NavigateTo("kasa-hareketleri")'>
+            <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6">Kasa Hareketleri</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="3" Class="d-flex flex-column align-center justify-center pa-4 cursor-pointer hover-effect" @onclick='() => Nav.NavigateTo("banka-hareketleri")'>
+            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6">Banka Hareketleri</MudText>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .hover-effect:hover {
+        background-color: var(--mud-palette-action-hover);
+        transform: translateY(-2px);
+        transition: all 0.3s;
+    }
+</style>
+
+@inject NavigationManager Nav

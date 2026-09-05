@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:common="using:FluentIcons.Common"
+             xmlns:conv="using:ErmayMuhasebe.Avalonia.Converters"
+             x:Class="ErmayMuhasebe.Avalonia.Views.GenericToolModuleView">
+     
+    <Grid RowDefinitions="Auto, *" Margin="40">
+        <StackPanel Grid.Row="0" Spacing="20" Margin="0,0,0,40">
+            <StackPanel Orientation="Horizontal" Spacing="20">
+                <Border Width="65" Height="65" CornerRadius="20" Background="#2660A5FA">
+                    <ic:SymbolIcon Symbol="{x:Static common:Symbol.Wrench}" 
+                                   Foreground="#60A5FA" FontSize="35" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="TitleText" Text="Araç Modülü" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="Bu modülün teknik altyapısı ve özellikleri şu an yapılandırılmaktadır." FontSize="15" Foreground="#9CA3AF"/>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="{DynamicResource PanelBrush}" CornerRadius="32" Padding="60" BorderBrush="#22FFFFFF" BorderThickness="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel Spacing="40" HorizontalAlignment="Center">
+                <Panel HorizontalAlignment="Center">
+                    <Ellipse Width="120" Height="120" Fill="#1060A5FA"/>
+                    <!-- SymbolIcon commented out -->
+                </Panel>
+                
+                <StackPanel Spacing="15">
+                    <TextBlock Text="YAPILANDIRMA DEVAM EDİYOR" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Geliştirmeler hızla devam etmektedir. Bir sonraki güncelleme ile özellikler aktif hale gelecektir." 
+                               FontSize="14" Foreground="#9CA3AF" TextAlignment="Center" MaxWidth="400" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <ProgressBar IsIndeterminate="True" Height="4" CornerRadius="2" Width="200" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

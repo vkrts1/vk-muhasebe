@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "BAWSAQ",
+    "slug": "bawsaq-muhasebe",
+    "version": "1.0.0",
+    "sdkVersion": "57.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bawsaq.muhasebe",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "NSCameraUsageDescription": "Fatura ve evrak fotoğrafları eklemek için kamera erişimi gereklidir.",
+        "NSPhotoLibraryUsageDescription": "Fatura, dekont ve logo yüklemek için galeri erişimi gereklidir.",
+        "NSFaceIDUsageDescription": "Güvenli oturum açma ve kilit açma için Face ID kullanılır.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "16c5ba8b-add7-4c22-a79d-7142c3360086"
+      }
+    }
+  }
+}

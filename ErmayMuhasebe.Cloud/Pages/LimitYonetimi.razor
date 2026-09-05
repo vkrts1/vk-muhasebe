@@ -1,0 +1,249 @@
+@page "/limit-yonetimi"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Repositories
+@using System.Globalization
+@inject IUnitOfWork Uow
+@inject ISnackbar Snackbar
+
+<div class="limit-container">
+    <!-- Header Section -->
+    <div class="header-section mb-8">
+        <div class="header-icon-box purple">
+            <MudIcon Icon="@Icons.Material.Filled.Shield" Style="font-size: 24px; color: #8B5CF6;" />
+        </div>
+        <div class="header-content">
+            <h1 class="page-title">Müşteri Kredi ve Risk Limit Yönetimi</h1>
+            <p class="page-subtitle">Açık hesap çalışan müşterilerinize özel limitler tanımlayın ve risklerini anlık izleyin.</p>
+        </div>
+    </div>
+
+    <!-- Toolbar Section -->
+    <div class="toolbar-panel mb-4">
+        <div class="panel-card p-4">
+            <div class="d-flex align-center">
+                <MudTextField @bind-Value="_searchString" 
+                              Placeholder="Müşteri adında ara..." 
+                              Adornment="Adornment.Start" 
+                              AdornmentIcon="@Icons.Material.Filled.Search" 
+                              IconSize="Size.Medium" 
+                              Class="search-box mt-0"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Clearable="true" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-panel">
+        <div class="panel-card p-0">
+            <MudTable Items="@FilteredLimitler" 
+                      Dense="true" 
+                      Hover="true" 
+                      Bordered="false" 
+                      Striped="false"
+                      Elevation="0"
+                      Class="custom-limit-table">
+                <HeaderContent>
+                    <MudTh class="text-left">Müşteri Ünvan</MudTh>
+                    <MudTh class="text-left" Style="width: 180px;">Kredi Limiti</MudTh>
+                    <MudTh class="text-left" Style="width: 150px;">Anlık Risk</MudTh>
+                    <MudTh class="text-left" Style="width: 220px;">Limit Doluluk</MudTh>
+                    <MudTh class="text-center" Style="width: 120px;">İşlem</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Müşteri Ünvan" class="cari-name">@context.Cari.Unvan</MudTd>
+                    <MudTd DataLabel="Kredi Limiti">
+                        <MudNumericField @bind-Value="context.KrediLimiti" 
+                                        Variant="Variant.Outlined" 
+                                        Margin="Margin.Dense"
+                                        HideSpinButtons="true"
+                                        Class="limit-input"
+                                        Style="background: #0d1117;" />
+                    </MudTd>
+                    <MudTd DataLabel="Anlık Risk" class="risk-text">@context.MevcutRisk.ToString("N2") TL</MudTd>
+                    <MudTd DataLabel="Limit Doluluk">
+                        <div class="d-flex align-center gap-3">
+                            <div class="limit-progress-bg">
+                                <div class="limit-progress-bar" style="@GetProgressStyle(context)"></div>
+                            </div>
+                            <span class="fill-text" style="@($"color: {context.Renk};")">@context.DolulukOrani.ToString("N1")%</span>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="İşlem" class="text-center">
+                        <MudButton Variant="Variant.Filled" 
+                                   Class="save-btn" 
+                                   OnClick="@(() => Kaydet(context))">
+                            KAYDET
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager InfoFormat="{first_item}-{last_item} of {all_items}" HorizontalAlignment="HorizontalAlignment.Right" />
+                </PagerContent>
+            </MudTable>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<LimitItem> _limitler = new();
+    private string _searchString = "";
+
+    public class LimitItem
+    {
+        public CariKart Cari { get; set; } = new();
+        public decimal KrediLimiti { get; set; }
+        public decimal MevcutRisk => Cari.Borc - Cari.Alacak;
+        public double DolulukOrani => KrediLimiti > 0 ? (double)(MevcutRisk / KrediLimiti * 100) : 0;
+        public string Renk => DolulukOrani > 90 ? "#EF4444" : (DolulukOrani > 70 ? "#F59E0B" : "#10B981");
+    }
+
+    private IEnumerable<LimitItem> FilteredLimitler => _limitler.Where(x => string.IsNullOrWhiteSpace(_searchString) || 
+                                                                           x.Cari.Unvan?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true);
+
+    private string GetProgressStyle(LimitItem item) 
+    {
+        double displayVal = item.DolulukOrani;
+        if (displayVal > 100) displayVal = 100;
+        if (displayVal < 0) displayVal = 0;
+        return $"width: {displayVal.ToString(CultureInfo.InvariantCulture)}%; background-color: {item.Renk};";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            var cariler = await Uow.Cariler.GetAllAsync();
+            _limitler = cariler.Select(c => new LimitItem { 
+                Cari = c, 
+                KrediLimiti = c.RiskLimiti 
+            }).OrderByDescending(x => x.DolulukOrani).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Veri yükleme hatası: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task Kaydet(LimitItem item)
+    {
+        try
+        {
+            var cari = await Uow.Cariler.GetByIdAsync(item.Cari.Id);
+            if (cari != null)
+            {
+                cari.RiskLimiti = item.KrediLimiti;
+                await Uow.Cariler.SaveAsync(cari);
+                Snackbar.Add($"{cari.Unvan} için limit güncellendi.", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Kaydetme hatası: " + ex.Message, Severity.Error);
+        }
+    }
+}
+
+<style>
+    .limit-container {
+        padding: 30px 40px !important;
+        background-color: #0d1117;
+        min-height: 100vh;
+        color: white;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Header Styling */
+    .header-section { display: flex; align-items: center; gap: 15px; }
+    .header-icon-box {
+        width: 45px; height: 45px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .header-icon-box.purple { background: rgba(139, 92, 246, 0.15); }
+    .page-title { font-size: 26px; font-weight: 700; margin: 0; }
+    .page-subtitle { font-size: 13px; color: #9ca3af; margin: 2px 0 0 0; }
+
+    /* Panels */
+    .panel-card {
+        background: #161b22;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+        overflow: hidden;
+    }
+
+    /* Search Box */
+    .search-box {
+        max-width: 400px;
+        --mud-palette-surface: #0d1117;
+    }
+
+    /* Table Styling */
+    .custom-limit-table {
+        background: transparent !important;
+        color: white !important;
+    }
+
+    .custom-limit-table th {
+        background: #0d1117 !important;
+        padding: 15px 20px !important;
+        font-size: 12px !important;
+        color: #9ca3af !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    .custom-limit-table td {
+        padding: 10px 20px !important;
+        background: transparent !important;
+        border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+        color: white !important;
+    }
+
+    .cari-name { font-size: 14px; font-weight: 500; }
+    .risk-text { font-size: 14px; color: #9ca3af; }
+
+    .limit-input {
+        max-width: 150px;
+    }
+
+    .limit-progress-bg {
+        width: 120px;
+        height: 6px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .limit-progress-bar {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 1s ease-in-out;
+    }
+
+    .fill-text { font-size: 12px; font-weight: 700; min-width: 45px; }
+
+    .save-btn {
+        background-color: #8B5CF6 !important;
+        color: white !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        height: 32px !important;
+        border-radius: 8px !important;
+        text-transform: uppercase !important;
+        padding: 0 15px !important;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2) !important;
+    }
+
+    .save-btn:hover {
+        background-color: #7C3AED !important;
+        transform: translateY(-1px);
+    }
+</style>

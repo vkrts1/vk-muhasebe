@@ -1,0 +1,943 @@
+@page "/portfoy-listesi"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Repositories
+@using ErmayMuhasebe.Services
+@using System.IO
+@using MiniExcelLibs
+@inject IUnitOfWork Uow
+@inject IExcelService ExcelService
+@inject ErmayMuhasebe.Cloud.Services.IFileService FileService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<div class="portfoy-page">
+
+    <!-- HEADER: Grid Row 0 -->
+    <div class="portfoy-header mb-6">
+        <div class="header-left">
+            <div class="icon-border">
+                <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Inherit" Style="font-size: 24px;" />
+            </div>
+            <div class="header-text">
+                <h1 class="title">Portföy Listesi</h1>
+                <p class="subtitle">Potansiyel müşterilerinizi takip edin ve carilere aktarın</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn-side secondary" @onclick="DownloadTemplate">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Class="mr-2" Style="font-size: 18px;" />
+                Şablon İndir
+            </button>
+            <label class="btn-side info" for="excelUpload">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Class="mr-2" Style="font-size: 18px;" />
+                Excel'den Yükle
+            </label>
+            <InputFile id="excelUpload" OnChange="OnExcelFileSelected" hidden accept=".xlsx" />
+            
+            <button class="btn-side success-alt" @onclick="OpenAddDialog">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" Style="font-size: 18px;" />
+                Yeni Kayıt
+            </button>
+        </div>
+    </div>
+
+    <!-- DATA GRID: Grid Row 1 -->
+    <div class="portfoy-card">
+        <div class="table-wrapper">
+            <table class="portfoy-table">
+                <thead>
+                    <tr>
+                        <th class="th-firma">Firma / Ünvan</th>
+                        <th class="th-yetkili">Yetkili</th>
+                        <th class="th-gsm">GSM</th>
+                        <th class="th-sehir">Şehir</th>
+                        <th class="th-islemler">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_loading)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-10">
+                                <MudProgressCircular Color="Color.Info" Indeterminate="true" />
+                            </td>
+                        </tr>
+                    }
+                    else if (!_list.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-10 empty-state">
+                                <MudIcon Icon="@Icons.Material.Filled.Inbox" Style="font-size: 48px; opacity: 0.2;" />
+                                <p>Herhangi bir portföy kaydı bulunamadı.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var p in _list)
+                        {
+                            <tr class="portfoy-row @(_selected?.Id == p.Id ? "selected" : "")" @onclick="() => _selected = p" @ondblclick="() => EditPortfoy(p)">
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="firm-name">@p.FirmaIsmi</span>
+                                        <span class="firm-no">@p.PortfoyNo</span>
+                                    </div>
+                                </td>
+                                <td>@p.YetkiliKisi</td>
+                                <td>@p.GSM</td>
+                                <td>@p.Il</td>
+                                <td class="text-center">
+                                    <div class="d-flex align-center justify-center gap-2">
+                                        <button class="btn-action blue" @onclick="() => TransferToCari(p)" @onclick:stopPropagation="true" title="Cari Hesaplara Aktar">
+                                            <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Style="font-size: 14px;" />
+                                            Cari'ye Aktar
+                                        </button>
+                                        <button class="btn-icon-only" @onclick="() => EditPortfoy(p)" @onclick:stopPropagation="true">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                        </button>
+                                        <button class="btn-icon-only danger" @onclick="() => DeletePortfoy(p)" @onclick:stopPropagation="true">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ADD/EDIT DIALOG (Detailed Redesign) -->
+@if (_showDialog)
+{
+    <div class="dlg-overlay">
+        <div class="dlg-content">
+            <!-- Dialog Header -->
+            <div class="dlg-header">
+                <div class="d-flex align-center gap-4">
+                    <div class="dlg-icon-box">
+                        <MudIcon Icon="@(_editingItem.Id == 0 ? Icons.Material.Filled.PersonAdd : Icons.Material.Filled.Edit)" Color="Color.Inherit" />
+                    </div>
+                    <span class="dlg-title">@(_editingItem.Id == 0 ? "Yeni Portföy / Cari Kaydı" : "Portföy Kartı Düzenle")</span>
+                </div>
+                <button class="dlg-close" @onclick="CloseDialog">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" />
+                </button>
+            </div>
+
+            <!-- Dialog Body -->
+            <div class="dlg-body">
+                <!-- Left: Basic Info -->
+                <div class="dlg-left-panel">
+                    <div class="section-badge mb-4">TEMEL BİLGİLER</div>
+                    
+                    <div class="form-row mb-3">
+                        <div class="form-group flex-1">
+                            <label class="blue-label">Cari Tipi</label>
+                            <input class="form-control" @bind="_editingItem.CariTipi" placeholder="Müşteri / Tedarikçi" />
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>Yetkili Kişi</label>
+                            <input class="form-control" @bind="_editingItem.YetkiliKisi" placeholder="Ad Soyad" />
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="blue-label">Hesap / Firma Adı</label>
+                        <textarea class="form-control" rows="3" @bind="_editingItem.FirmaIsmi" placeholder="Firma Ünvanı"></textarea>
+                    </div>
+
+                    <div class="form-row mb-3">
+                        <div class="form-group flex-1">
+                            <label>Vade Günü</label>
+                            <input type="number" class="form-control" @bind="_editingItem.VadeGunu" />
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>Risk Limiti</label>
+                            <input type="number" class="form-control" @bind="_editingItem.RiskLimiti" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cari Kart Açıklaması</label>
+                        <textarea class="form-control" rows="8" @bind="_editingItem.Aciklama" placeholder="Genel notlar..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Right: Tabs -->
+                <div class="dlg-right-panel">
+                    <div class="dlg-tabs-header">
+                        <button class="dlg-tab @(_activeTab == 0 ? "active" : "")" @onclick="() => _activeTab = 0">İletişim &amp; Adres</button>
+                        <button class="dlg-tab @(_activeTab == 1 ? "active" : "")" @onclick="() => _activeTab = 1">Risk &amp; Limit</button>
+                    </div>
+
+                    <div class="dlg-tabs-content">
+                        @if (_activeTab == 0)
+                        {
+                            <div class="form-row mb-3">
+                                <div class="form-group flex-1">
+                                    <label>Telefon</label>
+                                    <input class="form-control" @bind="_editingItem.Telefon" placeholder="Sabit Hat" />
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label>Cep Telefonu</label>
+                                    <input class="form-control" @bind="_editingItem.GSM" placeholder="Mobil Hat" />
+                                </div>
+                            </div>
+                            <div class="form-row mb-3">
+                                <div class="form-group flex-1">
+                                    <label>E-Mail</label>
+                                    <input class="form-control" @bind="_editingItem.Email" placeholder="iletisim@firma.com" />
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label>Web Adresi</label>
+                                    <input class="form-control" @bind="_editingItem.WebSitesi" placeholder="www.firma.com" />
+                                </div>
+                            </div>
+                            <div class="form-row mb-3">
+                                <div class="form-group flex-1">
+                                    <label>Vergi Dairesi</label>
+                                    <input class="form-control" @bind="_editingItem.VergiDairesi" placeholder="Daire Adı" />
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label class="blue-label fw-bold">Vergi No / T.C.</label>
+                                    <input class="form-control border-blue" @bind="_editingItem.VKN" placeholder="VKN/TCKN" />
+                                </div>
+                            </div>
+                            <div class="form-row mb-3">
+                                <div class="form-group flex-1">
+                                    <label>Ülke</label>
+                                    <input class="form-control" @bind="_editingItem.Ulke" />
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label>İl</label>
+                                    <input class="form-control" @bind="_editingItem.Il" placeholder="Şehir" />
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label>İlçe</label>
+                                    <input class="form-control" @bind="_editingItem.Ilce" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group flex-1">
+                                    <label>Ana Adres</label>
+                                    <textarea class="form-control" rows="6" @bind="_editingItem.Adres" placeholder="Açık Adres"></textarea>
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label>Sevk Adresi</label>
+                                    <textarea class="form-control" rows="6" @bind="_editingItem.SevkAdresi" placeholder="Gönderim Adresi"></textarea>
+                                </div>
+                            </div>
+                        }
+                        else if (_activeTab == 1)
+                        {
+                            <div class="risk-panel">
+                                <div class="risk-section-title">FİNANSAL RİSK PARAMETRELERİ</div>
+                                <MudCheckBox @bind-Value="_editingItem.RiskTakibiYapilsin" Label="Risk Takibi Yapılsın (Limiti Aşınca Uyar)" Color="Color.Primary" Dense="true" />
+                                <MudCheckBox @bind-Value="_editingItem.VadeGecmisteEngelle" Label="Vadesi Geçmiş Borçlarda İşlem Engelle" Color="Color.Primary" Dense="true" />
+                                <MudCheckBox @bind-Value="_editingItem.FaturadaRiskKontrolu" Label="Fatura Keserken Risk Kontrolü Yap" Color="Color.Primary" Dense="true" />
+                                
+                                <div class="risk-notice mt-4">
+                                    ⚠️ Bu ayarlar cari hesaba aktarıldığında aktif olacaktır.
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dialog Footer -->
+            <div class="dlg-footer">
+                <button class="btn-dlg-secondary" @onclick="CloseDialog">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Class="mr-2" Size="Size.Small" />
+                    VAZGEÇ
+                </button>
+                
+                <div class="d-flex align-center gap-6">
+                    <div class="footer-stat">
+                        <span class="stat-label">Açılış Bakiyesi</span>
+                        <div class="stat-value">
+                            <input type="number" class="stat-input" @bind="_editingItem.AcilisBakiyesi" />
+                            <span class="currency">₺</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-dlg-success" @onclick="SavePortfoy">
+                        <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-2" Size="Size.Small" />
+                        KAYDET
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private List<PortfoyKart> _list = new();
+    private PortfoyKart? _selected;
+    private bool _showDialog = false;
+    private PortfoyKart _editingItem = new();
+    private int _activeTab = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            _list = await Uow.Portfolyo.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Yükleme sırasında hata: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OpenAddDialog()
+    {
+        _editingItem = new PortfoyKart
+        {
+            PortfoyNo = "P-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
+            CariTipi = "Müşteri",
+            Ulke = "Türkiye",
+            FaturadaRiskKontrolu = true
+        };
+        _activeTab = 0;
+        _showDialog = true;
+    }
+
+    private void EditPortfoy(PortfoyKart item)
+    {
+        // Clone for editing
+        _editingItem = new PortfoyKart
+        {
+            Id = item.Id,
+            PortfoyNo = item.PortfoyNo,
+            FirmaIsmi = item.FirmaIsmi,
+            CariTipi = item.CariTipi,
+            YetkiliKisi = item.YetkiliKisi,
+            VadeGunu = item.VadeGunu,
+            RiskLimiti = item.RiskLimiti,
+            Aciklama = item.Aciklama,
+            Telefon = item.Telefon,
+            GSM = item.GSM,
+            Email = item.Email,
+            WebSitesi = item.WebSitesi,
+            VergiDairesi = item.VergiDairesi,
+            VKN = item.VKN,
+            Ulke = item.Ulke,
+            Il = item.Il,
+            Ilce = item.Ilce,
+            Adres = item.Adres,
+            SevkAdresi = item.SevkAdresi,
+            AcilisBakiyesi = item.AcilisBakiyesi,
+            RiskTakibiYapilsin = item.RiskTakibiYapilsin,
+            VadeGecmisteEngelle = item.VadeGecmisteEngelle,
+            FaturadaRiskKontrolu = item.FaturadaRiskKontrolu,
+            KayitTarihi = item.KayitTarihi
+        };
+        _activeTab = 0;
+        _showDialog = true;
+    }
+
+    private async Task SavePortfoy()
+    {
+        if (string.IsNullOrWhiteSpace(_editingItem.FirmaIsmi))
+        {
+            Snackbar.Add("Firma ismi gereklidir.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            await Uow.Portfolyo.SaveAsync(_editingItem);
+            _showDialog = false;
+            Snackbar.Add("Kayıt başarıyla kaydedildi.", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Kaydetme hatası: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeletePortfoy(PortfoyKart item)
+    {
+        var confirm = await JS.InvokeAsync<bool>("confirm", $"'{item.FirmaIsmi}' kaydını silmek istediğinize emin misiniz?");
+        if (!confirm) return;
+
+        try
+        {
+            await Uow.Portfolyo.DeleteAsync(item.Id);
+            Snackbar.Add("Kayıt silindi.", Severity.Info);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Silme hatası: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task TransferToCari(PortfoyKart item)
+    {
+        var confirm = await JS.InvokeAsync<bool>("confirm", $"'{item.FirmaIsmi}' portföy kaydını Cari Hesaplara aktarmak istiyor musunuz? Bu işlemden sonra portföy kaydı silinecektir.");
+        if (!confirm) return;
+
+        try
+        {
+            var cari = new CariKart
+            {
+                CariKod = item.PortfoyNo?.StartsWith("C-") == true ? item.PortfoyNo : "C-" + item.PortfoyNo,
+                Unvan = item.FirmaIsmi,
+                Grup = item.CariTipi ?? "Müşteri",
+                Tur = (item.CariTipi == "Tedarikçi") ? "Satici" : "Alici",
+                Yetkili = item.YetkiliKisi,
+                VadeGunu = item.VadeGunu,
+                RiskLimiti = item.RiskLimiti,
+                VKN = item.VKN,
+                VergiDairesi = item.VergiDairesi,
+                CepTelefon = item.GSM,
+                Telefon = item.Telefon,
+                Email = item.Email,
+                WebAdresi = item.WebSitesi,
+                Ulke = item.Ulke,
+                Il = item.Il,
+                Ilce = item.Ilce,
+                Adres = item.Adres,
+                SevkAdresi = item.SevkAdresi,
+                Aciklama = item.Aciklama,
+                RiskTakibiYapilsin = item.RiskTakibiYapilsin,
+                VadeGecmisteEngelle = item.VadeGecmisteEngelle,
+                FaturadaRiskKontrolu = item.FaturadaRiskKontrolu
+            };
+
+            if (item.AcilisBakiyesi >= 0) cari.Borc = item.AcilisBakiyesi;
+            else cari.Alacak = Math.Abs(item.AcilisBakiyesi);
+
+            await Uow.Cariler.SaveAsync(cari);
+            await Uow.Portfolyo.DeleteAsync(item.Id);
+            
+            Snackbar.Add("Cari hesaba aktarım başarılı!", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Aktarım hatası: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DownloadTemplate()
+    {
+        try
+        {
+            var templateData = new List<PortfoyKart> 
+            { 
+                new PortfoyKart { 
+                    FirmaIsmi = "Örnek Firma Ltd Şti", 
+                    YetkiliKisi = "Ahmet Yılmaz", 
+                    GSM = "0532 000 00 00", 
+                    Il = "İstanbul",
+                    Sektor = "Teknoloji",
+                    CariTipi = "Müşteri"
+                } 
+            };
+            var bytes = await ExcelService.ExportListToMemoryAsync(templateData, "PortfoySablon");
+            await FileService.DownloadFileAsync("Portfoy_Excel_Sablon.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bytes);
+            Snackbar.Add("Şablon başarıyla indirildi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Şablon indirme hatası: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnExcelFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        try
+        {
+            using var stream = file.OpenReadStream(10 * 1024 * 1024); // max 10MB
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            ms.Position = 0;
+
+            var rows = MiniExcel.Query(ms, useHeaderRow: true).ToList();
+            int count = 0;
+            foreach (var row in rows)
+            {
+                var dict = (IDictionary<string, object>)row;
+                var item = PortfoyKart.FromDictionary(dict);
+                if (string.IsNullOrWhiteSpace(item.FirmaIsmi)) continue;
+                if (string.IsNullOrEmpty(item.PortfoyNo)) item.PortfoyNo = "P-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+                await Uow.Portfolyo.SaveAsync(item);
+                count++;
+            }
+
+            Snackbar.Add($"{count} adet kayıt başarıyla içe aktarıldı.", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Excel yükleme hatası: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private void CloseDialog() => _showDialog = false;
+}
+
+<style>
+    .portfoy-page {
+        padding: 24px 32px;
+        background: #0B0D12;
+        min-height: 100vh;
+        color: white;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Header Styles (Avalonia Parity) */
+    .portfoy-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .icon-border {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .header-text .title {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0;
+        color: white;
+    }
+
+    .header-text .subtitle {
+        font-size: 12px;
+        color: #9CA3AF;
+        margin: 4px 0 0 0;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* Grid/Table Card */
+    .portfoy-card {
+        background: #161B22;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .portfoy-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #E5E7EB;
+    }
+
+    .portfoy-table th {
+        background: #0D1117;
+        padding: 14px 20px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6B7280;
+        border-bottom: 2px solid #1F2937;
+    }
+
+    .portfoy-table td {
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-size: 13px;
+        vertical-align: middle;
+    }
+
+    .portfoy-row {
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    .portfoy-row:hover {
+        background: rgba(255,255,255,0.03);
+    }
+
+    .portfoy-row.selected {
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .firm-name {
+        font-weight: 700;
+        color: white;
+    }
+
+    .firm-no {
+        font-size: 10px;
+        color: #6B7280;
+        margin-top: 2px;
+    }
+
+    /* Buttons (Avalonia Parity) */
+    .btn-side {
+        display: flex;
+        align-items: center;
+        padding: 0 18px;
+        height: 40px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        color: white;
+    }
+
+    .btn-side.secondary {
+        background: #374151;
+        border-color: #4B5563;
+    }
+
+    .btn-side.info {
+        background: #2563EB;
+        border-color: #3B82F6;
+    }
+
+    .btn-side.success-alt {
+        background: #10B981;
+        border-color: #34D399;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 12px;
+        height: 30px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-action.blue {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60A5FA;
+    }
+
+    .btn-icon-only {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        background: rgba(255,255,255,0.05);
+        color: #9CA3AF;
+        border: 1px solid rgba(255,255,255,0.1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .btn-icon-only.danger:hover {
+        background: rgba(239, 68, 68, 0.1);
+        color: #EF4444;
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    /* Dialog Styles */
+    .dlg-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+
+    .dlg-content {
+        background: #1A1D21;
+        width: 1100px;
+        height: 730px;
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .dlg-header {
+        padding: 16px 24px;
+        background: #24292E;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .dlg-icon-box {
+        width: 38px;
+        height: 38px;
+        background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dlg-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+    }
+
+    .dlg-close {
+        color: #9CA3AF;
+        background: rgba(255,255,255,0.05);
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .dlg-body {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+    }
+
+    .dlg-left-panel {
+        width: 400px;
+        background: #1C2128;
+        padding: 24px;
+        border-right: 1px solid rgba(255,255,255,0.1);
+        overflow-y: auto;
+    }
+
+    .dlg-right-panel {
+        flex: 1;
+        background: #161B22;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .section-badge {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        color: #60A5FA;
+        padding: 8px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 11px;
+        color: #9CA3AF;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .blue-label { color: #60A5FA !important; }
+
+    .form-control {
+        width: 100%;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: white;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+        border-color: #3B82F6;
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    .border-blue { border-color: rgba(59, 130, 246, 0.4); }
+
+    .form-row { display: flex; gap: 16px; }
+
+    /* Tabs */
+    .dlg-tabs-header {
+        background: transparent;
+        padding: 24px 24px 0 24px;
+        display: flex;
+        gap: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .dlg-tab {
+        padding: 0 10px 12px 10px;
+        background: none;
+        border: none;
+        color: #9CA3AF;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .dlg-tab.active {
+        color: white;
+    }
+
+    .dlg-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #3B82F6;
+    }
+
+    .dlg-tabs-content {
+        padding: 24px;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .risk-panel {
+        background: rgba(59, 130, 246, 0.05);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .risk-section-title {
+        color: #60A5FA;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        margin-bottom: 8px;
+    }
+
+    .risk-notice {
+        font-size: 12px;
+        color: #EF4444;
+        background: rgba(239, 68, 68, 0.05);
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .dlg-footer {
+        padding: 16px 24px;
+        background: #24292E;
+        border-top: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 0 0 16px 16px;
+    }
+
+    .btn-dlg-secondary {
+        background: #374151;
+        color: white;
+        border: none;
+        padding: 0 24px;
+        height: 42px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-dlg-success {
+        background: #10B981;
+        color: white;
+        border: none;
+        padding: 0 28px;
+        height: 42px;
+        border-radius: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+    .footer-stat {
+        text-align: right;
+    }
+
+    .stat-label {
+        display: block;
+        font-size: 10px;
+        color: #9CA3AF;
+        margin-bottom: 2px;
+    }
+
+    .stat-value {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .stat-input {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        font-weight: 800;
+        width: 100px;
+        text-align: right;
+        outline: none;
+    }
+
+    .currency {
+        font-size: 14px;
+        color: #6B7280;
+    }
+</style>

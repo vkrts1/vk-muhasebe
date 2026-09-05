@@ -1,0 +1,37 @@
+@using ErmayMuhasebe.Models
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Model.BankaAdi" Label="Banka Adı" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.SubeAdi" Label="Şube Adı" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.SubeKodu" Label="Şube Kodu" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.HesapNo" Label="Hesap No" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.IBAN" Label="IBAN" Variant="Variant.Outlined" Class="mb-3" />
+        <MudSelect @bind-Value="Model.DovizTuru" Label="Döviz Türü" Variant="Variant.Outlined" Class="mb-3">
+             <MudSelectItem Value="@("TL")">TL</MudSelectItem>
+             <MudSelectItem Value="@("USD")">USD</MudSelectItem>
+             <MudSelectItem Value="@("EUR")">EUR</MudSelectItem>
+        </MudSelect>
+        <MudTextField @bind-Value="Model.Yetkili" Label="Banka Yetkilisi" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Telefon" Label="Telefon" Variant="Variant.Outlined" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İptal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Kaydet</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public BankaKart Model { get; set; } = new();
+
+    void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.BankaAdi) || string.IsNullOrWhiteSpace(Model.IBAN)) return;
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}

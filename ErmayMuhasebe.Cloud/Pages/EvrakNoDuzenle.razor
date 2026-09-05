@@ -1,0 +1,122 @@
+@page "/evrak-no-duzenle"
+@using ErmayMuhasebe.Shared.ViewModels
+@inject EvrakNoDuzenleViewModel ViewModel
+
+<div class="premium-container fade-in">
+    <!-- Header Section -->
+    <div class="d-flex align-items-center justify-content-between mb-8">
+        <div class="d-flex align-center gap-4">
+            <div class="icon-box-large bg-info-light" style="background: rgba(107, 114, 128, 0.1) !important;">
+                <MudIcon Icon="@Icons.Material.Filled.Numbers" Style="color: #9CA3AF; font-size: 32px;" />
+            </div>
+            <div>
+                <h1 class="h2 fw-black mb-1 text-white">Evrak Seri ve No Yapılandırma</h1>
+                <p class="text-muted mb-0">Fatura ve makbuzlar için kullanılacak yeni seri ve başlangıç numaralarını belirleyin.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-6">
+        <!-- List Section -->
+        <div class="col-lg-8">
+            <div class="glass-panel border-white-5 overflow-hidden h-100">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>EVRAK TÜRÜ</th>
+                            <th style="width: 180px;">SERİ (PREFİKS)</th>
+                            <th style="width: 180px;">SIRADAKİ NO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in ViewModel.Seriler)
+                        {
+                            <tr>
+                                <td class="fw-bold text-white">@item.EvrakTipi</td>
+                                <td>
+                                    <input type="text" @bind="item.Seri" class="inline-edit-input" />
+                                </td>
+                                <td>
+                                    <input type="number" @bind="item.SiradakiNo" class="inline-edit-input" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Action / Info Sidebar -->
+        <div class="col-lg-4">
+            <div class="glass-panel pa-8 border-white-5 h-100">
+                <div class="d-flex flex-column gap-6">
+                    <div>
+                        <h3 class="h5 fw-bold text-white mb-4">İşlem Özeti</h3>
+                        <p class="text-muted small" style="line-height: 1.6;">
+                            Değişiklik yaptıktan sonra <b>'KAYDET'</b> butonuna basın. 
+                            Bu işlemden sonra kesilecek ilk evrak belirttiğiniz numaradan başlayacaktır.
+                        </p>
+                    </div>
+
+                    <div class="divider-white-5"></div>
+
+                    <button class="action-btn-large w-100 mt-4" @onclick="ViewModel.Kaydet" style="background: #6B7280; color: white; border: none;">
+                        <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-2" /> TÜMÜNÜ KAYDET
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(ViewModel.StatusMessage))
+                    {
+                        <div class="status-msg-box pa-4 text-center mt-2">
+                            <span class="text-success small fw-black">@ViewModel.StatusMessage</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .premium-table th {
+        background: rgba(255,255,255,0.02);
+        color: rgba(255,255,255,0.3);
+        font-size: 10px;
+        font-weight: 900;
+        padding: 15px 20px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .premium-table td {
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+        font-size: 13px;
+    }
+    .premium-table tr:hover { background: rgba(255,255,255,0.01); }
+
+    .inline-edit-input {
+        width: 100%;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        height: 36px;
+        padding: 0 12px;
+        color: white;
+        font-weight: 700;
+        transition: all 0.2s;
+    }
+    .inline-edit-input:focus {
+        background: rgba(255,255,255,0.05);
+        border-color: #60A5FA;
+        outline: none;
+    }
+
+    .status-msg-box {
+        background: rgba(16, 185, 129, 0.05);
+        border: 1px solid rgba(16, 185, 129, 0.1);
+        border-radius: 12px;
+    }
+</style>

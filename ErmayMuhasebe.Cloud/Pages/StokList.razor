@@ -1,0 +1,467 @@
+@page "/stoklar"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.ViewModels
+@inject ErmayMuhasebe.Cloud.ViewModels.StokListViewModel ViewModel
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ClientAuthService AuthService
+@inject UiService UiService
+@implements IDisposable
+@inject NavigationManager NavManager
+
+<style>
+    /* Desktop Parity Overrides for StokList form inputs */
+    .stok-form-input {
+        border-radius: 20px !important;
+        padding: 6px 15px !important;
+    }
+    .stok-form-label {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        color: white !important;
+    }
+</style>
+
+<div class="fade-in d-flex flex-grow-1 flex-column stok-page-container" style="overflow: hidden; height: 100%; min-height: 0;">
+    @if (ViewModel.IsLoading)
+    {
+        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#60A5FA;">
+            <span>Yükleniyor...</span>
+        </div>
+    }
+    else
+    {
+    <!-- Combined Header & Search Bar (Unified with Table) -->
+    <div class="stok-main" style="min-height: 0; padding-top: 10px;">
+        <!-- LEFT: Two tables stacked -->
+        <div class="stok-left" style="min-height: 0;">
+            <!-- Stok Listesi -->
+            <div class="stok-section" style="flex: 1; min-height: 0;">
+                <div class="stok-section-header px-4 py-2 d-flex align-items-center justify-content-between flex-shrink-0">
+                    <div class="d-flex align-items-center gap-3">
+                        <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Size="Size.Small" Style="color: #60A5FA;" />
+                        <span class="header-text blue-text" style="text-transform: none; font-size: 14px;">Stok Listesi</span>
+                    </div>
+
+                    <!-- Search Box, Pager & Bakiye Göster -->
+                    <div class="d-flex align-items-center gap-3 flex-grow-1 justify-content-end" style="max-width: 750px;">
+                        <!-- Search -->
+                        <div class="desktop-search-pill" style="flex-grow: 1; justify-content: flex-start; background: rgba(0,0,0,0.2);">
+                            <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" Style="color: rgba(255,255,255,0.4);" />
+                            <input type="text" placeholder="Stok Kodu / Adı / Barkodu ile Ara..." 
+                                   @bind-value="ViewModel.FilterKod" @bind-value:event="oninput"
+                                   class="desktop-search-input" style="width: 100%;" />
+                        </div>
+
+                        <!-- Bakiye Göster Toggle -->
+                        <div class="d-flex align-items-center gap-2 px-2" style="cursor:pointer; white-space: nowrap;" @onclick="() => ViewModel.OnlyWithBalance = !ViewModel.OnlyWithBalance">
+                            <MudIcon Icon="@(ViewModel.OnlyWithBalance ? Icons.Material.Outlined.RadioButtonChecked : Icons.Material.Outlined.RadioButtonUnchecked)" Size="Size.Small" Style="color: rgba(255,255,255,0.4);" />
+                            <span style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600;">Bakiye Göster</span>
+                        </div>
+
+                        <!-- Pager -->
+                        <div class="desktop-pager-pill d-flex align-items-center">
+                            <button @onclick="ViewModel.PreviousPageAsync" disabled="@(!ViewModel.CanPreviousPage)" class="pager-arrow">
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small" />
+                            </button>
+                            <span class="pager-text" style="min-width: 80px;">@ViewModel.PagerInfo</span>
+                            <button @onclick="ViewModel.NextPageAsync" disabled="@(!ViewModel.CanNextPage)" class="pager-arrow">
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="stok-data-table-wrap" style="overflow-x: auto; min-height: 0;">
+                    <table class="stok-data-table">
+                        <thead>
+                            <tr>
+                                <th style="width:40px;"></th>
+                                <th style="width:100px;">Kod</th>
+                                <th style="width:120px;">Grup</th>
+                                <th>Stok Adı</th>
+                                <th style="width:90px; text-align:right;">Ort. Alış F.</th>
+                                <th style="width:90px; text-align:right;">Ort. Satış F.</th>
+                                <th style="width:90px; text-align:right;">Satış F.</th>
+                                <th style="width:70px; text-align:right;">Miktar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!ViewModel.Stoklar.Any())
+                            {
+                                <tr><td colspan="7" style="text-align:center; padding:20px; color:#555;">Herhangi bir stok bulunamadı.</td></tr>
+                            }
+                            @foreach (var stok in ViewModel.Stoklar)
+                            {
+                                <tr class="@(ViewModel.SelectedStok?.Id == stok.Id ? "selected" : "")"
+                                    @onclick="() => ViewModel.SelectedStok = stok"
+                                    @oncontextmenu:preventDefault="true"
+                                    @oncontextmenu="(e) => ShowContextMenu(e, stok)">
+                                    <td style="text-align: center;">
+                                        <MudIcon Icon="@Icons.Material.Outlined.RadioButtonUnchecked" Size="Size.Small" Style="color: rgba(255,255,255,0.4);" />
+                                    </td>
+                                    <td style="color: #FBC02D; font-weight: 700;">@stok.StokKodu</td>
+                                    <td style="color: #10B981;">@stok.Kategori</td>
+                                    <td style="font-weight: 600;">@stok.StokAdi</td>
+                                    <td style="text-align:right; color:#999;">@stok.OrtalamaAlisFiyati.ToString("N2")</td>
+                                    <td style="text-align:right; color:#999;">@stok.OrtalamaSatisFiyati.ToString("N2")</td>
+                                    <td style="text-align:right; color:#999;">@stok.SatisFiyati.ToString("N2")</td>
+                                    <td style="text-align:right; font-weight:800; color:white;">@stok.Miktar.ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stok Hareket İşlemleri -->
+            <div class="stok-section" style="flex: 0 0 35%; min-height: 0;">
+                <div class="stok-section-header flex-shrink-0">
+                    <span class="stok-section-title" style="color: #FBC02D; text-transform: none; font-size: 13px;">Stok Hareket İşlemleri</span>
+                    <MudIcon Icon="@Icons.Material.Outlined.CalendarMonth" Size="Size.Small" Style="color: #FBC02D;" />
+                </div>
+                <div class="stok-data-table-wrap" style="overflow-x: auto; min-height: 0;">
+                    <table class="stok-data-table">
+                        <thead>
+                            <tr>
+                                <th style="width:100px;">Tarih</th>
+                                <th style="width:120px;">İşlem Türü</th>
+                                <th>Açıklama</th>
+                                <th style="width:80px; text-align:right;">Miktar</th>
+                                <th style="width:80px; text-align:right;">Kalan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewModel.SelectedStok == null)
+                            {
+                                <tr><td colspan="5" style="text-align:center; padding:20px; color:#555;">Hareketleri görmek için bir stok seçin.</td></tr>
+                            }
+                            else if (!ViewModel.StokHareketleri.Any())
+                            {
+                                <tr><td colspan="5" style="text-align:center; padding:20px; color:#555;">Bu stoğa ait hareket yok.</td></tr>
+                            }
+                            @foreach (var h in ViewModel.StokHareketleri)
+                            {
+                                <tr class="@(ViewModel.SelectedStokHareket?.Id == h.Id ? "selected" : "")"
+                                    @onclick="() => ViewModel.SelectedStokHareket = h">
+                                    <td style="color:#999;">@h.Tarih.ToString("dd.MM.yyyy")</td>
+                                    <td>
+                                        <span style="font-size:9px; font-weight:800; padding:2px 8px; border-radius:10px;
+                                              background:@(h.IslemTuru?.Contains("Giriş") == true ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)");
+                                              color:@(h.IslemTuru?.Contains("Giriş") == true ? "#34D399" : "#F87171");">
+                                            @h.IslemTuru
+                                        </span>
+                                    </td>
+                                    <td>@h.Aciklama</td>
+                                    <td style="text-align:right; font-weight:800; color:@(h.Giren > 0 || (h.IslemTuru ?? "").Contains("Giriş") ? "#34D399" : "#F87171");">@h.Miktar.ToString("N2")</td>
+                                    <td style="text-align:right; font-weight:800; color:white;">@h.KalanMiktar.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Stok Bilgileri Form + Actions -->
+        <div class="stok-right" style="min-height: 0;">
+            <div class="stok-form-panel" style="min-height: 0;">
+                <div class="stok-blue-header flex-shrink-0">
+                    <span class="stok-section-title" style="color: #FBC02D; text-transform: none; font-weight: 800; font-size: 13px;">Stok Bilgileri</span>
+                </div>
+                <div style="padding: 20px; flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0;">
+                    @if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
+                    {
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #F87171; font-size: 11px; font-weight: 700; padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+                            ⚠️ @ViewModel.ErrorMessage
+                        </div>
+                    }
+
+                    <div style="display: grid; grid-template-columns: 85px minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <span class="stok-form-label">Kodu</span>
+                        <input type="text" @bind="ViewModel.EditStokKodu" class="stok-form-input" />
+                    </div>
+                    <div style="display: grid; grid-template-columns: 85px minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <span class="stok-form-label">Stok Adı</span>
+                        <input type="text" @bind="ViewModel.EditStokAdi" class="stok-form-input" />
+                    </div>
+                    <div style="display: grid; grid-template-columns: 85px minmax(0, 1fr) 50px minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <div class="stok-form-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-right: 5px;">
+                            <span>Grup</span>
+                            <MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" Style="color: #FBC02D; cursor: pointer; font-size: 16px;" @onclick="() => ViewModel.IsAddGroupVisible = true" />
+                        </div>
+                        <select @bind="ViewModel.EditKategori" class="stok-form-input">
+                            <option value="">Seçiniz</option>
+                            @foreach (var g in ViewModel.GroupList) { <option value="@g">@g</option> }
+                        </select>
+                        <span class="stok-form-label" style="text-align: left; padding-left: 5px;">Birim</span>
+                        <select @bind="ViewModel.EditBirim" class="stok-form-input">
+                            @foreach (var b in ViewModel.Birimler) { <option value="@b">@b</option> }
+                        </select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 85px minmax(0, 1fr) 50px minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <span class="stok-form-label">Ort. Alış F.</span>
+                        <input type="number" @bind="ViewModel.EditOrtalamaAlisFiyati" class="stok-form-input" />
+                        <span class="stok-form-label" style="text-align: left; padding-left: 5px;">Alış F.</span>
+                        <input type="number" @bind="ViewModel.EditAlisFiyati" class="stok-form-input" />
+                    </div>
+                    <div style="display: grid; grid-template-columns: 85px minmax(0, 1fr) 50px minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <span class="stok-form-label">Ort. Satış F.</span>
+                        <input type="number" @bind="ViewModel.EditOrtalamaSatisFiyati" class="stok-form-input" />
+                        <span class="stok-form-label" style="text-align: left; padding-left: 5px;">Satış F.</span>
+                        <input type="number" @bind="ViewModel.EditSatisFiyati" class="stok-form-input" />
+                    </div>
+                    <div style="display: grid; grid-template-columns: 85px minmax(0, 1fr) 50px minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <span class="stok-form-label">KDV</span>
+                        <input type="number" @bind="ViewModel.EditKDV" class="stok-form-input" />
+                        <span class="stok-form-label" style="text-align: left; padding-left: 5px;">Açılış</span>
+                        <input type="number" @bind="ViewModel.EditAcilisBakiye" class="stok-form-input" />
+                    </div>
+
+                    <div class="stok-separator"></div>
+
+                    <!-- Core Actions: Yeni, Kaydet, Düzen, Sil -->
+                    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 15px;">
+                        <button class="action-capsule primary" style="padding:0; font-size:10px; height:32px;" @onclick="HandleNew">
+                            <MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> <span style="color: white; margin-left: 2px;">Yeni</span>
+                        </button>
+                        <button class="action-capsule success" style="padding:0; font-size:10px; height:32px;" @onclick="HandleSave">
+                            <MudIcon Icon="@Icons.Material.Outlined.Save" Size="Size.Small" /> <span style="color: white; margin-left: 2px;">Kaydet</span>
+                        </button>
+                        <button class="action-capsule" style="padding:0; font-size:10px; height:32px;">
+                            <MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /> <span style="color: white; margin-left: 2px;">Düzen</span>
+                        </button>
+                        <button class="action-capsule danger" style="padding:0; font-size:10px; height:32px;" @onclick="ConfirmDelete">
+                            <MudIcon Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" /> <span style="color: white; margin-left: 2px;">Sil</span>
+                        </button>
+                    </div>
+
+                    <!-- Transaction Actions -->
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: 8px;">
+                        <button class="action-capsule success" style="justify-content: center; height: 42px;" @onclick='() => ViewModel.ManualIslem("Giriş")'>
+                            <MudIcon Icon="@Icons.Material.Outlined.AddBox" Size="Size.Small" /> <span style="color: white; margin-left: 4px;">Stok Girişi (F1)</span>
+                        </button>
+                        <button class="action-capsule warning" style="justify-content: center; height: 42px;" @onclick='() => ViewModel.ManualIslem("Çıkış")'>
+                            <MudIcon Icon="@Icons.Material.Outlined.DisabledByDefault" Size="Size.Small" /> <span style="color: white; margin-left: 4px;">Stok Çıkışı (F2)</span>
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: 12px;">
+                        <button class="action-capsule primary" style="justify-content: center; height: 42px;">
+                            <MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /> <span style="color: white; margin-left: 4px;">Düzenle (F3)</span>
+                        </button>
+                        <button class="action-capsule danger" style="justify-content: center; height: 42px;" @onclick="ConfirmDeleteStokHareket">
+                            <MudIcon Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" /> <span style="color: white; margin-left: 4px;">İşlemi Sil</span>
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: 8px;">
+                        <button class="action-capsule" style="justify-content: center; height: 40px;">
+                            <MudIcon Icon="@Icons.Material.Outlined.Description" Size="Size.Small" /> <span style="color: white; margin-left: 4px;">Raporlar</span>
+                        </button>
+                        <button class="action-capsule primary" style="justify-content: center; height: 40px;" @onclick="HandlePrint">
+                            <MudIcon Icon="@Icons.Material.Outlined.Print" Size="Size.Small" /> <span style="color: white; margin-left: 4px;">Yazdır</span>
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: 12px;">
+                        <button class="action-capsule success" style="justify-content: center; height: 40px;">
+                            <MudIcon Icon="@Icons.Material.Outlined.FileUpload" Size="Size.Small" /> <span style="color: white; margin-left: 4px;">Dıştan Aktar</span>
+                        </button>
+                        <button class="action-capsule" style="justify-content: center; height: 40px;">
+                            <MudIcon Icon="@Icons.Material.Outlined.FileDownload" Size="Size.Small" /> <span style="color: white; margin-left: 4px;">Excel</span>
+                        </button>
+                    </div>
+
+                    <button class="action-capsule w-100" style="height: 44px; justify-content: center; font-size: 13px;">
+                        <span style="color: white;">VAZGEÇ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+
+@if (ViewModel.IsTransactionWindowVisible)
+{
+    <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:10000;">
+        <div style="background:#1A1D21; border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:450px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
+            <div style="background:rgba(96,165,250,0.15); padding:15px 20px; border-radius:16px 16px 0 0; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700; color:white;">Manual @ViewModel.TransactionType İşlemi</span>
+                <button style="background:transparent; border:none; color:white; cursor:pointer;" @onclick="ViewModel.CloseTransactionWindow">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" />
+                </button>
+            </div>
+            <div style="padding:20px;">
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:11px; color:#888; margin-bottom:4px; display:block;">Miktar (@ViewModel.SelectedStok?.Birim)</label>
+                    <input type="number" @bind="ViewModel.IslemMiktar" class="stok-form-input" style="width:100%; height:36px;" autofocus />
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:11px; color:#888; margin-bottom:4px; display:block;">Tarih</label>
+                    <input type="text" @bind="ViewModel.IslemTarihStr" placeholder="GG.AA.YYYY" class="stok-form-input" style="width:100%; height:36px;" />
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:11px; color:#888; margin-bottom:4px; display:block;">Açıklama</label>
+                    <textarea @bind="ViewModel.IslemAciklama" rows="3" placeholder="İsteğe bağlı notlar..." class="stok-form-input" style="width:100%; height:80px; resize:none;"></textarea>
+                </div>
+            </div>
+            <div style="padding:10px 20px 20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid rgba(255,255,255,0.06);">
+                <button class="stok-btn secondary" style="padding:0 20px;" @onclick="ViewModel.CloseTransactionWindow">Vazgeç</button>
+                <button class="stok-btn success" style="padding:0 20px;" @onclick="ViewModel.SaveTransactionAsync">İşlemi Tamamla</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ViewModel.IsAddGroupVisible)
+{
+    <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:10000;">
+        <div style="background:#1A1D21; border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:320px; padding:20px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
+            <div style="text-align:center; font-weight:700; color:white; margin-bottom:15px;">Yeni Grup Ekle</div>
+            <input type="text" @bind="ViewModel.NewGroupName" placeholder="Grup Adı..." class="stok-form-input" style="width:100%; height:36px; margin-bottom:15px;" autofocus />
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <button class="stok-btn success" @onclick="ViewModel.SaveNewGroupAsync">EKLE</button>
+                <button class="stok-btn danger" @onclick="ViewModel.CancelAddGroup">İPTAL</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        UiService.OnEscapePressed += HandleEscape;
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        ViewModel.ErrorMessage = "";
+        ViewModel.SuccessMessage = "";
+        await ViewModel.LoadStoklarAsync();
+
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        var query = uri.Query;
+        if (!string.IsNullOrEmpty(query) && query.Contains("selectId="))
+        {
+            var parts = query.TrimStart('?').Split('&');
+            var selectPart = parts.FirstOrDefault(p => p.StartsWith("selectId="));
+            if (selectPart != null && int.TryParse(selectPart.Split('=')[1], out int id))
+            {
+                var stok = ViewModel.Stoklar.FirstOrDefault(s => s.Id == id);
+                if (stok != null)
+                {
+                    ViewModel.SelectedStok = stok;
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private async Task<bool> HandleEscape()
+    {
+        if (ViewModel.IsTransactionWindowVisible)
+        {
+            ViewModel.CloseTransactionWindow();
+            StateHasChanged();
+            return true;
+        }
+        if (ViewModel.IsAddGroupVisible)
+        {
+            ViewModel.CancelAddGroup();
+            StateHasChanged();
+            return true;
+        }
+        if (ViewModel.SelectedStok != null)
+        {
+            ViewModel.SelectedStok = null;
+            ViewModel.SelectedStokHareket = null;
+            StateHasChanged();
+            return true;
+        }
+        await Task.CompletedTask;
+        return false;
+    }
+
+    public void Dispose()
+    {
+        UiService.OnEscapePressed -= HandleEscape;
+    }
+
+    private async Task HandleSave()
+    {
+        ViewModel.ErrorMessage = "";
+        await ViewModel.SaveStokAsync();
+        if (string.IsNullOrEmpty(ViewModel.ErrorMessage))
+        {
+            Snackbar.Add("Stok kartı başarıyla kaydedildi.", Severity.Success);
+        }
+    }
+
+    private void HandleNew()
+    {
+        ViewModel.CreateNew();
+        Snackbar.Add("Yeni stok kartı oluşturma moduna geçildi.", Severity.Info);
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (ViewModel.SelectedStok == null) return;
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Stok Kartı Silinecek",
+            $"{ViewModel.SelectedStok.StokAdi} kartını silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+        if (confirm == true)
+        {
+            await ViewModel.DeleteStokAsync();
+            Snackbar.Add("Stok kartı silindi", Severity.Success);
+        }
+    }
+
+    private async Task ConfirmDeleteStokHareket()
+    {
+        if (ViewModel.SelectedStokHareket == null) return;
+        bool? confirm = await DialogService.ShowMessageBox(
+            "İşlem Silinecek",
+            "Seçili stok hareketini silmek istediğinize emin misiniz?",
+            yesText: "Sil", cancelText: "Vazgeç"
+        );
+        if (confirm == true)
+        {
+            await ViewModel.DeleteStokHareketAsync();
+            Snackbar.Add("Stok hareketi silindi", Severity.Success);
+        }
+    }
+
+    private async Task HandleFileUpload(IBrowserFile file)
+    {
+        if (file == null) return;
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            await ViewModel.ImportExcelFromStreamAsync(stream);
+            Snackbar.Add("Stoklar başarıyla içe aktarıldı.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Yükleme Hatası: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task HandlePrint()
+    {
+        await ViewModel.PrintStokList();
+    }
+
+    private void ShowContextMenu(MouseEventArgs e, StokKart stok)
+    {
+        ViewModel.SelectedStok = stok;
+        var items = new List<UiService.ContextMenuItem>
+        {
+            new UiService.ContextMenuItem { Text = "Stok Girişi (F1)", Icon = Icons.Material.Filled.AddBox, Action = () => { ViewModel.ManualIslem("Giriş"); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { Text = "Stok Çıkışı (F2)", Icon = Icons.Material.Filled.IndeterminateCheckBox, Action = () => { ViewModel.ManualIslem("Çıkış"); return Task.CompletedTask; } },
+            new UiService.ContextMenuItem { IsDivider = true },
+            new UiService.ContextMenuItem { Text = "Düzenle (F3)", Icon = Icons.Material.Filled.Edit, Action = () => { return Task.CompletedTask; } }, // Already handled in view
+            new UiService.ContextMenuItem { Text = "Sil", Icon = Icons.Material.Filled.Delete, IsDanger = true, Action = async () => await ConfirmDelete() }
+        };
+        UiService.ShowContextMenu(e.ClientX, e.ClientY, items);
+    }
+}

@@ -1,0 +1,4688 @@
+{
+  ".vs/Ermay/v17/DocumentLayout.backup.json": {
+    "mtime": 1766932970.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "56af16e82893949fec042715d035978f",
+    "semantic_hash": "56af16e82893949fec042715d035978f"
+  },
+  ".vs/Ermay/v17/DocumentLayout.json": {
+    "mtime": 1766932982.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "56af16e82893949fec042715d035978f",
+    "semantic_hash": "56af16e82893949fec042715d035978f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia.Android/ErmayMuhasebe.Avalonia.Android.csproj": {
+    "mtime": 1766924828.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "19c281bde915b0ac2cd250d48aace4cd",
+    "semantic_hash": "19c281bde915b0ac2cd250d48aace4cd"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia.Android/MainActivity.cs": {
+    "mtime": 1783616122.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cbbe943b902d0ff4f109f553eb13d42d",
+    "semantic_hash": "cbbe943b902d0ff4f109f553eb13d42d"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia.Desktop/ErmayMuhasebe.Avalonia.Desktop.csproj": {
+    "mtime": 1787387560.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "904b83f53aad28589bf323aed88d81d3",
+    "semantic_hash": "904b83f53aad28589bf323aed88d81d3"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia.Desktop/Program.cs": {
+    "mtime": 1782379898.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ec4bda2cee59e78f078cd2eea932699f",
+    "semantic_hash": "ec4bda2cee59e78f078cd2eea932699f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia.iOS/AppDelegate.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5c18468716e96dc4e436f616a9d75e9d",
+    "semantic_hash": "5c18468716e96dc4e436f616a9d75e9d"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia.iOS/ErmayMuhasebe.Avalonia.iOS.csproj": {
+    "mtime": 1766924830.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "df6e631e83948e90e3905f96d04c422b",
+    "semantic_hash": "df6e631e83948e90e3905f96d04c422b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia.iOS/Main.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3b71ee7382775092b505906dd3f5fdb0",
+    "semantic_hash": "3b71ee7382775092b505906dd3f5fdb0"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/App.axaml.cs": {
+    "mtime": 1788379470.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ece1ef1d780c9a064cfd10d6045afd3c",
+    "semantic_hash": "ece1ef1d780c9a064cfd10d6045afd3c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BakiyeToColorConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0bf8b8582af4678fe0067b8b44754807",
+    "semantic_hash": "0bf8b8582af4678fe0067b8b44754807"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BakiyeToStatusBrushConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b595a58cc4b042b983cd260615af9e9f",
+    "semantic_hash": "b595a58cc4b042b983cd260615af9e9f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BakiyeToStatusTextConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cabc3070f45c00d429e2a6aeca873b51",
+    "semantic_hash": "cabc3070f45c00d429e2a6aeca873b51"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BitmapAssetValueConverter.cs": {
+    "mtime": 1781616784.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "54edbaa570cd984c5ff2560ef4f38542",
+    "semantic_hash": "54edbaa570cd984c5ff2560ef4f38542"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BoolToBlueBrushConverter.cs": {
+    "mtime": 1777021600.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4b09e8e12af6dab22d9b1ae552dfa001",
+    "semantic_hash": "4b09e8e12af6dab22d9b1ae552dfa001"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BoolToColorConverter.cs": {
+    "mtime": 1777021536.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1160c2d39b8b99f2116b5166c623076e",
+    "semantic_hash": "1160c2d39b8b99f2116b5166c623076e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BoolToDoubleConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "83f11b4fc668d5ba124e0b95beb16097",
+    "semantic_hash": "83f11b4fc668d5ba124e0b95beb16097"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BoolToFontWeightConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1b8a73be0b69bc5e68b15122b8552cd0",
+    "semantic_hash": "1b8a73be0b69bc5e68b15122b8552cd0"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/BoolToRedGreenConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ea9e5a2714530780d684e4265505a627",
+    "semantic_hash": "ea9e5a2714530780d684e4265505a627"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/CariTurConverters.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e4c9bb80755553b93595ff936e22b15e",
+    "semantic_hash": "e4c9bb80755553b93595ff936e22b15e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/CekDurumToColorConverter.cs": {
+    "mtime": 1783189586.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5ea9865d7c464324536e33abacb594a6",
+    "semantic_hash": "5ea9865d7c464324536e33abacb594a6"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/CekDurumToTextConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "181d1d8c3841a381b83bc2f0017da7cc",
+    "semantic_hash": "181d1d8c3841a381b83bc2f0017da7cc"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/EftDurumToColorConverter.cs": {
+    "mtime": 1783194792.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b39b952fe1f8e86b255013b4d9295cd9",
+    "semantic_hash": "b39b952fe1f8e86b255013b4d9295cd9"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/EftDurumToTextConverter.cs": {
+    "mtime": 1783194786.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9c1a6a78e3666672cff9ac8539bb5f44",
+    "semantic_hash": "9c1a6a78e3666672cff9ac8539bb5f44"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/FaturaTurToColorConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b99dc7a98643ab844cefda47ca49f23c",
+    "semantic_hash": "b99dc7a98643ab844cefda47ca49f23c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/MathMultiplyConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b70ec6385a385bf54d59f9fe67f1fa3d",
+    "semantic_hash": "b70ec6385a385bf54d59f9fe67f1fa3d"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/MusteriTakipConverters.cs": {
+    "mtime": 1788379444.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3d082ecc3267b48d6ec76a34d4c1f582",
+    "semantic_hash": "3d082ecc3267b48d6ec76a34d4c1f582"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/ObjectIsNullConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b0a9c42af80f22111c0068a31d85e246",
+    "semantic_hash": "b0a9c42af80f22111c0068a31d85e246"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/OrtalamaVadeColorConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7eb8c9f4bc4c378ac825a40ce5a26a5f",
+    "semantic_hash": "7eb8c9f4bc4c378ac825a40ce5a26a5f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/OverdueToColorConverter.cs": {
+    "mtime": 1781181314.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e65e72c985bf6b5e042fecca6e0d7ed4",
+    "semantic_hash": "e65e72c985bf6b5e042fecca6e0d7ed4"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/StatusToColorConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0758183421f4c12f57367466fed94685",
+    "semantic_hash": "0758183421f4c12f57367466fed94685"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/StringEqualsConverter.cs": {
+    "mtime": 1777022356.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3268ef980a87fd6b4effdb55d40287b5",
+    "semantic_hash": "3268ef980a87fd6b4effdb55d40287b5"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/SymbolIconConverter.cs": {
+    "mtime": 1781866688.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "085c3a7199e0120a6be9d0b77aea89bd",
+    "semantic_hash": "085c3a7199e0120a6be9d0b77aea89bd"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/VadeIncomingToColorConverter.cs": {
+    "mtime": 1781181304.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7a6f3c3fffbad4c7cf246d4bd45ca578",
+    "semantic_hash": "7a6f3c3fffbad4c7cf246d4bd45ca578"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/VadeTypeToIconConverter.cs": {
+    "mtime": 1781181308.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6b2b04a78df21330a2629542129cd62b",
+    "semantic_hash": "6b2b04a78df21330a2629542129cd62b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Converters/ValueToTextConverter.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2106fa8e21a65f29d2153253f19c5d11",
+    "semantic_hash": "2106fa8e21a65f29d2153253f19c5d11"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia.csproj": {
+    "mtime": 1787387558.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ae47d76d7ef828b7804e275ddf5ecf91",
+    "semantic_hash": "ae47d76d7ef828b7804e275ddf5ecf91"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Messages/Messages.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d0528d3cbb9bb2888de0286202fb1610",
+    "semantic_hash": "d0528d3cbb9bb2888de0286202fb1610"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Program.cs": {
+    "mtime": 1782379890.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "09eca8a55f67666f96ec88b9a54b0010",
+    "semantic_hash": "09eca8a55f67666f96ec88b9a54b0010"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/BackupService.cs": {
+    "mtime": 1782977258.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d3983f9eb67f1382311960f79c8a2f24",
+    "semantic_hash": "d3983f9eb67f1382311960f79c8a2f24"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/DisplayService.cs": {
+    "mtime": 1783199944.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "65b8795aee89e9ad80bc22468fe2bbfa",
+    "semantic_hash": "65b8795aee89e9ad80bc22468fe2bbfa"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/ExcelService.cs": {
+    "mtime": 1786802400.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "02ab7a5d1946ed4ddfa1a1f669c6075c",
+    "semantic_hash": "02ab7a5d1946ed4ddfa1a1f669c6075c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/FileService.cs": {
+    "mtime": 1782977242.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c2871a2e46aed23dd8ad4f5ab267cf3b",
+    "semantic_hash": "c2871a2e46aed23dd8ad4f5ab267cf3b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/HttpPdfService.cs": {
+    "mtime": 1787948206.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a56cde750be55bb50dd3da521e0adc50",
+    "semantic_hash": "a56cde750be55bb50dd3da521e0adc50"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/SessionService.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "47a2038aa35d2cd333d5414a2781bc1b",
+    "semantic_hash": "47a2038aa35d2cd333d5414a2781bc1b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/ShareService.cs": {
+    "mtime": 1783326704.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c4cee6f570c8256702470f5d85942d19",
+    "semantic_hash": "c4cee6f570c8256702470f5d85942d19"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/StatusBarService.cs": {
+    "mtime": 1777210346.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "81024a2f22653e3fd990febf84d45e4e",
+    "semantic_hash": "81024a2f22653e3fd990febf84d45e4e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Services/ThemeService.cs": {
+    "mtime": 1777053698.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "febfc42e047679c85ee887132daef8e7",
+    "semantic_hash": "febfc42e047679c85ee887132daef8e7"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewLocator.cs": {
+    "mtime": 1776760680.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "461c8d179740673ff53eb1dd20dfbaff",
+    "semantic_hash": "461c8d179740673ff53eb1dd20dfbaff"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/BankaDetayViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f8c6f57b137135c581ff37ffb771b02a",
+    "semantic_hash": "f8c6f57b137135c581ff37ffb771b02a"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/BankaListViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6fa37c0fc1d526b9640829ab1adcb552",
+    "semantic_hash": "6fa37c0fc1d526b9640829ab1adcb552"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/BarkodTasarimViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3ca423d6ab91e50bdefc656025f61d34",
+    "semantic_hash": "3ca423d6ab91e50bdefc656025f61d34"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/BelgeArsivViewModel.cs": {
+    "mtime": 1784195280.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0dad58e88a38d06ef4f7840b75226f06",
+    "semantic_hash": "0dad58e88a38d06ef4f7840b75226f06"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/BorcHatirlaticiViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c677a0d3e20a2ff9167ee60521c81690",
+    "semantic_hash": "c677a0d3e20a2ff9167ee60521c81690"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/CariBirlestirmeViewModel.cs": {
+    "mtime": 1781614776.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5adddec95833289792c2eb0d02de423b",
+    "semantic_hash": "5adddec95833289792c2eb0d02de423b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/CariDetayViewModel.cs": {
+    "mtime": 1783931626.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fbbf9ee74d6d4b5823c63f124cf04d22",
+    "semantic_hash": "fbbf9ee74d6d4b5823c63f124cf04d22"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/CariListViewModel.cs": {
+    "mtime": 1788379698.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1beaa8997c21f9bf62374b7b37fbe501",
+    "semantic_hash": "1beaa8997c21f9bf62374b7b37fbe501"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/CekSenetListViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fd45e083d03d6e52b864df58315eb8b9",
+    "semantic_hash": "fd45e083d03d6e52b864df58315eb8b9"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/DashboardViewModel.cs": {
+    "mtime": 1787305678.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fdcff2a3c6c6cf09b1f1ea4913cee16b",
+    "semantic_hash": "fdcff2a3c6c6cf09b1f1ea4913cee16b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/DbBakimViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2c1e6c5aabb91626fa4129f07dd93b99",
+    "semantic_hash": "2c1e6c5aabb91626fa4129f07dd93b99"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/DovizDonusturucuViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ed9b3234683bdaa0faf325c70d557cf1",
+    "semantic_hash": "ed9b3234683bdaa0faf325c70d557cf1"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/EFTListViewModel.cs": {
+    "mtime": 1776769598.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f4d2aa51af6d6359f6e2b2df75070b59",
+    "semantic_hash": "f4d2aa51af6d6359f6e2b2df75070b59"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/EvrakNoDuzenleViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "26c2477de9dd79705c0cff492a6481a1",
+    "semantic_hash": "26c2477de9dd79705c0cff492a6481a1"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/FaturaDetayViewModel.cs": {
+    "mtime": 1785921634.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5874efc05cfd08982033b44b28a9a24a",
+    "semantic_hash": "5874efc05cfd08982033b44b28a9a24a"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/FaturaListViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d578e6aa003f44d0cc9c402282bc96ba",
+    "semantic_hash": "d578e6aa003f44d0cc9c402282bc96ba"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/FaturaTasarimViewModel.cs": {
+    "mtime": 1786444072.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0cd19f792b4675949a0edc490b5a23c8",
+    "semantic_hash": "0cd19f792b4675949a0edc490b5a23c8"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/FinansDashboardViewModel.cs": {
+    "mtime": 1782813946.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "53397b86ddd6bae757dabda470bbbf29",
+    "semantic_hash": "53397b86ddd6bae757dabda470bbbf29"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/FiyatListesiViewModel.cs": {
+    "mtime": 1785921512.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "704c6c3b8c121b80547642c2b8deee57",
+    "semantic_hash": "704c6c3b8c121b80547642c2b8deee57"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/GecikmeFaiziViewModel.cs": {
+    "mtime": 1781605360.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6ee4792321c83616d04ad327e13ece55",
+    "semantic_hash": "6ee4792321c83616d04ad327e13ece55"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/HaftalikHedefTakipViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5b5b617fc920b94a17463dcd680a6a90",
+    "semantic_hash": "5b5b617fc920b94a17463dcd680a6a90"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/HedefTakipViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c0a66a690b7ad212fb98bd49f5f728a1",
+    "semantic_hash": "c0a66a690b7ad212fb98bd49f5f728a1"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/IHandleBack.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d18882fcf4237eb39eb8748cc638062f",
+    "semantic_hash": "d18882fcf4237eb39eb8748cc638062f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/KanbanViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f2161cc99614c5af3bf376452f9f9112",
+    "semantic_hash": "f2161cc99614c5af3bf376452f9f9112"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/KarZararHaritasiViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2b0227f0a36b1321f0d7b1e3dc751b86",
+    "semantic_hash": "2b0227f0a36b1321f0d7b1e3dc751b86"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/KasaDetayViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3609fcee601fbe7a44678f76ddd50c31",
+    "semantic_hash": "3609fcee601fbe7a44678f76ddd50c31"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/KasaListViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cc9b63f2f46140061bc8ccd91ac39022",
+    "semantic_hash": "cc9b63f2f46140061bc8ccd91ac39022"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/KisayolTusuViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bf9f6b8a6b541387bafe8b9b241ca9f3",
+    "semantic_hash": "bf9f6b8a6b541387bafe8b9b241ca9f3"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/KrediKartiListViewModel.cs": {
+    "mtime": 1776769592.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "beff201a48cb9ba57e8fc585c57b254c",
+    "semantic_hash": "beff201a48cb9ba57e8fc585c57b254c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/LoginViewModel.cs": {
+    "mtime": 1783281310.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8405605e484aa6615facbff6f191a07c",
+    "semantic_hash": "8405605e484aa6615facbff6f191a07c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/MainViewModel.cs": {
+    "mtime": 1788374024.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "faf500827e249dd0a60af34f7c94627c",
+    "semantic_hash": "faf500827e249dd0a60af34f7c94627c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/MaliyetHesaplamaViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d817901d5302a30bf0ded0b391eda28a",
+    "semantic_hash": "d817901d5302a30bf0ded0b391eda28a"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/MusteriTakipDetayViewModel.cs": {
+    "mtime": 1788379552.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "be3d77cfb4014a4148f611e9f896b93d",
+    "semantic_hash": "be3d77cfb4014a4148f611e9f896b93d"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/MusteriTakipViewModel.cs": {
+    "mtime": 1788379680.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "72e616cd283e4e5fadaaef4027d379c0",
+    "semantic_hash": "72e616cd283e4e5fadaaef4027d379c0"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/NotificationItem.cs": {
+    "mtime": 1782890174.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3c5e68185931ee466b600d69bcc6f8f8",
+    "semantic_hash": "3c5e68185931ee466b600d69bcc6f8f8"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/OptimalFiyatViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c9d119df3da1c11f6ff9ca3f7ae08e8b",
+    "semantic_hash": "c9d119df3da1c11f6ff9ca3f7ae08e8b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/Placeholders.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "efada21632e994bb13a7aa33de557799",
+    "semantic_hash": "efada21632e994bb13a7aa33de557799"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/RaporListViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b68700975b2e09c4005510bed6ec0f8f",
+    "semantic_hash": "b68700975b2e09c4005510bed6ec0f8f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/RotaPlanlamaViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c0ae202d85532c0babacc8408cc06643",
+    "semantic_hash": "c0ae202d85532c0babacc8408cc06643"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/SettingsViewModel.cs": {
+    "mtime": 1787838350.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "59c69190503b6065b1d542de273978b1",
+    "semantic_hash": "59c69190503b6065b1d542de273978b1"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/SiparisAciklamaViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bcb043ae768a821d8a87203ce948be1b",
+    "semantic_hash": "bcb043ae768a821d8a87203ce948be1b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/SiparisDetayViewModel.cs": {
+    "mtime": 1781256712.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1c1df5e3dfebed4098f2aa5e1d1e0c8e",
+    "semantic_hash": "1c1df5e3dfebed4098f2aa5e1d1e0c8e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/SiparisListViewModel.cs": {
+    "mtime": 1785922084.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f819c0d2e380cfc274eb8818b58660b5",
+    "semantic_hash": "f819c0d2e380cfc274eb8818b58660b5"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/SistemSaglikViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "efcc4874c114857bc2b29c895cf470f7",
+    "semantic_hash": "efcc4874c114857bc2b29c895cf470f7"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/StokGrupDuzenleViewModel.cs": {
+    "mtime": 1788268404.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8fefedccbfd49c0d9115d6f20307efd9",
+    "semantic_hash": "8fefedccbfd49c0d9115d6f20307efd9"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/StokListViewModel.cs": {
+    "mtime": 1786802432.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5839cda49b2fbe0e5e97a658d93f29b6",
+    "semantic_hash": "5839cda49b2fbe0e5e97a658d93f29b6"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/StokSayimViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0d2f80e337142eb71cf2f08cb5bd9496",
+    "semantic_hash": "0d2f80e337142eb71cf2f08cb5bd9496"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/TeklifDetayViewModel.cs": {
+    "mtime": 1781256718.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bc22465130457f9e237b3285ec08024e",
+    "semantic_hash": "bc22465130457f9e237b3285ec08024e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/TeklifListViewModel.cs": {
+    "mtime": 1785922090.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cd80595d784702182e2e9ee75268da88",
+    "semantic_hash": "cd80595d784702182e2e9ee75268da88"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/TeklifSiparisViewModel.cs": {
+    "mtime": 1776375748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "337daeee8e42b689ee82c0e0667061b3",
+    "semantic_hash": "337daeee8e42b689ee82c0e0667061b3"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/ToolModuleDefinitions.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "72fd9ef4fed8b34a1fd4ef6df55a9a8d",
+    "semantic_hash": "72fd9ef4fed8b34a1fd4ef6df55a9a8d"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/ToolViewModels.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1ad6b2ba000ce9513cb127fec400aabe",
+    "semantic_hash": "1ad6b2ba000ce9513cb127fec400aabe"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/ToolsViewModel.cs": {
+    "mtime": 1786523636.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ab622bab6c9e96227610461747b0344a",
+    "semantic_hash": "ab622bab6c9e96227610461747b0344a"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/TopluFiyatViewModel.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a0668ffc0510569e4ecc14173ea8d5fa",
+    "semantic_hash": "a0668ffc0510569e4ecc14173ea8d5fa"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/UrunBirlestirmeViewModel.cs": {
+    "mtime": 1781614796.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7573ad5694449ddc631fc3c36cb36644",
+    "semantic_hash": "7573ad5694449ddc631fc3c36cb36644"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/VadeTakipViewModel.cs": {
+    "mtime": 1785921534.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "73a702ae40d43a5872d79bc6a9abc8c9",
+    "semantic_hash": "73a702ae40d43a5872d79bc6a9abc8c9"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/VeriTemizlikViewModel.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "323e8f21ddddff31428127144e78b89b",
+    "semantic_hash": "323e8f21ddddff31428127144e78b89b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/ViewModelBase.cs": {
+    "mtime": 1783799692.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ac55f83e4b95fa04a17d44f3bcf4fc19",
+    "semantic_hash": "ac55f83e4b95fa04a17d44f3bcf4fc19"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/ViewModels/YearSelectionViewModel.cs": {
+    "mtime": 1787837740.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "70f48e75cb31fe8b499d95dce6a8a8ec",
+    "semantic_hash": "70f48e75cb31fe8b499d95dce6a8a8ec"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/BankaDetayView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5d68ba80e5190f5179358e38060593f8",
+    "semantic_hash": "5d68ba80e5190f5179358e38060593f8"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/BankaListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "aa3d416e8985b7eddd42c7ad9f8d9f59",
+    "semantic_hash": "aa3d416e8985b7eddd42c7ad9f8d9f59"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/BarkodTasarimView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b8cebb231fbd8778630535ac7712b64f",
+    "semantic_hash": "b8cebb231fbd8778630535ac7712b64f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/BelgeArsivView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "714e813c17f71f611594f1eafb4ab453",
+    "semantic_hash": "714e813c17f71f611594f1eafb4ab453"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/BorcHatirlaticiView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "af3a92a5306f8e9223d13bd7365bf97f",
+    "semantic_hash": "af3a92a5306f8e9223d13bd7365bf97f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/ButcePlanlamaView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "891f153822915a9fc8e0d986868f2b24",
+    "semantic_hash": "891f153822915a9fc8e0d986868f2b24"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CariBirlestirmeView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "499a753c98b586196de50c90c95b6f42",
+    "semantic_hash": "499a753c98b586196de50c90c95b6f42"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CariDetayWindow.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "22e2aa6e8ce77e482de874e57018eec0",
+    "semantic_hash": "22e2aa6e8ce77e482de874e57018eec0"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CariEditDialog.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "63ef28e5dabd6497d009195b84809c43",
+    "semantic_hash": "63ef28e5dabd6497d009195b84809c43"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CariEkstreDialog.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e9dcc774d5cb353ebd31e07adcf635a7",
+    "semantic_hash": "e9dcc774d5cb353ebd31e07adcf635a7"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CariListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0b7ccf0c8d9132d3db059d1990762107",
+    "semantic_hash": "0b7ccf0c8d9132d3db059d1990762107"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CariSelectionDialog.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f0830246f5fc4ef12d3e0a88947275e7",
+    "semantic_hash": "f0830246f5fc4ef12d3e0a88947275e7"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CekEntryView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b9b0456ebdaf1570e34e6146bd52b1dc",
+    "semantic_hash": "b9b0456ebdaf1570e34e6146bd52b1dc"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CekRiskAnalizView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "347fb90ceca77b1c7f4f00f45750972e",
+    "semantic_hash": "347fb90ceca77b1c7f4f00f45750972e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/CekSenetListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1741fb4d64dfae445c298c6bf46f8f67",
+    "semantic_hash": "1741fb4d64dfae445c298c6bf46f8f67"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/DashboardView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "18fe46bce78cd854f0eed5af8dbefd40",
+    "semantic_hash": "18fe46bce78cd854f0eed5af8dbefd40"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/DbBakimView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fb5a54ebc33693f6540c1365f29eb362",
+    "semantic_hash": "fb5a54ebc33693f6540c1365f29eb362"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/DovizDonusturucuView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "53d809ff93a36e7e4bb22b0fee43311c",
+    "semantic_hash": "53d809ff93a36e7e4bb22b0fee43311c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/DovizOtomasyonView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ecc18133c69384d8fa11aee20ecb309e",
+    "semantic_hash": "ecc18133c69384d8fa11aee20ecb309e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/EFTListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8de095cde306f8ea77beebe766ff5d05",
+    "semantic_hash": "8de095cde306f8ea77beebe766ff5d05"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/EvrakNoDuzenleView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8b9933dafc76f0fb83c9d14b6d35d9ba",
+    "semantic_hash": "8b9933dafc76f0fb83c9d14b6d35d9ba"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/FaturaDetayView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2ff7f3774dce89c56ada7ca75981d4c3",
+    "semantic_hash": "2ff7f3774dce89c56ada7ca75981d4c3"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/FaturaListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "59c78be069bc75ca113ccf8412021c6e",
+    "semantic_hash": "59c78be069bc75ca113ccf8412021c6e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/FaturaTasarimView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "39defa6eb6642e719240cdad344229e1",
+    "semantic_hash": "39defa6eb6642e719240cdad344229e1"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/FinansDashboardView.axaml.cs": {
+    "mtime": 1778003808.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0d82a5ef021c4b0847aeb02f005731af",
+    "semantic_hash": "0d82a5ef021c4b0847aeb02f005731af"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/FinansView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a6d19afd2844dca3a6025456d8af9047",
+    "semantic_hash": "a6d19afd2844dca3a6025456d8af9047"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/FiyatListesiView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c1718d2e0f2570c20ac71c6b1f9b03d3",
+    "semantic_hash": "c1718d2e0f2570c20ac71c6b1f9b03d3"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/GecikmeFaiziView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "55b45a5d48c96495c313a3daae30fa79",
+    "semantic_hash": "55b45a5d48c96495c313a3daae30fa79"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/GenericToolModuleView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f73ae4b590df31fcd6ac9fdeba56d3bc",
+    "semantic_hash": "f73ae4b590df31fcd6ac9fdeba56d3bc"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/HaftalikHedefTakipView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b24fea93366ad1dcbe640ef86295479b",
+    "semantic_hash": "b24fea93366ad1dcbe640ef86295479b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/HedefTakipView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "07ec9276712f4988224b1b5bd094c40d",
+    "semantic_hash": "07ec9276712f4988224b1b5bd094c40d"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/KanbanView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4b312c331213556e0e69200b9a50ae1f",
+    "semantic_hash": "4b312c331213556e0e69200b9a50ae1f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/KarZararHaritasiView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dc97a63cce7dcecd585899de75a7174b",
+    "semantic_hash": "dc97a63cce7dcecd585899de75a7174b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/KasaDetayView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "417837b93d91648e094ada75e6aaeb66",
+    "semantic_hash": "417837b93d91648e094ada75e6aaeb66"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/KasaListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "53a0ed3567b4362fdc1f18635daaafb7",
+    "semantic_hash": "53a0ed3567b4362fdc1f18635daaafb7"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/KisayolTusuView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c868611926bf20560967fe56302b993f",
+    "semantic_hash": "c868611926bf20560967fe56302b993f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/KrediKartiListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2c58c2acdbbbf2e673ff66eed7d2e9d6",
+    "semantic_hash": "2c58c2acdbbbf2e673ff66eed7d2e9d6"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/LoginView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e82ece7fcb3f4b7c42e48494096eebce",
+    "semantic_hash": "e82ece7fcb3f4b7c42e48494096eebce"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/MainView.axaml.cs": {
+    "mtime": 1787305558.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cbc6baf28323cd11c3d34b1226df9027",
+    "semantic_hash": "cbc6baf28323cd11c3d34b1226df9027"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/MainWindow.axaml.cs": {
+    "mtime": 1782977470.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "63e1398cfca2cabd3002e444f92f172f",
+    "semantic_hash": "63e1398cfca2cabd3002e444f92f172f"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/MaliyetHesaplamaView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5e972ca96b065cadbf99170f2422f912",
+    "semantic_hash": "5e972ca96b065cadbf99170f2422f912"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/ModuleWindow.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "83968d0b5bc64b03ba2daa0416e97dc3",
+    "semantic_hash": "83968d0b5bc64b03ba2daa0416e97dc3"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/MusteriLimitView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "816c40502c8020226f602512fdf36099",
+    "semantic_hash": "816c40502c8020226f602512fdf36099"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/MusteriTakipDetayView.axaml.cs": {
+    "mtime": 1788374696.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dba279ba3ebf58a5b06dbb3f9402e002",
+    "semantic_hash": "dba279ba3ebf58a5b06dbb3f9402e002"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/MusteriTakipView.axaml.cs": {
+    "mtime": 1788373976.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "16c16d8198995ed6b25beb6f5b9b32d9",
+    "semantic_hash": "16c16d8198995ed6b25beb6f5b9b32d9"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/OptimalFiyatView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b461b20471958c63a36c16620596183e",
+    "semantic_hash": "b461b20471958c63a36c16620596183e"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/PortfoyListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "434a7c8633b49087591efbf7af9a67ce",
+    "semantic_hash": "434a7c8633b49087591efbf7af9a67ce"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/RaporListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "09a148bbd08a25816f2ca0fc12d8f923",
+    "semantic_hash": "09a148bbd08a25816f2ca0fc12d8f923"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/RotaPlanlamaView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c64b5c3aa47c172dc75ffc9a348764a9",
+    "semantic_hash": "c64b5c3aa47c172dc75ffc9a348764a9"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/SettingsView.axaml.cs": {
+    "mtime": 1782842256.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4065ecd23764a60b476369394a88f178",
+    "semantic_hash": "4065ecd23764a60b476369394a88f178"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/SiparisAciklamaView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cad5c42854fa572e808c5bf7a01fd475",
+    "semantic_hash": "cad5c42854fa572e808c5bf7a01fd475"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/SiparisDetayView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "03284e0884c3781b456b0781ddd67d00",
+    "semantic_hash": "03284e0884c3781b456b0781ddd67d00"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/SiparisListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0f69dd66ee2c0f284b2d3b121c96b2bb",
+    "semantic_hash": "0f69dd66ee2c0f284b2d3b121c96b2bb"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/SistemSaglikView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d2cd3eddd976cb2b3c088fad118aac2b",
+    "semantic_hash": "d2cd3eddd976cb2b3c088fad118aac2b"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/StokGrupDuzenleView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cebd43dfde6a769dc5c9e41821d1bb79",
+    "semantic_hash": "cebd43dfde6a769dc5c9e41821d1bb79"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/StokListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "db4d3f082727ba9165809c4a4d0e294d",
+    "semantic_hash": "db4d3f082727ba9165809c4a4d0e294d"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/StokSayimView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7f19e94c4445df96ab58608a264d28d1",
+    "semantic_hash": "7f19e94c4445df96ab58608a264d28d1"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/TeklifDetayView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8f7398811ca402424c662c1d525783d0",
+    "semantic_hash": "8f7398811ca402424c662c1d525783d0"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/TeklifListView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "13de4421a029ed9695bb23785cb22829",
+    "semantic_hash": "13de4421a029ed9695bb23785cb22829"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/TeklifSiparisView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "29c3e1c97f47da83ad63aaac34ab4d72",
+    "semantic_hash": "29c3e1c97f47da83ad63aaac34ab4d72"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/ToolsView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "895d3827a0414c0363be5635788c6dde",
+    "semantic_hash": "895d3827a0414c0363be5635788c6dde"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/TopluFiyatView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d2bcf7ab8fbf01eef12af2c7a12caecc",
+    "semantic_hash": "d2bcf7ab8fbf01eef12af2c7a12caecc"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/TransactionDialog.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2ac9b7c942c1cb710cda91b7189f1a7c",
+    "semantic_hash": "2ac9b7c942c1cb710cda91b7189f1a7c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/UrunBirlestirmeView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "740eec4f26ef97aabfeb45708b651897",
+    "semantic_hash": "740eec4f26ef97aabfeb45708b651897"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/VadeTakipView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e226c394440f1737d6b6b434ce4d8a9c",
+    "semantic_hash": "e226c394440f1737d6b6b434ce4d8a9c"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/VeriTemizlikView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "38d94e4aca2d2adaee28ba383c98ee4d",
+    "semantic_hash": "38d94e4aca2d2adaee28ba383c98ee4d"
+  },
+  "ErmayMuhasebe.Avalonia/ErmayMuhasebe.Avalonia/Views/YearSelectionView.axaml.cs": {
+    "mtime": 1776375750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7cb14c48fcc1eb646a1fdd08fface604",
+    "semantic_hash": "7cb14c48fcc1eb646a1fdd08fface604"
+  },
+  "ErmayMuhasebe.Cloud/App.razor": {
+    "mtime": 1772709722.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "72922ab430cde5cc53ca0df2e8086d82",
+    "semantic_hash": "72922ab430cde5cc53ca0df2e8086d82"
+  },
+  "ErmayMuhasebe.Cloud/ErmayMuhasebe.Cloud.csproj": {
+    "mtime": 1775773050.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "44478cd8cc24128731bc19cf02f24b38",
+    "semantic_hash": "44478cd8cc24128731bc19cf02f24b38"
+  },
+  "ErmayMuhasebe.Cloud/Layout/ContextMenuContainer.razor": {
+    "mtime": 1774094754.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1c33ed730fbf20a52e37bcedee72c7ee",
+    "semantic_hash": "1c33ed730fbf20a52e37bcedee72c7ee"
+  },
+  "ErmayMuhasebe.Cloud/Layout/EmptyLayout.razor": {
+    "mtime": 1768746172.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "db14937bc5e33c3c6ba8400a17805f07",
+    "semantic_hash": "db14937bc5e33c3c6ba8400a17805f07"
+  },
+  "ErmayMuhasebe.Cloud/Layout/MainLayout.razor": {
+    "mtime": 1781079260.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4f2200d96b6da83a82157a07283d0a60",
+    "semantic_hash": "4f2200d96b6da83a82157a07283d0a60"
+  },
+  "ErmayMuhasebe.Cloud/Pages/Araclar.razor": {
+    "mtime": 1776367270.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "48dce7a8f5b969835ca6b6f81a355a5c",
+    "semantic_hash": "48dce7a8f5b969835ca6b6f81a355a5c"
+  },
+  "ErmayMuhasebe.Cloud/Pages/Ayarlar.razor": {
+    "mtime": 1787837530.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ffe42f8d4f2cc7b11ac3cf631a677834",
+    "semantic_hash": "ffe42f8d4f2cc7b11ac3cf631a677834"
+  },
+  "ErmayMuhasebe.Cloud/Pages/BankaDetay.razor": {
+    "mtime": 1770290072.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "651a147e77a5596b77750408baee705e",
+    "semantic_hash": "651a147e77a5596b77750408baee705e"
+  },
+  "ErmayMuhasebe.Cloud/Pages/BankaKartDialog.razor": {
+    "mtime": 1774192944.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "266b9990ab6c22b893c76ed1c2ddde6e",
+    "semantic_hash": "266b9990ab6c22b893c76ed1c2ddde6e"
+  },
+  "ErmayMuhasebe.Cloud/Pages/BankaList.razor": {
+    "mtime": 1772648354.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "00235510d20f1ef435d19dab4a5e3d4d",
+    "semantic_hash": "00235510d20f1ef435d19dab4a5e3d4d"
+  },
+  "ErmayMuhasebe.Cloud/Pages/BarkodTasarim.razor": {
+    "mtime": 1776850168.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e2bfba38fb26ba247a484b400c7bf5cd",
+    "semantic_hash": "e2bfba38fb26ba247a484b400c7bf5cd"
+  },
+  "ErmayMuhasebe.Cloud/Pages/BelgeArsivYonetimi.razor": {
+    "mtime": 1775771746.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ad347d489e6f952b936d5b4a0d02f752",
+    "semantic_hash": "ad347d489e6f952b936d5b4a0d02f752"
+  },
+  "ErmayMuhasebe.Cloud/Pages/BorcHatirlatici.razor": {
+    "mtime": 1773682212.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "63e7266598bcad003444683571956ad3",
+    "semantic_hash": "63e7266598bcad003444683571956ad3"
+  },
+  "ErmayMuhasebe.Cloud/Pages/ButcePlanlama.razor": {
+    "mtime": 1774201472.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "352f036da0c3f8f904ffcb6495d988fe",
+    "semantic_hash": "352f036da0c3f8f904ffcb6495d988fe"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CariBirlestirme.razor": {
+    "mtime": 1781608940.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c7cab8ecbaac5be4103bb1cfa33f45ea",
+    "semantic_hash": "c7cab8ecbaac5be4103bb1cfa33f45ea"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CariDetay.razor": {
+    "mtime": 1776766014.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d41707f4af3d722eaa74a202139bcfd0",
+    "semantic_hash": "d41707f4af3d722eaa74a202139bcfd0"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CariIslemDialog.razor": {
+    "mtime": 1775405502.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7f2ea1d13ba548586c2fad6c3cece996",
+    "semantic_hash": "7f2ea1d13ba548586c2fad6c3cece996"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CariKartDialog.razor": {
+    "mtime": 1781607106.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5ad101af5733d5ce24fdc2e3a8c42264",
+    "semantic_hash": "5ad101af5733d5ce24fdc2e3a8c42264"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CariList.razor": {
+    "mtime": 1786104314.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7af31788d915d793625c5156fcc406d5",
+    "semantic_hash": "7af31788d915d793625c5156fcc406d5"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CariSecimDialog.razor": {
+    "mtime": 1774193774.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "87af36882f22ffca0e8a1f27e342a3d5",
+    "semantic_hash": "87af36882f22ffca0e8a1f27e342a3d5"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CekRiskAnaliz.razor": {
+    "mtime": 1776367238.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d1532a6f8424410dfc22c384af9a901a",
+    "semantic_hash": "d1532a6f8424410dfc22c384af9a901a"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CekSenetDialog.razor": {
+    "mtime": 1774193002.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "17c003e5274144699853dc2e78ff1718",
+    "semantic_hash": "17c003e5274144699853dc2e78ff1718"
+  },
+  "ErmayMuhasebe.Cloud/Pages/CekSenetList.razor": {
+    "mtime": 1773427450.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "91c7b580f6d431d741bdc40e204fda84",
+    "semantic_hash": "91c7b580f6d431d741bdc40e204fda84"
+  },
+  "ErmayMuhasebe.Cloud/Pages/Counter.razor": {
+    "mtime": 1768649028.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "32c8ca0737f51544273734b916425e98",
+    "semantic_hash": "32c8ca0737f51544273734b916425e98"
+  },
+  "ErmayMuhasebe.Cloud/Pages/Dashboard.razor": {
+    "mtime": 1784057188.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9438ef932a4770b28cffab8791c97514",
+    "semantic_hash": "9438ef932a4770b28cffab8791c97514"
+  },
+  "ErmayMuhasebe.Cloud/Pages/DbBakim.razor": {
+    "mtime": 1774118518.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "87a7b8cc443d840eec7d801e823af4f4",
+    "semantic_hash": "87a7b8cc443d840eec7d801e823af4f4"
+  },
+  "ErmayMuhasebe.Cloud/Pages/DovizDonusturucu.razor": {
+    "mtime": 1772823614.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "63a845d72c99fc49bc035a180f25e704",
+    "semantic_hash": "63a845d72c99fc49bc035a180f25e704"
+  },
+  "ErmayMuhasebe.Cloud/Pages/DovizKurlari.razor": {
+    "mtime": 1775771320.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "57f2b10b53f3dc99d40273608362977c",
+    "semantic_hash": "57f2b10b53f3dc99d40273608362977c"
+  },
+  "ErmayMuhasebe.Cloud/Pages/DovizOtomasyon.razor": {
+    "mtime": 1776367754.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d417ba508773c462e66ab17dad0926f5",
+    "semantic_hash": "d417ba508773c462e66ab17dad0926f5"
+  },
+  "ErmayMuhasebe.Cloud/Pages/EFTList.razor": {
+    "mtime": 1773427482.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d17cd53ca29aecc8ee83395ca7615a8a",
+    "semantic_hash": "d17cd53ca29aecc8ee83395ca7615a8a"
+  },
+  "ErmayMuhasebe.Cloud/Pages/EkstreDialog.razor": {
+    "mtime": 1770816528.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c3d6d489219253b676ed0a72d77fc17f",
+    "semantic_hash": "c3d6d489219253b676ed0a72d77fc17f"
+  },
+  "ErmayMuhasebe.Cloud/Pages/EvrakNoDuzenle.razor": {
+    "mtime": 1773683972.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9249c3123a106ba13ee9ebe616946077",
+    "semantic_hash": "9249c3123a106ba13ee9ebe616946077"
+  },
+  "ErmayMuhasebe.Cloud/Pages/FaizHesaplama.razor": {
+    "mtime": 1781605382.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0c6ebc33cedf49aeac545c75bc9c00fb",
+    "semantic_hash": "0c6ebc33cedf49aeac545c75bc9c00fb"
+  },
+  "ErmayMuhasebe.Cloud/Pages/FaturaDetay.razor": {
+    "mtime": 1770289962.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2c58447e1664519a00f55b85382c487b",
+    "semantic_hash": "2c58447e1664519a00f55b85382c487b"
+  },
+  "ErmayMuhasebe.Cloud/Pages/FaturaGoruntule.razor": {
+    "mtime": 1769087732.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d55a4131eba1ce6358f0f6bc7df8d6a2",
+    "semantic_hash": "d55a4131eba1ce6358f0f6bc7df8d6a2"
+  },
+  "ErmayMuhasebe.Cloud/Pages/FaturaList.razor": {
+    "mtime": 1773875316.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c7321b259899389d73fd284f985b4234",
+    "semantic_hash": "c7321b259899389d73fd284f985b4234"
+  },
+  "ErmayMuhasebe.Cloud/Pages/FaturaOlustur.razor": {
+    "mtime": 1784057206.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d42fa947bbc7162cb2dc326d080313cf",
+    "semantic_hash": "d42fa947bbc7162cb2dc326d080313cf"
+  },
+  "ErmayMuhasebe.Cloud/Pages/FaturaTasarim.razor": {
+    "mtime": 1773679334.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "daccc2dc3b478af8ccf3c407e20084af",
+    "semantic_hash": "daccc2dc3b478af8ccf3c407e20084af"
+  },
+  "ErmayMuhasebe.Cloud/Pages/Finans.razor": {
+    "mtime": 1782071364.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6f407d0dbfea8fa180828c1c7540f008",
+    "semantic_hash": "6f407d0dbfea8fa180828c1c7540f008"
+  },
+  "ErmayMuhasebe.Cloud/Pages/FiyatListesi.razor": {
+    "mtime": 1776673312.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "738770a51c7e3e0bceb2942a8486fa0e",
+    "semantic_hash": "738770a51c7e3e0bceb2942a8486fa0e"
+  },
+  "ErmayMuhasebe.Cloud/Pages/GiderRaporlari.razor": {
+    "mtime": 1769640336.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "af42e61d2dfa8134cb8eced90215d10b",
+    "semantic_hash": "af42e61d2dfa8134cb8eced90215d10b"
+  },
+  "ErmayMuhasebe.Cloud/Pages/GorevDialog.razor": {
+    "mtime": 1774192936.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1baea502a65ba20703b9e75be0aeefea",
+    "semantic_hash": "1baea502a65ba20703b9e75be0aeefea"
+  },
+  "ErmayMuhasebe.Cloud/Pages/GorevList.razor": {
+    "mtime": 1773704038.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "96e7130c6a29c30ef0c4b415936a9b66",
+    "semantic_hash": "96e7130c6a29c30ef0c4b415936a9b66"
+  },
+  "ErmayMuhasebe.Cloud/Pages/GrafanaInfo.razor": {
+    "mtime": 1776765690.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9557ee95406b3b619610882f8ce7f295",
+    "semantic_hash": "9557ee95406b3b619610882f8ce7f295"
+  },
+  "ErmayMuhasebe.Cloud/Pages/HaftalikHedef.razor": {
+    "mtime": 1775773234.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "694538a11c9f607dd6ebd09423250105",
+    "semantic_hash": "694538a11c9f607dd6ebd09423250105"
+  },
+  "ErmayMuhasebe.Cloud/Pages/Kanban.razor": {
+    "mtime": 1782071376.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9b3e8eef53826c787e513f180eb46e53",
+    "semantic_hash": "9b3e8eef53826c787e513f180eb46e53"
+  },
+  "ErmayMuhasebe.Cloud/Pages/KarZararHaritasi.razor": {
+    "mtime": 1771785762.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "622fa91cea61e7262bad1f0cc51b3068",
+    "semantic_hash": "622fa91cea61e7262bad1f0cc51b3068"
+  },
+  "ErmayMuhasebe.Cloud/Pages/KarlilikRaporu.razor": {
+    "mtime": 1769685804.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "19d5168ef7aa88adf4cd32180d3bb269",
+    "semantic_hash": "19d5168ef7aa88adf4cd32180d3bb269"
+  },
+  "ErmayMuhasebe.Cloud/Pages/KasaDetay.razor": {
+    "mtime": 1773427436.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "00a888419ead4cc76a0cddf188460a29",
+    "semantic_hash": "00a888419ead4cc76a0cddf188460a29"
+  },
+  "ErmayMuhasebe.Cloud/Pages/KrediKartiList.razor": {
+    "mtime": 1773427470.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d31dd1f756c92b256f648d76e4e77abc",
+    "semantic_hash": "d31dd1f756c92b256f648d76e4e77abc"
+  },
+  "ErmayMuhasebe.Cloud/Pages/LimitYonetimi.razor": {
+    "mtime": 1771719498.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e77a5f3e1ff1d7eea08118441a886dbe",
+    "semantic_hash": "e77a5f3e1ff1d7eea08118441a886dbe"
+  },
+  "ErmayMuhasebe.Cloud/Pages/MaliyetHesaplama.razor": {
+    "mtime": 1770588236.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "41b7d53f6977f4d5681e78b895a74f4c",
+    "semantic_hash": "41b7d53f6977f4d5681e78b895a74f4c"
+  },
+  "ErmayMuhasebe.Cloud/Pages/OptimalFiyat.razor": {
+    "mtime": 1773704094.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "13cfb8f5d10527b5a63552b11a71d1b8",
+    "semantic_hash": "13cfb8f5d10527b5a63552b11a71d1b8"
+  },
+  "ErmayMuhasebe.Cloud/Pages/PortfoyListesi.razor": {
+    "mtime": 1781615268.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "38378463d4ac71e90d6e80cb83ba2776",
+    "semantic_hash": "38378463d4ac71e90d6e80cb83ba2776"
+  },
+  "ErmayMuhasebe.Cloud/Pages/RaporList.razor": {
+    "mtime": 1782071408.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ed62f89967dafc6504e72a3e0d5db11b",
+    "semantic_hash": "ed62f89967dafc6504e72a3e0d5db11b"
+  },
+  "ErmayMuhasebe.Cloud/Pages/RemindDialog.razor": {
+    "mtime": 1768848394.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ac2697d2bbec0dcbb337551b36cd1cd8",
+    "semantic_hash": "ac2697d2bbec0dcbb337551b36cd1cd8"
+  },
+  "ErmayMuhasebe.Cloud/Pages/RiskPuanlayici.razor": {
+    "mtime": 1774129814.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4fcd938de50505150f5f6dc31f18eaa7",
+    "semantic_hash": "4fcd938de50505150f5f6dc31f18eaa7"
+  },
+  "ErmayMuhasebe.Cloud/Pages/RotaPlanlama.razor": {
+    "mtime": 1768849070.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6419f67563c358bcac1341c9a190f8d3",
+    "semantic_hash": "6419f67563c358bcac1341c9a190f8d3"
+  },
+  "ErmayMuhasebe.Cloud/Pages/SatisRaporlari.razor": {
+    "mtime": 1769640220.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "402a6e439427f64a6c4781c4aad7485f",
+    "semantic_hash": "402a6e439427f64a6c4781c4aad7485f"
+  },
+  "ErmayMuhasebe.Cloud/Pages/SiparisDetayi.razor": {
+    "mtime": 1771331378.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "baea63205f5ec5dd78539e6b9988c91f",
+    "semantic_hash": "baea63205f5ec5dd78539e6b9988c91f"
+  },
+  "ErmayMuhasebe.Cloud/Pages/SiparisGoruntule.razor": {
+    "mtime": 1768747392.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1dd3d66ae09f917fb7f38b76bac75d92",
+    "semantic_hash": "1dd3d66ae09f917fb7f38b76bac75d92"
+  },
+  "ErmayMuhasebe.Cloud/Pages/SiparisList.razor": {
+    "mtime": 1782071420.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a716618b2ae9b602812072860e9a1fd0",
+    "semantic_hash": "a716618b2ae9b602812072860e9a1fd0"
+  },
+  "ErmayMuhasebe.Cloud/Pages/SiparisOlustur.razor": {
+    "mtime": 1784057220.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3d927cc92b15569d323ebe7fd910ee66",
+    "semantic_hash": "3d927cc92b15569d323ebe7fd910ee66"
+  },
+  "ErmayMuhasebe.Cloud/Pages/SistemSaglik.razor": {
+    "mtime": 1775769338.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "386dee6ddab9e0e2da537d089b6f0420",
+    "semantic_hash": "386dee6ddab9e0e2da537d089b6f0420"
+  },
+  "ErmayMuhasebe.Cloud/Pages/StokDetay.razor": {
+    "mtime": 1770547674.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1753141db127ce90969ba7a09629d9f4",
+    "semantic_hash": "1753141db127ce90969ba7a09629d9f4"
+  },
+  "ErmayMuhasebe.Cloud/Pages/StokGrupDuzenle.razor": {
+    "mtime": 1774193328.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "be2907ee4edf2020375d553d70418cca",
+    "semantic_hash": "be2907ee4edf2020375d553d70418cca"
+  },
+  "ErmayMuhasebe.Cloud/Pages/StokHizliHareketDialog.razor": {
+    "mtime": 1768849290.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "105aa326eb5f3b8b514532ae0927fe87",
+    "semantic_hash": "105aa326eb5f3b8b514532ae0927fe87"
+  },
+  "ErmayMuhasebe.Cloud/Pages/StokKartDialog.razor": {
+    "mtime": 1774192994.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7c9daae1d260abfb15fe3d50c6a9707b",
+    "semantic_hash": "7c9daae1d260abfb15fe3d50c6a9707b"
+  },
+  "ErmayMuhasebe.Cloud/Pages/StokList.razor": {
+    "mtime": 1782071388.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a158b8208f4177881e4c06d4a3a1b817",
+    "semantic_hash": "a158b8208f4177881e4c06d4a3a1b817"
+  },
+  "ErmayMuhasebe.Cloud/Pages/StokSecimDialog.razor": {
+    "mtime": 1776673302.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b272ca0ab2ecd452141e3ac3f6e40cc7",
+    "semantic_hash": "b272ca0ab2ecd452141e3ac3f6e40cc7"
+  },
+  "ErmayMuhasebe.Cloud/Pages/TeklifDetayi.razor": {
+    "mtime": 1771331372.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6fb1fd4d2ecbd32b0125c82fca48c6ab",
+    "semantic_hash": "6fb1fd4d2ecbd32b0125c82fca48c6ab"
+  },
+  "ErmayMuhasebe.Cloud/Pages/TeklifGoruntule.razor": {
+    "mtime": 1768747406.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b81267914e9563833e714f5404ae07db",
+    "semantic_hash": "b81267914e9563833e714f5404ae07db"
+  },
+  "ErmayMuhasebe.Cloud/Pages/TeklifList.razor": {
+    "mtime": 1782071430.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "54c59d605591e6dc9a467799b160b573",
+    "semantic_hash": "54c59d605591e6dc9a467799b160b573"
+  },
+  "ErmayMuhasebe.Cloud/Pages/TeklifOlustur.razor": {
+    "mtime": 1784057232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "183f68871b284a085659a6b79772a282",
+    "semantic_hash": "183f68871b284a085659a6b79772a282"
+  },
+  "ErmayMuhasebe.Cloud/Pages/Test.razor": {
+    "mtime": 1769078924.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3ec3bfc587075f920720a3fb278586cd",
+    "semantic_hash": "3ec3bfc587075f920720a3fb278586cd"
+  },
+  "ErmayMuhasebe.Cloud/Pages/TopluFiyat.razor": {
+    "mtime": 1773424672.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "89fe09f184c49ad29af7d076e02c5ff1",
+    "semantic_hash": "89fe09f184c49ad29af7d076e02c5ff1"
+  },
+  "ErmayMuhasebe.Cloud/Pages/UrunBirlestirme.razor": {
+    "mtime": 1781608950.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "46090787c589e2a34148162888047121",
+    "semantic_hash": "46090787c589e2a34148162888047121"
+  },
+  "ErmayMuhasebe.Cloud/Pages/VadeTakip.razor": {
+    "mtime": 1782071344.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "482feff280c600f7be727f2a0691ce8d",
+    "semantic_hash": "482feff280c600f7be727f2a0691ce8d"
+  },
+  "ErmayMuhasebe.Cloud/Pages/VeriTemizlik.razor": {
+    "mtime": 1775771358.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d9fc3f98ec7cd2f696b439fe3ede2b99",
+    "semantic_hash": "d9fc3f98ec7cd2f696b439fe3ede2b99"
+  },
+  "ErmayMuhasebe.Cloud/Pages/Weather.razor": {
+    "mtime": 1768649028.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2b5edd05a58fdf4510ae8e22ccb36619",
+    "semantic_hash": "2b5edd05a58fdf4510ae8e22ccb36619"
+  },
+  "ErmayMuhasebe.Cloud/Pages/YearSelection.razor": {
+    "mtime": 1782058262.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "94a5b6a4e8ea81bba5aae28a56263dc7",
+    "semantic_hash": "94a5b6a4e8ea81bba5aae28a56263dc7"
+  },
+  "ErmayMuhasebe.Cloud/Program.cs": {
+    "mtime": 1787837208.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e9381874763729c4df079186ac4790e4",
+    "semantic_hash": "e9381874763729c4df079186ac4790e4"
+  },
+  "ErmayMuhasebe.Cloud/Properties/launchSettings.json": {
+    "mtime": 1768649028.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8b8cbd6ce4b0f674734e2ef1eadd1b57",
+    "semantic_hash": "8b8cbd6ce4b0f674734e2ef1eadd1b57"
+  },
+  "ErmayMuhasebe.Cloud/Services/BrowserStorageService.cs": {
+    "mtime": 1773703906.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "652423f9be71064d33ce8039b92b47c7",
+    "semantic_hash": "652423f9be71064d33ce8039b92b47c7"
+  },
+  "ErmayMuhasebe.Cloud/Services/ClientAuthService.cs": {
+    "mtime": 1774093104.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9f4409a50a3d8d8ae64bd26140bc6a4e",
+    "semantic_hash": "9f4409a50a3d8d8ae64bd26140bc6a4e"
+  },
+  "ErmayMuhasebe.Cloud/Services/ClientDatabaseService.cs": {
+    "mtime": 1783805150.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c256c47a7af7457186bfd8ec1ad2500f",
+    "semantic_hash": "c256c47a7af7457186bfd8ec1ad2500f"
+  },
+  "ErmayMuhasebe.Cloud/Services/ClientFileService.cs": {
+    "mtime": 1783319854.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "16d91bb4551696012c5f660a564e0de9",
+    "semantic_hash": "16d91bb4551696012c5f660a564e0de9"
+  },
+  "ErmayMuhasebe.Cloud/Services/CloudPdfService.cs": {
+    "mtime": 1787948216.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "041772588f08bfacec2a6eac5fea5143",
+    "semantic_hash": "041772588f08bfacec2a6eac5fea5143"
+  },
+  "ErmayMuhasebe.Cloud/Services/CloudYearContext.cs": {
+    "mtime": 1774211566.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "13eb32b83f4ca5c86f881c54246fe6e3",
+    "semantic_hash": "13eb32b83f4ca5c86f881c54246fe6e3"
+  },
+  "ErmayMuhasebe.Cloud/Services/FirebaseService.cs": {
+    "mtime": 1775773302.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4df4b7be322c6c3d50c7d51336815323",
+    "semantic_hash": "4df4b7be322c6c3d50c7d51336815323"
+  },
+  "ErmayMuhasebe.Cloud/Services/FontInitializationService.cs": {
+    "mtime": 1773775000.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "df8dfd9ee6963cbb67ba0c4d91929c3b",
+    "semantic_hash": "df8dfd9ee6963cbb67ba0c4d91929c3b"
+  },
+  "ErmayMuhasebe.Cloud/Services/I18nService.cs": {
+    "mtime": 1772492342.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0fbaabd4c484e049ac67645d19b9d579",
+    "semantic_hash": "0fbaabd4c484e049ac67645d19b9d579"
+  },
+  "ErmayMuhasebe.Cloud/Services/UiService.cs": {
+    "mtime": 1777140740.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9adb5e23095225b241b4bec61b9fbefa",
+    "semantic_hash": "9adb5e23095225b241b4bec61b9fbefa"
+  },
+  "ErmayMuhasebe.Cloud/Shared/MobileSearchDialog.razor": {
+    "mtime": 1772652352.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7ae147ce4d1bda8f43fcd971a29565fe",
+    "semantic_hash": "7ae147ce4d1bda8f43fcd971a29565fe"
+  },
+  "ErmayMuhasebe.Cloud/Shared/NavMenu.razor": {
+    "mtime": 1782071328.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c7b860fb0461cd9b2042a4abf2d4b737",
+    "semantic_hash": "c7b860fb0461cd9b2042a4abf2d4b737"
+  },
+  "ErmayMuhasebe.Cloud/Shared/QuickNotes.razor": {
+    "mtime": 1776850148.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2ddde870a6a7d25cb301599c8c56c139",
+    "semantic_hash": "2ddde870a6a7d25cb301599c8c56c139"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/BankaDetayViewModel.cs": {
+    "mtime": 1769359802.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "17b17a98bc17892d5ec1df5951070285",
+    "semantic_hash": "17b17a98bc17892d5ec1df5951070285"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/BankaListViewModel.cs": {
+    "mtime": 1772491784.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c42401ff665745eefbfb31cc32a8e234",
+    "semantic_hash": "c42401ff665745eefbfb31cc32a8e234"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/BarkodTasarimViewModel.cs": {
+    "mtime": 1773679268.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e936d54290391e95e6690873706df0f0",
+    "semantic_hash": "e936d54290391e95e6690873706df0f0"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/BorcHatirlaticiViewModel.cs": {
+    "mtime": 1773682188.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "60e5bdf974a19c5bb19108528e6fed4c",
+    "semantic_hash": "60e5bdf974a19c5bb19108528e6fed4c"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/CariBirlestirmeViewModel.cs": {
+    "mtime": 1773681672.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "61119ea33c7b3df5d70baac0af10af73",
+    "semantic_hash": "61119ea33c7b3df5d70baac0af10af73"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/CariListViewModel.cs": {
+    "mtime": 1786104276.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4b058cb0965b9df5d7a859890e0cf34b",
+    "semantic_hash": "4b058cb0965b9df5d7a859890e0cf34b"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/CekSenetListViewModel.cs": {
+    "mtime": 1769639660.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "02e3e1a8ca113de8b6696d19caa43a5f",
+    "semantic_hash": "02e3e1a8ca113de8b6696d19caa43a5f"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/EFTListViewModel.cs": {
+    "mtime": 1769677976.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "79812966700375e44edaaf3518b119ec",
+    "semantic_hash": "79812966700375e44edaaf3518b119ec"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/EvrakNoDuzenleViewModel.cs": {
+    "mtime": 1773683956.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "931739d0f09bb28c57fdebfce4c4e213",
+    "semantic_hash": "931739d0f09bb28c57fdebfce4c4e213"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/FaturaDetayViewModel.cs": {
+    "mtime": 1775773170.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "040c65495db58d6293577863bbf3ac7a",
+    "semantic_hash": "040c65495db58d6293577863bbf3ac7a"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/FaturaListViewModel.cs": {
+    "mtime": 1776412382.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7651ae2d76ed8f947b99a73c54842883",
+    "semantic_hash": "7651ae2d76ed8f947b99a73c54842883"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/FaturaTasarimViewModel.cs": {
+    "mtime": 1773679282.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d0e18f22ff6cbdaa16683ab3a0b1fca4",
+    "semantic_hash": "d0e18f22ff6cbdaa16683ab3a0b1fca4"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/KanbanViewModel.cs": {
+    "mtime": 1775771800.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0bc5611a8ad44f11f9689f2d04cdfec8",
+    "semantic_hash": "0bc5611a8ad44f11f9689f2d04cdfec8"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/KasaDetayViewModel.cs": {
+    "mtime": 1769360044.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "da8bd2ca25c587f664157d3ab813b24d",
+    "semantic_hash": "da8bd2ca25c587f664157d3ab813b24d"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/KasaListViewModel.cs": {
+    "mtime": 1776367596.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "837bbd085ec3d4f5c1d2fd569569a59f",
+    "semantic_hash": "837bbd085ec3d4f5c1d2fd569569a59f"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/KrediKartiListViewModel.cs": {
+    "mtime": 1769677984.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "69b7363fe8582c74349ce51ecf152aa4",
+    "semantic_hash": "69b7363fe8582c74349ce51ecf152aa4"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/OptimalFiyatViewModel.cs": {
+    "mtime": 1773683922.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6f07f21763eed796055d95d1f63605b5",
+    "semantic_hash": "6f07f21763eed796055d95d1f63605b5"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/RaporListViewModel.cs": {
+    "mtime": 1776412388.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2d5d0be705afbea79da3c11812215e5c",
+    "semantic_hash": "2d5d0be705afbea79da3c11812215e5c"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/SettingsViewModel.cs": {
+    "mtime": 1783272796.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0ca49262cfeee29ad37f798285f95dec",
+    "semantic_hash": "0ca49262cfeee29ad37f798285f95dec"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/SiparisDetayViewModel.cs": {
+    "mtime": 1773679228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "93cd7475be10ee93ff48861d0efc713b",
+    "semantic_hash": "93cd7475be10ee93ff48861d0efc713b"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/SiparisListViewModel.cs": {
+    "mtime": 1773694508.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cbd9a5481d6d7b5f9055ea975a52a0fc",
+    "semantic_hash": "cbd9a5481d6d7b5f9055ea975a52a0fc"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/StokGrupDuzenleViewModel.cs": {
+    "mtime": 1773681728.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d2843533f89b91a025e1422a9d0990b8",
+    "semantic_hash": "d2843533f89b91a025e1422a9d0990b8"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/StokListViewModel.cs": {
+    "mtime": 1786787122.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9c9826f1e7e775bdc63442c168f4aaba",
+    "semantic_hash": "9c9826f1e7e775bdc63442c168f4aaba"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/TeklifDetayViewModel.cs": {
+    "mtime": 1773679234.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a3c8d71c33cce5eee9c67f889f810aac",
+    "semantic_hash": "a3c8d71c33cce5eee9c67f889f810aac"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/TeklifListViewModel.cs": {
+    "mtime": 1773694504.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "18e9f5a010268855287f04a356da5d28",
+    "semantic_hash": "18e9f5a010268855287f04a356da5d28"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/TopluFiyatViewModel.cs": {
+    "mtime": 1773424650.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "12dc194b83d489abe751ae6a33e82e0f",
+    "semantic_hash": "12dc194b83d489abe751ae6a33e82e0f"
+  },
+  "ErmayMuhasebe.Cloud/ViewModels/VadeTakipViewModel.cs": {
+    "mtime": 1769678974.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d453cb2ad93a18dcde732156950810ef",
+    "semantic_hash": "d453cb2ad93a18dcde732156950810ef"
+  },
+  "ErmayMuhasebe.Cloud/_Imports.razor": {
+    "mtime": 1772478674.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "18d8489685577967ced1749df67d63d0",
+    "semantic_hash": "18d8489685577967ced1749df67d63d0"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/ErmayMuhasebe.Cloud.staticwebassets.runtime.json": {
+    "mtime": 1788265916.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "99b5494e5eec549e945a29789e557b2b",
+    "semantic_hash": "99b5494e5eec549e945a29789e557b2b"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/dotnet.js": {
+    "mtime": 1781560788.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1af34dd02f5a38126f87a4e7b5f75cfe",
+    "semantic_hash": "1af34dd02f5a38126f87a4e7b5f75cfe"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/dotnet.native.js": {
+    "mtime": 1781560826.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ba83820672536115e0d88f1853e32e94",
+    "semantic_hash": "ba83820672536115e0d88f1853e32e94"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/dotnet.runtime.js": {
+    "mtime": 1781560796.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "39509cf62bfcd60f10a4115c41443888",
+    "semantic_hash": "39509cf62bfcd60f10a4115c41443888"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/errors.json": {
+    "mtime": 1773703756.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "37f41dc74dc59b17776e34aa5d608f9d",
+    "semantic_hash": "37f41dc74dc59b17776e34aa5d608f9d"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/errors_last.json": {
+    "mtime": 1773703894.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f8cae9ba69315510ef3c06f8e359a5ba",
+    "semantic_hash": "f8cae9ba69315510ef3c06f8e359a5ba"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/errors_new.json": {
+    "mtime": 1773703816.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4135c1aa38f4b040fb3fabbeacc789cb",
+    "semantic_hash": "4135c1aa38f4b040fb3fabbeacc789cb"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/segmentation-rules.json": {
+    "mtime": 1771524616.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f26a76381eca92d97d38feadf87ac588",
+    "semantic_hash": "f26a76381eca92d97d38feadf87ac588"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/vercel.json": {
+    "mtime": 1768652012.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "16954adafdbea58b04cfe4e382f44d60",
+    "semantic_hash": "16954adafdbea58b04cfe4e382f44d60"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/wwwroot/_framework/blazor.boot.json": {
+    "mtime": 1788265912.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "626d656c55e15c633faa0865afb978da",
+    "semantic_hash": "626d656c55e15c633faa0865afb978da"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/wwwroot/_framework/blazor.webassembly.js": {
+    "mtime": 1730208332.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7a47eed9e261daa7420cbad9932976c4",
+    "semantic_hash": "7a47eed9e261daa7420cbad9932976c4"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/wwwroot/_framework/dotnet.js": {
+    "mtime": 1781560788.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1af34dd02f5a38126f87a4e7b5f75cfe",
+    "semantic_hash": "1af34dd02f5a38126f87a4e7b5f75cfe"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/wwwroot/_framework/dotnet.native.l1ds2rhypd.js": {
+    "mtime": 1771526560.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "05f93e94c8c7171788751f49741a51fc",
+    "semantic_hash": "05f93e94c8c7171788751f49741a51fc"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/wwwroot/_framework/dotnet.native.mf92lzu2d1.js": {
+    "mtime": 1781560826.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ba83820672536115e0d88f1853e32e94",
+    "semantic_hash": "ba83820672536115e0d88f1853e32e94"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/wwwroot/_framework/dotnet.runtime.2hocyfcbj2.js": {
+    "mtime": 1771526526.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "127694baaa48d13839bf348a3b642787",
+    "semantic_hash": "127694baaa48d13839bf348a3b642787"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/wwwroot/_framework/dotnet.runtime.7zon98f8ky.js": {
+    "mtime": 1781560796.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "39509cf62bfcd60f10a4115c41443888",
+    "semantic_hash": "39509cf62bfcd60f10a4115c41443888"
+  },
+  "ErmayMuhasebe.Cloud/bin/Debug/net9.0/wwwroot/_framework/segmentation-rules.json": {
+    "mtime": 1771524616.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f26a76381eca92d97d38feadf87ac588",
+    "semantic_hash": "f26a76381eca92d97d38feadf87ac588"
+  },
+  "ErmayMuhasebe.Cloud/errors.json": {
+    "mtime": 1773703756.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "37f41dc74dc59b17776e34aa5d608f9d",
+    "semantic_hash": "37f41dc74dc59b17776e34aa5d608f9d"
+  },
+  "ErmayMuhasebe.Cloud/errors_last.json": {
+    "mtime": 1773703894.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f8cae9ba69315510ef3c06f8e359a5ba",
+    "semantic_hash": "f8cae9ba69315510ef3c06f8e359a5ba"
+  },
+  "ErmayMuhasebe.Cloud/errors_new.json": {
+    "mtime": 1773703816.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4135c1aa38f4b040fb3fabbeacc789cb",
+    "semantic_hash": "4135c1aa38f4b040fb3fabbeacc789cb"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1779796784.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "60283218ad643d1ea75fac7a1cdeb6f3",
+    "semantic_hash": "60283218ad643d1ea75fac7a1cdeb6f3"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/ErmayMuhasebe.Cloud.AssemblyInfo.cs": {
+    "mtime": 1782890276.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "df908e90b04dec1fc5f6e10793b63f86",
+    "semantic_hash": "df908e90b04dec1fc5f6e10793b63f86"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/ErmayMuhasebe.Cloud.GlobalUsings.g.cs": {
+    "mtime": 1788264424.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2a9e99f21c8b1584f61acfdf6cf237df",
+    "semantic_hash": "2a9e99f21c8b1584f61acfdf6cf237df"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/blazor.boot.json": {
+    "mtime": 1788265912.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "626d656c55e15c633faa0865afb978da",
+    "semantic_hash": "626d656c55e15c633faa0865afb978da"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/blazor.build.boot-extension.json": {
+    "mtime": 1788265912.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "67c1890df55a3fda9bfa59ed880bdd0c",
+    "semantic_hash": "67c1890df55a3fda9bfa59ed880bdd0c"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/rbcswa.dswa.cache.json": {
+    "mtime": 1788265914.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3f81f009af200f390c28307c804c21ed",
+    "semantic_hash": "3f81f009af200f390c28307c804c21ed"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/rjimswa.dswa.cache.json": {
+    "mtime": 1788264470.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f0ffcd0621f1c0c1a9b0f5f4f0086347",
+    "semantic_hash": "f0ffcd0621f1c0c1a9b0f5f4f0086347"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/rjsmcshtml.dswa.cache.json": {
+    "mtime": 1788264470.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8b6baaa33c7c4be214e60dfa08bc235f",
+    "semantic_hash": "8b6baaa33c7c4be214e60dfa08bc235f"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/rjsmrazor.dswa.cache.json": {
+    "mtime": 1788264470.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "50e802ab66d9f3f689ac9587168cb237",
+    "semantic_hash": "50e802ab66d9f3f689ac9587168cb237"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/rpswa.dswa.cache.json": {
+    "mtime": 1788264456.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "938980bddcebcbaf30df62abf2a7268d",
+    "semantic_hash": "938980bddcebcbaf30df62abf2a7268d"
+  },
+  "ErmayMuhasebe.Cloud/obj/Debug/net9.0/staticwebassets.development.json": {
+    "mtime": 1788265916.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "99b5494e5eec549e945a29789e557b2b",
+    "semantic_hash": "99b5494e5eec549e945a29789e557b2b"
+  },
+  "ErmayMuhasebe.Cloud/obj/ErmayMuhasebe.Cloud.csproj.nuget.dgspec.json": {
+    "mtime": 1788264424.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cf96bc962e0a7bd3bec90b0ddf63668f",
+    "semantic_hash": "cf96bc962e0a7bd3bec90b0ddf63668f"
+  },
+  "ErmayMuhasebe.Cloud/obj/project.assets.json": {
+    "mtime": 1788264424.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0c526fcd441e4e6143a69baad4f96870",
+    "semantic_hash": "0c526fcd441e4e6143a69baad4f96870"
+  },
+  "ErmayMuhasebe.Cloud/vercel.json": {
+    "mtime": 1768652012.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "16954adafdbea58b04cfe4e382f44d60",
+    "semantic_hash": "16954adafdbea58b04cfe4e382f44d60"
+  },
+  "ErmayMuhasebe.Cloud/wwwroot/appsettings.json": {
+    "mtime": 1772483930.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8f4990448f6dec5ed6923771ca448e2f",
+    "semantic_hash": "8f4990448f6dec5ed6923771ca448e2f"
+  },
+  "ErmayMuhasebe.Cloud/wwwroot/i18n/en.json": {
+    "mtime": 1772478646.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ad3d16de75c148582c0b9c3ce478b1bc",
+    "semantic_hash": "ad3d16de75c148582c0b9c3ce478b1bc"
+  },
+  "ErmayMuhasebe.Cloud/wwwroot/i18n/tr.json": {
+    "mtime": 1772478638.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "54e4367a957a8a26e5ef820c0fb2ee04",
+    "semantic_hash": "54e4367a957a8a26e5ef820c0fb2ee04"
+  },
+  "ErmayMuhasebe.Cloud/wwwroot/js/cryptoHelper.js": {
+    "mtime": 1772816010.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "833577d7ba213ce715800f85d30ec642",
+    "semantic_hash": "833577d7ba213ce715800f85d30ec642"
+  },
+  "ErmayMuhasebe.Cloud/wwwroot/js/ermay_core.js": {
+    "mtime": 1782131580.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "21c154071a5f3a12bcf4b3dcfbf6d31a",
+    "semantic_hash": "21c154071a5f3a12bcf4b3dcfbf6d31a"
+  },
+  "ErmayMuhasebe.Cloud/wwwroot/manifest.json": {
+    "mtime": 1772478870.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4dc0fb163ac2d0a2c707c68bfd127ea0",
+    "semantic_hash": "4dc0fb163ac2d0a2c707c68bfd127ea0"
+  },
+  "ErmayMuhasebe.Cloud/wwwroot/sample-data/weather.json": {
+    "mtime": 1768649028.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fee50fa5c1dd9bae58d08442e9954fd4",
+    "semantic_hash": "fee50fa5c1dd9bae58d08442e9954fd4"
+  },
+  "ErmayMuhasebe.Cloud/wwwroot/service-worker.js": {
+    "mtime": 1782127018.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6d86cc177481b129d855b085e9f8421b",
+    "semantic_hash": "6d86cc177481b129d855b085e9f8421b"
+  },
+  "ErmayMuhasebe.Functions/ErmayMuhasebe.Functions.csproj": {
+    "mtime": 1772452738.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1e27e1a3fe5d07cdddac1c5eaa87d8e9",
+    "semantic_hash": "1e27e1a3fe5d07cdddac1c5eaa87d8e9"
+  },
+  "ErmayMuhasebe.Functions/Program.cs": {
+    "mtime": 1787947964.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "45dc22c014f9266d9a197a2fa1d786fa",
+    "semantic_hash": "45dc22c014f9266d9a197a2fa1d786fa"
+  },
+  "ErmayMuhasebe.Functions/bin/Debug/net9.0/ErmayMuhasebe.Functions.deps.json": {
+    "mtime": 1787948254.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b041695fb39a5cb697d418f1e4f5894b",
+    "semantic_hash": "b041695fb39a5cb697d418f1e4f5894b"
+  },
+  "ErmayMuhasebe.Functions/bin/Debug/net9.0/ErmayMuhasebe.Functions.runtimeconfig.json": {
+    "mtime": 1787948254.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f5f407c5933cc4f6e310042a98f67d21",
+    "semantic_hash": "f5f407c5933cc4f6e310042a98f67d21"
+  },
+  "ErmayMuhasebe.Functions/bin/Debug/net9.0/ErmayMuhasebe.Functions.staticwebassets.endpoints.json": {
+    "mtime": 1787948254.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9b3e4927c9e187f68f850c0267bd1c13",
+    "semantic_hash": "9b3e4927c9e187f68f850c0267bd1c13"
+  },
+  "ErmayMuhasebe.Functions/bin/Debug/net9.0/ErmayMuhasebe.Functions.staticwebassets.runtime.json": {
+    "mtime": 1787948254.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b6bd57b4415a7b7e56eb22b560f0b5b8",
+    "semantic_hash": "b6bd57b4415a7b7e56eb22b560f0b5b8"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1779796798.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "60283218ad643d1ea75fac7a1cdeb6f3",
+    "semantic_hash": "60283218ad643d1ea75fac7a1cdeb6f3"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/ErmayMuhasebe.Functions.AssemblyInfo.cs": {
+    "mtime": 1779796798.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "210358f9c419e4cc2a5cfbf2977667bf",
+    "semantic_hash": "210358f9c419e4cc2a5cfbf2977667bf"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/ErmayMuhasebe.Functions.GlobalUsings.g.cs": {
+    "mtime": 1787948250.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5b3fdaae7b59d230d7d136eab049a98a",
+    "semantic_hash": "5b3fdaae7b59d230d7d136eab049a98a"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/rbcswa.dswa.cache.json": {
+    "mtime": 1787948252.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a362f68e5c5bf6dc6eaa332b647a640e",
+    "semantic_hash": "a362f68e5c5bf6dc6eaa332b647a640e"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/rjsmcshtml.dswa.cache.json": {
+    "mtime": 1787948252.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "905dd031b06a0acf2ee5d8567f4fcbc3",
+    "semantic_hash": "905dd031b06a0acf2ee5d8567f4fcbc3"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/rjsmrazor.dswa.cache.json": {
+    "mtime": 1787948252.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4fb51131ae6bd78340552f7ff3095596",
+    "semantic_hash": "4fb51131ae6bd78340552f7ff3095596"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/staticwebassets.build.endpoints.json": {
+    "mtime": 1787948254.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9b3e4927c9e187f68f850c0267bd1c13",
+    "semantic_hash": "9b3e4927c9e187f68f850c0267bd1c13"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/staticwebassets.build.json": {
+    "mtime": 1787948254.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "71a827b88e6fc3c9023de8d0a539305d",
+    "semantic_hash": "71a827b88e6fc3c9023de8d0a539305d"
+  },
+  "ErmayMuhasebe.Functions/obj/Debug/net9.0/staticwebassets.development.json": {
+    "mtime": 1787948254.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b6bd57b4415a7b7e56eb22b560f0b5b8",
+    "semantic_hash": "b6bd57b4415a7b7e56eb22b560f0b5b8"
+  },
+  "ErmayMuhasebe.Functions/obj/ErmayMuhasebe.Functions.csproj.nuget.dgspec.json": {
+    "mtime": 1787948250.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "741540dfb091bb915ab2db3b2f801d86",
+    "semantic_hash": "741540dfb091bb915ab2db3b2f801d86"
+  },
+  "ErmayMuhasebe.Functions/obj/project.assets.json": {
+    "mtime": 1787948250.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "397665c4f3c35102fa4c367eecdccac9",
+    "semantic_hash": "397665c4f3c35102fa4c367eecdccac9"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/BankaDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6ffe1230176e6594ef90196f68c5e750",
+    "semantic_hash": "6ffe1230176e6594ef90196f68c5e750"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/BankaIslemDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "54f0291ad4829e746c30fa4e4fa8fb17",
+    "semantic_hash": "54f0291ad4829e746c30fa4e4fa8fb17"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/BankaKartDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6d56dd7ab49a4490f373f73b12c824d2",
+    "semantic_hash": "6d56dd7ab49a4490f373f73b12c824d2"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/CariHareketEditDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8d978d2a5f668cc1f4222099f1749cf3",
+    "semantic_hash": "8d978d2a5f668cc1f4222099f1749cf3"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/CariSecDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "938c8592f27dcfb98e51994f56bd2b4d",
+    "semantic_hash": "938c8592f27dcfb98e51994f56bd2b4d"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/CekDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e8974a5c2e768b78d7eb1a8f602d3fc2",
+    "semantic_hash": "e8974a5c2e768b78d7eb1a8f602d3fc2"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/GiderEkleDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "79dac8cbd729091f28ddba06a3b992b7",
+    "semantic_hash": "79dac8cbd729091f28ddba06a3b992b7"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/GorevDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "83aadaa4a89664ec48a798536f0d057e",
+    "semantic_hash": "83aadaa4a89664ec48a798536f0d057e"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/ImagePreviewDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5fa4ef53c23febc1f30c22995a1a8463",
+    "semantic_hash": "5fa4ef53c23febc1f30c22995a1a8463"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/KasaIslemDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d15420b813ef03e6e865a2f3edf7e549",
+    "semantic_hash": "d15420b813ef03e6e865a2f3edf7e549"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/MaliyetMerkeziDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e3e86c714f2a4334635106b20f4a63c7",
+    "semantic_hash": "e3e86c714f2a4334635106b20f4a63c7"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/PersonelDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b1c5ae888ff2ca8892db5f8c013caf75",
+    "semantic_hash": "b1c5ae888ff2ca8892db5f8c013caf75"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/SenetDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "00ac8646efc614ff61aa9d0b9e0962a7",
+    "semantic_hash": "00ac8646efc614ff61aa9d0b9e0962a7"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/SiparisOlusturDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "322221f9a7a92c6e671f3ea92da90e02",
+    "semantic_hash": "322221f9a7a92c6e671f3ea92da90e02"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/SiparisSatirAciklamaDialog.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "948223be8fb0f043051f4d4001c6402a",
+    "semantic_hash": "948223be8fb0f043051f4d4001c6402a"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/StokHareketDialog.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0800057450408acedea636148d2da164",
+    "semantic_hash": "0800057450408acedea636148d2da164"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/StokKartDialog.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8ca9777a65b0caa87518f3a87d6d98bc",
+    "semantic_hash": "8ca9777a65b0caa87518f3a87d6d98bc"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/StokSecDialog.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ed8536de80f552218762c7ee5235cf91",
+    "semantic_hash": "ed8536de80f552218762c7ee5235cf91"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/TeklifOlusturDialog.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8151f546c6e40c0601c268664d94912d",
+    "semantic_hash": "8151f546c6e40c0601c268664d94912d"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/TransactionDetailDialog.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b8fe0563a934f7e6c4bd87dafa1b77eb",
+    "semantic_hash": "b8fe0563a934f7e6c4bd87dafa1b77eb"
+  },
+  "ErmayMuhasebe.Shared/Components/Dialogs/UrunDetayDialog.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f3fb9d67e15dd026ef83dadbe0100562",
+    "semantic_hash": "f3fb9d67e15dd026ef83dadbe0100562"
+  },
+  "ErmayMuhasebe.Shared/Components/Layout/MainLayout.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "385607062382793eb1f3198505d156af",
+    "semantic_hash": "385607062382793eb1f3198505d156af"
+  },
+  "ErmayMuhasebe.Shared/Components/Layout/MinimalLayout.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ed4e274b03e08343f984d714cff4dfb5",
+    "semantic_hash": "ed4e274b03e08343f984d714cff4dfb5"
+  },
+  "ErmayMuhasebe.Shared/Components/Layout/NavMenu.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2fe16c468373123a79791fb55cd533bd",
+    "semantic_hash": "2fe16c468373123a79791fb55cd533bd"
+  },
+  "ErmayMuhasebe.Shared/Components/Layout/SimpleLayout.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "75ef4d882d662e5a6c1edc57b4d082d3",
+    "semantic_hash": "75ef4d882d662e5a6c1edc57b4d082d3"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/AICiroTahmin.razor": {
+    "mtime": 1781516188.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "43029ac4015c6e67fbd259d831622e50",
+    "semantic_hash": "43029ac4015c6e67fbd259d831622e50"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/AcilisKapanisFisi.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "80ca0b329ad4a17fcdb1b304a0261800",
+    "semantic_hash": "80ca0b329ad4a17fcdb1b304a0261800"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/AdresEtiketi.razor": {
+    "mtime": 1776375268.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "54d9650f2d43ff6db092360e7663e096",
+    "semantic_hash": "54d9650f2d43ff6db092360e7663e096"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Ayarlar.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5d6394041968fae1b662dc37596e1d25",
+    "semantic_hash": "5d6394041968fae1b662dc37596e1d25"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/BakiyeLimitAsimi.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ed3a65f973c0126f723ea316ddfe153a",
+    "semantic_hash": "ed3a65f973c0126f723ea316ddfe153a"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/BankaDetay.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c365a69ff8b4d9e8c10148b0e5b9774a",
+    "semantic_hash": "c365a69ff8b4d9e8c10148b0e5b9774a"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/BankaHareketleri.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "14ac604fca90e47618aa461fd05d02ac",
+    "semantic_hash": "14ac604fca90e47618aa461fd05d02ac"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/BankaList.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d31d44299a29732b6dce0140d4ba22c5",
+    "semantic_hash": "d31d44299a29732b6dce0140d4ba22c5"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/BarkodSihirbazi.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4e6f36411fc5155425696769a5d953db",
+    "semantic_hash": "4e6f36411fc5155425696769a5d953db"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/BolgeSatis.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "898bcda6329fae4afb03ce8da0f1742d",
+    "semantic_hash": "898bcda6329fae4afb03ce8da0f1742d"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/BolgeselSatisAnalizi.razor": {
+    "mtime": 1781516202.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "478ac3e630c25190475ec7ec9eb033cd",
+    "semantic_hash": "478ac3e630c25190475ec7ec9eb033cd"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/ButceHedef.razor": {
+    "mtime": 1776375306.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9cbec12f9ef2a3b464a6d05040934a15",
+    "semantic_hash": "9cbec12f9ef2a3b464a6d05040934a15"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/CariBakiyeRaporu.razor": {
+    "mtime": 1781598250.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1055d4580afa14776128beeff446f668",
+    "semantic_hash": "1055d4580afa14776128beeff446f668"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/CariHareketDokumu.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3cfec84731b29de41220c1a215e78358",
+    "semantic_hash": "3cfec84731b29de41220c1a215e78358"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/CariList.razor": {
+    "mtime": 1786045838.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "26734d7633709d8db268ef8145e02c60",
+    "semantic_hash": "26734d7633709d8db268ef8145e02c60"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/CekTakip.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3e9245bcfcd0ab4ddb312f2bf94fc90f",
+    "semantic_hash": "3e9245bcfcd0ab4ddb312f2bf94fc90f"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Dashboard/DovizKurWidget.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "70df427ee369cc85d5aece302d3e13d9",
+    "semantic_hash": "70df427ee369cc85d5aece302d3e13d9"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Dashboard/FinansalOzet.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a6b8d0f42ef819305f22e384012f4e82",
+    "semantic_hash": "a6b8d0f42ef819305f22e384012f4e82"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Dashboard/GunlukIslemler.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6b8acf515abb827725be2db76f954cf0",
+    "semantic_hash": "6b8acf515abb827725be2db76f954cf0"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Dashboard/KritikStoklar.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dcffde5b7512a6de3173951754209e51",
+    "semantic_hash": "dcffde5b7512a6de3173951754209e51"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Dashboard/SatisGrafigi.razor": {
+    "mtime": 1781516266.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e659ffab1d7b8a5f78bcc620b00c893e",
+    "semantic_hash": "e659ffab1d7b8a5f78bcc620b00c893e"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/DebugTest.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c1a30c203dd283c2e93d96584a93dfb4",
+    "semantic_hash": "c1a30c203dd283c2e93d96584a93dfb4"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Doviz.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0f14628c13ab74d2d2007a38b7f04c86",
+    "semantic_hash": "0f14628c13ab74d2d2007a38b7f04c86"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/DovizCevirici.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "76b9f0951eb90c0dc33cbd34b3900346",
+    "semantic_hash": "76b9f0951eb90c0dc33cbd34b3900346"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/DovizGrafik.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9606a19e126b167dc84469136a9b45af",
+    "semantic_hash": "9606a19e126b167dc84469136a9b45af"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/EnCokSatanlar.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "507d20b76860f30322228082a007031a",
+    "semantic_hash": "507d20b76860f30322228082a007031a"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/EtiketTasarim.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "622a12236654ab37cfd40a815bf6033f",
+    "semantic_hash": "622a12236654ab37cfd40a815bf6033f"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/ExcelImport.razor": {
+    "mtime": 1776375230.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "37240c19e8e6e7fc53d66076af8297b0",
+    "semantic_hash": "37240c19e8e6e7fc53d66076af8297b0"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/FaizHesaplama.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bae923b67bf86a5224024140cf3ab213",
+    "semantic_hash": "bae923b67bf86a5224024140cf3ab213"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/FaturaOlustur.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bbc913514a88f509d8c9e744a70e527b",
+    "semantic_hash": "bbc913514a88f509d8c9e744a70e527b"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Finans.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6e760e457b3ef4f506d0bc38bf7e103d",
+    "semantic_hash": "6e760e457b3ef4f506d0bc38bf7e103d"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/FinansalIsiHaritasi.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "38c14a937eeaa55c3ed64574f7357749",
+    "semantic_hash": "38c14a937eeaa55c3ed64574f7357749"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/FiyatDalgalanma.razor": {
+    "mtime": 1781516258.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a0a2fff6bad476b387fe600c71c0ebdd",
+    "semantic_hash": "a0a2fff6bad476b387fe600c71c0ebdd"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/GelirTablosu.razor": {
+    "mtime": 1781516248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c0032ba2e4004d9a1e0ef13904216c3c",
+    "semantic_hash": "c0032ba2e4004d9a1e0ef13904216c3c"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/GiderAnalizi.razor": {
+    "mtime": 1781516210.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e9091a0c6cd878f995bf49bdd0ceda64",
+    "semantic_hash": "e9091a0c6cd878f995bf49bdd0ceda64"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/GiderRaporu.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a206c938b36d9172d5c1975793492c47",
+    "semantic_hash": "a206c938b36d9172d5c1975793492c47"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/GorevBoard.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "833dd68b3e481b1b999cb9baa444b7c1",
+    "semantic_hash": "833dd68b3e481b1b999cb9baa444b7c1"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/HareketsizCariler.razor": {
+    "mtime": 1782593946.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "adf2207884718e202da8f1aacbbf240e",
+    "semantic_hash": "adf2207884718e202da8f1aacbbf240e"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Home.razor": {
+    "mtime": 1781524198.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c5dd31fa789ec88e4c0e7ec7a0748f58",
+    "semantic_hash": "c5dd31fa789ec88e4c0e7ec7a0748f58"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/KarZararMukayese.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d5b71f2a65767580e4cfaa7416418b10",
+    "semantic_hash": "d5b71f2a65767580e4cfaa7416418b10"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/KarsilastirmaliBilanco.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "01ecbf40780da203ce393e840dff34f1",
+    "semantic_hash": "01ecbf40780da203ce393e840dff34f1"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/KasaHareketleri.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7e152dff274ef401b0747d7257c03736",
+    "semantic_hash": "7e152dff274ef401b0747d7257c03736"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/KasaSayim.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "624fc9a04453a9fc7bc4249c707920ee",
+    "semantic_hash": "624fc9a04453a9fc7bc4249c707920ee"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/KritikStok.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "648e65056eee996160b5cdeb735a9847",
+    "semantic_hash": "648e65056eee996160b5cdeb735a9847"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/MakbuzOlustur.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1d4bdcc7591540a57894878fa8ec05b2",
+    "semantic_hash": "1d4bdcc7591540a57894878fa8ec05b2"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/MaliyetHesaplama.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b8dc5be9b296f9f9fecaf9c64693e562",
+    "semantic_hash": "b8dc5be9b296f9f9fecaf9c64693e562"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/MaliyetMerkezi.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "88eef415513c18197b9eb73357a198c9",
+    "semantic_hash": "88eef415513c18197b9eb73357a198c9"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Menus/AraclarMenu.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e92af7869176c81335d826a047ddd4fa",
+    "semantic_hash": "e92af7869176c81335d826a047ddd4fa"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Menus/FaturaMenu.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1c37cca6484c64071faac8ae70c35d2c",
+    "semantic_hash": "1c37cca6484c64071faac8ae70c35d2c"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Menus/MuhasebeMenu.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ef700c27d8ffc8fef8ddd84af885be46",
+    "semantic_hash": "ef700c27d8ffc8fef8ddd84af885be46"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Menus/RaporMenu.razor": {
+    "mtime": 1781516272.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6e22518d16d25a790c66e479abbcd694",
+    "semantic_hash": "6e22518d16d25a790c66e479abbcd694"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Menus/TakipMenu.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "aea56a0b19743ac7cd46d31474720504",
+    "semantic_hash": "aea56a0b19743ac7cd46d31474720504"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/MukerrerKontrol.razor": {
+    "mtime": 1776375232.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ac3035c1074540f9a502b7c25321790f",
+    "semantic_hash": "ac3035c1074540f9a502b7c25321790f"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/MusteriABC.razor": {
+    "mtime": 1781516220.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "04c9b6439df53b7fc87f5df7c8583ef6",
+    "semantic_hash": "04c9b6439df53b7fc87f5df7c8583ef6"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/MusteriChurn.razor": {
+    "mtime": 1781516228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "46c93c93931364c9f7fa43df35384889",
+    "semantic_hash": "46c93c93931364c9f7fa43df35384889"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/MusteriKarlilik.razor": {
+    "mtime": 1776375236.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b091eb76e1068eb3c0d21c594c32d087",
+    "semantic_hash": "b091eb76e1068eb3c0d21c594c32d087"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/MusteriLTV.razor": {
+    "mtime": 1781516242.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d1685656d2908f11876eb7e7cf5288fd",
+    "semantic_hash": "d1685656d2908f11876eb7e7cf5288fd"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/NakitAkisTablosu.razor": {
+    "mtime": 1776375236.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f3d6be17aee1c8ed2aa77a7eb37dcde4",
+    "semantic_hash": "f3d6be17aee1c8ed2aa77a7eb37dcde4"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/NakitDurum.razor": {
+    "mtime": 1781524058.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4ca35b2fce9598902b9839c387e6ce62",
+    "semantic_hash": "4ca35b2fce9598902b9839c387e6ce62"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/NakitTahmin.razor": {
+    "mtime": 1776375236.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1fd82d2d9fee451bf88e3053f872a6fe",
+    "semantic_hash": "1fd82d2d9fee451bf88e3053f872a6fe"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/OdemeTakibi.razor": {
+    "mtime": 1776375236.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0280a20f25fe99005492fcd7bbd6ad4f",
+    "semantic_hash": "0280a20f25fe99005492fcd7bbd6ad4f"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/OluStok.razor": {
+    "mtime": 1776375236.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8925d8037ed50a977eefdbf8a3f0cde6",
+    "semantic_hash": "8925d8037ed50a977eefdbf8a3f0cde6"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/PersonelList.razor": {
+    "mtime": 1776375236.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "53b5d06b4c28e407c67a5ace925430ac",
+    "semantic_hash": "53b5d06b4c28e407c67a5ace925430ac"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/Portfoy.razor": {
+    "mtime": 1781615270.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2145e20a221b62fb13611fa211895c82",
+    "semantic_hash": "2145e20a221b62fb13611fa211895c82"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/PortfoyDetay.razor": {
+    "mtime": 1776375238.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b537a9e5d13573034978329f6ccf471d",
+    "semantic_hash": "b537a9e5d13573034978329f6ccf471d"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/SMSPaneli.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cf41eadffc381055b6c0292262a63d60",
+    "semantic_hash": "cf41eadffc381055b6c0292262a63d60"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/SatisFaturaDokumu.razor": {
+    "mtime": 1776375238.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7cd74ad2388caa56992b2f50379ed8b0",
+    "semantic_hash": "7cd74ad2388caa56992b2f50379ed8b0"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/SenetTakip.razor": {
+    "mtime": 1776375240.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2ccca6e081a6a90b3055d022d8716f78",
+    "semantic_hash": "2ccca6e081a6a90b3055d022d8716f78"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/SilinenKayitlar.razor": {
+    "mtime": 1776375240.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1e1d22385576bde9e05e2cf68c831203",
+    "semantic_hash": "1e1d22385576bde9e05e2cf68c831203"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/SiparisDetaySayfasi.razor": {
+    "mtime": 1776375294.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3623946894aa57a4dbd6db9bcd96c2bd",
+    "semantic_hash": "3623946894aa57a4dbd6db9bcd96c2bd"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/SiparisList.razor": {
+    "mtime": 1776375242.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "58fa9c1b0ea5b839b200750abf4630db",
+    "semantic_hash": "58fa9c1b0ea5b839b200750abf4630db"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/SistemSaglik.razor": {
+    "mtime": 1776375244.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fb265955d5ed49e3e05f95c6b4873f8c",
+    "semantic_hash": "fb265955d5ed49e3e05f95c6b4873f8c"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/StokDevir.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8aacebe133244d94788117910bae332c",
+    "semantic_hash": "8aacebe133244d94788117910bae332c"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/StokHareketleri.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cf567e8a875ffdc10120de82068d96f1",
+    "semantic_hash": "cf567e8a875ffdc10120de82068d96f1"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/StokKartlari.razor": {
+    "mtime": 1786802442.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "86896848515418810d19cdaa4677274c",
+    "semantic_hash": "86896848515418810d19cdaa4677274c"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/StokList.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "86e4bd683d2c94ff8dda36d3d560758d",
+    "semantic_hash": "86e4bd683d2c94ff8dda36d3d560758d"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/StokMevcudu.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cf184a2925d68ba31ccad31972c1b5e0",
+    "semantic_hash": "cf184a2925d68ba31ccad31972c1b5e0"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/TahsilatSuresi.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "047513cf9edf98e7fd78fdafcd58cdaf",
+    "semantic_hash": "047513cf9edf98e7fd78fdafcd58cdaf"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/TaksitHesaplama.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "63a26ac0a9c9bfe26cc34086f226931d",
+    "semantic_hash": "63a26ac0a9c9bfe26cc34086f226931d"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/TeklifDetaySayfasi.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "37d863d489c198e80dace44aa635af33",
+    "semantic_hash": "37d863d489c198e80dace44aa635af33"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/TeklifList.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3d1801d0a82f3c26c690b5177aa57308",
+    "semantic_hash": "3d1801d0a82f3c26c690b5177aa57308"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/ThemeGallery.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c34843c11e7130b9df9d4d42de8dd64f",
+    "semantic_hash": "c34843c11e7130b9df9d4d42de8dd64f"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/TopluFiyatGuncelle.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7e7b943a9570bb90980678c94ab9a2c1",
+    "semantic_hash": "7e7b943a9570bb90980678c94ab9a2c1"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/UrunKarlilik.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cb2d4dbc4bcf0ec426d3696de20bc980",
+    "semantic_hash": "cb2d4dbc4bcf0ec426d3696de20bc980"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/VeriGorsellestirme.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8257f9c0c9a7c4ca4d9906a28242890c",
+    "semantic_hash": "8257f9c0c9a7c4ca4d9906a28242890c"
+  },
+  "ErmayMuhasebe.Shared/Components/Pages/YaslandirmaRaporu.razor": {
+    "mtime": 1776375246.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5c71a93cbfdc47ea1ceb10496325b145",
+    "semantic_hash": "5c71a93cbfdc47ea1ceb10496325b145"
+  },
+  "ErmayMuhasebe.Shared/Components/Routes.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "de91bc0c0bbede31f2211713b6e6e8f6",
+    "semantic_hash": "de91bc0c0bbede31f2211713b6e6e8f6"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/CariFormDialog.razor": {
+    "mtime": 1781607072.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "57d3ad6a8c2177f322843c7e9b2616df",
+    "semantic_hash": "57d3ad6a8c2177f322843c7e9b2616df"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/CariIslemDialog.razor": {
+    "mtime": 1781510004.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "aefb36433dcd9698f328749318a35b7d",
+    "semantic_hash": "aefb36433dcd9698f328749318a35b7d"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/ChoiceDialog.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cca11e5645b9b9f8b81a648aa112a19c",
+    "semantic_hash": "cca11e5645b9b9f8b81a648aa112a19c"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/DialogWindow.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0cc40448f76e7af6430db2fec3ebf1f6",
+    "semantic_hash": "0cc40448f76e7af6430db2fec3ebf1f6"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/FaturaDialog.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5c45e5f5f8b344341d7584ba3f63ef58",
+    "semantic_hash": "5c45e5f5f8b344341d7584ba3f63ef58"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/MakbuzDialog.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3889c1962f8202a1d1fda5e533b0c5cf",
+    "semantic_hash": "3889c1962f8202a1d1fda5e533b0c5cf"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/PageDialog.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7d37eb81eb6b7340b95815dfebd34ba3",
+    "semantic_hash": "7d37eb81eb6b7340b95815dfebd34ba3"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/PortfoyDialog.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "433b706e2b572336ab9cbf623d310abc",
+    "semantic_hash": "433b706e2b572336ab9cbf623d310abc"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/ResponsiveContainer.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "11c88632df2ffe1cbcea9450dd2b98e5",
+    "semantic_hash": "11c88632df2ffe1cbcea9450dd2b98e5"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/SimpleBarChart.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "db922099dd8a88f62e4789956be64e4a",
+    "semantic_hash": "db922099dd8a88f62e4789956be64e4a"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/SpotlightSearch.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9e257af1b2738f7365788cbdcfb03902",
+    "semantic_hash": "9e257af1b2738f7365788cbdcfb03902"
+  },
+  "ErmayMuhasebe.Shared/Components/Shared/ThemeSwitcher.razor": {
+    "mtime": 1776375248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "af9b289f2fe67dcf1468219d8580611d",
+    "semantic_hash": "af9b289f2fe67dcf1468219d8580611d"
+  },
+  "ErmayMuhasebe.Shared/Data/Constants.cs": {
+    "mtime": 1772396504.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3835d0d86d17273efe1437c19e2e7ceb",
+    "semantic_hash": "3835d0d86d17273efe1437c19e2e7ceb"
+  },
+  "ErmayMuhasebe.Shared/ErmayMuhasebe.Shared.csproj": {
+    "mtime": 1776768120.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9ccc30a0af5f48fd6583136ae25c24ca",
+    "semantic_hash": "9ccc30a0af5f48fd6583136ae25c24ca"
+  },
+  "ErmayMuhasebe.Shared/Helpers/ValidationHelper.cs": {
+    "mtime": 1766582892.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8b4d25cfe3735af6e55d812819e35cf9",
+    "semantic_hash": "8b4d25cfe3735af6e55d812819e35cf9"
+  },
+  "ErmayMuhasebe.Shared/Models/AcilisKapanisFisi.cs": {
+    "mtime": 1766918594.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cf4e7fed77fa821c4e4e31bd7ed263b7",
+    "semantic_hash": "cf4e7fed77fa821c4e4e31bd7ed263b7"
+  },
+  "ErmayMuhasebe.Shared/Models/BankaHareket.cs": {
+    "mtime": 1781162698.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "42e7d1c0cb07a0f772ae570be3ac00a5",
+    "semantic_hash": "42e7d1c0cb07a0f772ae570be3ac00a5"
+  },
+  "ErmayMuhasebe.Shared/Models/BankaKart.cs": {
+    "mtime": 1788095832.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4c3496d996d0e7958d8811f4dcbcd715",
+    "semantic_hash": "4c3496d996d0e7958d8811f4dcbcd715"
+  },
+  "ErmayMuhasebe.Shared/Models/CariDosya.cs": {
+    "mtime": 1768750620.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a58edf2beaad96d5e0126217b0fb14b6",
+    "semantic_hash": "a58edf2beaad96d5e0126217b0fb14b6"
+  },
+  "ErmayMuhasebe.Shared/Models/CariHareket.cs": {
+    "mtime": 1788095808.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d77c022972482a5777f1b6dce93cccad",
+    "semantic_hash": "d77c022972482a5777f1b6dce93cccad"
+  },
+  "ErmayMuhasebe.Shared/Models/CariKart.cs": {
+    "mtime": 1788095794.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6a799d1a9bcc2b54ee391ef04d5df749",
+    "semantic_hash": "6a799d1a9bcc2b54ee391ef04d5df749"
+  },
+  "ErmayMuhasebe.Shared/Models/CekSenet.cs": {
+    "mtime": 1782891796.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "752469746c5800523dda0c9688e91f52",
+    "semantic_hash": "752469746c5800523dda0c9688e91f52"
+  },
+  "ErmayMuhasebe.Shared/Models/DovizKur.cs": {
+    "mtime": 1766918812.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4c7bda2590a2241194b31346e76f7b49",
+    "semantic_hash": "4c7bda2590a2241194b31346e76f7b49"
+  },
+  "ErmayMuhasebe.Shared/Models/EftIslem.cs": {
+    "mtime": 1787166656.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f3e47d1a53fc1900b5146e1bb41a4421",
+    "semantic_hash": "f3e47d1a53fc1900b5146e1bb41a4421"
+  },
+  "ErmayMuhasebe.Shared/Models/Fatura.cs": {
+    "mtime": 1788095822.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5aea6f692309387ce599169ae1bc1aa6",
+    "semantic_hash": "5aea6f692309387ce599169ae1bc1aa6"
+  },
+  "ErmayMuhasebe.Shared/Models/FaturaDetay.cs": {
+    "mtime": 1774260170.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "78fa4e4e7e3c6974cba7f44109955d62",
+    "semantic_hash": "78fa4e4e7e3c6974cba7f44109955d62"
+  },
+  "ErmayMuhasebe.Shared/Models/FaturaExcelDto.cs": {
+    "mtime": 1775767114.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "54093098e1bfaa4ab785acbef1fd6571",
+    "semantic_hash": "54093098e1bfaa4ab785acbef1fd6571"
+  },
+  "ErmayMuhasebe.Shared/Models/FaturaTasarimi.cs": {
+    "mtime": 1786443292.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a5e221dbf2483525b1bb42076c582ad9",
+    "semantic_hash": "a5e221dbf2483525b1bb42076c582ad9"
+  },
+  "ErmayMuhasebe.Shared/Models/FinancialModels.cs": {
+    "mtime": 1782383732.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fe8da2cb6efa020af864a19f67c35e83",
+    "semantic_hash": "fe8da2cb6efa020af864a19f67c35e83"
+  },
+  "ErmayMuhasebe.Shared/Models/GlobalSearchResult.cs": {
+    "mtime": 1771501138.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "377084350da994798623c5be6c40d48d",
+    "semantic_hash": "377084350da994798623c5be6c40d48d"
+  },
+  "ErmayMuhasebe.Shared/Models/Gorev.cs": {
+    "mtime": 1766919374.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "090f3dedd306900ef14950c9fce43401",
+    "semantic_hash": "090f3dedd306900ef14950c9fce43401"
+  },
+  "ErmayMuhasebe.Shared/Models/HaftalikSatisHedefi.cs": {
+    "mtime": 1767987700.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1e0b0a00d9e3aca7f4096a2026488226",
+    "semantic_hash": "1e0b0a00d9e3aca7f4096a2026488226"
+  },
+  "ErmayMuhasebe.Shared/Models/IBaseEntity.cs": {
+    "mtime": 1774202334.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3588df831860d356b66ae3d83d071e95",
+    "semantic_hash": "3588df831860d356b66ae3d83d071e95"
+  },
+  "ErmayMuhasebe.Shared/Models/ITenantEntity.cs": {
+    "mtime": 1772478898.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f96ad2394604615abd3d76ba00ea94cf",
+    "semantic_hash": "f96ad2394604615abd3d76ba00ea94cf"
+  },
+  "ErmayMuhasebe.Shared/Models/KanbanModels.cs": {
+    "mtime": 1775773264.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d231b94feca2f673b0f63b30426ca38e",
+    "semantic_hash": "d231b94feca2f673b0f63b30426ca38e"
+  },
+  "ErmayMuhasebe.Shared/Models/KasaHareket.cs": {
+    "mtime": 1781162690.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dbd8f45e4faf9c3a5718d0e8a925c13c",
+    "semantic_hash": "dbd8f45e4faf9c3a5718d0e8a925c13c"
+  },
+  "ErmayMuhasebe.Shared/Models/KasaSayimFisi.cs": {
+    "mtime": 1766918814.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "952d73588bc1a1d300dd2f3261c923e3",
+    "semantic_hash": "952d73588bc1a1d300dd2f3261c923e3"
+  },
+  "ErmayMuhasebe.Shared/Models/KrediKartiIslem.cs": {
+    "mtime": 1787166652.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fdcc7a4e02f9c2bfe0134c2b76f61436",
+    "semantic_hash": "fdcc7a4e02f9c2bfe0134c2b76f61436"
+  },
+  "ErmayMuhasebe.Shared/Models/MaliyetMerkeziDef.cs": {
+    "mtime": 1766918788.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "db87993c1149b50f27c4a06d2544138f",
+    "semantic_hash": "db87993c1149b50f27c4a06d2544138f"
+  },
+  "ErmayMuhasebe.Shared/Models/MusteriTakipModels.cs": {
+    "mtime": 1788373860.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8bd6dc34ebc30d4f56698cf0b6c7659a",
+    "semantic_hash": "8bd6dc34ebc30d4f56698cf0b6c7659a"
+  },
+  "ErmayMuhasebe.Shared/Models/NewModules.cs": {
+    "mtime": 1783279216.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "66548aa0efb75759f6c8a5918b34d82c",
+    "semantic_hash": "66548aa0efb75759f6c8a5918b34d82c"
+  },
+  "ErmayMuhasebe.Shared/Models/PdfRequests.cs": {
+    "mtime": 1786443788.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e03099a8a0bc4bfcaf7f28899848786d",
+    "semantic_hash": "e03099a8a0bc4bfcaf7f28899848786d"
+  },
+  "ErmayMuhasebe.Shared/Models/Personel.cs": {
+    "mtime": 1766918792.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3da7f7cc491970fba93d206d2acb73f7",
+    "semantic_hash": "3da7f7cc491970fba93d206d2acb73f7"
+  },
+  "ErmayMuhasebe.Shared/Models/PortfoyKart.cs": {
+    "mtime": 1781607068.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "145cfe38b3f027e206722d1dc22ca0b3",
+    "semantic_hash": "145cfe38b3f027e206722d1dc22ca0b3"
+  },
+  "ErmayMuhasebe.Shared/Models/SatisHedefi.cs": {
+    "mtime": 1768295912.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0237881e9eff8d347ebcf527ac18b3cf",
+    "semantic_hash": "0237881e9eff8d347ebcf527ac18b3cf"
+  },
+  "ErmayMuhasebe.Shared/Models/SilinenKayit.cs": {
+    "mtime": 1766919372.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c17d99de625d6b507d0717faed1a6bb5",
+    "semantic_hash": "c17d99de625d6b507d0717faed1a6bb5"
+  },
+  "ErmayMuhasebe.Shared/Models/SmsGecmisi.cs": {
+    "mtime": 1766919376.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0ffa537f13aaede68ac15d6a4301625e",
+    "semantic_hash": "0ffa537f13aaede68ac15d6a4301625e"
+  },
+  "ErmayMuhasebe.Shared/Models/StokDosya.cs": {
+    "mtime": 1768750626.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bb81b38e55abdc2dd07821e53548d260",
+    "semantic_hash": "bb81b38e55abdc2dd07821e53548d260"
+  },
+  "ErmayMuhasebe.Shared/Models/StokExcelDto.cs": {
+    "mtime": 1786802392.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c742aa92da46600aec6ce1a5e314eafd",
+    "semantic_hash": "c742aa92da46600aec6ce1a5e314eafd"
+  },
+  "ErmayMuhasebe.Shared/Models/StokGrupDef.cs": {
+    "mtime": 1788268440.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d130e1f9c2ffe516f7998a310470c6d9",
+    "semantic_hash": "d130e1f9c2ffe516f7998a310470c6d9"
+  },
+  "ErmayMuhasebe.Shared/Models/StokHareket.cs": {
+    "mtime": 1788095816.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "663003cb5ac083446ade8bdca89509e3",
+    "semantic_hash": "663003cb5ac083446ade8bdca89509e3"
+  },
+  "ErmayMuhasebe.Shared/Models/StokKart.cs": {
+    "mtime": 1788095800.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "97d88b5e80defc2427f6c5013eb732f9",
+    "semantic_hash": "97d88b5e80defc2427f6c5013eb732f9"
+  },
+  "ErmayMuhasebe.Shared/Models/StokSayim.cs": {
+    "mtime": 1769357270.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ac8dc35337c314286b3af7d7f5f266b6",
+    "semantic_hash": "ac8dc35337c314286b3af7d7f5f266b6"
+  },
+  "ErmayMuhasebe.Shared/Models/SyncQueueItem.cs": {
+    "mtime": 1774202486.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fe1f9dbdd4b943198395c838308f352a",
+    "semantic_hash": "fe1f9dbdd4b943198395c838308f352a"
+  },
+  "ErmayMuhasebe.Shared/Models/TurkiyeSehirler.cs": {
+    "mtime": 1766918290.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "43c7f3370845aff72cd9a5a321992106",
+    "semantic_hash": "43c7f3370845aff72cd9a5a321992106"
+  },
+  "ErmayMuhasebe.Shared/Models/User.cs": {
+    "mtime": 1783279212.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "01f5509db202cd0248cea0ddd4a9350d",
+    "semantic_hash": "01f5509db202cd0248cea0ddd4a9350d"
+  },
+  "ErmayMuhasebe.Shared/Models/ValidationException.cs": {
+    "mtime": 1772479662.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7f1106d4f5f9468f2666f86421e8ccee",
+    "semantic_hash": "7f1106d4f5f9468f2666f86421e8ccee"
+  },
+  "ErmayMuhasebe.Shared/Models/YillikSatisHedefi.cs": {
+    "mtime": 1768083836.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4622cf7f5ca40cff327c29ac8f90b1ff",
+    "semantic_hash": "4622cf7f5ca40cff327c29ac8f90b1ff"
+  },
+  "ErmayMuhasebe.Shared/Repositories/BankaRepository.cs": {
+    "mtime": 1772396652.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "988b6387face6e276fa08b614b3111d1",
+    "semantic_hash": "988b6387face6e276fa08b614b3111d1"
+  },
+  "ErmayMuhasebe.Shared/Repositories/BaseRepository.cs": {
+    "mtime": 1783802430.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0bf577840222ab33eb47a12116769254",
+    "semantic_hash": "0bf577840222ab33eb47a12116769254"
+  },
+  "ErmayMuhasebe.Shared/Repositories/BelgeArsivRepository.cs": {
+    "mtime": 1771712500.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a7730c03043413517c6f5a5ddae6d85b",
+    "semantic_hash": "a7730c03043413517c6f5a5ddae6d85b"
+  },
+  "ErmayMuhasebe.Shared/Repositories/CariRepository.cs": {
+    "mtime": 1788095844.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "03681bb6382ae90e42631bb90ee6def9",
+    "semantic_hash": "03681bb6382ae90e42631bb90ee6def9"
+  },
+  "ErmayMuhasebe.Shared/Repositories/CekRepository.cs": {
+    "mtime": 1770062784.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4577157f18cdece62a1ac98cd7f6702d",
+    "semantic_hash": "4577157f18cdece62a1ac98cd7f6702d"
+  },
+  "ErmayMuhasebe.Shared/Repositories/DataProviders/FirebaseDataProvider.cs": {
+    "mtime": 1776102524.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5f09622eefa45ef0fbdc75e62ee5a899",
+    "semantic_hash": "5f09622eefa45ef0fbdc75e62ee5a899"
+  },
+  "ErmayMuhasebe.Shared/Repositories/DataProviders/IDataProvider.cs": {
+    "mtime": 1788373890.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "25be2c394854b9fb01d8bbfcb8aa569b",
+    "semantic_hash": "25be2c394854b9fb01d8bbfcb8aa569b"
+  },
+  "ErmayMuhasebe.Shared/Repositories/DataProviders/SqliteDataProvider.cs": {
+    "mtime": 1776102514.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d55872715c805cb4188e882e80b6caea",
+    "semantic_hash": "d55872715c805cb4188e882e80b6caea"
+  },
+  "ErmayMuhasebe.Shared/Repositories/DovizRepository.cs": {
+    "mtime": 1769354104.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "239dd1560b447e3be45b5fd2abaa2015",
+    "semantic_hash": "239dd1560b447e3be45b5fd2abaa2015"
+  },
+  "ErmayMuhasebe.Shared/Repositories/EftRepository.cs": {
+    "mtime": 1771963104.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dfd24837c2466463e140be623d488495",
+    "semantic_hash": "dfd24837c2466463e140be623d488495"
+  },
+  "ErmayMuhasebe.Shared/Repositories/FaturaRepository.cs": {
+    "mtime": 1788088034.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f62e31ef91d5e24790639875755d297b",
+    "semantic_hash": "f62e31ef91d5e24790639875755d297b"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/BaseFirebaseRepository.cs": {
+    "mtime": 1774093104.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "adba78dad24fb6634a7c9a9cd39eefdd",
+    "semantic_hash": "adba78dad24fb6634a7c9a9cd39eefdd"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseBankaRepository.cs": {
+    "mtime": 1771709002.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bf44c33e014c4a69287f9906cbd1a7ce",
+    "semantic_hash": "bf44c33e014c4a69287f9906cbd1a7ce"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseBelgeArsivRepository.cs": {
+    "mtime": 1771712506.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e90da79cf7329fc190e5fdecd72587c2",
+    "semantic_hash": "e90da79cf7329fc190e5fdecd72587c2"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseCariRepository.cs": {
+    "mtime": 1782593912.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "334ced89bd750085d5ebce38161fa1cd",
+    "semantic_hash": "334ced89bd750085d5ebce38161fa1cd"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseCekRepository.cs": {
+    "mtime": 1769347128.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f0b0e958bd95371faa6e60d6ff75da80",
+    "semantic_hash": "f0b0e958bd95371faa6e60d6ff75da80"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseDovizRepository.cs": {
+    "mtime": 1769351224.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d9cb5e0884f50be156befb4ad6cdee72",
+    "semantic_hash": "d9cb5e0884f50be156befb4ad6cdee72"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseEftRepository.cs": {
+    "mtime": 1771963118.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5c7f935f38ea54e48d5b8ae39c05f64a",
+    "semantic_hash": "5c7f935f38ea54e48d5b8ae39c05f64a"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseFaturaRepository.cs": {
+    "mtime": 1772397944.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "91374ceb7d8478bbe54369daccb2f3b2",
+    "semantic_hash": "91374ceb7d8478bbe54369daccb2f3b2"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseHedefRepository.cs": {
+    "mtime": 1769357418.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d60de08cad8b668403c30104da0b7ac0",
+    "semantic_hash": "d60de08cad8b668403c30104da0b7ac0"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseKasaRepository.cs": {
+    "mtime": 1769357694.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "95b8ef60191a478c93f05bd4f79c4af4",
+    "semantic_hash": "95b8ef60191a478c93f05bd4f79c4af4"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseKrediKartiRepository.cs": {
+    "mtime": 1771963126.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f43a0b4bb94b1687a5a98e6c8cbf889d",
+    "semantic_hash": "f43a0b4bb94b1687a5a98e6c8cbf889d"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseMusteriTakipRepository.cs": {
+    "mtime": 1788374100.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b47013546c844e56545c667344187a09",
+    "semantic_hash": "b47013546c844e56545c667344187a09"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseNoteRepository.cs": {
+    "mtime": 1776768058.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8f8802ddd5ad201ca833060b00d93107",
+    "semantic_hash": "8f8802ddd5ad201ca833060b00d93107"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebasePortfoyRepository.cs": {
+    "mtime": 1769350872.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ec20055bda0301c3702655361e8ed615",
+    "semantic_hash": "ec20055bda0301c3702655361e8ed615"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseSenetRepository.cs": {
+    "mtime": 1769344862.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "59a518c4201210ca6ee693a4f25112bd",
+    "semantic_hash": "59a518c4201210ca6ee693a4f25112bd"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseSiparisRepository.cs": {
+    "mtime": 1771709008.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2b49a2f2156b951630b4274e7daeea0b",
+    "semantic_hash": "2b49a2f2156b951630b4274e7daeea0b"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseStokRepository.cs": {
+    "mtime": 1788268456.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5a2654693acd9497383c30697be2e433",
+    "semantic_hash": "5a2654693acd9497383c30697be2e433"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseStokSayimRepository.cs": {
+    "mtime": 1771709174.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9bcd91159748606d427ceaa0bcb4034d",
+    "semantic_hash": "9bcd91159748606d427ceaa0bcb4034d"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseTeklifRepository.cs": {
+    "mtime": 1771709014.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "41b2df6c9d7072287b4cee2bb0471272",
+    "semantic_hash": "41b2df6c9d7072287b4cee2bb0471272"
+  },
+  "ErmayMuhasebe.Shared/Repositories/Firebase/FirebaseUnitOfWork.cs": {
+    "mtime": 1788373914.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4a589e5565accb7f4a79863b085842fa",
+    "semantic_hash": "4a589e5565accb7f4a79863b085842fa"
+  },
+  "ErmayMuhasebe.Shared/Repositories/HedefRepository.cs": {
+    "mtime": 1769357420.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f2ad53473b1f203fb8ef1db0d133cd78",
+    "semantic_hash": "f2ad53473b1f203fb8ef1db0d133cd78"
+  },
+  "ErmayMuhasebe.Shared/Repositories/IMusteriTakipRepository.cs": {
+    "mtime": 1788373880.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5ffc7c31f9e12f0dbdb072b38de80f57",
+    "semantic_hash": "5ffc7c31f9e12f0dbdb072b38de80f57"
+  },
+  "ErmayMuhasebe.Shared/Repositories/IRepository.cs": {
+    "mtime": 1772394052.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "271f70cd0f7b9a67f6a3ebbab492d680",
+    "semantic_hash": "271f70cd0f7b9a67f6a3ebbab492d680"
+  },
+  "ErmayMuhasebe.Shared/Repositories/IUnitOfWork.cs": {
+    "mtime": 1788268356.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8bdb17a6c0aaf2623c54fd1559a20e2c",
+    "semantic_hash": "8bdb17a6c0aaf2623c54fd1559a20e2c"
+  },
+  "ErmayMuhasebe.Shared/Repositories/KasaRepository.cs": {
+    "mtime": 1770062742.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4f15c80866e712609925cf89401b6bcc",
+    "semantic_hash": "4f15c80866e712609925cf89401b6bcc"
+  },
+  "ErmayMuhasebe.Shared/Repositories/KrediKartiRepository.cs": {
+    "mtime": 1771963112.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c3e57c4642c355b0c9fe41f6dbd6623d",
+    "semantic_hash": "c3e57c4642c355b0c9fe41f6dbd6623d"
+  },
+  "ErmayMuhasebe.Shared/Repositories/MusteriTakipRepository.cs": {
+    "mtime": 1788373886.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "60e6bd75da074675f202118fab2455b3",
+    "semantic_hash": "60e6bd75da074675f202118fab2455b3"
+  },
+  "ErmayMuhasebe.Shared/Repositories/NoteRepository.cs": {
+    "mtime": 1776768046.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "257c81d562ca4d373d654a65c5de31d1",
+    "semantic_hash": "257c81d562ca4d373d654a65c5de31d1"
+  },
+  "ErmayMuhasebe.Shared/Repositories/PortfoyRepository.cs": {
+    "mtime": 1770062774.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "94e1d0666e3cfcb0c58dd00e2daef2ac",
+    "semantic_hash": "94e1d0666e3cfcb0c58dd00e2daef2ac"
+  },
+  "ErmayMuhasebe.Shared/Repositories/SenetRepository.cs": {
+    "mtime": 1770062760.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "eeb7d74b51c3bda3f7b08a56d86a5fa1",
+    "semantic_hash": "eeb7d74b51c3bda3f7b08a56d86a5fa1"
+  },
+  "ErmayMuhasebe.Shared/Repositories/SiparisRepository.cs": {
+    "mtime": 1771708856.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "95b9e3700d0e20adec9efad83a18cc24",
+    "semantic_hash": "95b9e3700d0e20adec9efad83a18cc24"
+  },
+  "ErmayMuhasebe.Shared/Repositories/StokRepository.cs": {
+    "mtime": 1788268364.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "83bf14ce66441a695a2fb100ba958005",
+    "semantic_hash": "83bf14ce66441a695a2fb100ba958005"
+  },
+  "ErmayMuhasebe.Shared/Repositories/StokSayimRepository.cs": {
+    "mtime": 1771708874.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "94a168aec69161642d4c87608899e84b",
+    "semantic_hash": "94a168aec69161642d4c87608899e84b"
+  },
+  "ErmayMuhasebe.Shared/Repositories/TeklifRepository.cs": {
+    "mtime": 1771708862.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c2b7b4facc63a329dbc12ee6b0acad67",
+    "semantic_hash": "c2b7b4facc63a329dbc12ee6b0acad67"
+  },
+  "ErmayMuhasebe.Shared/Repositories/UnitOfWork.cs": {
+    "mtime": 1788373900.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8c135216b0cbcf2c186273f06120ea1d",
+    "semantic_hash": "8c135216b0cbcf2c186273f06120ea1d"
+  },
+  "ErmayMuhasebe.Shared/Services/AuthService.cs": {
+    "mtime": 1772393696.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dfe98190dec2c19d9de93447b8b4c11c",
+    "semantic_hash": "dfe98190dec2c19d9de93447b8b4c11c"
+  },
+  "ErmayMuhasebe.Shared/Services/ChartHelper.cs": {
+    "mtime": 1783934268.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "adf7cd77ab79abf0d93019da505ffd24",
+    "semantic_hash": "adf7cd77ab79abf0d93019da505ffd24"
+  },
+  "ErmayMuhasebe.Shared/Services/CloudSyncService.cs": {
+    "mtime": 1788268322.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "374ef43a4277c7d188bd507e364a45b2",
+    "semantic_hash": "374ef43a4277c7d188bd507e364a45b2"
+  },
+  "ErmayMuhasebe.Shared/Services/CustomAuthStateProvider.cs": {
+    "mtime": 1766848060.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "17239eb4f44e83b77d5a1fcf64aefea0",
+    "semantic_hash": "17239eb4f44e83b77d5a1fcf64aefea0"
+  },
+  "ErmayMuhasebe.Shared/Services/DatabaseService.cs": {
+    "mtime": 1788373866.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ffb365855649df445ddb357377e8b864",
+    "semantic_hash": "ffb365855649df445ddb357377e8b864"
+  },
+  "ErmayMuhasebe.Shared/Services/DovizService.cs": {
+    "mtime": 1781605300.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3d7b081cead8b7ea716f2f5e474be188",
+    "semantic_hash": "3d7b081cead8b7ea716f2f5e474be188"
+  },
+  "ErmayMuhasebe.Shared/Services/ExcelService.cs": {
+    "mtime": 1786802412.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b365b38886543a5aa0a6427f29a87614",
+    "semantic_hash": "b365b38886543a5aa0a6427f29a87614"
+  },
+  "ErmayMuhasebe.Shared/Services/ExternalApiService.cs": {
+    "mtime": 1776850134.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "93d82d76c5cd4340850df41a267afe56",
+    "semantic_hash": "93d82d76c5cd4340850df41a267afe56"
+  },
+  "ErmayMuhasebe.Shared/Services/FinansService.cs": {
+    "mtime": 1781509194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e53980a2d80305be5fa0feeabea8a968",
+    "semantic_hash": "e53980a2d80305be5fa0feeabea8a968"
+  },
+  "ErmayMuhasebe.Shared/Services/IExcelService.cs": {
+    "mtime": 1776767122.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d73f8b701f96c44dc74081960b8480a1",
+    "semantic_hash": "d73f8b701f96c44dc74081960b8480a1"
+  },
+  "ErmayMuhasebe.Shared/Services/IFileService.cs": {
+    "mtime": 1782977234.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8a6ddf7e67b1379fa4a94203744bdd9f",
+    "semantic_hash": "8a6ddf7e67b1379fa4a94203744bdd9f"
+  },
+  "ErmayMuhasebe.Shared/Services/IFinansService.cs": {
+    "mtime": 1781162708.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a638e8ca6cebfde91856fe43e628055e",
+    "semantic_hash": "a638e8ca6cebfde91856fe43e628055e"
+  },
+  "ErmayMuhasebe.Shared/Services/IFirebaseService.cs": {
+    "mtime": 1775773268.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6f6893d5c49f647d868e47112fee8e72",
+    "semantic_hash": "6f6893d5c49f647d868e47112fee8e72"
+  },
+  "ErmayMuhasebe.Shared/Services/IPdfService.cs": {
+    "mtime": 1788379488.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "90c0ccea7d747af87399ffa033ef8847",
+    "semantic_hash": "90c0ccea7d747af87399ffa033ef8847"
+  },
+  "ErmayMuhasebe.Shared/Services/IYearContext.cs": {
+    "mtime": 1774207048.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e7419cde0520e364a42ec0587d061e60",
+    "semantic_hash": "e7419cde0520e364a42ec0587d061e60"
+  },
+  "ErmayMuhasebe.Shared/Services/PdfService.cs": {
+    "mtime": 1788379506.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "229348eacd5fac7d70704db176599249",
+    "semantic_hash": "229348eacd5fac7d70704db176599249"
+  },
+  "ErmayMuhasebe.Shared/Services/SecuritySyncService.cs": {
+    "mtime": 1783319792.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f2b9f482bc456a47894e09e3c7be465f",
+    "semantic_hash": "f2b9f482bc456a47894e09e3c7be465f"
+  },
+  "ErmayMuhasebe.Shared/Services/TelegramService.cs": {
+    "mtime": 1783280946.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2b1c19d73674c09b4ec185ca3e1ff173",
+    "semantic_hash": "2b1c19d73674c09b4ec185ca3e1ff173"
+  },
+  "ErmayMuhasebe.Shared/Validators/CariKartValidator.cs": {
+    "mtime": 1776768110.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bc5f54017018e6cedc2a8cee16c90b95",
+    "semantic_hash": "bc5f54017018e6cedc2a8cee16c90b95"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/BankaDetayViewModel.cs": {
+    "mtime": 1785921486.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "31894d9c9ff73eabb4ea95f5d197da31",
+    "semantic_hash": "31894d9c9ff73eabb4ea95f5d197da31"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/BankaListViewModel.cs": {
+    "mtime": 1776374746.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9d75a6cc6765a3c6db1fc409fd84db8b",
+    "semantic_hash": "9d75a6cc6765a3c6db1fc409fd84db8b"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/BarkodTasarimViewModel.cs": {
+    "mtime": 1773679262.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "43761d6f66d274e6054dabbd22b93612",
+    "semantic_hash": "43761d6f66d274e6054dabbd22b93612"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/BorcHatirlaticiViewModel.cs": {
+    "mtime": 1773690434.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8b30ef9768666efad01763c864d73511",
+    "semantic_hash": "8b30ef9768666efad01763c864d73511"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/ButcePlanlamaViewModel.cs": {
+    "mtime": 1776367316.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ff05179a4897b4f2f2c70a20cc3e2fa2",
+    "semantic_hash": "ff05179a4897b4f2f2c70a20cc3e2fa2"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/CariBirlestirmeViewModel.cs": {
+    "mtime": 1773681666.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "efe05b502be7c2ade32646589d045cea",
+    "semantic_hash": "efe05b502be7c2ade32646589d045cea"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/CariDetayViewModel.cs": {
+    "mtime": 1783930462.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "275b4daf26b907f3c32f544172e7fe01",
+    "semantic_hash": "275b4daf26b907f3c32f544172e7fe01"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/CariListViewModel.cs": {
+    "mtime": 1788088052.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9e6c59c74a9330109b7653dec1d01dc8",
+    "semantic_hash": "9e6c59c74a9330109b7653dec1d01dc8"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/CekRiskAnalizViewModel.cs": {
+    "mtime": 1776374776.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3c7749c36dc3bc66fd4f447a035a0491",
+    "semantic_hash": "3c7749c36dc3bc66fd4f447a035a0491"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/CekSenetListViewModel.cs": {
+    "mtime": 1782892474.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0ac10cba60da213c0000a7b3bcfe78fc",
+    "semantic_hash": "0ac10cba60da213c0000a7b3bcfe78fc"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/DashboardViewModel.cs": {
+    "mtime": 1776764874.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "72f2f305b27877bf0d387ca96085cf17",
+    "semantic_hash": "72f2f305b27877bf0d387ca96085cf17"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/DovizOtomasyonViewModel.cs": {
+    "mtime": 1784183716.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ab1dcda571949c99e372fc059eec98b9",
+    "semantic_hash": "ab1dcda571949c99e372fc059eec98b9"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/EFTListViewModel.cs": {
+    "mtime": 1785921494.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9f9501482013cd14bd63f6b33026627b",
+    "semantic_hash": "9f9501482013cd14bd63f6b33026627b"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/EvrakNoDuzenleViewModel.cs": {
+    "mtime": 1773683950.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "910c912be63fb3ef82d3583c9905e517",
+    "semantic_hash": "910c912be63fb3ef82d3583c9905e517"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/FaturaDetayViewModel.cs": {
+    "mtime": 1781471890.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e6fa6bb6b1a91a1ac13448884b5ecc1c",
+    "semantic_hash": "e6fa6bb6b1a91a1ac13448884b5ecc1c"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/FaturaListViewModel.cs": {
+    "mtime": 1782978638.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b32ea1b5d41fda82c96a63c76fc6b93e",
+    "semantic_hash": "b32ea1b5d41fda82c96a63c76fc6b93e"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/FaturaTasarimViewModel.cs": {
+    "mtime": 1786448460.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "79170f557375fb10a9a47919361f2b60",
+    "semantic_hash": "79170f557375fb10a9a47919361f2b60"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/FinansDashboardViewModel.cs": {
+    "mtime": 1781513948.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4138d49e329a8c66a5a0315598051c79",
+    "semantic_hash": "4138d49e329a8c66a5a0315598051c79"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/FinansViewModel.cs": {
+    "mtime": 1778003766.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3e996c61107d2df9eff4c6f199912803",
+    "semantic_hash": "3e996c61107d2df9eff4c6f199912803"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/HaftalikHedefTakipViewModel.cs": {
+    "mtime": 1775769274.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f2dde09be327bad8ee52491f5cb5b077",
+    "semantic_hash": "f2dde09be327bad8ee52491f5cb5b077"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/KasaDetayViewModel.cs": {
+    "mtime": 1785921480.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fd26c745cdd7b80cd5ebb5aa1e78af09",
+    "semantic_hash": "fd26c745cdd7b80cd5ebb5aa1e78af09"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/KasaListViewModel.cs": {
+    "mtime": 1785921474.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "703597eb362c37e708cc468d86721ed3",
+    "semantic_hash": "703597eb362c37e708cc468d86721ed3"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/KrediKartiListViewModel.cs": {
+    "mtime": 1785921500.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "89dbc4339020617876f4adc26d3e7aa4",
+    "semantic_hash": "89dbc4339020617876f4adc26d3e7aa4"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/MusteriLimitViewModel.cs": {
+    "mtime": 1776367158.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c5c407968274d59cc9909c6227f20437",
+    "semantic_hash": "c5c407968274d59cc9909c6227f20437"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/OptimalFiyatViewModel.cs": {
+    "mtime": 1773688954.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "68aa29d70bc035feb50e067bc4523ebd",
+    "semantic_hash": "68aa29d70bc035feb50e067bc4523ebd"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/PortfoyListViewModel.cs": {
+    "mtime": 1782467802.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e0f9adf73e90bde4513cb1197b1d5e60",
+    "semantic_hash": "e0f9adf73e90bde4513cb1197b1d5e60"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/RaporListViewModel.cs": {
+    "mtime": 1782725916.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "040e8cc055380667b2ce327b83ed481a",
+    "semantic_hash": "040e8cc055380667b2ce327b83ed481a"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/SettingsViewModel.cs": {
+    "mtime": 1783496758.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8c2a47ec50999e28697029cc135a4a10",
+    "semantic_hash": "8c2a47ec50999e28697029cc135a4a10"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/SiparisDetayViewModel.cs": {
+    "mtime": 1781471894.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a619bcef94a1c4fa67ef4c82bb2fa7d6",
+    "semantic_hash": "a619bcef94a1c4fa67ef4c82bb2fa7d6"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/SiparisListViewModel.cs": {
+    "mtime": 1782978656.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d0a2b037a6fe74a3a7d05dfa412ced49",
+    "semantic_hash": "d0a2b037a6fe74a3a7d05dfa412ced49"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/SistemSaglikViewModel.cs": {
+    "mtime": 1775769318.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "673ef513b562c2d13a9d4622d855edcd",
+    "semantic_hash": "673ef513b562c2d13a9d4622d855edcd"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/StokGrupDuzenleViewModel.cs": {
+    "mtime": 1773681724.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "56c4a2573b3bf97f64731fb9894319d1",
+    "semantic_hash": "56c4a2573b3bf97f64731fb9894319d1"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/StokListViewModel.cs": {
+    "mtime": 1788268394.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f8f4efea5b54364e569b087ada84c33f",
+    "semantic_hash": "f8f4efea5b54364e569b087ada84c33f"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/TeklifDetayViewModel.cs": {
+    "mtime": 1781471898.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d3bc9b92a0913ca8c32ebbaeab84c5ff",
+    "semantic_hash": "d3bc9b92a0913ca8c32ebbaeab84c5ff"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/TeklifListViewModel.cs": {
+    "mtime": 1782978664.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1bf02c687fc550c77f9ea46f52e97084",
+    "semantic_hash": "1bf02c687fc550c77f9ea46f52e97084"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/TopluFiyatViewModel.cs": {
+    "mtime": 1773424634.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9df254d86ed4b082d3e7d080491e2f3b",
+    "semantic_hash": "9df254d86ed4b082d3e7d080491e2f3b"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/VadeTakipViewModel.cs": {
+    "mtime": 1770283998.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a11e46cbdab1eea2e279ccd41c518a85",
+    "semantic_hash": "a11e46cbdab1eea2e279ccd41c518a85"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/VeriTemizlikViewModel.cs": {
+    "mtime": 1775772848.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2bf6dda663e428f918fdd9d2be3bdc25",
+    "semantic_hash": "2bf6dda663e428f918fdd9d2be3bdc25"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/ViewModelBase.cs": {
+    "mtime": 1783799686.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a201fdc159a5feed0fc55e32581c9ed8",
+    "semantic_hash": "a201fdc159a5feed0fc55e32581c9ed8"
+  },
+  "ErmayMuhasebe.Shared/ViewModels/YearSelectionViewModel.cs": {
+    "mtime": 1775771596.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "970e4136de9e13d224b457a3dbe4e087",
+    "semantic_hash": "970e4136de9e13d224b457a3dbe4e087"
+  },
+  "ErmayMuhasebe.Shared/_Imports.razor": {
+    "mtime": 1776375228.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "905002f195663539b170594c90849de4",
+    "semantic_hash": "905002f195663539b170594c90849de4"
+  },
+  "ErmayMuhasebe.Shared/bin/Debug/net9.0/ErmayMuhasebe.Shared.deps.json": {
+    "mtime": 1788373840.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "421a6b45b023367163763d80693b8500",
+    "semantic_hash": "421a6b45b023367163763d80693b8500"
+  },
+  "ErmayMuhasebe.Shared/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1787386462.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": "ff3517b1163003098ee37a1a6f1dc08d"
+  },
+  "ErmayMuhasebe.Shared/obj/Debug/net9.0/ErmayMuhasebe.Shared.AssemblyInfo.cs": {
+    "mtime": 1782812244.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d2d58c2defd8d3cb513825285f557aed",
+    "semantic_hash": "d2d58c2defd8d3cb513825285f557aed"
+  },
+  "ErmayMuhasebe.Shared/obj/Debug/net9.0/ErmayMuhasebe.Shared.GlobalUsings.g.cs": {
+    "mtime": 1788373764.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9706b2dbf69f7db452e8b0d5baf54dcf",
+    "semantic_hash": "9706b2dbf69f7db452e8b0d5baf54dcf"
+  },
+  "ErmayMuhasebe.Shared/obj/Debug/net9.0/rbcswa.dswa.cache.json": {
+    "mtime": 1775503248.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c8f477ebea762457bacfcee4640e2d5e",
+    "semantic_hash": "c8f477ebea762457bacfcee4640e2d5e"
+  },
+  "ErmayMuhasebe.Shared/obj/ErmayMuhasebe.Shared.csproj.nuget.dgspec.json": {
+    "mtime": 1788373764.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c3c652cfa0b9564bbcaa578a118c31a7",
+    "semantic_hash": "c3c652cfa0b9564bbcaa578a118c31a7"
+  },
+  "ErmayMuhasebe.Shared/obj/project.assets.json": {
+    "mtime": 1788373764.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "efe0090081369c41bd4cb6830880ad13",
+    "semantic_hash": "efe0090081369c41bd4cb6830880ad13"
+  },
+  "ErmayMuhasebe.Shared/wwwroot/exampleJsInterop.js": {
+    "mtime": 1766580162.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "97d6a74443388b8a3a7219dfdfbf0daa",
+    "semantic_hash": "97d6a74443388b8a3a7219dfdfbf0daa"
+  },
+  "ErmayMuhasebe.Tests/ErmayMuhasebe.Tests.csproj": {
+    "mtime": 1776851822.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f4afe07edb671295a8ee1b8fe10586c6",
+    "semantic_hash": "f4afe07edb671295a8ee1b8fe10586c6"
+  },
+  "ErmayMuhasebe.Tests/Integration/AgingAuditTests.cs": {
+    "mtime": 1781511580.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "48513c5accb0ff8c6b8f4b4320299df6",
+    "semantic_hash": "48513c5accb0ff8c6b8f4b4320299df6"
+  },
+  "ErmayMuhasebe.Tests/Integration/BusinessFlowTests.cs": {
+    "mtime": 1776851978.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6d728338d865cfe639971a26961a6f03",
+    "semantic_hash": "6d728338d865cfe639971a26961a6f03"
+  },
+  "ErmayMuhasebe.Tests/Integration/ComprehensiveBusinessTests.cs": {
+    "mtime": 1775767116.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "552c732eda2337f5e7601ad0b124c5ae",
+    "semantic_hash": "552c732eda2337f5e7601ad0b124c5ae"
+  },
+  "ErmayMuhasebe.Tests/Integration/EndorsementAuditTests.cs": {
+    "mtime": 1776856448.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1a9309a15822006654869fb6bdfdffaf",
+    "semantic_hash": "1a9309a15822006654869fb6bdfdffaf"
+  },
+  "ErmayMuhasebe.Tests/Integration/FinansServiceTests.cs": {
+    "mtime": 1781163082.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ff1b82cc594bd87529f8e32a37253f06",
+    "semantic_hash": "ff1b82cc594bd87529f8e32a37253f06"
+  },
+  "ErmayMuhasebe.Tests/Integration/Full626PathAudit.cs": {
+    "mtime": 1781163704.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c357dfa4c769007f7b3a75b5a3fb96ba",
+    "semantic_hash": "c357dfa4c769007f7b3a75b5a3fb96ba"
+  },
+  "ErmayMuhasebe.Tests/Integration/FullSystemDeepAudit.cs": {
+    "mtime": 1776854360.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9ea83f57927e59342efbf0efcf577f93",
+    "semantic_hash": "9ea83f57927e59342efbf0efcf577f93"
+  },
+  "ErmayMuhasebe.Tests/Integration/MultiEndorsementAuditTests.cs": {
+    "mtime": 1776856516.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "99928ec8d03c1c44daa598ccdbafa23d",
+    "semantic_hash": "99928ec8d03c1c44daa598ccdbafa23d"
+  },
+  "ErmayMuhasebe.Tests/Models/CariKartTests.cs": {
+    "mtime": 1769354272.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "384ed7317bec676247eb49318535ef8d",
+    "semantic_hash": "384ed7317bec676247eb49318535ef8d"
+  },
+  "ErmayMuhasebe.Tests/Models/FaturaTests.cs": {
+    "mtime": 1769354272.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "123eaca7e898cdc102eae91598956b25",
+    "semantic_hash": "123eaca7e898cdc102eae91598956b25"
+  },
+  "ErmayMuhasebe.Tests/Models/StokKartTests.cs": {
+    "mtime": 1769354272.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9556be8aa4352a3b045b37ee08513577",
+    "semantic_hash": "9556be8aa4352a3b045b37ee08513577"
+  },
+  "ErmayMuhasebe.Tests/Repositories/CariRepositoryTests.cs": {
+    "mtime": 1769354272.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fc2ade9781e8b57fb8e0256a18ae6108",
+    "semantic_hash": "fc2ade9781e8b57fb8e0256a18ae6108"
+  },
+  "ErmayMuhasebe.Tests/Repositories/FaturaRepositoryTests.cs": {
+    "mtime": 1769354272.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d3abb6d1214a043e3bf9209ca42475d8",
+    "semantic_hash": "d3abb6d1214a043e3bf9209ca42475d8"
+  },
+  "ErmayMuhasebe.Tests/Repositories/StokRepositoryTests.cs": {
+    "mtime": 1769354272.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f9adf26ee7aae0cf643b8614d79a7361",
+    "semantic_hash": "f9adf26ee7aae0cf643b8614d79a7361"
+  },
+  "ErmayMuhasebe.Tests/Repositories/UnitOfWorkTests.cs": {
+    "mtime": 1769354272.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6f83b738e61e8adb7cc6efd49d0d4f66",
+    "semantic_hash": "6f83b738e61e8adb7cc6efd49d0d4f66"
+  },
+  "ErmayMuhasebe.Tests/Services/AuthServiceTests.cs": {
+    "mtime": 1772226194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "14a447a48b5dcd9ba1353b60724be94c",
+    "semantic_hash": "14a447a48b5dcd9ba1353b60724be94c"
+  },
+  "ErmayMuhasebe.Tests/Services/DatabaseServiceTests.cs": {
+    "mtime": 1783881586.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a74219a5ebd7dc1f58df082131067dfa",
+    "semantic_hash": "a74219a5ebd7dc1f58df082131067dfa"
+  },
+  "ErmayMuhasebe.Tests/bin/Debug/net9.0/ErmayMuhasebe.Tests.deps.json": {
+    "mtime": 1788264470.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c70d1f723f08d9367378dfa0a4888505",
+    "semantic_hash": "c70d1f723f08d9367378dfa0a4888505"
+  },
+  "ErmayMuhasebe.Tests/bin/Debug/net9.0/ErmayMuhasebe.Tests.runtimeconfig.json": {
+    "mtime": 1788264470.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bd1700a57c9b2f96336d6d657be835a5",
+    "semantic_hash": "bd1700a57c9b2f96336d6d657be835a5"
+  },
+  "ErmayMuhasebe.Tests/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1781079170.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": "ff3517b1163003098ee37a1a6f1dc08d"
+  },
+  "ErmayMuhasebe.Tests/obj/Debug/net9.0/ErmayMuhasebe.Tests.AssemblyInfo.cs": {
+    "mtime": 1782890274.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "43279ac538c9ada6ec304a7cce91cc18",
+    "semantic_hash": "43279ac538c9ada6ec304a7cce91cc18"
+  },
+  "ErmayMuhasebe.Tests/obj/Debug/net9.0/ErmayMuhasebe.Tests.GlobalUsings.g.cs": {
+    "mtime": 1788264424.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "85ade9612eda34da064d8501bc008ac7",
+    "semantic_hash": "85ade9612eda34da064d8501bc008ac7"
+  },
+  "ErmayMuhasebe.Tests/obj/ErmayMuhasebe.Tests.csproj.nuget.dgspec.json": {
+    "mtime": 1788264424.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5b2aa833ee33d4828fc3d76476a9a056",
+    "semantic_hash": "5b2aa833ee33d4828fc3d76476a9a056"
+  },
+  "ErmayMuhasebe.Tests/obj/project.assets.json": {
+    "mtime": 1788264422.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "77d4a3a717dd14fb91861d855ddf8c8f",
+    "semantic_hash": "77d4a3a717dd14fb91861d855ddf8c8f"
+  },
+  "ermaymuhasebe-mobil/.claude/settings.json": {
+    "mtime": 1785924946.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dc580fca35a0e98ed20777ede5e545a1",
+    "semantic_hash": "dc580fca35a0e98ed20777ede5e545a1"
+  },
+  "ermaymuhasebe-mobil/App.tsx": {
+    "mtime": 1787818446.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c2d76d54841539597f48b0133a063556",
+    "semantic_hash": "c2d76d54841539597f48b0133a063556"
+  },
+  "ermaymuhasebe-mobil/app.json": {
+    "mtime": 1786442134.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ae6b44f7688b759681d6601a93424e66",
+    "semantic_hash": "ae6b44f7688b759681d6601a93424e66"
+  },
+  "ermaymuhasebe-mobil/babel.config.js": {
+    "mtime": 1787663776.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "566844c6c648c905c9b35ac910472197",
+    "semantic_hash": "566844c6c648c905c9b35ac910472197"
+  },
+  "ermaymuhasebe-mobil/eas.json": {
+    "mtime": 1785925362.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "64c48fac5f5fc2af57c64522e8843eb9",
+    "semantic_hash": "64c48fac5f5fc2af57c64522e8843eb9"
+  },
+  "ermaymuhasebe-mobil/index.ts": {
+    "mtime": 1785924008.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "33caa6d28d87fc7e637c033d0d7124b1",
+    "semantic_hash": "33caa6d28d87fc7e637c033d0d7124b1"
+  },
+  "ermaymuhasebe-mobil/package.json": {
+    "mtime": 1787665958.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "64eda6ccffba197724e1db537f7507b7",
+    "semantic_hash": "64eda6ccffba197724e1db537f7507b7"
+  },
+  "ermaymuhasebe-mobil/scratch_replace.js": {
+    "mtime": 1787649258.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fbe4775959d9f856b5a83e84f3672005",
+    "semantic_hash": "fbe4775959d9f856b5a83e84f3672005"
+  },
+  "ermaymuhasebe-mobil/scratch_replace_async.js": {
+    "mtime": 1787649354.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4ee8960bf7025def48d94d793bb4f986",
+    "semantic_hash": "4ee8960bf7025def48d94d793bb4f986"
+  },
+  "ermaymuhasebe-mobil/src/__tests__/analiz.test.ts": {
+    "mtime": 1787821192.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e2a3b31eb8fe4e6695c78003a9eba39b",
+    "semantic_hash": "e2a3b31eb8fe4e6695c78003a9eba39b"
+  },
+  "ermaymuhasebe-mobil/src/components/AppleGroupedList.tsx": {
+    "mtime": 1788098922.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e940b41fe3ab8d987a274a8539736585",
+    "semantic_hash": "e940b41fe3ab8d987a274a8539736585"
+  },
+  "ermaymuhasebe-mobil/src/components/FadeInView.tsx": {
+    "mtime": 1787821192.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fbc7fe4959410611681373a8bce3a8c5",
+    "semantic_hash": "fbc7fe4959410611681373a8bce3a8c5"
+  },
+  "ermaymuhasebe-mobil/src/components/GlassCard.tsx": {
+    "mtime": 1788095330.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3088dae687c79362febbe8b14f90e02d",
+    "semantic_hash": "3088dae687c79362febbe8b14f90e02d"
+  },
+  "ermaymuhasebe-mobil/src/components/IOSGlassCalendar.tsx": {
+    "mtime": 1787821192.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "462bc8152616cf0727a55e7c9c2e7368",
+    "semantic_hash": "462bc8152616cf0727a55e7c9c2e7368"
+  },
+  "ermaymuhasebe-mobil/src/components/LiquidGlassView.tsx": {
+    "mtime": 1787821192.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8690973751e39bed785512fc03207ed4",
+    "semantic_hash": "8690973751e39bed785512fc03207ed4"
+  },
+  "ermaymuhasebe-mobil/src/components/OfflineNetworkBar.tsx": {
+    "mtime": 1787821192.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2e5451cb11d9c49d74c8e83efe309311",
+    "semantic_hash": "2e5451cb11d9c49d74c8e83efe309311"
+  },
+  "ermaymuhasebe-mobil/src/components/Shimmer.tsx": {
+    "mtime": 1788092496.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f39a03e2978bb0178c229e07268239f3",
+    "semantic_hash": "f39a03e2978bb0178c229e07268239f3"
+  },
+  "ermaymuhasebe-mobil/src/components/UtilitarianCariRow.tsx": {
+    "mtime": 1788096858.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "5468fe3de69c4555a8c883168a67edb9",
+    "semantic_hash": "5468fe3de69c4555a8c883168a67edb9"
+  },
+  "ermaymuhasebe-mobil/src/navigation/AppNavigator.tsx": {
+    "mtime": 1787913304.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "940990b56462436636b25a13efa4f8a2",
+    "semantic_hash": "940990b56462436636b25a13efa4f8a2"
+  },
+  "ermaymuhasebe-mobil/src/screens/AraclarScreen.tsx": {
+    "mtime": 1787821192.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "407667964eb3afa69e9d794c3c676feb",
+    "semantic_hash": "407667964eb3afa69e9d794c3c676feb"
+  },
+  "ermaymuhasebe-mobil/src/screens/AyarlarScreen.tsx": {
+    "mtime": 1787948198.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a56b4e6305f5acfa9376f2a1803d41e7",
+    "semantic_hash": "a56b4e6305f5acfa9376f2a1803d41e7"
+  },
+  "ermaymuhasebe-mobil/src/screens/BildirimlerScreen.tsx": {
+    "mtime": 1787821192.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "34a230e34ccf6365c40ff19780c4e5ad",
+    "semantic_hash": "34a230e34ccf6365c40ff19780c4e5ad"
+  },
+  "ermaymuhasebe-mobil/src/screens/CarilerScreen.tsx": {
+    "mtime": 1788102466.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b46ebeca45b28193b5d6f736f77c8b1b",
+    "semantic_hash": "b46ebeca45b28193b5d6f736f77c8b1b"
+  },
+  "ermaymuhasebe-mobil/src/screens/DahaFazlaScreen.tsx": {
+    "mtime": 1787821194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "06e29b544b630f3563361f4867f942ae",
+    "semantic_hash": "06e29b544b630f3563361f4867f942ae"
+  },
+  "ermaymuhasebe-mobil/src/screens/DashboardScreen.tsx": {
+    "mtime": 1788102860.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dc4668b696f3f6e480aaa3ed0a86e738",
+    "semantic_hash": "dc4668b696f3f6e480aaa3ed0a86e738"
+  },
+  "ermaymuhasebe-mobil/src/screens/FaturaFormScreen.tsx": {
+    "mtime": 1787839384.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "076dd29be8b6f8ac2207c607fde01bb5",
+    "semantic_hash": "076dd29be8b6f8ac2207c607fde01bb5"
+  },
+  "ermaymuhasebe-mobil/src/screens/FaturaTasarimScreen.tsx": {
+    "mtime": 1787821194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a27cd49b29893128bba36fc72c7848cb",
+    "semantic_hash": "a27cd49b29893128bba36fc72c7848cb"
+  },
+  "ermaymuhasebe-mobil/src/screens/FaturalarScreen.tsx": {
+    "mtime": 1788096632.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b40db460346adb91965f19c1b534b8a2",
+    "semantic_hash": "b40db460346adb91965f19c1b534b8a2"
+  },
+  "ermaymuhasebe-mobil/src/screens/FinansScreen.tsx": {
+    "mtime": 1788092764.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "53d48f8b1f74c242a77909369aa4b894",
+    "semantic_hash": "53d48f8b1f74c242a77909369aa4b894"
+  },
+  "ermaymuhasebe-mobil/src/screens/HatirlaticiScreen.tsx": {
+    "mtime": 1787821194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "067c815722a0643c380af272eb97a6ff",
+    "semantic_hash": "067c815722a0643c380af272eb97a6ff"
+  },
+  "ermaymuhasebe-mobil/src/screens/KanbanScreen.tsx": {
+    "mtime": 1787821194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4bf144e8a7196f35f3d1c85bc803604e",
+    "semantic_hash": "4bf144e8a7196f35f3d1c85bc803604e"
+  },
+  "ermaymuhasebe-mobil/src/screens/LockScreen.tsx": {
+    "mtime": 1787821194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e495ab18af54fbeed5e21fb1ff353d41",
+    "semantic_hash": "e495ab18af54fbeed5e21fb1ff353d41"
+  },
+  "ermaymuhasebe-mobil/src/screens/LoginScreen.tsx": {
+    "mtime": 1787839164.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f7c33597ddff69d4f4024902c91bb2e8",
+    "semantic_hash": "f7c33597ddff69d4f4024902c91bb2e8"
+  },
+  "ermaymuhasebe-mobil/src/screens/MaliyetHesaplamaScreen.tsx": {
+    "mtime": 1787821194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fc991431be8cc9c9df1071217c0ccb51",
+    "semantic_hash": "fc991431be8cc9c9df1071217c0ccb51"
+  },
+  "ermaymuhasebe-mobil/src/screens/MusteriLimitScreen.tsx": {
+    "mtime": 1787821194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dcb18c834a119db0061eb947540e2898",
+    "semantic_hash": "dcb18c834a119db0061eb947540e2898"
+  },
+  "ermaymuhasebe-mobil/src/screens/RaporDetayScreen.tsx": {
+    "mtime": 1787915286.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "11ffa96976f7f5f7c13ec5f1d2e026ca",
+    "semantic_hash": "11ffa96976f7f5f7c13ec5f1d2e026ca"
+  },
+  "ermaymuhasebe-mobil/src/screens/RaporlarScreen.tsx": {
+    "mtime": 1788092712.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a97fad7a25a66ec88906703635666271",
+    "semantic_hash": "a97fad7a25a66ec88906703635666271"
+  },
+  "ermaymuhasebe-mobil/src/screens/SiparisFormScreen.tsx": {
+    "mtime": 1787839422.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6aacce786714939f72fa138f534a8694",
+    "semantic_hash": "6aacce786714939f72fa138f534a8694"
+  },
+  "ermaymuhasebe-mobil/src/screens/SiparislerScreen.tsx": {
+    "mtime": 1788092744.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "dc84e3a23822bfc31cbc069317c580e9",
+    "semantic_hash": "dc84e3a23822bfc31cbc069317c580e9"
+  },
+  "ermaymuhasebe-mobil/src/screens/StokGrupScreen.tsx": {
+    "mtime": 1788268524.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7168c444e7708fadffc8e06c6d2aaa74",
+    "semantic_hash": "7168c444e7708fadffc8e06c6d2aaa74"
+  },
+  "ermaymuhasebe-mobil/src/screens/StokSayimScreen.tsx": {
+    "mtime": 1787821194.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c0048363bf9857c200616eb023ca9ab1",
+    "semantic_hash": "c0048363bf9857c200616eb023ca9ab1"
+  },
+  "ermaymuhasebe-mobil/src/screens/StoklarScreen.tsx": {
+    "mtime": 1788268512.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f168a3c28b75f4b18b1746f24546f597",
+    "semantic_hash": "f168a3c28b75f4b18b1746f24546f597"
+  },
+  "ermaymuhasebe-mobil/src/screens/TeklifFormScreen.tsx": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d87be2964e13a3ede26c7e1d62b2dc87",
+    "semantic_hash": "d87be2964e13a3ede26c7e1d62b2dc87"
+  },
+  "ermaymuhasebe-mobil/src/screens/TekliflerScreen.tsx": {
+    "mtime": 1788092750.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c683165536b01c24ddb6d07a8a64f0aa",
+    "semantic_hash": "c683165536b01c24ddb6d07a8a64f0aa"
+  },
+  "ermaymuhasebe-mobil/src/screens/VadeTakipScreen.tsx": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8600a64bfee35a1a8f8926b460812f17",
+    "semantic_hash": "8600a64bfee35a1a8f8926b460812f17"
+  },
+  "ermaymuhasebe-mobil/src/services/__tests__/alertService.test.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "437f69925e7450fb420919b188e2788a",
+    "semantic_hash": "437f69925e7450fb420919b188e2788a"
+  },
+  "ermaymuhasebe-mobil/src/services/__tests__/analizUtils.test.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "22b36b1d751bea433e243f23b6f5a186",
+    "semantic_hash": "22b36b1d751bea433e243f23b6f5a186"
+  },
+  "ermaymuhasebe-mobil/src/services/__tests__/finansAnalizUtils.test.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bb34ce3147ceff254ce060312b92fcdf",
+    "semantic_hash": "bb34ce3147ceff254ce060312b92fcdf"
+  },
+  "ermaymuhasebe-mobil/src/services/__tests__/firebase.test.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7703b1f4eae89ee2c21952fc58fcb654",
+    "semantic_hash": "7703b1f4eae89ee2c21952fc58fcb654"
+  },
+  "ermaymuhasebe-mobil/src/services/__tests__/lockService.test.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "42c8ca113bc9247e4dfd6dc20c596848",
+    "semantic_hash": "42c8ca113bc9247e4dfd6dc20c596848"
+  },
+  "ermaymuhasebe-mobil/src/services/__tests__/themeService.test.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1b3851076bf8b05aba3585ed1b64354c",
+    "semantic_hash": "1b3851076bf8b05aba3585ed1b64354c"
+  },
+  "ermaymuhasebe-mobil/src/services/__tests__/transactionService.test.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b99e3aebcdebf39fbf45b8363cbdf535",
+    "semantic_hash": "b99e3aebcdebf39fbf45b8363cbdf535"
+  },
+  "ermaymuhasebe-mobil/src/services/alertService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a211b5d4a552b9fcfaef343c2eb2f00d",
+    "semantic_hash": "a211b5d4a552b9fcfaef343c2eb2f00d"
+  },
+  "ermaymuhasebe-mobil/src/services/analizUtils.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "11a916f2c95137c03549b96d891a1524",
+    "semantic_hash": "11a916f2c95137c03549b96d891a1524"
+  },
+  "ermaymuhasebe-mobil/src/services/apiService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bd73d84df0a1971cc61301d8e3e16527",
+    "semantic_hash": "bd73d84df0a1971cc61301d8e3e16527"
+  },
+  "ermaymuhasebe-mobil/src/services/appStateStore.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "c7f3432c76f355d0175f09d859883a82",
+    "semantic_hash": "c7f3432c76f355d0175f09d859883a82"
+  },
+  "ermaymuhasebe-mobil/src/services/biometricService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "6d4452577fe99c17d05127281f77005a",
+    "semantic_hash": "6d4452577fe99c17d05127281f77005a"
+  },
+  "ermaymuhasebe-mobil/src/services/contactService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "7c9a894682f08e19d3656bd80243b9d1",
+    "semantic_hash": "7c9a894682f08e19d3656bd80243b9d1"
+  },
+  "ermaymuhasebe-mobil/src/services/excelService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "26856c01c0612e250618bf8ac8460d9c",
+    "semantic_hash": "26856c01c0612e250618bf8ac8460d9c"
+  },
+  "ermaymuhasebe-mobil/src/services/finansAnalizUtils.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "1878ec375615c695cef124ea0a2cb6e9",
+    "semantic_hash": "1878ec375615c695cef124ea0a2cb6e9"
+  },
+  "ermaymuhasebe-mobil/src/services/firebase.ts": {
+    "mtime": 1788265216.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "905b036be1f73e372a92d5a5a26aa613",
+    "semantic_hash": "905b036be1f73e372a92d5a5a26aa613"
+  },
+  "ermaymuhasebe-mobil/src/services/hapticsService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "fcb3d50e40af6e0fdc490a05f1f3af87",
+    "semantic_hash": "fcb3d50e40af6e0fdc490a05f1f3af87"
+  },
+  "ermaymuhasebe-mobil/src/services/locationService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "98669322e055ad29562565025db0ee21",
+    "semantic_hash": "98669322e055ad29562565025db0ee21"
+  },
+  "ermaymuhasebe-mobil/src/services/lockService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4dc4300bafe68bba77127456fbe8d3f8",
+    "semantic_hash": "4dc4300bafe68bba77127456fbe8d3f8"
+  },
+  "ermaymuhasebe-mobil/src/services/mailService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "11643046bfdea5f9c32d5a2576a7b9a2",
+    "semantic_hash": "11643046bfdea5f9c32d5a2576a7b9a2"
+  },
+  "ermaymuhasebe-mobil/src/services/networkService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "237d46504c99a3738fa56ca30680e0e4",
+    "semantic_hash": "237d46504c99a3738fa56ca30680e0e4"
+  },
+  "ermaymuhasebe-mobil/src/services/notificationService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "044d34895642433e345ddf21f4012664",
+    "semantic_hash": "044d34895642433e345ddf21f4012664"
+  },
+  "ermaymuhasebe-mobil/src/services/pdfPrintService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e4819d248d3f57efb15497548290eb4b",
+    "semantic_hash": "e4819d248d3f57efb15497548290eb4b"
+  },
+  "ermaymuhasebe-mobil/src/services/pdfService.ts": {
+    "mtime": 1787948188.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9891a9a3d062d398dffe50c1670e6de2",
+    "semantic_hash": "9891a9a3d062d398dffe50c1670e6de2"
+  },
+  "ermaymuhasebe-mobil/src/services/secureStorageService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f95e74b1f2ac243291fcd5c068eef90e",
+    "semantic_hash": "f95e74b1f2ac243291fcd5c068eef90e"
+  },
+  "ermaymuhasebe-mobil/src/services/socketService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bb2d4984fb06ff8793b11ed2861fa71c",
+    "semantic_hash": "bb2d4984fb06ff8793b11ed2861fa71c"
+  },
+  "ermaymuhasebe-mobil/src/services/storage.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4378e839ca892257fa1fe79d6fccfb46",
+    "semantic_hash": "4378e839ca892257fa1fe79d6fccfb46"
+  },
+  "ermaymuhasebe-mobil/src/services/themeService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4ce79e3d097a93e1b4b935cf6a9f88af",
+    "semantic_hash": "4ce79e3d097a93e1b4b935cf6a9f88af"
+  },
+  "ermaymuhasebe-mobil/src/services/toastService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "60e95c9643d3924407ba1675eb6cc094",
+    "semantic_hash": "60e95c9643d3924407ba1675eb6cc094"
+  },
+  "ermaymuhasebe-mobil/src/services/transactionService.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "955e165cd5c7400c8c37b6e23f1c9d44",
+    "semantic_hash": "955e165cd5c7400c8c37b6e23f1c9d44"
+  },
+  "ermaymuhasebe-mobil/src/store/uiStore.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e42f44b8416c12bcdcba1362935c133e",
+    "semantic_hash": "e42f44b8416c12bcdcba1362935c133e"
+  },
+  "ermaymuhasebe-mobil/src/theme/appleDesign.ts": {
+    "mtime": 1788092484.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "197acbfbb1509f3f62f7332fab60865e",
+    "semantic_hash": "197acbfbb1509f3f62f7332fab60865e"
+  },
+  "ermaymuhasebe-mobil/src/theme/utilitarianTheme.ts": {
+    "mtime": 1788096212.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f26f64993161235ee84b4c60e334337f",
+    "semantic_hash": "f26f64993161235ee84b4c60e334337f"
+  },
+  "ermaymuhasebe-mobil/src/utils/IdGenerator.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "32bf0978cf19d4cb5cdfc62db33da87f",
+    "semantic_hash": "32bf0978cf19d4cb5cdfc62db33da87f"
+  },
+  "ermaymuhasebe-mobil/src/utils/validationSchema.ts": {
+    "mtime": 1787821196.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "e8a810dfb86787e520d678f77ce21677",
+    "semantic_hash": "e8a810dfb86787e520d678f77ce21677"
+  },
+  "ermaymuhasebe-mobil/tsconfig.json": {
+    "mtime": 1785924008.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a5df9ddad82c56de332cbb7d00dd294b",
+    "semantic_hash": "a5df9ddad82c56de332cbb7d00dd294b"
+  },
+  "firebase_functions/index.js": {
+    "mtime": 1783319776.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "77151ba6bb433d6bf948b9e84f6c65a7",
+    "semantic_hash": "77151ba6bb433d6bf948b9e84f6c65a7"
+  },
+  "scratch/DbKeyTest/DbKeyTest.csproj": {
+    "mtime": 1781461410.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ac78594a6bf02756a9f1b9262b65bd3b",
+    "semantic_hash": "ac78594a6bf02756a9f1b9262b65bd3b"
+  },
+  "scratch/DbKeyTest/Program.cs": {
+    "mtime": 1781464474.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "a3a59737b8ece5a65b06a41c2b6bb0b2",
+    "semantic_hash": "a3a59737b8ece5a65b06a41c2b6bb0b2"
+  },
+  "scratch/DbKeyTest/bin/Debug/net9.0/DbKeyTest.deps.json": {
+    "mtime": 1781464382.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0a91c5cc12fc51ebe3f62518d03aa5ad",
+    "semantic_hash": "0a91c5cc12fc51ebe3f62518d03aa5ad"
+  },
+  "scratch/DbKeyTest/bin/Debug/net9.0/DbKeyTest.runtimeconfig.json": {
+    "mtime": 1781464382.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bd1700a57c9b2f96336d6d657be835a5",
+    "semantic_hash": "bd1700a57c9b2f96336d6d657be835a5"
+  },
+  "scratch/DbKeyTest/obj/DbKeyTest.csproj.nuget.dgspec.json": {
+    "mtime": 1781464306.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "4632335431583ab1e89f63e34d06e0c1",
+    "semantic_hash": "4632335431583ab1e89f63e34d06e0c1"
+  },
+  "scratch/DbKeyTest/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1781086920.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": "ff3517b1163003098ee37a1a6f1dc08d"
+  },
+  "scratch/DbKeyTest/obj/Debug/net9.0/DbKeyTest.AssemblyInfo.cs": {
+    "mtime": 1781086920.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f2b9fed8a701a3494c0e570663d45733",
+    "semantic_hash": "f2b9fed8a701a3494c0e570663d45733"
+  },
+  "scratch/DbKeyTest/obj/Debug/net9.0/DbKeyTest.GlobalUsings.g.cs": {
+    "mtime": 1781461416.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9706b2dbf69f7db452e8b0d5baf54dcf",
+    "semantic_hash": "9706b2dbf69f7db452e8b0d5baf54dcf"
+  },
+  "scratch/DbKeyTest/obj/project.assets.json": {
+    "mtime": 1781464306.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d615664e1e5305ac7fb9a6dcfa33599b",
+    "semantic_hash": "d615664e1e5305ac7fb9a6dcfa33599b"
+  },
+  "scratch/UserSimulationTest/Program.cs": {
+    "mtime": 1781086362.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "08c35474a2dae7f72e6bb11d69416567",
+    "semantic_hash": "08c35474a2dae7f72e6bb11d69416567"
+  },
+  "scratch/UserSimulationTest/UserSimulationTest.csproj": {
+    "mtime": 1780315800.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "09088ecac1c9f536a97dc469c79194e1",
+    "semantic_hash": "09088ecac1c9f536a97dc469c79194e1"
+  },
+  "scratch/UserSimulationTest/bin/Debug/net9.0/UserSimulationTest.deps.json": {
+    "mtime": 1781460748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "b15f716466e625be9171b474eade2885",
+    "semantic_hash": "b15f716466e625be9171b474eade2885"
+  },
+  "scratch/UserSimulationTest/bin/Debug/net9.0/UserSimulationTest.runtimeconfig.json": {
+    "mtime": 1781460748.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bd1700a57c9b2f96336d6d657be835a5",
+    "semantic_hash": "bd1700a57c9b2f96336d6d657be835a5"
+  },
+  "scratch/UserSimulationTest/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1780315844.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": "ff3517b1163003098ee37a1a6f1dc08d"
+  },
+  "scratch/UserSimulationTest/obj/Debug/net9.0/UserSimulationTest.AssemblyInfo.cs": {
+    "mtime": 1780315844.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "d1f7fea4ebc0a99bf3c1dafe3b21a2d0",
+    "semantic_hash": "d1f7fea4ebc0a99bf3c1dafe3b21a2d0"
+  },
+  "scratch/UserSimulationTest/obj/Debug/net9.0/UserSimulationTest.GlobalUsings.g.cs": {
+    "mtime": 1781460718.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9706b2dbf69f7db452e8b0d5baf54dcf",
+    "semantic_hash": "9706b2dbf69f7db452e8b0d5baf54dcf"
+  },
+  "scratch/UserSimulationTest/obj/UserSimulationTest.csproj.nuget.dgspec.json": {
+    "mtime": 1781460718.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "46a7919607c3dc4209b42782ddb9a057",
+    "semantic_hash": "46a7919607c3dc4209b42782ddb9a057"
+  },
+  "scratch/UserSimulationTest/obj/project.assets.json": {
+    "mtime": 1781460718.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "58964aea6f486561b75dbd673530bf48",
+    "semantic_hash": "58964aea6f486561b75dbd673530bf48"
+  },
+  "scratch/WebTest/package.json": {
+    "mtime": 1780316804.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "8ccd18d5bb72fff3587f9cbc457d7721",
+    "semantic_hash": "8ccd18d5bb72fff3587f9cbc457d7721"
+  },
+  "scratch/WebTest/test.js": {
+    "mtime": 1780404802.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "2ccd159ec45e5eade39559bea2c23d9b",
+    "semantic_hash": "2ccd159ec45e5eade39559bea2c23d9b"
+  },
+  "scratch/db_inspector/Program.cs": {
+    "mtime": 1784054498.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "db8f1279750f2bd1e93b5f420af151ee",
+    "semantic_hash": "db8f1279750f2bd1e93b5f420af151ee"
+  },
+  "scratch/db_inspector/bin/Debug/net9.0/db_inspector.deps.json": {
+    "mtime": 1783190966.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "07146541483fc2228dbd1bad2dd6f6ac",
+    "semantic_hash": "07146541483fc2228dbd1bad2dd6f6ac"
+  },
+  "scratch/db_inspector/bin/Debug/net9.0/db_inspector.runtimeconfig.json": {
+    "mtime": 1783190966.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "bd1700a57c9b2f96336d6d657be835a5",
+    "semantic_hash": "bd1700a57c9b2f96336d6d657be835a5"
+  },
+  "scratch/db_inspector/db_inspector.csproj": {
+    "mtime": 1781512878.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "3f0958b84fb99b3619b3a8049cc8053f",
+    "semantic_hash": "3f0958b84fb99b3619b3a8049cc8053f"
+  },
+  "scratch/db_inspector/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs": {
+    "mtime": 1781512896.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "ff3517b1163003098ee37a1a6f1dc08d",
+    "semantic_hash": "ff3517b1163003098ee37a1a6f1dc08d"
+  },
+  "scratch/db_inspector/obj/Debug/net9.0/db_inspector.AssemblyInfo.cs": {
+    "mtime": 1781512896.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "cc48b1009522bbd8813ca7db3302b108",
+    "semantic_hash": "cc48b1009522bbd8813ca7db3302b108"
+  },
+  "scratch/db_inspector/obj/Debug/net9.0/db_inspector.GlobalUsings.g.cs": {
+    "mtime": 1783189432.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "9706b2dbf69f7db452e8b0d5baf54dcf",
+    "semantic_hash": "9706b2dbf69f7db452e8b0d5baf54dcf"
+  },
+  "scratch/db_inspector/obj/db_inspector.csproj.nuget.dgspec.json": {
+    "mtime": 1783189432.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "94845b68437098bbb56f8ba91db20bc5",
+    "semantic_hash": "94845b68437098bbb56f8ba91db20bc5"
+  },
+  "scratch/db_inspector/obj/project.assets.json": {
+    "mtime": 1783189432.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "0be90f94e574e2298aa6af1e00b33acc",
+    "semantic_hash": "0be90f94e574e2298aa6af1e00b33acc"
+  },
+  "scratch/dotnet-tools.json": {
+    "mtime": 1781461400.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f80e76fad13c15d531d508971ee096fd",
+    "semantic_hash": "f80e76fad13c15d531d508971ee096fd"
+  },
+  "scratch/rebuild_raporlar.js": {
+    "mtime": 1787906952.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "67cadb4bcb385b13e6f22a31ec35bcc3",
+    "semantic_hash": "67cadb4bcb385b13e6f22a31ec35bcc3"
+  },
+  "scratch/update_reports.js": {
+    "mtime": 1787906080.0,
+    "seen": 1788379968.5383012,
+    "ast_hash": "f79822908f8c02ee6ee85ddeac07194a",
+    "semantic_hash": "f79822908f8c02ee6ee85ddeac07194a"
+  }
+}

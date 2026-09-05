@@ -1,0 +1,478 @@
+@page "/"
+@page "/dashboard"
+@using ErmayMuhasebe.Shared.ViewModels
+@inject DashboardViewModel ViewModel
+@inject NavigationManager Navigation
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject ErmayMuhasebe.Services.IFirebaseService FirebaseService
+@inject IJSRuntime JS
+
+<div class="fade-in d-flex flex-column flex-grow-1 p-0 m-0 overflow-hidden" style="height: 100%;">
+    <!-- 1. Quick Actions Row (FIXED GRID - No Wrap) -->
+    <div class="dashboard-uniform-grid actions-grid mb-2">
+        @foreach (var action in new[] { 
+            (Icon: Icons.Material.Outlined.ShoppingCart, Color: "#FB8C00", Title: "Alış", Sub: "Fatura Girişi", Link: "/fatura-olustur/Alis?ReturnUrl=/", BorderColor: "251, 140, 0"),
+            (Icon: Icons.Material.Outlined.LocalOffer, Color: "#00C853", Title: "Satış", Sub: "Yeni Satış", Link: "/fatura-olustur/Satis?ReturnUrl=/", BorderColor: "0, 200, 83"),
+            (Icon: Icons.Material.Filled.Receipt, Color: "#2196F3", Title: "Sipariş", Sub: "Sipariş Yaz", Link: "/siparis-olustur?ReturnUrl=/", BorderColor: "33, 150, 243"),
+            (Icon: Icons.Material.Filled.Percent, Color: "#00B8D4", Title: "Teklif", Sub: "Teklif Hazırla", Link: "/teklif-olustur?ReturnUrl=/", BorderColor: "0, 184, 212"),
+            (Icon: Icons.Material.Outlined.Calculate, Color: "#757575", Title: "Maliyet", Sub: "Hesap Makinesi", Link: "/maliyet-hesaplama", BorderColor: "117, 117, 117")
+        })
+        {
+            <div class="dashboard-action-card" @onclick="() => Navigation.NavigateTo(action.Link)" 
+                 style="--action-color: @(action.BorderColor);">
+                <div class="action-icon-box" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <MudIcon Icon="@action.Icon" Size="Size.Small" Style="color: rgba(255, 255, 255, 0.6);" />
+                </div>
+                <div class="d-flex flex-column justify-center overflow-hidden">
+                    <span class="action-title" style="white-space: nowrap;">@action.Title</span>
+                    <span class="action-subtitle" style="white-space: nowrap;">@action.Sub</span>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- 2. KPI Cards Row (FIXED GRID - No Wrap) -->
+    <div class="dashboard-uniform-grid kpi-grid mb-2">
+        <div class="kpi-card-premium">
+            <div class="kpi-icon-box" style="background: rgba(251, 192, 45, 0.1); border: 1px solid rgba(251, 192, 45, 0.2);">
+                <MudIcon Icon="@Icons.Material.Filled.Bolt" Size="Size.Small" Style="color: #FBC02D;" />
+            </div>
+            <div class="kpi-content">
+                <span class="kpi-value text-white">@ViewModel.GunlukSatis.ToString("N2") ₺</span>
+                <span class="kpi-label">Günlük Ciro</span>
+            </div>
+        </div>
+        <div class="kpi-card-premium">
+            <div class="kpi-icon-box" style="background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.2);">
+                <MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Small" Style="color: #2196F3;" />
+            </div>
+            <div class="kpi-content">
+                <span class="kpi-value text-white">@ViewModel.ToplamTahsilat.ToString("N2") ₺</span>
+                <span class="kpi-label">Aylık Ciro</span>
+            </div>
+        </div>
+        <div class="kpi-card-premium @(ViewModel.Karlilik >= 0 ? "kpi-profit" : "kpi-loss")">
+            <div class="kpi-content">
+                <div class="d-flex align-center justify-between w-100">
+                    <span class="kpi-value text-white">@ViewModel.Karlilik.ToString("N2") ₺</span>
+                    <div class="profit-percent-badge">%@ViewModel.KarlilikOrani.ToString("N1")</div>
+                </div>
+                <span class="kpi-label" style="color: rgba(255,255,255,0.7);">Net Kâr (Aylık)</span>
+            </div>
+        </div>
+        <div class="kpi-card-premium">
+            <div class="kpi-icon-box" style="background: rgba(0, 200, 83, 0.1); border: 1px solid rgba(0, 200, 83, 0.2);">
+                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Style="color: #00C853;" />
+            </div>
+            <div class="kpi-content">
+                <span class="kpi-value text-white">@ViewModel.ToplamAlacak.ToString("N2") ₺</span>
+                <span class="kpi-label">Toplam Alacak</span>
+            </div>
+        </div>
+        <div class="kpi-card-premium">
+            <div class="kpi-icon-box" style="background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.2);">
+                <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Small" Style="color: #F44336;" />
+            </div>
+            <div class="kpi-content">
+                <span class="kpi-value text-white">@ViewModel.ToplamBorc.ToString("N2") ₺</span>
+                <span class="kpi-label">Toplam Borç</span>
+            </div>
+        </div>
+        <div class="kpi-card-premium" style="background: rgba(30, 41, 59, 0.5) !important;">
+            <div class="kpi-icon-box" style="background: rgba(148, 163, 184, 0.1); border: 1px solid rgba(148, 163, 184, 0.2);">
+                <MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Small" Style="color: #94A3B8;" />
+            </div>
+            <div class="kpi-content">
+                <span class="kpi-value text-white">@ViewModel.StokSayisi</span>
+                <span class="kpi-label">Kritik Stok</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Analytical Section (FIXED FLEX - No Wrap) -->
+    <div class="dashboard-main-grid flex-grow-1 overflow-hidden pb-1">
+        <div class="analytics-left h-100">
+            <div class="dashboard-glass-panel h-100 p-4 d-flex flex-column" style="border-radius: 14px !important;">
+                <div class="d-flex justify-content-between align-center mb-6 flex-shrink-0">
+                    <div class="panel-title d-flex align-center overflow-hidden" style="font-size: 14px; font-weight: 800; color: white; letter-spacing: 0.3px; line-height: 1;">
+                        <MudIcon Icon="@Icons.Material.Filled.Adjust" Style="color: #00C853; font-size: 18px; filter: drop-shadow(0 0 6px rgba(0,200,83,0.4));" class="mr-2" />
+                        <span style="white-space: nowrap; transform: translateY(1px);">Hedef & Gerçekleşme</span>
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Style="color: rgba(255,255,255,0.15); transform: translateY(1px);" 
+                                       @onclick='() => ViewModel.LoadStatsAsync()' Title="Verileri Yenile" class="ml-1" />
+                    </div>
+                    <div class="toggle-btn-group flex-shrink-0">
+                        <div class="toggle-btn @(ViewModel.IsWeeklyGoal ? "active" : "")" @onclick='() => ViewModel.ToggleGoalPeriodCommand.Execute("Weekly")'>Hafta</div>
+                        <div class="toggle-btn @(!ViewModel.IsWeeklyGoal ? "active" : "")" @onclick='() => ViewModel.ToggleGoalPeriodCommand.Execute("Monthly")'>Ay</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container flex-grow-1" style="min-height: 0; position: relative; padding: 10px 0;">
+                    @if (ViewModel.IsLoading)
+                    {
+                        <div class="skeleton" style="height: 100%; width: 100%; border-radius: 12px;"></div>
+                    }
+                    else if (!GoalSeries.Any() || GoalSeries.All(x => x.Data.All(d => d == 0)))
+                    {
+                        <div class="d-flex flex-column align-center justify-center h-100" style="color: rgba(255,255,255,0.15);">
+                            <MudIcon Icon="@Icons.Material.Filled.BarChart" Style="font-size: 54px; margin-bottom: 12px;" />
+                            <MudText Typo="Typo.h6" Style="font-size: 14px; opacity: 0.6;">Henüz Hedef Verisi Tanımlanmamış</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudChart ChartType="ChartType.Line" ChartSeries="@GoalSeries" XAxisLabels="@ProcessedGoalLabels" Width="100%" Height="100%" ChartOptions="@chartOptions" Interpolated="true" />
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="analytics-right h-100">
+            <div class="dashboard-glass-panel h-100 d-flex flex-column" style="border-radius: 14px !important; overflow: hidden;">
+                <div class="dashboard-tabs flex-shrink-0" style="padding: 12px 20px 0 20px;">
+                    <div class="dashboard-tab @(activeTab == "Son İşlemler" ? "active" : "")" @onclick='() => SetActiveTab("Son İşlemler")'>Son İşlemler</div>
+                    <div class="dashboard-tab @(activeTab == "Alacak Takibi" ? "active" : "")" @onclick='() => SetActiveTab("Alacak Takibi")'>Alacak Takibi</div>
+                    <div class="dashboard-tab @(activeTab == "Borç Takibi" ? "active" : "")" @onclick='() => SetActiveTab("Borç Takibi")'>Borç Takibi</div>
+                    <div class="dashboard-tab @(activeTab == "Notlarım" ? "active" : "")" @onclick='() => SetActiveTab("Notlarım")'>Notlarım</div>
+                </div>
+                
+                <div class="flex-grow-1 px-4 py-2" style="overflow-y: auto;">
+                    @if (ViewModel.IsLoading)
+                    {
+                        @for(int i=0; i<6; i++) { <div class="skeleton mb-4" style="height: 60px; border-radius: 10px;"></div> }
+                    }
+                    else
+                    {
+                        @if (activeTab == "Son İşlemler")
+                        {
+                            @foreach (var item in ViewModel.RecentTransactions.Take(12))
+                            {
+                                <div class="trans-item py-3">
+                                    <div class="trans-info">
+                                        <span class="trans-name">@item.Title</span>
+                                        <span class="trans-type">@item.Description</span>
+                                    </div>
+                                    <div class="trans-meta">
+                                        <span class="trans-val">@item.Amount.ToString("N2") ₺</span>
+                                        <span class="trans-dt">@item.Date.ToString("dd MMM HH:mm")</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else if (activeTab == "Alacak Takibi")
+                        {
+                            @foreach (var item in ViewModel.RiskyCaris.Take(12))
+                            {
+                                <div class="trans-item py-3" @onclick='() => Navigation.NavigateTo($"/cariler?selectId={item.CariId}")' style="cursor: pointer;">
+                                    <div class="trans-info">
+                                        <span class="trans-name">@item.Unvan</span>
+                                        <span class="trans-type">Vade: @item.OrtalamaVade Gün</span>
+                                    </div>
+                                    <div class="trans-meta">
+                                        <span class="trans-val">@item.Bakiye.ToString("N2") ₺</span>
+                                        <span class="trans-dt text-danger">Riskli Bakiye</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else if (activeTab == "Borç Takibi")
+                        {
+                            @foreach (var item in ViewModel.PayableCaris.Take(12))
+                            {
+                                <div class="trans-item py-3" @onclick='() => Navigation.NavigateTo($"/cariler?selectId={item.CariId}")' style="cursor: pointer;">
+                                    <div class="trans-info">
+                                        <span class="trans-name">@item.Unvan</span>
+                                        <span class="trans-type">Vade: @item.OrtalamaVade Gün</span>
+                                    </div>
+                                    <div class="trans-meta">
+                                        <span class="trans-val">@item.Bakiye.ToString("N2") ₺</span>
+                                        <span class="trans-dt text-warning">Toplam Borç</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else if (activeTab == "Notlarım")
+                        {
+                            <QuickNotes RelatedType="General" />
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Responsive Mode Selection Frame -->
+    <div class="d-flex justify-content-center flex-shrink-0" style="padding-bottom: 20px; padding-top: 10px;">
+        <div class="responsive-selection-frame">
+            <button @onclick='() => SetMode("desktop")' class="responsive-btn desktop-btn @(currentMode == "desktop" ? "active" : "")" title="Masaüstü Moduna Geç">
+                 <MudIcon Icon="@Icons.Material.Filled.DesktopWindows" Style="font-size: 20px;" />
+            </button>
+            <div class="frame-divider"></div>
+            <button @onclick='() => SetMode("mobile")' class="responsive-btn mobile-btn @(currentMode == "mobile" ? "active" : "")" title="Mobil Moduna Geç">
+                 <MudIcon Icon="@Icons.Material.Filled.Smartphone" Style="font-size: 20px;" />
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string activeTab = "Son İşlemler";
+    private string currentMode = "desktop";
+    private string[] Labels => ViewModel.IncomeExpenseData.FirstOrDefault()?.Labels ?? new[] { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" };
+    
+    private List<ChartSeries> IncomeExpenseSeries => ViewModel.IncomeExpenseData.Select(ds => new ChartSeries 
+    { 
+        Name = ds.Name, 
+        Data = ds.Values.Select(v => (double)v).ToArray() 
+    }).ToList();
+
+    private List<ChartSeries> GoalSeries {
+        get {
+            var rawData = ViewModel.TargetVsActualData?.ToList();
+            if (rawData == null || rawData.Count == 0) return new List<ChartSeries>();
+
+            // Find global max to normalize to 0-100 scale for "Image 2" look
+            var allValues = rawData.SelectMany(x => x.Values).ToList();
+            var max = allValues.Any() ? (double)allValues.Max() : 0;
+            if (max <= 0) max = 1;
+
+            return rawData.Select(ds => new ChartSeries 
+            { 
+                Name = ds.Name, 
+                Data = ds.Values.Select(v => (double)v / max * 100.0).ToArray() 
+            }).ToList();
+        }
+    }
+
+    private string[] ProcessedGoalLabels {
+        get {
+            var data = ViewModel.TargetVsActualData?.ToList();
+            if (data == null || data.Count < 1) return new[] { "1.H", "2.H", "3.H", "4.H" };
+            var labels = data[0].Labels;
+            var result = new string[labels.Length];
+            var hasActual = data.Count > 1;
+            for(int i=0; i<labels.Length; i++) {
+                var t = data[0].Values.Length > i ? data[0].Values[i] : 0;
+                var a = hasActual && data[1].Values.Length > i ? data[1].Values[i] : 0;
+                // Extremely compact format for 12 months
+                result[i] = $"{FormatVal(t)} {FormatVal(a)}\n{labels[i]}";
+            }
+            return result;
+        }
+    }
+
+    private string FormatVal(decimal val) {
+        if (val == 0) return "0";
+        if (val >= 1000000) return (val / 1000000m).ToString("0.#") + "M";
+        if (val >= 1000) return (val / 1000m).ToString("0") + "K";
+        return val.ToString("0");
+    }
+
+    private ChartOptions chartOptions = new ChartOptions
+    {
+        YAxisLines = true,
+        XAxisLines = false,
+        YAxisTicks = 5,
+        ChartPalette = new[] { "#FF6B00", "#00E676", "#2196F3", "#00B8D4" }
+    };
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        await ViewModel.LoadStatsAsync();
+    }
+
+    private async Task ToggleResponsiveMode()
+    {
+        await JS.InvokeVoidAsync("toggleResponsiveMode");
+    }
+
+    private async Task SetMode(string mode)
+    {
+        currentMode = mode;
+        await JS.InvokeVoidAsync("setResponsiveMode", mode);
+        StateHasChanged();
+    }
+
+    private async Task<IEnumerable<GlobalSearchResult>> SearchGlobalAsync(string value, CancellationToken token)
+    {
+        try
+        {
+            return await DbService.GlobalSearchAsync(value);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Global Search Error: {ex}");
+            return new List<GlobalSearchResult>();
+        }
+    }
+
+    private string[] customPalette = new[] { "#FFB300", "#00C853", "#2196F3", "#00B8D4" };
+
+    private void OnSearchResultSelected(GlobalSearchResult? result)
+    {
+        if (result == null) return;
+        switch (result.Type)
+        {
+            case "Cari": Navigation.NavigateTo($"/cari-detay/{result.Id}"); break;
+            case "Stok": Navigation.NavigateTo($"/stok-detay/{result.Id}"); break;
+            case "Fatura": Navigation.NavigateTo($"/fatura-detay/{result.Id}"); break;
+            case "Siparis": Navigation.NavigateTo($"/siparis-detay/{result.Id}"); break;
+        }
+    }
+}
+
+<style>
+    .glass-search .mud-input-control-input-container {
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+    }
+    .glass-search input {
+        color: white !important;
+    }
+    .glass-search .mud-icon-root {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    .dashboard-header {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding-bottom: 20px;
+        margin-bottom: 20px !important;
+    }
+
+    .pulse-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #38ef7d;
+        box-shadow: 0 0 0 rgba(56, 239, 125, 0.4);
+        animation: pulse 2s infinite;
+    }
+
+    .responsive-selection-frame {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 50px;
+        padding: 4px;
+        gap: 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .dashboard-glass-panel {
+        background: rgba(13, 15, 17, 0.8) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+    .indicator-dot {
+        width: 10px;
+        height: 10px;
+        background: #00C853;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(0, 200, 83, 0.4);
+    }
+    .toggle-btn-group {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 3px;
+        display: flex;
+    }
+    .toggle-btn {
+        padding: 5px 18px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .toggle-btn.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    .responsive-btn {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.2);
+        width: 44px;
+        height: 38px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    .dashboard-main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        min-height: 0;
+    }
+    .responsive-btn.active {
+        color: white;
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .responsive-btn:hover:not(.active) {
+        color: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.05);
+    }
+    .frame-divider {
+        width: 1px;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 0 4px;
+    }
+    .desktop-btn:hover {
+        color: #2196F3;
+        background: rgba(33, 150, 243, 0.1);
+        transform: scale(1.1);
+    }
+    .mobile-btn:hover {
+        color: #00C853;
+        background: rgba(0, 200, 83, 0.1);
+        transform: scale(1.1);
+    }
+    .kpi-profit {
+        background: linear-gradient(135deg, #00C853 0%, #009624 100%) !important;
+        box-shadow: 0 10px 20px rgba(0, 200, 83, 0.3);
+    }
+    .kpi-loss {
+        background: linear-gradient(135deg, #FF1744 0%, #B71C1C 100%) !important;
+        box-shadow: 0 10px 20px rgba(255, 23, 68, 0.3);
+    }
+    .profit-percent-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 800;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .chart-container {
+        height: 260px !important;
+        padding-bottom: 30px !important;
+    }
+    .chart-container svg text {
+        font-size: 7.5px !important;
+        fill: rgba(255,255,255,0.3) !important;
+        font-weight: 500;
+    }
+    .mud-chart-serie-text {
+        display: none !important; /* Hide redundant serie labels if they overlap */
+    }
+</style>

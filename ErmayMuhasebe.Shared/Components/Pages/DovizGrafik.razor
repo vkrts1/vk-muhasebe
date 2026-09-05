@@ -1,0 +1,24 @@
+
+<MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary" Class="mb-4">Döviz Geçmişi Grafiği</MudText>
+
+<MudPaper Class="pa-4">
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Son 30 günlük döviz kuru değişimleri (Örnek veri)
+    </MudAlert>
+    
+    <MudText Typo="Typo.h6" Class="mb-3">USD/TL Grafiği</MudText>
+    
+    <div style="height: 300px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center;">
+        <MudText Typo="Typo.body1" Color="MudBlazor.Color.Secondary">
+            Grafik için Chart.js veya ApexCharts kütüphanesi eklenebilir
+        </MudText>
+    </div>
+    
+    <MudText Typo="Typo.caption" Class="mt-2">
+        Örnek: Son 30 gün USD: 32.10 → 32.85 (↑ %2.3)
+    </MudText>
+</MudPaper>
+
+@code {
+    // Chart.js veya ApexCharts entegrasyonu yapılabilir
+}

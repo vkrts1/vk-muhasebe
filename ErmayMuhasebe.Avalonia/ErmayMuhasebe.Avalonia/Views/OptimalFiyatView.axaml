@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             x:Class="ErmayMuhasebe.Avalonia.Views.OptimalFiyatView"
+             x:DataType="vm:OptimalFiyatViewModel">
+  <Grid RowDefinitions="Auto, *" Margin="30">
+    <StackPanel Spacing="10" Margin="0,0,0,25">
+      <StackPanel Orientation="Horizontal" Spacing="15">
+        <Border Width="50" Height="50" CornerRadius="15" Background="#2614B8A6">
+          <ic:SymbolIcon Symbol="Calculator" Foreground="#14B8A6" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        </Border>
+        <TextBlock Text="Optimal Fiyat Hesaplayıcı" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+      </StackPanel>
+      <TextBlock Text="Maliyet, vergi ve hedef kar oranına göre en ideal satış fiyatını belirleyin." FontSize="15" Foreground="#9CA3AF" Margin="65,0,0,0"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="400, *">
+      <!-- Calculator -->
+      <Border Grid.Column="0" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="30" BorderBrush="#22FFFFFF" BorderThickness="1" Margin="0,0,20,0" VerticalAlignment="Top">
+        <StackPanel Spacing="25">
+           <StackPanel Spacing="8">
+             <TextBlock Text="Alış Fiyatı (Birim)" Foreground="#9CA3AF" FontSize="13"/>
+             <NumericUpDown Value="{Binding AlisFiyati}"  Increment="10"/>
+           </StackPanel>
+
+           <StackPanel Spacing="8">
+             <TextBlock Text="Ek Maliyetler (Lojistik vb.)" Foreground="#9CA3AF" FontSize="13"/>
+             <NumericUpDown Value="{Binding EkMaliyet}"  Increment="5"/>
+           </StackPanel>
+
+           <Separator Background="#15FFFFFF"/>
+
+           <StackPanel Spacing="8">
+             <TextBlock Text="Hedef Kar Oranı (%)" Foreground="#9CA3AF" FontSize="13"/>
+             <NumericUpDown Value="{Binding HedefKarOrani}"  Increment="1" Minimum="0" Maximum="1000"/>
+           </StackPanel>
+
+           <StackPanel Spacing="8">
+             <TextBlock Text="KDV Oranı (%)" Foreground="#9CA3AF" FontSize="13"/>
+             <NumericUpDown Value="{Binding KdvOrani}"  Increment="1" Minimum="0" Maximum="100"/>
+           </StackPanel>
+
+           <Button Command="{Binding HesaplaCommand}" Classes="SideButton Info" Height="50" HorizontalAlignment="Stretch" Background="#14B8A6">
+              <TextBlock Text="YENİDEN HESAPLA" FontWeight="Bold"/>
+           </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- Results -->
+      <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="20" Padding="40" BorderBrush="#22FFFFFF" BorderThickness="1">
+         <StackPanel Spacing="40" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel Spacing="10" HorizontalAlignment="Center">
+               <TextBlock Text="ÖNERİLEN SATIŞ FİYATI" FontSize="16" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+               <TextBlock Text="{Binding OnerilenSatisFiyati, StringFormat={}{0:N2} TL}" FontSize="60" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <Grid ColumnDefinitions="*, *, *" Width="500">
+               <StackPanel Grid.Column="0" Spacing="5" HorizontalAlignment="Center">
+                  <TextBlock Text="NET KAR" FontSize="13" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                  <TextBlock Text="{Binding NetKar, StringFormat={}{0:N2} TL}" FontSize="20" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
+               </StackPanel>
+               <StackPanel Grid.Column="1" Spacing="5" HorizontalAlignment="Center">
+                  <TextBlock Text="KDV TUTARI" FontSize="13" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                  <TextBlock Text="{Binding KdvTutari, StringFormat={}{0:N2} TL}" FontSize="20" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Center"/>
+               </StackPanel>
+               <StackPanel Grid.Column="2" Spacing="5" HorizontalAlignment="Center">
+                  <TextBlock Text="TOPLAM VERGİ" FontSize="13" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                  <TextBlock Text="{Binding KdvTutari, StringFormat={}{0:N2} TL}" FontSize="20" FontWeight="Bold" Foreground="#EF4444" HorizontalAlignment="Center"/>
+               </StackPanel>
+            </Grid>
+
+            <Border Background="#1014B8A6" CornerRadius="15" Padding="25" MaxWidth="450">
+               <StackPanel Spacing="10">
+                  <TextBlock Text="Analiz Özeti" FontWeight="Bold" Foreground="#14B8A6"/>
+                  <TextBlock Foreground="#9CA3AF" FontSize="13" TextWrapping="Wrap" TextAlignment="Center">
+                     Seçilen marjlara göre ürünün karlılığı sürdürülebilir seviyededir. Pazar fiyatlarını da göz önünde bulundurarak nihai kararı verebilirsiniz.
+                  </TextBlock>
+               </StackPanel>
+            </Border>
+         </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,150 @@
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager NavigationManager
+
+<MudDialog Class="spotlight-dialog">
+    <DialogContent>
+        <MudTextField @bind-Value="searchString" 
+                      Placeholder="Ara: Müşteri, Ürün, Menü..." 
+                      AutoFocus="true" 
+                      Variant="Variant.Filled" 
+                      Adornment="Adornment.Start" 
+                      AdornmentIcon="@Icons.Material.Filled.Search" 
+                      OnKeyUp="OnSearchKeyUp" 
+                      Class="spotlight-input"
+                      Immediate="true" />
+
+        <MudList T="SearchResult" Class="mt-2 spotlight-list" Dense="true">
+            @if (results.Any())
+            {
+                @foreach (var result in results)
+                {
+                    <MudListItem OnClick="@(() => Navigate(result.Url))">
+                        <div class="d-flex align-center gap-3">
+                            <MudIcon Icon="@result.Icon" Color="@result.Color" Size="Size.Small" />
+                            <div class="d-flex flex-column">
+                                <MudText Typo="Typo.body1">@result.Title</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@result.Subtitle</MudText>
+                            </div>
+                        </div>
+                    </MudListItem>
+                }
+            }
+            else if (!string.IsNullOrEmpty(searchString))
+            {
+                <MudListItem Disabled="true">Sonuç bulunamadı.</MudListItem>
+            }
+            else
+            {
+                <MudListItem Disabled="true"> Aramak için yazmaya başlayın...</MudListItem>
+            }
+        </MudList>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .spotlight-dialog {
+        backdrop-filter: blur(8px);
+        background: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+    }
+    .spotlight-input .mud-input-slot {
+        font-size: 1.25rem !important;
+        padding: 20px !important;
+    }
+    .spotlight-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    private string _searchString = "";
+    private string searchString 
+    { 
+        get => _searchString; 
+        set 
+        { 
+             _searchString = value; 
+             _ = Search(); 
+        } 
+    }
+    private List<SearchResult> results = new();
+
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(searchString) || searchString.Length < 2)
+        {
+            results.Clear();
+            return;
+        }
+
+        var newResults = new List<SearchResult>();
+        var s = searchString.ToLower();
+
+        // 1. Menü Araması
+        var menus = new[] {
+            new SearchResult { Title = "Satış Faturası", Subtitle = "Finans > İşlemler", Url = "/fatura-listesi", Icon = Icons.Material.Filled.Description, Color = Color.Primary },
+            new SearchResult { Title = "Stok Listesi", Subtitle = "Depo > Envanter", Url = "/stok-listesi", Icon = Icons.Material.Filled.Inventory, Color = Color.Info },
+            new SearchResult { Title = "Cari Hesaplar", Subtitle = "Finans > Rehber", Url = "/cari-liste", Icon = Icons.Material.Filled.People, Color = Color.Success },
+            new SearchResult { Title = "Döviz Kurları", Subtitle = "Araçlar", Url = "/doviz-kurlari", Icon = Icons.Material.Filled.CurrencyExchange, Color = Color.Secondary }
+        };
+        newResults.AddRange(menus.Where(m => m.Title.ToLower().Contains(s)));
+
+        // 2. Cari Araması
+        var cariler = await DbService.GetCarilerAsync();
+        newResults.AddRange(cariler.Where(c => (c.Unvan ?? "").ToLower().Contains(s))
+            .Take(5)
+            .Select(c => new SearchResult { 
+                Title = c.Unvan ?? "İsimsiz", 
+                Subtitle = $"Bakiye: {c.Bakiye:N2} TL", 
+                Url = "/cari-liste", // Normalde detay sayfasına gider
+                Icon = Icons.Material.Filled.Person, 
+                Color = Color.Default 
+            }));
+
+        // 3. Stok Araması
+        var stoklar = await DbService.GetStoklarAsync();
+        newResults.AddRange(stoklar.Where(st => (st.StokAdi ?? "").ToLower().Contains(s) || (st.StokKodu ?? "").ToLower().Contains(s))
+            .Take(5)
+            .Select(st => new SearchResult { 
+                Title = st.StokAdi ?? "İsimsiz", 
+                Subtitle = $"{st.StokKodu ?? "-"} | Fiyat: {st.SatisFiyati:N2} TL", 
+                Url = "/stok-listesi", 
+                Icon = Icons.Material.Filled.ShoppingBag, 
+                Color = Color.Default 
+            }));
+
+        results = newResults;
+    }
+
+    private void Navigate(string url)
+    {
+        NavigationManager.NavigateTo(url);
+        MudDialog.Close();
+    }
+
+    private void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && results.Any())
+        {
+            Navigate(results.First().Url);
+        }
+        else if (e.Key == "Escape")
+        {
+            MudDialog.Cancel();
+        }
+    }
+
+    public class SearchResult
+    {
+        public string Title { get; set; } = "";
+        public string Subtitle { get; set; } = "";
+        public string Url { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public Color Color { get; set; } = Color.Default;
+    }
+}

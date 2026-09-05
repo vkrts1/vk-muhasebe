@@ -1,0 +1,374 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:System="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+             x:Class="ErmayMuhasebe.Avalonia.Views.TeklifDetayView"
+             x:DataType="vm:TeklifDetayViewModel"
+             FontFamily="Netflix Sans, Inter, Roboto, Segoe UI"
+             Background="{DynamicResource BackgroundBrush}">
+
+  <UserControl.Styles>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto, *">
+    
+    <!-- MOBILE BACK BUTTON -->
+    <Button Grid.Row="0" Command="{Binding CloseTeklifCommand}" 
+            Classes="IconButton" Background="Transparent" 
+            HorizontalAlignment="Left" Margin="5" Padding="10,5">
+        <StackPanel Orientation="Horizontal" Spacing="5">
+            <ic:SymbolIcon Symbol="ArrowLeft" FontSize="20" Foreground="{DynamicResource TextBrush}"/>
+            <TextBlock Text="Geri Dön" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
+        </StackPanel>
+    </Button>
+
+    <Grid Grid.Row="1" RowDefinitions="Auto, *, Auto, Auto" Margin="2">
+
+      <!-- ROW 0: TOP SECTION -->
+      <Grid Grid.Row="0" Margin="0,0,0,5">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3.5*"/> <!-- Cari Bilgileri -->
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="2*"/>   <!-- Teklif Bilgileri -->
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="2.5*"/> <!-- Header -->
+        </Grid.ColumnDefinitions>
+
+        <!-- CARI BILGILERI -->
+        <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1">
+            <Grid RowDefinitions="Auto, *">
+                <Border Grid.Row="0" Classes="HeaderPanel">
+                    <TextBlock Text="Cari Bilgileri"/>
+                </Border>
+                <Grid Grid.Row="1" ColumnDefinitions="Auto, *, Auto, *, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto" Margin="5">
+                    
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Ünvan" Margin="0,0,5,5"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Cari.Unvan}" Margin="0,0,5,5"/>
+                    
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Vergi Dairesi" Margin="0,0,5,5"/>
+                    <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding Cari.VergiDairesi}" Margin="0,0,5,5"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Yetkili" Margin="0,0,5,5"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Cari.Yetkili}" Margin="0,0,5,5"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Vergi No" Margin="0,0,5,5"/>
+                    <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Cari.VergiNo}" Margin="0,0,5,5"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Grid.RowSpan="2" Text="Adres" Margin="0,0,5,5" VerticalAlignment="Top"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" Grid.RowSpan="2" Text="{Binding Cari.Adres}" Height="68" AcceptsReturn="True" Margin="0,0,5,5"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="İl" Margin="0,0,5,5" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Cari.Il}" Margin="0,0,5,5"/>
+                    
+                    <TextBlock Grid.Row="3" Grid.Column="2" Text="İlçe" Margin="0,0,5,5" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Cari.Ilce}" Margin="0,0,5,5"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="E-Mail" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Cari.Email}" Margin="0,0,5,0"/>
+
+                     <Button Grid.Row="0" Grid.Column="4" Grid.RowSpan="2" 
+                             Command="{Binding OpenCariSecimCommand}" 
+                             Width="60" Height="44" 
+                             Padding="0" 
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Top"
+                             Margin="10,0,0,5"
+                             Background="#1A60A5FA" BorderBrush="#4060A5FA" BorderThickness="1"
+                             CornerRadius="10">
+                        <StackPanel VerticalAlignment="Center" Spacing="0">
+                           <ic:SymbolIcon Symbol="PeopleSearch" Foreground="#60A5FA" FontSize="18" HorizontalAlignment="Center"/> 
+                           <TextBlock Text="Cari Seç" Foreground="White" FontSize="9" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                     </Button>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- TEKLIF BILGILERI -->
+        <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1">
+            <Grid RowDefinitions="Auto, *">
+                 <Grid Grid.Row="0">
+                     <Grid.ColumnDefinitions>
+                         <ColumnDefinition Width="*"/>
+                         <ColumnDefinition Width="Auto"/>
+                     </Grid.ColumnDefinitions>
+                     <Border Grid.Column="0" Padding="5,0">
+                         <TextBlock Text="Teklif Bilgileri" FontWeight="Bold" HorizontalAlignment="Left"/>
+                     </Border>
+                 </Grid>
+                
+                <Grid Grid.Row="1" ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto, Auto" Margin="5">
+                    <TextBlock Grid.Row="0" Text="Teklif Tarihi" Margin="0,0,5,5"/>
+                    <CalendarDatePicker Grid.Row="0" Grid.Column="1" SelectedDate="{Binding Tarih}" SelectedDateFormat="Custom" CustomDateFormatString="dd.MM.yyyy" Watermark="GG.AA.YYYY" HorizontalAlignment="Stretch" Margin="0,0,0,5"/>
+
+                    <TextBlock Grid.Row="1" Text="Teklif No" Margin="0,0,5,5"/>
+                     <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*, Auto" Margin="0,0,0,5">
+                        <TextBox Grid.Column="0" Text="{Binding TeklifNo}"/>
+                     </Grid>
+                     
+                    <TextBlock Grid.Row="2" Text="Açıklama" Margin="0,0,5,5"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Aciklama}" Margin="0,0,0,5"/>
+
+                    <TextBlock Grid.Row="3" Text="Ödeme Bilgisi" Margin="0,0,5,5"/>
+                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding OdemeBilgisi}" AcceptsReturn="True" Height="40" VerticalContentAlignment="Top"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- HEADER -->
+        <Grid Grid.Column="4" RowDefinitions="Auto, *">
+            <Border Grid.Row="0" Background="#1e3a8a" Padding="10" Margin="0,0,0,5">
+                <TextBlock Text="{Binding HeaderTitle}" FontSize="26" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+            </Border>
+        </Grid>
+    </Grid>
+
+    <!-- ROW 1: MIDDLE SECTION -->
+    <Grid Grid.Row="1">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="220"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT: DataGrid -->
+        <Grid Grid.Column="0" RowDefinitions="Auto, *">
+             <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" AutoGenerateColumns="False" 
+                       CanUserResizeColumns="True"
+                       GridLinesVisibility="All"
+                       BorderThickness="1" BorderBrush="#A0A0A0">
+                <DataGrid.Styles>
+                    <Style Selector="DataGridColumnHeader">
+                        <Setter Property="Padding" Value="5"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                    </Style>
+                </DataGrid.Styles>
+                
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Ad" Binding="{Binding Ad}" Width="*"/>
+                    
+                    <DataGridTemplateColumn Header="Miktar" Width="80">
+                        <DataTemplate>
+                             <NumericUpDown Value="{Binding Miktar}"  ShowButtonSpinner="False" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Right"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+
+
+                    <DataGridTextColumn Header="Birim" Binding="{Binding Birim}" Width="70"/>
+
+                    <DataGridTemplateColumn Header="Birim Fiyatı" Width="110">
+                        <DataTemplate>
+                             <NumericUpDown Value="{Binding BirimFiyat}"  ShowButtonSpinner="False" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Right"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="KDV" Width="80">
+                        <DataTemplate>
+                             <ComboBox SelectedValue="{Binding KdvOrani}" HorizontalAlignment="Stretch" BorderThickness="0" Background="Transparent">
+                                <System:Decimal>0</System:Decimal>
+                                <System:Decimal>10</System:Decimal>
+                                <System:Decimal>20</System:Decimal>
+                             </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Toplam" Binding="{Binding Tutar, StringFormat='N2'}" Width="90"/>
+                    <DataGridTextColumn Header="Genel Toplam" Binding="{Binding GenelToplam, StringFormat='N2'}" Width="120"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+         <!-- RIGHT: Actions -->
+         <Border Grid.Column="1" Background="{DynamicResource PanelBrush}" CornerRadius="12" Padding="12" Margin="5,0,0,0">
+            <Grid RowDefinitions="Auto, *">
+               <StackPanel Spacing="8">
+                  <TextBlock Text="ÜRÜN İŞLEMLERİ" FontSize="10" FontWeight="Bold" Foreground="#666" HorizontalAlignment="Center" Margin="0,2,0,6"/>
+                  
+                   <Button Command="{Binding OpenStokSecimCommand}" Classes="SideButton Info">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                         <ic:SymbolIcon Symbol="Search" FontSize="16"/> 
+                         <TextBlock Text="Ürün Ekle (F2)" FontSize="11" FontWeight="SemiBold"/>
+                      </StackPanel>
+                   </Button>
+
+                   <Button Command="{Binding RemoveSelectedItemCommand}" Classes="SideButton Danger">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                         <ic:SymbolIcon Symbol="Delete" FontSize="16"/> 
+                         <TextBlock Text="Ürünü Sil" FontSize="11" FontWeight="SemiBold"/>
+                      </StackPanel>
+                   </Button>
+               </StackPanel>
+            </Grid>
+         </Border>
+    </Grid>
+
+    <!-- ROW 2: BOTTOM SECTION -->
+    <Grid Grid.Row="2" Margin="0,5,0,0">
+        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="5">
+            <Grid ColumnDefinitions="300, Auto, *, 250">
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="GENEL TOPLAM" Foreground="#A50909" FontWeight="Bold" FontSize="18" Margin="0,0,0,2"/>
+                    <Border Background="{DynamicResource SystemAccentColor}" BorderBrush="#A0A0A0" BorderThickness="1" Height="60">
+                         <TextBlock Text="{Binding GenelToplam, StringFormat='N2'}" 
+                                    Foreground="White" FontSize="36" FontWeight="Bold" 
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Grid.Column="2" Text="{Binding StatusMessage}" 
+                           Foreground="#A50909" VerticalAlignment="Center" HorizontalAlignment="Center"
+                           FontWeight="Bold" FontSize="14" TextWrapping="Wrap"/>
+
+                <StackPanel Grid.Column="3" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10,0,0,0" Spacing="5">
+                    <Button Classes="Success" Command="{Binding SaveTeklifCommand}" IsEnabled="{Binding !IsSaving}" Height="38" Width="120">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                            <ProgressBar IsIndeterminate="True" Width="16" Height="16" IsVisible="{Binding IsSaving}"/>
+                            <ic:SymbolIcon Symbol="Save" Foreground="White" IsVisible="{Binding !IsSaving}" FontSize="16"/> 
+                            <TextBlock Text="Kaydet (F4)" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+                    
+                     <Button Classes="Secondary" Command="{Binding CancelCommand}" IsEnabled="{Binding !IsSaving}" Height="38" Width="120">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                            <ic:SymbolIcon Symbol="Dismiss" Foreground="White" FontSize="16"/> 
+                            <TextBlock Text="Vazgeç (ESC)" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+
+    <!-- STOK SECIM DIALOG -->
+    <Grid Grid.Row="0" Grid.RowSpan="4" IsVisible="{Binding IsStokSecimVisible}" Background="#E6000000">
+       <Border Background="#080A0C" BorderBrush="#33FFFFFF" BorderThickness="1" 
+               BoxShadow="0 10 40 0 #AA000000"
+               CornerRadius="12" Width="980" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center">
+          <Grid RowDefinitions="Auto, Auto, *, Auto">
+             <Border Grid.Row="0" Background="#991D2126" Padding="25,15" CornerRadius="12,12,0,0">
+                <Grid ColumnDefinitions="*, Auto">
+                   <StackPanel Orientation="Horizontal" Spacing="15">
+                       <ic:SymbolIcon Symbol="Archive" FontSize="24" Foreground="#60A5FA"/> 
+                      <TextBlock Text="Stok Seçim Listesi" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                   </StackPanel>
+                   <Button Grid.Column="1" Command="{Binding CloseStokSecimCommand}" 
+                           Background="Transparent" Width="32" Height="32" Padding="0">
+                      <ic:SymbolIcon Symbol="Dismiss" FontSize="18" Foreground="#88FFFFFF"/> 
+                   </Button>
+                </Grid>
+             </Border>
+             
+             <Border Grid.Row="1" Background="#11FFFFFF" Margin="20,15,20,5" Padding="15" CornerRadius="8">
+                <Grid ColumnDefinitions="*, Auto">
+                   <TextBox Grid.Column="0" Text="{Binding StokSearchText}" 
+                            Watermark="Stok Adı ve Stok Kodu ile Ara..." 
+                            Height="40" CornerRadius="20" Padding="15,0"
+                            VerticalContentAlignment="Center"/>
+                   <Button Grid.Column="1" Command="{Binding SearchStokCommand}" 
+                           Classes="SideButton Info" Width="120" Margin="10,0,0,0">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                         <ic:SymbolIcon Symbol="Search" FontSize="16"/> 
+                         <TextBlock Text="ARA" FontWeight="Bold"/>
+                      </StackPanel>
+                   </Button>
+                </Grid>
+             </Border>
+             
+             <Border Grid.Row="2" Margin="20,10" Background="#0AFFFFFF" CornerRadius="8" BorderBrush="#22FFFFFF" BorderThickness="1">
+                <DataGrid ItemsSource="{Binding StokListesi}" SelectedItem="{Binding SelectedStokForAdd}"
+                          AutoGenerateColumns="False" IsReadOnly="True" 
+                          Background="Transparent" BorderThickness="0"
+                          GridLinesVisibility="Horizontal" RowBackground="Transparent"
+                          DoubleTapped="OnStokDoubleTapped">
+                   <DataGrid.Columns>
+                      <DataGridTextColumn Header="Stok Kodu" Binding="{Binding StokKodu}" Width="120"/>
+                      <DataGridTextColumn Header="Stok Adı" Binding="{Binding StokAdi}" Width="*"/>
+                      <DataGridTextColumn Header="Satış Fiyatı" Binding="{Binding SatisFiyati, StringFormat='N2'}" Width="120"/>
+                      <DataGridTextColumn Header="Miktar" Binding="{Binding Miktar}" Width="80"/>
+                   </DataGrid.Columns>
+                </DataGrid>
+             </Border>
+             
+             <Border Grid.Row="3" Background="#0AFFFFFF" Padding="20,15" CornerRadius="0,0,12,12">
+                <Grid ColumnDefinitions="*, Auto, Auto">
+                   <Button Grid.Column="1" Command="{Binding CloseStokSecimCommand}" 
+                           Classes="SideButton Danger" Width="130" Margin="0,0,10,0">
+                      <TextBlock Text="İPTAL" FontWeight="Bold"/>
+                   </Button>
+                   <Button Grid.Column="2" Command="{Binding AddStokToGridCommand}" 
+                           Classes="SideButton Success" Width="200">
+                      <StackPanel Orientation="Horizontal" Spacing="10">
+                          <ic:SymbolIcon Symbol="Add" FontSize="18"/> 
+                         <TextBlock Text="SEÇ VE EKLE" FontWeight="Bold"/>
+                      </StackPanel>
+                   </Button>
+                </Grid>
+             </Border>
+          </Grid>
+       </Border>
+    </Grid>
+
+     <!-- CARI SECIM DIALOG -->
+    <Grid Grid.Row="0" Grid.RowSpan="4" IsVisible="{Binding IsCariSecimVisible}" Background="#E6000000">
+       <Border Background="#080A0C" BorderBrush="#33FFFFFF" BorderThickness="1" 
+               BoxShadow="0 10 40 0 #AA000000"
+               CornerRadius="12" Width="800" Height="600" VerticalAlignment="Center" HorizontalAlignment="Center">
+          <Grid RowDefinitions="Auto, Auto, *, Auto">
+             <Border Grid.Row="0" Background="#991D2126" Padding="25,12" CornerRadius="12,12,0,0">
+                <Grid ColumnDefinitions="*, Auto">
+                   <StackPanel Orientation="Horizontal" Spacing="15">
+                       <ic:SymbolIcon Symbol="People" FontSize="24" Foreground="#60A5FA"/> 
+                       <TextBlock Text="Cari Hesap Seçimi" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                   </StackPanel>
+                   
+                   <Button Grid.Column="1" Command="{Binding CloseCariSecimCommand}" 
+                           Background="Transparent" Width="36" Height="36" Padding="5"
+                           VerticalAlignment="Center" HorizontalAlignment="Right">
+                       <ic:SymbolIcon Symbol="Dismiss" FontSize="20" Foreground="#88FFFFFF"/> 
+                   </Button>
+                </Grid>
+             </Border>
+             <Border Grid.Row="1" Background="#11FFFFFF" Margin="20,15,20,5" Padding="15" CornerRadius="8">
+                <Grid ColumnDefinitions="*, Auto">
+                   <TextBox Grid.Column="0" Text="{Binding CariSearchText}" Watermark="Cari Ünvan ile ara..." Height="40" CornerRadius="20" Padding="15,5" VerticalContentAlignment="Center"/>
+                   <Button Grid.Column="1" Command="{Binding SearchCariCommand}" Classes="SideButton Info" Width="120" Margin="10,0,0,0">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                         <ic:SymbolIcon Symbol="Search" FontSize="16"/> 
+                         <TextBlock Text="ARA" FontWeight="Bold"/>
+                      </StackPanel>
+                   </Button>
+                </Grid>
+             </Border>
+             <Border Grid.Row="2" Margin="20,10" Background="#0AFFFFFF" CornerRadius="8" BorderBrush="#22FFFFFF" BorderThickness="1">
+                <DataGrid ItemsSource="{Binding CariListesi}" SelectedItem="{Binding SelectedCariForAdd}" 
+                          AutoGenerateColumns="False" IsReadOnly="True" 
+                          Background="Transparent" GridLinesVisibility="Horizontal"
+                          DoubleTapped="OnCariDoubleTapped">
+                   <DataGrid.Columns>
+                      <DataGridTextColumn Header="Grup" Binding="{Binding Grup}" Width="100"/>
+                      <DataGridTextColumn Header="Ünvan" Binding="{Binding Unvan}" Width="*"/>
+                      <DataGridTextColumn Header="Bakiye" Binding="{Binding Bakiye, StringFormat='N2'}" Width="120"/>
+                   </DataGrid.Columns>
+                </DataGrid>
+             </Border>
+             <Border Grid.Row="3" Background="#0AFFFFFF" Padding="20,15" CornerRadius="0,0,12,12">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                   <Button Command="{Binding CloseCariSecimCommand}" Classes="SideButton Danger" Width="130" Content="İPTAL"/>
+                   <Button Command="{Binding SelectCariCommand}" Classes="SideButton Success" Width="200">
+                      <StackPanel Orientation="Horizontal" Spacing="10">
+                          <ic:SymbolIcon Symbol="Checkmark" FontSize="18"/> 
+                          <TextBlock Text="SEÇ" FontWeight="Bold"/>
+                      </StackPanel>
+                   </Button>
+                </StackPanel>
+             </Border>
+          </Grid>
+       </Border>
+    </Grid>
+
+  </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,423 @@
+@page "/db-bakim"
+@using MudBlazor
+@using ErmayMuhasebe.Repositories
+@inject IUnitOfWork UnitOfWork
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject IDialogService DialogService
+@inject ErmayMuhasebe.Cloud.Services.ClientAuthService AuthService
+@inject NavigationManager Nav
+
+@if (AuthService.IsAdmin)
+{
+    <div class="db-maintenance-container fade-in">
+    <!-- Header -->
+    <div class="db-header mb-8">
+        <div class="d-flex align-items-center gap-4">
+            <div class="header-icon-box">
+                <MudIcon Icon="@Icons.Material.Filled.Storage" Style="font-size: 32px; color: #EF4444;" />
+            </div>
+            <div>
+                <h2 class="db-title">Veritabanı Bakım ve Yönetim</h2>
+                <p class="db-subtitle">Veritabanı performansını optimize edin, dosya boyutunu küçültün veya yedek alın.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Info & Status -->
+        <div class="col-lg-6">
+            <div class="premium-panel glass-morphism h-100">
+                <div class="panel-inner p-8">
+                    <h3 class="panel-h3 mb-6">Sistem Bilgileri</h3>
+                    
+                    <div class="info-grid">
+                        <div class="info-row">
+                            <span class="info-label" style="min-width: 120px;">Dosya Yolu:</span>
+                            <span class="info-value">@DbPath</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label" style="min-width: 120px;">Mevcut Boyut:</span>
+                            <span class="info-value text-success fw-bold">@DbSize</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label" style="min-width: 120px;">Durum:</span>
+                            <span class="info-value">@Status</span>
+                        </div>
+                    </div>
+
+                    <div class="progress-wrapper my-8">
+                        <MudProgressLinear Color="Color.Error" Value="@Progress" Class="rounded-pill" Style="height: 10px; background: rgba(255,255,255,0.05);" />
+                    </div>
+
+                    <div class="tip-box">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="tip-title text-danger fw-bold">İpucu:</span>
+                        </div>
+                        <p class="tip-text">Optimize işlemi sırasında veritabanına erişim kısa süreliğine kısıtlanabilir. Yoğun kullanımın olmadığı zamanlarda yapılması önerilir.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="col-lg-6">
+            <div class="d-flex flex-column gap-4">
+                <!-- Optimize Card -->
+                <div class="premium-panel glass-morphism">
+                    <div class="panel-inner p-8">
+                        <h3 class="panel-h3 mb-2">Performans Optimizasyonu</h3>
+                        <p class="panel-desc mb-6">Veritabanındaki boşlukları temizler (VACUUM) ve sorgu planlarını günceller (ANALYZE). Bu işlem hızı artırır.</p>
+                        
+                        <button class="action-btn-red" @onclick="BakimYapAsync" disabled="@_isBusy">
+                            @if (_isBusy)
+                            {
+                                <MudProgressCircular Color="Color.Inherit" Size="Size.Small" Indeterminate="true" Class="me-2" />
+                            }
+                            else
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Build" Class="me-2" />
+                            }
+                            ŞİMDİ OPTİMİZE ET
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Backup Card -->
+                <div class="premium-panel glass-morphism">
+                    <div class="panel-inner p-8">
+                        <h3 class="panel-h3 mb-2">Hızlı Yedekleme ve Geri Yükleme</h3>
+                        <p class="panel-desc mb-6">Mevcut verileri buluta yedekleyin veya bilgisayarınızdaki bir yedeği sisteme geri yükleyin.</p>
+                        
+                        <div class="d-flex gap-4">
+                            <button class="action-btn-blue flex-grow-1" @onclick="YedekAlAsync" disabled="@_isBusy">
+                                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="me-2" />
+                                 YEDEK İNDİR
+                            </button>
+                            
+                            <MudFileUpload T="IBrowserFile" FilesChanged="YedekYukleAsync" Accept=".json" Class="flex-grow-1">
+                                <ActivatorContent>
+                                    <button class="action-btn-green w-100" disabled="@_isBusy">
+                                        <MudIcon Icon="@Icons.Material.Filled.UploadFile" Class="me-2" />
+                                        YEDEK YÜKLE
+                                    </button>
+                                </ActivatorContent>
+                            </MudFileUpload>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+}
+
+@code {
+    private string Status = "Sistem Hazır";
+    private double Progress = 0;
+    private string DbSize = "Hesaplanıyor...";
+    private string DbPath = "Bulut Sunucu (Cloud)";
+    private bool _isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsAdmin)
+        {
+            Snackbar.Add("Bu sayfaya erişim yetkiniz yok!", Severity.Error);
+            Nav.NavigateTo("/");
+            return;
+        }
+        await LoadInfoAsync();
+    }
+
+    private async Task LoadInfoAsync()
+    {
+        DbPath = await UnitOfWork.GetDatabasePathAsync();
+        var size = await UnitOfWork.GetDatabaseSizeAsync();
+        DbSize = $"{(size / 1024.0 / 1024.0):N2} MB";
+        
+        if (DbPath == "Cloud") DbPath = "Firebase Realtime Database";
+    }
+
+    private async Task BakimYapAsync()
+    {
+        _isBusy = true;
+        Status = "Veritabanı bakiye ve hareketleri optimize ediliyor...";
+        Progress = 20;
+        StateHasChanged();
+
+        try 
+        {
+            await UnitOfWork.PerformMaintenanceAsync();
+            await Task.Delay(500);
+            Progress = 60;
+            Status = "Sistem bakiyeleri yeniden hesaplanıyor...";
+            StateHasChanged();
+
+            await UnitOfWork.RecalculateSystemBalancesAsync();
+            await Task.Delay(500);
+            
+            Progress = 100;
+            Status = "Bakım başarıyla tamamlandı. Performans optimize edildi.";
+            Snackbar.Add("Sistem bakımı başarıyla tamamlandı.", Severity.Success);
+            await LoadInfoAsync();
+        }
+        catch (Exception ex)
+        {
+            Status = $"Hata: {ex.Message}";
+            Snackbar.Add("Bakım sırasında bir hata oluştu.", Severity.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task YedekAlAsync()
+    {
+        if (_isBusy) return;
+        _isBusy = true;
+        Status = "Yedek dosyası hazırlanıyor (Veriler toplanıyor)...";
+        Progress = 10;
+        StateHasChanged();
+
+        try
+        {
+            // Tüm verileri topla
+            var backupData = new Dictionary<string, object>();
+            
+            Status = "Temel kayıtlar alınıyor...";
+            backupData["Cariler"] = await UnitOfWork.Cariler.GetAllAsync();
+            backupData["Stoklar"] = await UnitOfWork.Stoklar.GetAllAsync();
+            backupData["Faturalar"] = await UnitOfWork.Faturalar.GetAllAsync();
+            backupData["Bankalar"] = await UnitOfWork.Bankalar.GetAllAsync();
+            backupData["Kasalar"] = await UnitOfWork.Kasalar.GetAllAsync();
+            backupData["Cekler"] = await UnitOfWork.Cekler.GetAllAsync();
+            backupData["Senetler"] = await UnitOfWork.Senetler.GetAllAsync();
+            backupData["Siparisler"] = await UnitOfWork.Siparisler.GetAllAsync();
+            backupData["Teklifler"] = await UnitOfWork.Teklifler.GetAllAsync();
+            backupData["KrediKartlari"] = await UnitOfWork.KrediKartlari.GetAllAsync();
+            backupData["EftIslemleri"] = await UnitOfWork.EftIslemleri.GetAllAsync();
+            backupData["StokSayimlar"] = await UnitOfWork.StokSayimlar.GetAllAsync();
+            backupData["Portfolyo"] = await UnitOfWork.Portfolyo.GetAllAsync();
+            backupData["DovizKurlari"] = await UnitOfWork.DovizKurlari.GetAllAsync();
+            
+            // Hedefler (Multiple tables)
+            backupData["AylikHedefler"] = await UnitOfWork.Hedefler.GetAllAylikHedeflerAsync();
+            backupData["HaftalikHedefler"] = await UnitOfWork.Hedefler.GetAllHaftalikHedeflerAsync();
+            backupData["YillikHedefler"] = await UnitOfWork.Hedefler.GetAllYillikHedeflerAsync();
+            Progress = 40;
+            StateHasChanged();
+            
+            Status = "Detay veriler ve hareketler alınıyor...";
+            backupData["CariHareketler"] = await UnitOfWork.Cariler.GetAllHareketlerAsync();
+            backupData["StokHareketler"] = await UnitOfWork.Stoklar.GetAllHareketlerAsync();
+            backupData["FaturaDetaylar"] = await UnitOfWork.Faturalar.GetAllDetaylarAsync();
+            backupData["BankaHareketler"] = await UnitOfWork.Bankalar.GetAllHareketlerAsync();
+            backupData["KasaHareketler"] = await UnitOfWork.Kasalar.GetAllHareketlerAsync();
+            backupData["SiparisDetaylar"] = await UnitOfWork.Siparisler.GetAllDetaylarAsync();
+            backupData["TeklifDetaylar"] = await UnitOfWork.Teklifler.GetAllDetaylarAsync();
+            backupData["StokSayimDetaylar"] = await UnitOfWork.StokSayimlar.GetAllDetaylarAsync();
+            Progress = 80;
+            StateHasChanged();
+
+            Status = "Dosya oluşturuluyor...";
+            var json = System.Text.Json.JsonSerializer.Serialize(backupData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            
+            var fileName = $"Ermay_Bulut_Yedek_{DateTime.Now:yyyyMMdd_HHmm}.json";
+            await JS.InvokeVoidAsync("downloadFile", fileName, "application/json", json);
+
+            Progress = 100;
+            Status = $"Yedek başarıyla oluşturuldu ve indirildi: {fileName}";
+            Snackbar.Add("Veritabanı yedeği bilgisayarınıza indirildi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Status = $"Hata: {ex.Message}";
+            Snackbar.Add("Yedekleme sırasında bir hata oluştu.", Severity.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task YedekYukleAsync(IBrowserFile file)
+    {
+        if (file == null) return;
+        
+        bool? confirm = await DialogService.ShowMessageBox(
+            "UYARI: Veriler Temizlenecek", 
+            "Yedeği geri yüklediğinizde mevcut tüm verileriniz silinecek ve yedek dosyasındaki veriler yüklenecektir. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?", 
+            yesText:"Evet, Geri Yükle", cancelText:"İptal");
+
+        if (confirm != true) return;
+
+        _isBusy = true;
+        Status = "Yedek dosyası okunuyor...";
+        Progress = 10;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB max
+            using var reader = new System.IO.StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+            
+            Progress = 30;
+            Status = "Veritabanına geri yükleniyor (Bu işlem zaman alabilir)...";
+            StateHasChanged();
+            
+            await UnitOfWork.RestoreBackupAsync(json);
+            
+            Progress = 100;
+            Status = "Yedekleme başarıyla geri yüklendi.";
+            Snackbar.Add("Verileriniz başarıyla geri yüklendi ve sistem güncellendi.", Severity.Success);
+            await LoadInfoAsync();
+        }
+        catch (Exception ex)
+        {
+            Status = $"Hata: {ex.Message}";
+            Snackbar.Add("Yedek geri yüklenirken bir hata oluştu: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+            StateHasChanged();
+        }
+    }
+}
+
+<style>
+    .db-maintenance-container {
+        padding: 30px 40px 30px 60px !important;
+        background: #0B0D12;
+        min-height: 100vh;
+        color: white;
+    }
+
+    .header-icon-box {
+        width: 50px;
+        height: 50px;
+        background: rgba(239, 68, 68, 0.15);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .db-title { font-size: 28px; font-weight: 800; margin: 0; }
+    .db-subtitle { font-size: 15px; color: #9CA3AF; margin-top: 4px; }
+
+    .premium-panel {
+        background: rgba(26, 32, 44, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+    }
+
+    .panel-h3 { font-size: 20px; font-weight: 700; color: white; }
+    .panel-desc { font-size: 13px; color: #9CA3AF; line-height: 1.6; }
+
+    .info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .info-row {
+        display: flex;
+        gap: 15px;
+        font-size: 14px;
+    }
+
+    .info-label { color: #9CA3AF; }
+    .info-value { color: white; }
+
+    .tip-box {
+        background: rgba(239, 68, 68, 0.08);
+        border-radius: 12px;
+        padding: 15px;
+    }
+
+    .tip-text { font-size: 12px; color: #9CA3AF; margin: 0; }
+
+    .action-btn-red {
+        width: 100%;
+        height: 50px;
+        background: #EF4444;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        gap: 10px;
+    }
+
+    .action-btn-red:hover:not(:disabled) {
+        background: #DC2626;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .action-btn-blue {
+        width: 100%;
+        height: 50px;
+        background: #3B82F6;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        gap: 10px;
+    }
+
+    .action-btn-blue:hover:not(:disabled) {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    .action-btn-green {
+        width: 100%;
+        height: 50px;
+        background: #10B981;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        gap: 10px;
+    }
+
+    .action-btn-green:hover:not(:disabled) {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .action-btn-red:disabled, .action-btn-blue:disabled, .action-btn-green:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>

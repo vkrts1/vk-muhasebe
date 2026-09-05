@@ -1,0 +1,159 @@
+@page "/siparis-detay/{Id:int}"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager NavManager
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div class="d-flex align-center gap-4">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Variant="Variant.Outlined" Color="Color.Default" />
+            <div>
+                <MudText Typo="Typo.h5" Class="font-weight-bold">Sipariş Detayı</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">#@(_siparis?.SiparisNo ?? "-") numaralı kayıt</MudText>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Print" OnClick='() => NavManager.NavigateTo($"/siparis-goruntule/{Id}")'>Yazdır</MudButton>
+            @if (_siparis?.Durum != "Faturalandırıldı")
+            {
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Receipt" OnClick="ConvertToInvoice">Faturalandır</MudButton>
+            }
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick='() => NavManager.NavigateTo($"/siparis-olustur?Id={Id}")'>Siparişi Düzenle</MudButton>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="d-flex justify-center mt-12">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (_siparis == null)
+    {
+        <MudAlert Severity="Severity.Error">Sipariş bulunamadı.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            <!-- HEADER INFO -->
+            <MudItem xs="12">
+                <MudPaper Class="pa-8" Elevation="4" Style="border-radius: 20px; border-left: 8px solid var(--mud-palette-secondary);">
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.h6" Color="Color.Secondary" Class="font-weight-bold mb-2">Müşteri Bilgileri</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold">@_siparis.CariUnvan</MudText>
+                            <MudText Typo="Typo.body1" Color="Color.Secondary">ID: #@_siparis.CariId</MudText>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                             <div class="d-flex flex-column align-end">
+                                <MudChip T="string" Color="@GetStatusColor(_siparis.Durum)" Variant="Variant.Filled" Size="Size.Large" Class="mb-4">
+                                    Sipariş Durumu: @_siparis.Durum
+                                </MudChip>
+                                <div class="d-flex gap-8 text-right">
+                                    <div>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">SİPARİŞ TARİHİ</MudText>
+                                        <MudText Typo="Typo.body1" Class="font-weight-bold">@_siparis.Tarih.ToString("dd.MM.yyyy")</MudText>
+                                    </div>
+                                    <div>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">TESLİMAT PLANI</MudText>
+                                        <MudText Typo="Typo.body1" Class="font-weight-bold">Genel Teslimat</MudText>
+                                    </div>
+                                </div>
+                             </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+
+            <!-- LINE ITEMS -->
+            <MudItem xs="12">
+                <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 20px;">
+                    <MudTable Items="@_detaylar" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>#</MudTh>
+                            <MudTh>Ürün Adı</MudTh>
+                            <MudTh>Miktar</MudTh>
+                            <MudTh>Birim Fiyat</MudTh>
+                            <MudTh Style="text-align: right;">Toplam</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@( ( _detaylar.IndexOf(context) + 1 ).ToString() )</MudTd>
+                            <MudTd Class="font-weight-bold">@context.StokAdi</MudTd>
+                            <MudTd>@context.Miktar @context.Birim</MudTd>
+                            <MudTd>@context.BirimFiyat.ToString("N2") ₺</MudTd>
+                            <MudTd Style="text-align: right; font-weight: bold;">@context.Tutar.ToString("N2") ₺</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+
+                    <MudDivider Class="my-6" />
+
+                    <div class="d-flex justify-end pr-4">
+                        <div style="min-width: 250px;">
+                            <div class="d-flex justify-space-between mt-2">
+                                <MudText Typo="Typo.h5" Class="font-weight-bold">TOPLAM TUTAR:</MudText>
+                                <MudText Typo="Typo.h5" Color="Color.Secondary" Class="font-weight-bold">@_siparis.GenelToplam.ToString("N2") ₺</MudText>
+                            </div>
+                        </div>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Siparis? _siparis;
+    private List<SiparisDetay> _detaylar = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _siparis = await DbService.GetSiparisAsync(Id);
+            if (_siparis != null)
+            {
+                _detaylar = await DbService.GetSiparisDetaylarAsync(Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Color GetStatusColor(string? status) => status switch
+    {
+        "Onaylandı" => Color.Success,
+        "Faturalandırıldı" => Color.Primary,
+        "Bekliyor" => Color.Warning,
+        "Hazırlanıyor" => Color.Info,
+        "İptal" => Color.Error,
+        _ => Color.Default
+    };
+
+    private async Task ConvertToInvoice()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Faturalandır", 
+            "Bu siparişi faturalandırmak istediğinize emin misiniz?", 
+            yesText:"Evet", cancelText:"Hayır");
+
+        if (result == true)
+        {
+            await DbService.ConvertSiparisToFaturaAsync(Id);
+            NavManager.NavigateTo("/faturalar");
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("/siparisler");
+}

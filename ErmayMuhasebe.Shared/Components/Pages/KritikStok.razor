@@ -1,0 +1,106 @@
+@page "/kritik-stok"
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject NavigationManager Nav
+@inject IPdfService PdfService
+@inject IFileService FileService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5" Color="MudBlazor.Color.Primary">Kritik Stok Seviyesi Raporu</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.List" OnClick="@(() => Nav.NavigateTo("/raporlar-menu"))">Tüm Raporlar</MudButton>
+        @if(kritikStoklar != null && kritikStoklar.Any())
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="PrintReport">
+                Yazdır / PDF
+            </MudButton>
+        }
+    </MudStack>
+</div>
+
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.body2" Class="mb-2">Miktarı kritik seviyenin (Minimum Seviye) altına düşen stoklar listelenir.</MudText>
+    <div class="d-flex gap-2">
+        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="LoadData">
+            Raporu Yenile
+        </MudButton>
+    </div>
+    </MudPaper>
+
+    @if(kritikStoklar != null && kritikStoklar.Any())
+    {
+        <MudTable Items="@kritikStoklar" Hover="true" Striped="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Stok Kodu</MudTh>
+                <MudTh>Stok Adı</MudTh>
+                <MudTh>Kategori</MudTh>
+                <MudTh Style="text-align:right">Mevcut Miktar</MudTh>
+                <MudTh Style="text-align:right">Kritik Seviye</MudTh>
+                <MudTh Style="text-align:right">Fark</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.StokKodu</MudTd>
+                <MudTd>@context.StokAdi</MudTd>
+                <MudTd>@context.Kategori</MudTd>
+                <MudTd Style="text-align:right; font-weight:bold; color:red;">@context.Miktar.ToString("N2") @context.Birim</MudTd>
+                <MudTd Style="text-align:right">@context.MinSeviye.ToString("N2") @context.Birim</MudTd>
+                <MudTd Style="text-align:right; font-weight:bold;">@((context.MinSeviye - context.Miktar).ToString("N2"))</MudTd>
+            </RowTemplate>
+        </MudTable>
+        
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            Toplam @kritikStoklar.Count adet ürünün stoğu kritik seviyenin altındadır.
+        </MudAlert>
+    }
+    else if (searched)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-4">
+            Kritik seviyenin altında stok bulunmamaktadır.
+        </MudAlert>
+    }
+
+    @code {
+        private List<StokKart>? kritikStoklar;
+        private bool searched = false;
+
+        protected override async Task OnInitializedAsync()
+        {
+            await LoadData();
+        }
+
+        private async Task LoadData()
+        {
+            searched = true;
+            var hepsi = await DbService.GetStoklarAsync();
+            kritikStoklar = hepsi.Where(s => s.Miktar < s.MinSeviye).ToList();
+        }
+
+        private async Task PrintReport()
+        {
+            if (kritikStoklar == null || !kritikStoklar.Any()) return;
+
+            try
+            {
+                var headers = new[] { "Stok Kodu", "Stok Adı", "Kategori", "Miktar", "Kritik", "Fark" };
+                var rows = kritikStoklar.Select(s => new string[] 
+                { 
+                    s.StokKodu ?? "",
+                    s.StokAdi ?? "",
+                    s.Kategori ?? "",
+                    s.Miktar.ToString("N2") + " " + (s.Birim ?? "Adet"),
+                    s.MinSeviye.ToString("N2") + " " + (s.Birim ?? "Adet"),
+                    (s.MinSeviye - s.Miktar).ToString("N2")
+                }).ToList();
+                
+                var pdf = await PdfService.GenerateGenericTablePdfBytesAsync("Kritik Stok Seviyesi Raporu", headers, rows);
+                await FileService.SaveAndOpenFileAsync("KritikStokRaporu.pdf", pdf, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Hata: {ex.Message}", Severity.Error);
+            }
+        }
+    }

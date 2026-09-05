@@ -1,0 +1,359 @@
+@page "/finans"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<style>
+    .finans-container {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        background: #0d1117;
+        min-height: calc(100vh - 64px);
+    }
+
+    .sub-nav-tabs {
+        background: #1a1d21;
+        padding: 5px;
+        border-radius: 12px;
+        display: flex;
+        gap: 5px;
+        border: 1px solid rgba(255,255,255,0.08);
+        width: 100%;
+    }
+
+    .tab-btn {
+        padding: 10px 24px;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.25s ease;
+        color: rgba(255,255,255,0.6);
+        border: none;
+        background: transparent;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .tab-btn:hover {
+        background: rgba(255,255,255,0.05);
+        color: white;
+    }
+
+    .tab-btn.active {
+        background: #5865f2;
+        color: white;
+        box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
+    }
+
+    .finans-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+    }
+
+    .header-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .icon-box {
+        width: 54px;
+        height: 54px;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+    }
+
+    .title-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .main-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.5px;
+    }
+
+    .sub-title {
+        font-size: 13px;
+        color: rgba(255,255,255,0.45);
+        font-weight: 500;
+    }
+
+    .glass-panel {
+        background: #161b22;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+        padding: 4px;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        overflow: hidden;
+    }
+
+    .action-btn {
+        height: 44px;
+        border-radius: 12px !important;
+        text-transform: none !important;
+        font-weight: 800 !important;
+        background: transparent !important;
+        color: #60A5FA !important;
+        border: 1.5px solid #60A5FA !important;
+        padding: 0 28px !important;
+        font-size: 13px !important;
+        letter-spacing: 0.2px;
+        transition: all 0.3s !important;
+    }
+
+    .action-btn:hover {
+        background: rgba(96, 165, 250, 0.1) !important;
+        transform: translateY(-2px);
+    }
+
+    /* Table Customizations */
+    .custom-table {
+        background: transparent !important;
+    }
+
+    .custom-table .mud-table-head {
+        background: #0d1117 !important;
+    }
+
+    .custom-table .mud-table-cell {
+        padding: 16px 20px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+        color: rgba(255,255,255,0.8) !important;
+        font-size: 13.5px !important;
+    }
+
+    .custom-table .mud-table-head .mud-table-cell {
+        font-weight: 700 !important;
+        color: rgba(255,255,255,0.4) !important;
+        text-transform: none !important;
+        font-size: 12px !important;
+        letter-spacing: 0.5px;
+    }
+
+    .bakiye-positive {
+        color: #2ecc71;
+        font-weight: 800;
+        font-size: 15px;
+    }
+
+    .bakiye-negative {
+        color: #ef4444;
+        font-weight: 800;
+        font-size: 15px;
+    }
+
+    .row-hover:hover {
+        background: rgba(255,255,255,0.02) !important;
+    }
+
+    .action-icon-btn {
+        background: rgba(255,255,255,0.05) !important;
+        margin: 0 4px;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+    }
+
+    .action-icon-btn:hover {
+        background: rgba(255,255,255,0.1) !important;
+    }
+</style>
+
+<div class="finans-container">
+    <!-- Sub Nav -->
+    <div class="sub-nav-tabs">
+        <button class="tab-btn @(currentTab == "Nakit" ? "active" : "")" @onclick='() => currentTab = "Nakit"'>
+            <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" />
+            Nakit
+        </button>
+        <button class="tab-btn @(currentTab == "Cek" ? "active" : "")" @onclick='() => currentTab = "Cek"'>
+            <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Small" />
+            Çek
+        </button>
+        <button class="tab-btn @(currentTab == "KrediKarti" ? "active" : "")" @onclick='() => currentTab = "KrediKarti"'>
+            <MudIcon Icon="@Icons.Material.Filled.CreditCard" Size="Size.Small" />
+            Kredi Kartı
+        </button>
+        <button class="tab-btn @(currentTab == "EFT" ? "active" : "")" @onclick='() => currentTab = "EFT"'>
+            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
+            Havale / EFT
+        </button>
+    </div>
+
+    @if (currentTab == "Nakit")
+    {
+        <div class="finans-header slide-up">
+            <div class="header-info">
+                <div class="icon-box">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Inherit" Size="Size.Medium" />
+                </div>
+                <div class="title-stack">
+                    <span class="main-title">Kasa / Nakit Hesapları</span>
+                    <span class="sub-title">Nakit akışını ve kasa bakiyelerini yönetin</span>
+                </div>
+            </div>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Class="action-btn" OnClick="OpenNewKasa">Yeni Kasa Tanımla</MudButton>
+        </div>
+
+        <div class="glass-panel slide-up" style="animation-delay: 0.1s;">
+            <MudTable Items="@kasalar" T="BankaKart" Elevation="0" Dense="true" Hover="true" Class="custom-table" RowClass="row-hover">
+                <HeaderContent>
+                    <MudTh>Kasa Adı</MudTh>
+                    <MudTh>Döviz</MudTh>
+                    <MudTh>Bakiye</MudTh>
+                    <MudTh>Yetkili</MudTh>
+                    <MudTh Style="text-align: center;">İşlemler</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.BankaAdi</MudTd>
+                    <MudTd>@context.DovizTuru</MudTd>
+                    <MudTd>
+                        <span class="@(context.GuncelBakiye >= 0 ? "bakiye-positive" : "bakiye-negative")">
+                            @context.GuncelBakiye.ToString("N2")
+                        </span>
+                    </MudTd>
+                    <MudTd>@(string.IsNullOrEmpty(context.Yetkili) ? "-" : context.Yetkili)</MudTd>
+                    <MudTd Style="text-align: center;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="action-icon-btn" OnClick="@(() => EditKasa(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="action-icon-btn" OnClick="@(() => DeleteKasa(context))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </div>
+    }
+    else if (currentTab == "EFT")
+    {
+        <div class="finans-header slide-up">
+            <div class="header-info">
+                <div class="icon-box" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Inherit" Size="Size.Medium" />
+                </div>
+                <div class="title-stack">
+                    <span class="main-title">Banka Hesapları (Havale / EFT)</span>
+                    <span class="sub-title">Banka bakiyelerini ve IBAN bilgilerini yönetin</span>
+                </div>
+            </div>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Class="action-btn" OnClick="OpenNewBanka">Yeni Banka Tanımla</MudButton>
+        </div>
+
+        <div class="glass-panel slide-up" style="animation-delay: 0.1s;">
+            <MudTable Items="@bankalar" T="BankaKart" Elevation="0" Dense="true" Hover="true" Class="custom-table" RowClass="row-hover">
+                <HeaderContent>
+                    <MudTh>Banka Adı</MudTh>
+                    <MudTh>Döviz</MudTh>
+                    <MudTh>Bakiye</MudTh>
+                    <MudTh>IBAN</MudTh>
+                    <MudTh Style="text-align: center;">İşlemler</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.BankaAdi</MudTd>
+                    <MudTd>@context.DovizTuru</MudTd>
+                    <MudTd>
+                        <span class="@(context.GuncelBakiye >= 0 ? "bakiye-positive" : "bakiye-negative")">
+                            @context.GuncelBakiye.ToString("N2")
+                        </span>
+                    </MudTd>
+                    <MudTd Style="font-family: monospace; font-size: 12px; color: rgba(255,255,255,0.6);">@(string.IsNullOrEmpty(context.IBAN) ? "-" : context.IBAN)</MudTd>
+                    <MudTd Style="text-align: center;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="action-icon-btn" OnClick="@(() => EditBanka(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="action-icon-btn" OnClick="@(() => DeleteBanka(context))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column align-center justify-center pt-16" style="opacity: 0.3; height: 400px;">
+            <MudIcon Icon="@Icons.Material.Filled.AutoGraph" Size="Size.Large" Style="font-size: 80px;" />
+            <MudText Typo="Typo.h5" Class="mt-4 font-weight-bold">@currentTab Analizleri</MudText>
+            <MudText Typo="Typo.body1">Bu modül üzerinde çalışmalarımız devam ediyor.</MudText>
+        </div>
+    }
+</div>
+
+@code {
+    private string currentTab = "Nakit";
+    private List<BankaKart> allData = new();
+    private List<BankaKart> kasalar = new();
+    private List<BankaKart> bankalar = new();
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        allData = await DbService.GetBankalarAsync();
+        kasalar = allData.Where(b => b.KartTuru == "Kasa").ToList();
+        bankalar = allData.Where(b => b.KartTuru == "Banka").ToList();
+    }
+
+    private async Task OpenNewKasa()
+    {
+        var parameters = new DialogParameters { ["Model"] = new BankaKart { KartTuru = "Kasa", DovizTuru = "TL" } };
+        var dialog = await DialogService.ShowAsync<CariIslemDialog>("Yeni Kasa Tanımı", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) await LoadData();
+    }
+
+    private async Task OpenNewBanka()
+    {
+        var parameters = new DialogParameters { ["Model"] = new BankaKart { KartTuru = "Banka", DovizTuru = "TL" } };
+        var dialog = await DialogService.ShowAsync<CariIslemDialog>("Yeni Banka Tanımı", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) await LoadData();
+    }
+
+    private async Task EditKasa(BankaKart item)
+    {
+        var parameters = new DialogParameters { ["Model"] = item };
+        var dialog = await DialogService.ShowAsync<CariIslemDialog>("Kasa Düzenle", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) await LoadData();
+    }
+
+    private async Task EditBanka(BankaKart item)
+    {
+        var parameters = new DialogParameters { ["Model"] = item };
+        var dialog = await DialogService.ShowAsync<CariIslemDialog>("Banka Düzenle", parameters);
+        var result = await dialog.Result;
+        if (result != null && !result.Canceled) await LoadData();
+    }
+
+    private async Task DeleteKasa(BankaKart item)
+    {
+        bool? confirmed = await DialogService.ShowMessageBox("Onay", $"{item.BankaAdi} adlı kasayı silmek istediğinize emin misiniz?", "Evet", "Hayır");
+        if (confirmed == true)
+        {
+            await DbService.DeleteBankaKartAsync(item);
+            Snackbar.Add("Kasa silindi.", Severity.Info);
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteBanka(BankaKart item)
+    {
+        bool? confirmed = await DialogService.ShowMessageBox("Onay", $"{item.BankaAdi} adlı banka hesabını silmek istediğinize emin misiniz?", "Evet", "Hayır");
+        if (confirmed == true)
+        {
+            await DbService.DeleteBankaKartAsync(item);
+            Snackbar.Add("Banka hesabı silindi.", Severity.Info);
+            await LoadData();
+        }
+    }
+}

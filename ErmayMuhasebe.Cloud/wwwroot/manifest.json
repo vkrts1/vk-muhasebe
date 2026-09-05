@@ -1,0 +1,23 @@
+{
+    "name": "Ermay Muhasebe Cloud",
+    "short_name": "Ermay",
+    "description": "Premium Bulut Tabanlı Muhasebe Yönetim Sistemi",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0B0D12",
+    "theme_color": "#0061FF",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "icon-192.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "any maskable"
+        }
+    ]
+}

@@ -1,0 +1,188 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ErmayMuhasebe.Avalonia.ViewModels;assembly=ErmayMuhasebe.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
+             x:Class="ErmayMuhasebe.Avalonia.Views.SiparisListView"
+             x:DataType="vm:SiparisListViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="DataGridRow">
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="MinHeight" Value="32"/>
+    </Style>
+    <Style Selector="DataGridCell">
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="4,0"/>
+    </Style>
+    <Style Selector="DataGridCell TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto, Auto, *" Margin="20">
+    <!-- Notification Area -->
+    <StackPanel Grid.Row="0" Margin="0,0,0,10" Spacing="8">
+        <Border Background="#1AFF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1" CornerRadius="8" Padding="15,10" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <ic:SymbolIcon Symbol="DismissCircle" Foreground="#FF6B6B" FontSize="20"/>
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+        <Border Background="#1A60A5FA" BorderBrush="#4060A5FA" BorderThickness="1" CornerRadius="8" Padding="15,10" IsVisible="{Binding IsLoading}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <ProgressBar IsIndeterminate="True" Width="18" Height="18" Foreground="#60A5FA" VerticalAlignment="Center"/>
+                <TextBlock Text="İşlem yapılıyor, lütfen bekleyin..." Foreground="#60A5FA" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+
+    <!-- 1. Header Area (Responsive & Modern) -->
+    <Grid Grid.Row="1" ColumnDefinitions="Auto, *" Margin="0,0,0,25">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,20,10" VerticalAlignment="Center">
+        <TextBlock Text="Siparişler" FontSize="24" FontWeight="ExtraBold" VerticalAlignment="Center" Foreground="White"/>
+        <Border Background="#2060A5FA" CornerRadius="4" Padding="8,2" Margin="15,0,0,0" VerticalAlignment="Center">
+           <TextBlock Text="Müşteri Talepleri" FontSize="10" Foreground="#60A5FA" FontWeight="Bold"/>
+        </Border>
+      </StackPanel>
+      
+      <!-- Search & Actions Container -->
+      <Viewbox Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Right" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="15" Margin="0,0,0,10">
+            <!-- Search Box -->
+            <Border Background="#0C0E10" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Height="40" Width="300">
+                <Grid ColumnDefinitions="40, *">
+                    <ic:SymbolIcon Symbol="Search" FontSize="18" Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1" Text="{Binding SearchString, UpdateSourceTrigger=PropertyChanged}" 
+                             Watermark="Hızlı Arama..." 
+                             Background="Transparent" BorderThickness="0"
+                             VerticalContentAlignment="Center" FontSize="13" Padding="0,0,15,0">
+                    </TextBox>
+                </Grid>
+            </Border>
+
+            <Button Command="{Binding ShowConvertToInvoiceConfirmCommand}" Background="#15FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" VerticalAlignment="Center" Padding="15,8" CornerRadius="10"
+                    IsEnabled="{Binding SelectedSiparis, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ic:SymbolIcon Symbol="ArrowSync" FontSize="18" Foreground="#94A3B8"/>
+                    <TextBlock Text="Faturaya Dönüştür" FontSize="12" Foreground="#E2E8F0" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            
+            <Button Command="{Binding CreateNewOrderCommand}" Classes="Success" VerticalAlignment="Center" Padding="20,8" CornerRadius="10" BorderThickness="0">
+                <Button.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Offset="0" Color="#10B981"/>
+                        <GradientStop Offset="1" Color="#059669"/>
+                    </LinearGradientBrush>
+                </Button.Background>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ic:SymbolIcon Symbol="Add" FontSize="18" Foreground="White"/>
+                    <TextBlock Text="YENİ SİPARİŞ" FontSize="12" FontWeight="Heavy" Foreground="White" VerticalAlignment="Center" LetterSpacing="1"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+      </Viewbox>
+    </Grid>
+
+    <!-- 2. List Container (The "Card" Layout) -->
+    <Border Grid.Row="2" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="12" Padding="1" ClipToBounds="True">
+      <DataGrid ItemsSource="{Binding Siparisler}" SelectedItem="{Binding SelectedSiparis}"
+                AutoGenerateColumns="False" IsReadOnly="True"
+                GridLinesVisibility="Horizontal" Background="Transparent"
+                RowHeight="32"
+                DoubleTapped="OnDoubleTapped">
+        <DataGrid.ContextMenu>
+            <ContextMenu>
+                <MenuItem Header="Açıklama Ekle" Command="{Binding OpenAciklamaDialogCommand}" CommandParameter="{Binding SelectedSiparis}">
+                    <MenuItem.Icon><ic:SymbolIcon Symbol="TextDescription"/></MenuItem.Icon>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="Düzenle" Command="{Binding EditSiparisCommand}" CommandParameter="{Binding SelectedSiparis}">
+                    <MenuItem.Icon><ic:SymbolIcon Symbol="Edit"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Görüntüle (PDF)" Command="{Binding ViewSiparisPdfCommand}" CommandParameter="{Binding SelectedSiparis}">
+                    <MenuItem.Icon><ic:SymbolIcon Symbol="DocumentPdf"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="WhatsApp ile Paylaş" Command="{Binding ShareSiparisWhatsAppCommand}" CommandParameter="{Binding SelectedSiparis}">
+                    <MenuItem.Icon><ic:SymbolIcon Symbol="Chat" Foreground="#22C55E"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="E-posta ile Gönder" Command="{Binding ShareSiparisEmailCommand}" CommandParameter="{Binding SelectedSiparis}">
+                    <MenuItem.Icon><ic:SymbolIcon Symbol="Mail" Foreground="#A855F7"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Faturaya Dönüştür" Command="{Binding ShowConvertToInvoiceConfirmCommand}">
+                    <MenuItem.Icon><ic:SymbolIcon Symbol="ArrowSync"/></MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Durumu Değiştir">
+                    <MenuItem.Icon><ic:SymbolIcon Symbol="Flag"/></MenuItem.Icon>
+                    <MenuItem Header="Bekliyor" Command="{Binding UpdateStatusCommand}" CommandParameter="Bekliyor"/>
+                    <MenuItem Header="Onaylandı" Command="{Binding UpdateStatusCommand}" CommandParameter="Onaylandı"/>
+                    <MenuItem Header="Faturalandı" Command="{Binding UpdateStatusCommand}" CommandParameter="Faturalandı"/>
+                    <MenuItem Header="İptal" Command="{Binding UpdateStatusCommand}" CommandParameter="İptal"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Sil" Command="{Binding DeleteSiparisConfirmCommand}" CommandParameter="{Binding SelectedSiparis}" Foreground="#EF4444">
+                    <MenuItem.Icon><ic:SymbolIcon Symbol="Delete" Foreground="#EF4444"/></MenuItem.Icon>
+                </MenuItem>
+            </ContextMenu>
+        </DataGrid.ContextMenu>
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Sipariş No" Binding="{Binding SiparisNo}" Width="120"/>
+          <DataGridTextColumn Header="Tarih" Binding="{Binding Tarih, StringFormat='dd.MM.yyyy'}" Width="120"/>
+          <DataGridTextColumn Header="Teslimat" Binding="{Binding TeslimatTarihi, StringFormat='dd.MM.yyyy'}" Width="120"/>
+          <DataGridTextColumn Header="Cari Ünvan" Binding="{Binding CariUnvan}" Width="*"/>
+          <DataGridTextColumn Header="Tutar" Binding="{Binding GenelToplam, StringFormat='{}{0:C2}'}" Width="120"/>
+          <DataGridTemplateColumn Header="Durum" Width="120">
+              <DataTemplate>
+                  <Border Background="{Binding Durum, Converter={StaticResource StatusToColorConverter}}" 
+                          CornerRadius="4" Padding="8,2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Durum}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                  </Border>
+              </DataTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+    </Border>
+
+    <!-- DELETE/ACTION CONFIRMATION OVERLAY -->
+    <Grid Grid.RowSpan="3" Background="#E6000000" IsVisible="{Binding IsConfirmVisible}">
+         <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="16" Width="400" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 20 60 0 #CC000000" ClipToBounds="True">
+             <Grid RowDefinitions="Auto, *">
+                  <Border Grid.Row="0" Background="#26FF416C" Padding="20,12">
+                      <StackPanel Orientation="Horizontal" Spacing="12">
+                          <ic:SymbolIcon Symbol="Warning" Foreground="White" FontSize="20"/> 
+                          <TextBlock Text="Onay Gerekiyor" FontWeight="Bold" FontSize="15" Foreground="White" VerticalAlignment="Center"/>
+                      </StackPanel>
+                  </Border>
+
+                  <StackPanel Grid.Row="1" Margin="30" Spacing="25">
+                      <ic:SymbolIcon Symbol="Question" Foreground="#FF416C" FontSize="48" HorizontalAlignment="Center"/> 
+                      <StackPanel Spacing="8">
+                          <TextBlock Text="{Binding ConfirmTitle}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" FontSize="18"/>
+                          <TextBlock Text="{Binding ConfirmMessage}" Foreground="#BBB" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="13"/>
+                      </StackPanel>
+                      
+                      <Grid ColumnDefinitions="*,*" Margin="0,10,0,0">
+                          <Button Grid.Column="0" Classes="SideButton Info" Command="{Binding ConfirmYesCommand}" Margin="0,0,5,0" Height="45">
+                              <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                  <ic:SymbolIcon Symbol="Checkmark" FontSize="18" VerticalAlignment="Center"/> 
+                                  <TextBlock Text="EVET" FontWeight="Bold" VerticalAlignment="Center" FontSize="12"/>
+                              </StackPanel>
+                          </Button>
+                          <Button Grid.Column="1" Classes="SideButton Secondary" Command="{Binding ConfirmNoCommand}" Margin="5,0,0,0" Height="45">
+                               <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                  <ic:SymbolIcon Symbol="Dismiss" FontSize="18" VerticalAlignment="Center"/> 
+                                  <TextBlock Text="VAZGEÇ" FontWeight="Bold" VerticalAlignment="Center" FontSize="12"/>
+                               </StackPanel>
+                          </Button>
+                      </Grid>
+                  </StackPanel>
+             </Grid>
+         </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,150 @@
+@page "/satis-raporlari"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Cloud.Services
+@inject ClientDatabaseService DbService
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <!-- HEADER -->
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Class="font-weight-bold">Satış Performans Analitiği</MudText>
+            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Gelir trendleri, müşteri hacimleri ve satış verimi</MudText>
+        </div>
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Timeline" Color="Color.Primary">Karşılaştırmalı Rapor</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" OnClick='() => Nav.NavigateTo("/fatura-olustur/Satis")'>YENİ SATIŞ YAP</MudButton>
+        </div>
+    </div>
+    
+    <MudGrid>
+        <!-- KPI CARDS -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-right: 4px solid #10b981; border-radius: 12px;">
+                <MudText Typo="Typo.overline" Color="Color.Success">BU AY CİRO</MudText>
+                <MudText Typo="Typo.h4" Class="font-weight-bold">@TotalSalesThisMonth.ToString("N0") ₺</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Geçen Aya Göre: %18 Artış</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-right: 4px solid #3b82f6; border-radius: 12px;">
+                <MudText Typo="Typo.overline" Color="Color.Info">FATURA SAYISI</MudText>
+                <MudText Typo="Typo.h4" Class="font-weight-bold">@InvoiceCount</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Ortalama: @((InvoiceCount > 0 ? TotalSalesThisMonth / InvoiceCount : 0).ToString("N0")) ₺ / Fatura</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-right: 4px solid #8b5cf6; border-radius: 12px;">
+                <MudText Typo="Typo.overline" Style="color: #8b5cf6;">SATIŞ VERİMİ</MudText>
+                <MudText Typo="Typo.h4" Class="font-weight-bold">% 92</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Hedef: %100</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-right: 4px solid #f43f5e; border-radius: 12px;">
+                <MudText Typo="Typo.overline" Color="Color.Error">İADE HACMİ</MudText>
+                <MudText Typo="Typo.h4" Class="font-weight-bold">0 ₺</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Tüm süreçler sağlıklı</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- CHARTS SECTION -->
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                <MudText Typo="Typo.h6" Class="mb-4 font-weight-bold">Haftalık Satış Hacmi</MudText>
+                @if (SalesSeries != null)
+                {
+                    <MudChart ChartType="ChartType.Line" ChartSeries="@SalesSeries" XAxisLabels="@SalesLabels" Width="100%" Height="350px" ChartOptions="_chartOptions" />
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                <MudText Typo="Typo.h6" Class="mb-4 font-weight-bold">En İyi Alıcılar</MudText>
+                 <MudList T="string" Dense="true" Class="mt-2">
+                    @foreach(var c in TopCustomers)
+                    {
+                        <MudListItem Class="px-0">
+                            <div class="d-flex align-center gap-3">
+                                <MudAvatar Color="Color.Secondary" Size="Size.Small" Variant="Variant.Text">@c.Unvan?[0]</MudAvatar>
+                                <div class="flex-grow-1">
+                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@c.Unvan</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Sadık Müşteri</MudText>
+                                </div>
+                                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Color="Color.Success" />
+                            </div>
+                        </MudListItem>
+                        <MudDivider DividerType="DividerType.Middle" Class="my-1"/>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudItem>
+
+        <!-- DETAILS LIST -->
+        <MudItem xs="12">
+            <MudPaper Class="pa-6" Elevation="4" Style="border-radius: 16px;">
+                 <MudText Typo="Typo.h6" Class="mb-4 font-weight-bold">Son Satış Kayıtları</MudText>
+                 <MudTable Items="@LastInvoices" Dense="true" Hover="true" Elevation="0">
+                     <HeaderContent>
+                         <MudTh>Fatura No</MudTh>
+                         <MudTh>Tarih</MudTh>
+                         <MudTh>Müşteri Ünvanı</MudTh>
+                         <MudTh>Tutar</MudTh>
+                         <MudTh>Tahsilat</MudTh>
+                         <MudTh Style="text-align: right;">Durum</MudTh>
+                     </HeaderContent>
+                     <RowTemplate>
+                         <MudTd Class="font-weight-bold">@context.FaturaNo</MudTd>
+                         <MudTd>@context.Tarih.ToString("dd.MM.yyyy")</MudTd>
+                         <MudTd>@context.CariUnvan</MudTd>
+                         <MudTd Class="font-weight-bold" Style="color: var(--mud-palette-success);">@context.GenelToplam.ToString("N2") ₺</MudTd>
+                         <MudTd>@context.Odenen.ToString("N2") ₺</MudTd>
+                         <MudTd Style="text-align: right;">
+                             <MudChip T="string" Color="@(context.Odenen >= context.GenelToplam ? Color.Success : Color.Warning)" Size="Size.Small" Variant="Variant.Text">
+                                 @(context.Odenen >= context.GenelToplam ? "Tahsil Edildi" : "Bekliyor")
+                             </MudChip>
+                         </MudTd>
+                     </RowTemplate>
+                 </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+
+@code {
+    private List<ChartSeries> SalesSeries = new();
+    private string[] SalesLabels = Array.Empty<string>();
+    private List<CariKart> TopCustomers = new();
+    private List<Fatura> LastInvoices = new();
+    
+    private decimal TotalSalesThisMonth = 0;
+    private int InvoiceCount = 0;
+
+    private ChartOptions _chartOptions = new ChartOptions 
+    { 
+        YAxisFormat = "N0", 
+        InterpolationOption = InterpolationOption.NaturalSpline,
+        ShowLegend = false 
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        SalesSeries = await DbService.GetLast7DaysSalesAsync();
+        SalesLabels = await DbService.GetLast7DaysLabelsAsync();
+        TopCustomers = await DbService.GetTopCustomersAsync();
+        
+        var allInvoices = await DbService.GetFaturalarAsync();
+        var salesInvoices = allInvoices.Where(f => f.Tur == "Satış").ToList();
+
+        var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var thisMonth = salesInvoices.Where(f => f.Tarih >= startOfMonth).ToList();
+        
+        TotalSalesThisMonth = thisMonth.Sum(f => f.GenelToplam);
+        InvoiceCount = thisMonth.Count;
+
+        LastInvoices = salesInvoices.OrderByDescending(f => f.Tarih).Take(20).ToList();
+    }
+}

@@ -1,0 +1,107 @@
+@page "/ayarlar"
+@using MudBlazor
+@using ErmayMuhasebe.Models
+@using ErmayMuhasebe.Services
+@inject DatabaseService DbService
+@inject ExternalApiService ExternalApi
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <div class="mb-8">
+        <MudText Typo="Typo.h4" Class="font-weight-bold">Sistem Yapılandırma</MudText>
+        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Firma bilgileri ve uygulama tercihleri</MudText>
+    </div>
+
+    <MudTabs Elevation="0" Rounded="false" Color="Color.Primary" ApplyEffectsToContainer="true" PanelClass="pa-6 mt-4" 
+             Style="background: transparent;">
+        
+        <MudTabPanel Text="Firma Profili" Icon="@Icons.Material.Filled.Business">
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-8 d-flex flex-column align-center gap-6" Elevation="4" Style="border-radius: 20px;">
+                        <MudAvatar Style="height:156px; width:156px; font-size: 4rem;" Color="Color.Primary" Variant="Variant.Filled">
+                            @(_firma.FirmaAdi?[0].ToString() ?? "F")
+                        </MudAvatar>
+                        <div class="text-center">
+                            <MudText Typo="Typo.h6" Class="font-weight-bold">@_firma.FirmaAdi</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Kurumsal Kimlik Ayarları</MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" md="8">
+                    <MudPaper Class="pa-8" Elevation="4" Style="border-radius: 20px;">
+                        <MudText Typo="Typo.h6" Class="mb-6 font-weight-bold">Genel Bilgiler</MudText>
+                        <MudGrid Spacing="4">
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_firma.FirmaAdi" Label="Firma Tam Ünvanı" Variant="Variant.Outlined" FullWidth="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_firma.Yetkili" Label="İmza Yetkilisi / Müdür" Variant="Variant.Outlined" FullWidth="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_firma.Telefon" Label="İrtibat Telefonu" Variant="Variant.Outlined" FullWidth="true" />
+                            </MudItem>
+                            <MudItem xs="12" Class="d-flex justify-end pt-4">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="SaveFirma">DEĞİŞİKLİKLERİ KAYDET</MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+
+        <MudTabPanel Text="API Entegrasyonları" Icon="@Icons.Material.Filled.Api">
+            <MudPaper Class="pa-8" Elevation="4" Style="border-radius: 20px;">
+                <MudText Typo="Typo.h6" Class="mb-6 font-weight-bold">Harici Servis Anahtarları</MudText>
+                <MudGrid Spacing="4">
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info" Class="mb-4">Bu anahtarlar veri doğrulama, canlı kur takibi ve harita servisleri için gereklidir.</MudAlert>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_exchangeKey" Label="ExchangeRate-API Anahtarı" HelperText="Canlı döviz kurları için yedek servis" Variant="Variant.Outlined" FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_positionKey" Label="PositionStack API Anahtarı" HelperText="Adreslerden koordinat (Lat/Lon) bulmak için" Variant="Variant.Outlined" FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_emailKey" Label="Emailable API Anahtarı" HelperText="E-posta geçerliliği ve ulaşılabilirliği için" Variant="Variant.Outlined" FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="12" Class="d-flex justify-end pt-4">
+                        <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Large" StartIcon="@Icons.Material.Filled.VpnKey" OnClick="SaveApiSettings">ANAHTARLARI KAYDET</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+    </MudTabs>
+</MudContainer>
+
+@code {
+    private FirmaProfili _firma = new();
+    private string _exchangeKey = "";
+    private string _positionKey = "";
+    private string _emailKey = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _firma = await DbService.GetFirmaProfiliAsync() ?? new FirmaProfili();
+        _exchangeKey = ExternalApi.ExchangeRateApiKey ?? "";
+        _positionKey = ExternalApi.PositionStackApiKey ?? "";
+        _emailKey = ExternalApi.EmailableApiKey ?? "";
+    }
+
+    private async Task SaveFirma()
+    {
+        await DbService.SaveFirmaProfiliAsync(_firma);
+        Snackbar.Add("Firma profili başarıyla güncellendi.", Severity.Success);
+    }
+
+    private void SaveApiSettings()
+    {
+        ExternalApi.ExchangeRateApiKey = _exchangeKey;
+        ExternalApi.PositionStackApiKey = _positionKey;
+        ExternalApi.EmailableApiKey = _emailKey;
+        Snackbar.Add("API anahtarları başarıyla kaydedildi.", Severity.Success);
+    }
+}
