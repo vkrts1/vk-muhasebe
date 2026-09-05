@@ -1,0 +1,30 @@
+name: Connect to macOS Desktop (Live Remote Control)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  macos-vnc:
+    name: macOS Desktop Live Session
+    runs-on: macos-14
+
+    steps:
+      - name: ⬇️ Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: 🖥️ Setup macOS VNC & Remote Desktop
+        run: |
+          # Mac kullanıcısına şifre ata (Şifre: 123456)
+          sudo dscl . -passwd /Users/runner 123456
+          
+          # Apple Ekran Paylaşımı / VNC Hizmetini Aktif Et
+          sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+            -activate -configure -access -on \
+            -clientopts -setvnclegacy -vnclegacy yes \
+            -clientopts -setvncpw -vncpw 123456 \
+            -restart -agent -privs -all
+
+      - name: 🌐 Start Secure Web / SSH Tunnel (Tmate)
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: false
