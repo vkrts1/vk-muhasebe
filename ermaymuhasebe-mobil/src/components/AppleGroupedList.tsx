@@ -82,19 +82,26 @@ export const AppleListRow: React.FC<AppleListRowProps> = ({
 
         {(value || showChevron) && (
           <View style={styles.rightCol}>
-            {value && (
-              <Text
-                style={[
-                  styles.value,
-                  valueColor ? { color: valueColor } : { color: AppleTheme.colors.textPrimary },
-                ]}
-              >
-                {value}
+            <View style={styles.valueRow}>
+              {value && (
+                <Text
+                  style={[
+                    styles.value,
+                    valueColor ? { color: valueColor } : { color: AppleTheme.colors.textPrimary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {value}
+                </Text>
+              )}
+              {showChevron && onPress && (
+                <ChevronRight color={AppleTheme.colors.textTertiary} size={15} style={styles.chevron} />
+              )}
+            </View>
+            {valueSub && (
+              <Text style={[styles.valueSub, valueColor ? { color: valueColor } : {}]} numberOfLines={1}>
+                {valueSub}
               </Text>
-            )}
-            {valueSub && <Text style={styles.valueSub}>{valueSub}</Text>}
-            {showChevron && onPress && (
-              <ChevronRight color={AppleTheme.colors.textTertiary} size={16} style={styles.chevron} />
             )}
           </View>
         )}
@@ -186,7 +193,9 @@ const styles = StyleSheet.create({
   },
   leftCol: {
     flex: 1,
+    minWidth: 0,
     marginRight: 10,
+    justifyContent: 'center',
   },
   titleRow: {
     flexDirection: 'row',
@@ -198,6 +207,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     letterSpacing: -0.2,
+    flexShrink: 1,
   },
   tag: {
     paddingHorizontal: 6,
@@ -206,6 +216,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
+    flexShrink: 0,
+    alignSelf: 'center',
   },
   tagText: {
     fontSize: 10,
@@ -219,9 +231,15 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   rightCol: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginLeft: 8,
+  },
+  valueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
   },
   value: {
     fontSize: 15,
@@ -230,11 +248,12 @@ const styles = StyleSheet.create({
   },
   valueSub: {
     fontSize: 11,
-    color: AppleTheme.colors.textTertiary,
-    marginLeft: 4,
+    marginTop: 2,
+    fontWeight: '500',
+    textAlign: 'right',
   },
   chevron: {
-    marginLeft: 6,
+    marginLeft: 4,
   },
   divider: {
     position: 'absolute',

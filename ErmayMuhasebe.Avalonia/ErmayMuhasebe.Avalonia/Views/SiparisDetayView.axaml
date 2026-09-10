@@ -142,7 +142,7 @@
 
         <!-- LEFT: DataGrid -->
         <Grid Grid.Column="0" RowDefinitions="Auto, *">
-             <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" AutoGenerateColumns="False" 
+             <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}" SelectionMode="Single" AutoGenerateColumns="False" 
                        CanUserResizeColumns="True"
                        GridLinesVisibility="All"
                        BorderThickness="1" BorderBrush="#A0A0A0">
@@ -165,8 +165,11 @@
                     
                     <DataGridTextColumn Header="Miktar Açıklaması" Binding="{Binding MiktarAciklama}" Width="150"/>
 
-
-                    <DataGridTextColumn Header="Birim" Binding="{Binding Birim}" Width="70"/>
+                    <DataGridTemplateColumn Header="Birim" Width="95">
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding Birimler}" SelectedItem="{Binding Birim}" HorizontalAlignment="Stretch" BorderThickness="0" Background="Transparent"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn>
 
                     <DataGridTemplateColumn Header="Birim Fiyatı" Width="110">
                         <DataTemplate>

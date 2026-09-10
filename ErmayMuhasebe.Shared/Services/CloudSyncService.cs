@@ -34,6 +34,13 @@ namespace ErmayMuhasebe.Services
         public string AuthSecret => _config.AuthSecret;
         public bool IsAutoSyncEnabled => _config.IsAutoSyncEnabled;
 
+        public void Disconnect()
+        {
+            _config.IsActive = false;
+            _config.BaseUrl = "";
+            _firebase = null;
+        }
+
         public void EnableAutoSync(bool enable)
         {
             _config.IsAutoSyncEnabled = enable;

@@ -19,6 +19,8 @@ public partial class SiparisItemViewModel : ObservableObject
     private decimal _birimFiyat;
     private decimal _kdvOrani = 10;
 
+    private string _birim = "Adet";
+
     public StokKart Stok { get; }
 
     public SiparisItemViewModel(StokKart stok)
@@ -26,11 +28,19 @@ public partial class SiparisItemViewModel : ObservableObject
         Stok = stok;
         BirimFiyat = stok.SatisFiyati;
         KdvOrani = 10;
+        _birim = string.IsNullOrWhiteSpace(stok?.Birim) ? "Adet" : stok.Birim;
     }
+
+    public static readonly string[] BirimListesi = new[] { "Adet", "Kg", "Mt", "M2" };
+    public string[] Birimler => BirimListesi;
 
     public string Kod => Stok.StokKodu ?? "";
     public string Ad => Stok.StokAdi ?? "";
-    public string Birim => Stok.Birim ?? "Adet";
+    public string Birim
+    {
+        get => _birim;
+        set => SetProperty(ref _birim, value);
+    }
 
     public decimal Miktar
     {
@@ -155,6 +165,7 @@ public partial class SiparisDetayViewModel : ViewModelBase, IHandleBack
     public int SiparisId { get; set; } = 0;
 
     public ObservableCollection<SiparisItemViewModel> Items { get; } = new();
+    [ObservableProperty] private SiparisItemViewModel? _selectedItem;
 
     // Stok Seçim Dialog
     [ObservableProperty] private bool _isStokSecimVisible;
@@ -211,6 +222,7 @@ public partial class SiparisDetayViewModel : ViewModelBase, IHandleBack
 
             var item = new SiparisItemViewModel(stok);
             item.Miktar = (decimal)d.Miktar;
+            if (!string.IsNullOrWhiteSpace(d.Birim)) item.Birim = d.Birim;
             item.BirimFiyat = d.BirimFiyat;
             item.Aciklama = d.Aciklama; // Map Aciklama
             item.MiktarAciklama = d.MiktarAciklama; // Map MiktarAciklama
@@ -263,6 +275,17 @@ public partial class SiparisDetayViewModel : ViewModelBase, IHandleBack
         item.AmountChanged -= CalculateTotals;
         Items.Remove(item);
         CalculateTotals();
+    }
+
+    [RelayCommand]
+    public void RemoveSelectedItem()
+    {
+        var itemToRemove = SelectedItem ?? Items.LastOrDefault();
+        if (itemToRemove != null)
+        {
+            RemoveItem(itemToRemove);
+            SelectedItem = null;
+        }
     }
 
     private void CalculateTotals()
@@ -342,6 +365,7 @@ public partial class SiparisDetayViewModel : ViewModelBase, IHandleBack
                 StokId = i.Stok.Id,
                 StokAdi = i.Ad,
                 Miktar = (double)i.Miktar,
+                Birim = i.Birim,
                 BirimFiyat = i.BirimFiyat,
                 Tutar = i.Tutar,
                 KdvOrani = (double)i.KdvOrani,

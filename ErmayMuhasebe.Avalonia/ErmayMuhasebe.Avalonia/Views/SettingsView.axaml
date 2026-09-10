@@ -87,9 +87,13 @@
                             <DataTemplate x:DataType="vm:SettingCategory">
                                 <Button Command="{Binding $parent[UserControl].DataContext.SelectCategoryCommand}" 
                                         CommandParameter="{Binding}"
-                                        Background="Transparent" BorderThickness="0" Padding="0" 
-                                        MaxWidth="380" Height="200" Margin="0,0,15,15" Theme="{x:Null}"
-                                        HorizontalAlignment="Stretch">
+                                        Background="Transparent" 
+                                        BorderThickness="0" 
+                                        Padding="0" 
+                                        Width="370" 
+                                        Height="220" 
+                                        Margin="0,0,10,10"
+                                        Theme="{x:Null}">
                                     <Button.Styles>
                                         <Style Selector="Button">
                                             <Setter Property="Template">
@@ -97,38 +101,66 @@
                                                     <Panel>
                                                         <ContentPresenter Name="PART_ContentPresenter"
                                                                           Background="{TemplateBinding Background}"
+                                                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                                                          BorderThickness="{TemplateBinding BorderThickness}"
+                                                                          CornerRadius="{TemplateBinding CornerRadius}"
                                                                           Content="{TemplateBinding Content}"
-                                                                          Padding="{TemplateBinding Padding}"/>
+                                                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                          Padding="{TemplateBinding Padding}"
+                                                                          HorizontalContentAlignment="Stretch"
+                                                                          VerticalContentAlignment="Stretch"/>
                                                     </Panel>
                                                 </ControlTemplate>
                                             </Setter>
                                         </Style>
+                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                        </Style>
+                                        <Style Selector="Button:pressed /template/ ContentPresenter">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                        </Style>
                                         <Style Selector="Button:pointerover Border#CardBorder">
                                             <Setter Property="BorderBrush" Value="{Binding Color}"/>
-                                            <Setter Property="RenderTransform" Value="scale(1.03)"/>
+                                            <Setter Property="RenderTransform" Value="scale(1.02)"/>
                                         </Style>
                                     </Button.Styles>
-                                    
                                     <Border Name="CardBorder" Margin="10" Background="{DynamicResource PanelBrush}" 
                                             BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5" 
-                                            CornerRadius="24" Padding="28">
+                                            CornerRadius="20" Padding="24">
                                         <Border.Transitions>
                                             <Transitions>
-                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25"/>
-                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
                                             </Transitions>
                                         </Border.Transitions>
-                                        <Grid ColumnDefinitions="Auto, *">
-                                            <Panel Grid.Column="0" VerticalAlignment="Top">
-                                                <Border Width="56" Height="56" CornerRadius="18" Background="{Binding Color}" Opacity="0.15"/>
-                                                <ic:SymbolIcon Symbol="{Binding Icon, Converter={StaticResource SymbolIconConverter}}" 
-                                                               Foreground="{Binding Color}" FontSize="28" 
-                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/> 
-                                            </Panel>
+                                        <Grid RowDefinitions="Auto, *, Auto">
+                                            <!-- Top Icon and Badge -->
+                                            <Grid Grid.Row="0" ColumnDefinitions="Auto, *">
+                                                <Panel Grid.Column="0">
+                                                    <Border Width="48" Height="48" CornerRadius="14" Background="{Binding Color}" Opacity="0.15"/>
+                                                    <ic:SymbolIcon Symbol="{Binding Icon, Converter={StaticResource SymbolIconConverter}}" 
+                                                                   Foreground="{Binding Color}" FontSize="24" 
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+                                                </Panel>
+                                                
+                                                <Border Grid.Column="1" IsVisible="{Binding IsImplemented}" 
+                                                        Background="{DynamicResource FluidGreenGradient}" CornerRadius="8" Padding="6,2" 
+                                                        HorizontalAlignment="Right" VerticalAlignment="Top">
+                                                    <TextBlock Text="AKTİF" FontSize="10" FontWeight="Black" Foreground="White"/>
+                                                </Border>
+                                            </Grid>
                                             
-                                            <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center" Spacing="4">
-                                                <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="Black" Foreground="White" LetterSpacing="-0.3"/>
-                                                <TextBlock Text="{Binding Description}" FontSize="13" Foreground="#94a3b8" TextWrapping="Wrap" MaxLines="3" LineHeight="18"/>
+                                            <!-- Main Content -->
+                                            <StackPanel Grid.Row="1" Margin="0,15,0,0" Spacing="5">
+                                                <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#9CA3AF" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+
+                                            <!-- Footer Status -->
+                                            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom" Margin="0,10,0,0">
+                                                <Ellipse Width="7" Height="7" Fill="{Binding Color}"/>
+                                                <TextBlock Text="{Binding StatusText}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding Color}" Opacity="0.8"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -603,36 +635,67 @@
                             <StackPanel Spacing="25" MaxWidth="1000" HorizontalAlignment="Left">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <ic:SymbolIcon Symbol="Cloud" FontSize="24" Foreground="#F59E0B"/> 
-                                    <TextBlock Text="Bulut Senkronizasyon Ayarları" FontSize="20" FontWeight="Bold"/>
+                                    <TextBlock Text="Bulut Senkronizasyon ve API Ayarları" FontSize="20" FontWeight="Bold"/>
                                 </StackPanel>
+
+                                <!-- 1. FIREBASE REALTIME DATABASE -->
+                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="14" Padding="20">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <ic:SymbolIcon Symbol="Database" FontSize="18" Foreground="#60A5FA"/>
+                                            <TextBlock Text="Firebase Veritabanı (Realtime DB)" FontSize="15" FontWeight="Bold" Foreground="#60A5FA"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Bulut Veritabanı URL" FontSize="13" FontWeight="SemiBold" Opacity="0.8"/>
+                                            <TextBox Text="{Binding CloudUrl}" Watermark="https://your-project.firebaseio.com" Height="46" CornerRadius="10"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Veritabanı Gizli Anahtarı (Database Secret / Auth Token)" FontSize="13" FontWeight="SemiBold" Opacity="0.8"/>
+                                            <TextBox Text="{Binding CloudSecret}" PasswordChar="*" Watermark="Database Secret Key" Height="46" CornerRadius="10"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- 2. GOOGLE CLOUD & FIREBASE QUESTPDF API -->
+                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="14" Padding="20">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <ic:SymbolIcon Symbol="DocumentPdf" FontSize="18" Foreground="#10B981"/>
+                                            <TextBlock Text="Bulut PDF Motoru (QuestPDF / Google Cloud Run API)" FontSize="15" FontWeight="Bold" Foreground="#10B981"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Mobil ve harici servisler için Cloud Run üzerinde çalışan QuestPDF sunucusunun bağlantı ve API anahtarı ayarları." FontSize="12" Foreground="#94a3b8"/>
+
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="QuestPDF Bulut Servis URL'si" FontSize="13" FontWeight="SemiBold" Opacity="0.8"/>
+                                            <TextBox Text="{Binding CloudPdfApiUrl}" Watermark="https://ermay-pdf-api-916435485627.europe-west1.run.app" Height="46" CornerRadius="10"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Google Cloud / Firebase Web API Anahtarı (API Key)" FontSize="13" FontWeight="SemiBold" Opacity="0.8"/>
+                                            <TextBox Text="{Binding CloudPdfApiKey}" Watermark="AIzaSy... (Google Cloud Console veya Firebase Console Web API Key)" Height="46" CornerRadius="10"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
                                 
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="Bulut Veritabanı URL (Firebase)" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
-                                    <TextBox Text="{Binding CloudUrl}" Watermark="https://your-app.firebaseio.com" Height="50" CornerRadius="12"/>
-                                </StackPanel>
- 
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="Erişim Anahtarı / Token" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
-                                    <TextBox Text="{Binding CloudSecret}" PasswordChar="*" Watermark="Auth Key" Height="50" CornerRadius="12"/>
-                                </StackPanel>
-                                
-                                <Grid ColumnDefinitions="*, *" ColumnSpacing="20" Margin="0,10,0,0">
+                                <Grid ColumnDefinitions="*, *" ColumnSpacing="20" Margin="0,5,0,0">
                                     <Button Grid.Column="0" Command="{Binding SyncCloudCommand}" IsEnabled="{Binding !IsBusy}"
                                             Background="rgba(245, 158, 11, 0.15)" BorderBrush="#F59E0B" BorderThickness="1"
-                                            Height="54" CornerRadius="12"
+                                            Height="52" CornerRadius="12"
                                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <ic:SymbolIcon Symbol="ArrowSync" FontSize="20" Foreground="#F59E0B" VerticalAlignment="Center"/>
-                                            <TextBlock Text="Hemen Senkronize Et" FontWeight="SemiBold" Foreground="#F59E0B" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Verileri Bulut ile Eşitle" FontWeight="SemiBold" Foreground="#F59E0B" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button Grid.Column="1" Command="{Binding SaveSettingsCommand}" IsEnabled="{Binding !IsBusy}"
-                                            Background="rgba(245, 158, 11, 0.15)" BorderBrush="#F59E0B" BorderThickness="1"
-                                            Height="54" CornerRadius="12"
+                                    <Button Grid.Column="1" Command="{Binding SaveCloudAndApiSettingsCommand}" IsEnabled="{Binding !IsBusy}"
+                                            Background="rgba(16, 185, 129, 0.2)" BorderBrush="#10B981" BorderThickness="1.5"
+                                            Height="52" CornerRadius="12"
                                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <ic:SymbolIcon Symbol="Save" FontSize="20" Foreground="#F59E0B" VerticalAlignment="Center"/>
-                                            <TextBlock Text="Yapılandırmayı Kaydet" FontWeight="SemiBold" Foreground="#F59E0B" VerticalAlignment="Center"/>
+                                            <ic:SymbolIcon Symbol="Save" FontSize="20" Foreground="#10B981" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Bulut ve API Ayarlarını Kaydet" FontWeight="Bold" Foreground="#10B981" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
                                 </Grid>

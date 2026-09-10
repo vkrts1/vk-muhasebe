@@ -64,7 +64,7 @@ export default function StoklarScreen() {
   const [loading, setLoading] = useState(true);
   const [stokGruplar, setStokGruplar] = useState<string[]>([]);
   const [groupList, setGroupList] = useState<string[]>([]);
-  const birimler = ['Kg', 'Adet', 'Mt', 'Top'];
+  const birimler = ['Adet', 'Kg', 'Mt', 'M2'];
 
   // Filter & Paging State
   const [filterKod, setFilterKod] = useState('');

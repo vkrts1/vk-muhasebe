@@ -8,7 +8,6 @@ import * as Device from 'expo-device';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import MusteriLimitScreen from './MusteriLimitScreen';
-import FaturaTasarimScreen from './FaturaTasarimScreen';
 
 const formatMoney = (val: number) => {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
@@ -26,7 +25,7 @@ const formatUptime = (ms: number) => {
 };
 
 export default function AraclarScreen() {
-  const [activeTab, setActiveTab] = useState<'kurlar' | 'fiyat' | 'hedef' | 'cariBir' | 'urunBir' | 'sistem' | 'faiz' | 'risk' | 'portfoy' | 'belge' | 'limit' | 'tasarim' | 'kur' | 'optimal' | 'evrak' | null>(null);
+  const [activeTab, setActiveTab] = useState<'kurlar' | 'fiyat' | 'hedef' | 'cariBir' | 'urunBir' | 'sistem' | 'faiz' | 'risk' | 'portfoy' | 'belge' | 'limit' | 'kur' | 'optimal' | 'evrak' | null>(null);
   const [cariler, setCariler] = useState<any[]>([]);
   const [stoklar, setStoklar] = useState<any[]>([]);
   const [portfoyler, setPortfoyler] = useState<any[]>([]);
@@ -726,8 +725,7 @@ export default function AraclarScreen() {
     { id: 'fiyat', title: 'Toplu Fiyat Güncelleme', description: 'Tüm ürünlere toplu zam/indirim.', icon: TrendingUp, color: '#10B981' },
     { id: 'limit', title: 'Limit Yönetimi', description: 'Risk ve kredi limitleri.', icon: Lock, color: '#EF4444' },
     { id: 'hedef', title: 'Bütçe Planlama Merkezi', description: 'Yıllık, aylık ve haftalık hedef yönetimi.', icon: Target, color: '#60A5FA' },
-    { id: 'portfoy', title: 'Portföy Listesi', description: 'Varlık yönetimi paneli.', icon: Briefcase, color: '#8B5CF6' },
-    { id: 'tasarim', title: 'Fatura Tasarımı', description: 'Fatura çıktı düzeni ve görünür alanlar.', icon: Palette, color: '#2563EB' }
+    { id: 'portfoy', title: 'Portföy Listesi', description: 'Varlık yönetimi paneli.', icon: Briefcase, color: '#8B5CF6' }
   ];
 
   return (
@@ -1221,7 +1219,6 @@ export default function AraclarScreen() {
         )}
 
         {activeTab === 'limit' && <MusteriLimitScreen isTab={true} />}
-        {activeTab === 'tasarim' && <FaturaTasarimScreen isTab={true} />}
           </>
         )}
       </ScrollView>

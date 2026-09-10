@@ -60,6 +60,8 @@ public interface IUnitOfWork : IDataProvider
     // Firma Profili
     Task<FirmaProfili> GetFirmaProfiliAsync();
     Task SaveFirmaProfiliAsync(FirmaProfili f);
+
+    Task ClearAllTablesAsync();
 }
 
 /// <summary>

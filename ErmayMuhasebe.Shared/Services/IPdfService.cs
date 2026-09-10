@@ -89,6 +89,7 @@ public interface IPdfService
     Task<byte[]> GenerateMusteriTakipRaporuPdfBytesAsync(MusteriTakipKlasor klasor, List<MusteriTakipDetay> detaylar);
 
     byte[]? LogoBytes { get; set; }
+    void ResetLogoCache();
     bool ShowLogoFatura { get; set; }
     bool ShowLogoSiparis { get; set; }
     bool ShowLogoTeklif { get; set; }

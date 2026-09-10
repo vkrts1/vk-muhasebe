@@ -56,13 +56,18 @@ namespace ErmayMuhasebe.Services
                 .Child("security_requests")
                 .Child(requestId)
                 .AsObservable<SecurityRequest>()
-                .Subscribe(eventArgs =>
-                {
-                    if (eventArgs.Object != null)
+                .Subscribe(
+                    eventArgs =>
                     {
-                        OnRequestStatusChanged?.Invoke(eventArgs.Object.Status);
-                    }
-                });
+                        if (eventArgs.Object != null)
+                        {
+                            OnRequestStatusChanged?.Invoke(eventArgs.Object.Status);
+                        }
+                    },
+                    onError: ex =>
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[SecuritySyncService] Request subscription error: {ex.Message}");
+                    });
         }
 
         /// <summary>
@@ -80,19 +85,24 @@ namespace ErmayMuhasebe.Services
                 .Child(userId)
                 .Child("security")
                 .AsObservable<UserSecurityState>()
-                .Subscribe(eventArgs =>
-                {
-                    if (eventArgs.Object != null && !string.IsNullOrEmpty(eventArgs.Object.ActiveSessionsRevokedAt))
+                .Subscribe(
+                    eventArgs =>
                     {
-                        if (DateTime.TryParse(eventArgs.Object.ActiveSessionsRevokedAt, out DateTime revokedAt))
+                        if (eventArgs.Object != null && !string.IsNullOrEmpty(eventArgs.Object.ActiveSessionsRevokedAt))
                         {
-                            if (revokedAt > sessionStartTime)
+                            if (DateTime.TryParse(eventArgs.Object.ActiveSessionsRevokedAt, out DateTime revokedAt))
                             {
-                                OnSessionRevoked?.Invoke();
+                                if (revokedAt > sessionStartTime)
+                                {
+                                    OnSessionRevoked?.Invoke();
+                                }
                             }
                         }
-                    }
-                });
+                    },
+                    onError: ex =>
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[SecuritySyncService] Session subscription error: {ex.Message}");
+                    });
         }
 
         /// <summary>

@@ -42,6 +42,8 @@ public class BankaRepository : BaseRepository<BankaKart>, IBankaRepository
         }
         else
         {
+            var maxId = await db.ExecuteScalarAsync<int>("SELECT IFNULL(MAX(Id), 0) FROM BankaKart");
+            entity.Id = maxId + 1;
             await db.InsertAsync(entity);
         }
 

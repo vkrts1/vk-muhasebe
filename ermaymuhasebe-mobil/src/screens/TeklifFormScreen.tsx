@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { KeyboardAvoidingView, Platform,  StyleSheet, Text, View, SafeAreaView, FlatList, TextInput, ActivityIndicator, TouchableOpacity, Modal, ScrollView, Alert, Share, PanResponder  } from 'react-native';
-import { Search, FileKey2, Plus, X, Save, Edit3, Trash2, Calendar, User, ShoppingBag, Share2 } from 'lucide-react-native';
+import { Search, FileKey2, Plus, X, Save, Edit3, Trash2, Calendar, User, ShoppingBag, Share2, ChevronDown } from 'lucide-react-native';
 import { subscribeToPath, writeData, readData, mapAppToDatabase } from '../services/firebase';
 import { generateInt32Id } from '../utils/IdGenerator';
 import { generateReportPdf } from '../services/pdfService';
+
+const BIRIM_LISTESI = ['Adet', 'Kg', 'Mt', 'M2'];
 
 const formatMoney = (val: number) => {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
@@ -25,6 +27,7 @@ export default function TeklifFormScreen({ route, navigation }: any) {
   
   // Saving guard to prevent double-tap double-save
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedItemIndexForBirim, setSelectedItemIndexForBirim] = useState<number | null>(null);
   
   const [selectedTeklif, setSelectedTeklif] = useState<any | null>(null);
   const openedFromDashboardRef = React.useRef(false);
@@ -187,6 +190,8 @@ export default function TeklifFormScreen({ route, navigation }: any) {
       newItems[index].kdvOrani = parseInt(val) || 0;
     } else if (field === 'aciklama') {
       newItems[index].aciklama = val;
+    } else if (field === 'birim') {
+      newItems[index].birim = val;
     }
     setItems(newItems);
   };
@@ -517,7 +522,14 @@ export default function TeklifFormScreen({ route, navigation }: any) {
                                 value={String(item.miktar)}
                                 onChangeText={(val) => handleItemChange(index, 'miktar', val)}
                               />
-                              <Text style={styles.itemUnitLabel}>{item.birim}</Text>
+                              <TouchableOpacity 
+                                style={styles.unitPickerBtn}
+                                onPress={() => setSelectedItemIndexForBirim(index)}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={styles.unitPickerBtnText}>{item.birim || 'Adet'}</Text>
+                                <ChevronDown color="#94A3B8" size={13} style={{ marginLeft: 3 }} />
+                              </TouchableOpacity>
                             </View>
                           </View>
                           
@@ -672,6 +684,48 @@ export default function TeklifFormScreen({ route, navigation }: any) {
             )}
           </View>
         </KeyboardAvoidingView>
+
+        {/* Birim Seçici Modal */}
+        <Modal
+          visible={selectedItemIndexForBirim !== null}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setSelectedItemIndexForBirim(null)}
+        >
+          <TouchableOpacity 
+            style={styles.unitModalBackdrop}
+            activeOpacity={1}
+            onPress={() => setSelectedItemIndexForBirim(null)}
+          >
+            <View style={styles.unitModalContainer}>
+              <View style={styles.unitModalHeader}>
+                <Text style={styles.unitModalTitle}>Birim Seçin</Text>
+                <TouchableOpacity onPress={() => setSelectedItemIndexForBirim(null)}>
+                  <X color="#FFF" size={20} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.unitGrid}>
+                {BIRIM_LISTESI.map((b) => {
+                  const isSelected = selectedItemIndexForBirim !== null && items[selectedItemIndexForBirim]?.birim === b;
+                  return (
+                    <TouchableOpacity
+                      key={b}
+                      style={[styles.unitChip, isSelected && styles.unitChipActive]}
+                      onPress={() => {
+                        if (selectedItemIndexForBirim !== null) {
+                          handleItemChange(selectedItemIndexForBirim, 'birim', b);
+                        }
+                        setSelectedItemIndexForBirim(null);
+                      }}
+                    >
+                      <Text style={[styles.unitChipText, isSelected && styles.unitChipTextActive]}>{b}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
     </SafeAreaView>
   );
 }
@@ -1137,5 +1191,79 @@ const styles = StyleSheet.create({
   },
   kdvChipItemTextActive: {
     color: '#FFF',
+  },
+  unitPickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#334155',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#475569',
+    marginLeft: 4,
+  },
+  unitPickerBtnText: {
+    color: '#F8FAFC',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  unitModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  unitModalContainer: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  unitModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  unitModalTitle: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  unitGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  unitChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+    minWidth: '28%',
+    alignItems: 'center',
+  },
+  unitChipActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#60A5FA',
+  },
+  unitChipText: {
+    color: '#CBD5E1',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  unitChipTextActive: {
+    color: '#FFF',
+    fontWeight: 'bold',
   }
 });

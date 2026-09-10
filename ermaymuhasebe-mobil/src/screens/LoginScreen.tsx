@@ -188,31 +188,6 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      // Firebase profil kontrolü ve Google Sign-In akışı
-      const profil = await readData('FirmaProfili/1');
-      const googleUser = {
-        username: 'google_user',
-        email: 'google_user@bawsaq.com',
-        role: 'Admin',
-      };
-
-      await AsyncStorage.setItem('ermay_logged_user', JSON.stringify(googleUser));
-      const currentYear = new Date().getFullYear().toString();
-      await saveActiveYear(currentYear);
-      setLoggedInUser(googleUser);
-      onLoginSuccess();
-    } catch (err: any) {
-      console.error('[GOOGLE LOGIN] Hata:', err?.message || err);
-      setError('Google ile giriş yapılamadı.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleYearConfirm = async () => {
     if (!selectedYear || !/^\d{4}$/.test(selectedYear.trim())) {
@@ -260,7 +235,7 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
               </View>
             ) : (
               <View style={styles.header}>
-                <Text style={styles.title}>BAWSAQ</Text>
+                <Text style={styles.title}>VK</Text>
                 <Text style={styles.subtitle}>
                   {mode === 'config' 
                     ? 'Sistem veritabanı bağlantı ayarlarını yapılandırın' 
@@ -404,21 +379,6 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
                   )}
                 </TouchableOpacity>
 
-                {/* VEYA Ayracı & Google ile Giriş (Cursor Tasarımı) */}
-                <View style={styles.dividerRow}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>VEYA</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                <TouchableOpacity 
-                  style={[styles.googleButton, loading && styles.buttonDisabled]} 
-                  onPress={handleGoogleLogin}
-                  disabled={loading}
-                >
-                  <Text style={styles.googleIconText}>G</Text>
-                  <Text style={styles.googleButtonText}>Google ile Giriş Yap</Text>
-                </TouchableOpacity>
 
                 <TouchableOpacity 
                   style={styles.switchModeButton}

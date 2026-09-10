@@ -15,6 +15,7 @@
     <PackageVersion Include="Avalonia.Browser" Version="11.3.10" />
     <PackageVersion Include="Avalonia.Android" Version="11.3.10" />
     <PackageVersion Include="Avalonia.Controls.DataGrid" Version="11.3.10" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.10" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="HarfBuzzSharp.NativeAssets.WebAssembly" Version="8.3.1.1" />

@@ -119,9 +119,14 @@ public partial class DashboardViewModel : ViewModelBase
         System.Diagnostics.Debug.WriteLine("=== Shared DashboardViewModel Constructor END ===");
     }
 
+    public bool DisableAutoRefresh { get; set; } = false;
+
     public override void OnNavigatedTo()
     {
-        _ = LoadStatsAsync();
+        if (!DisableAutoRefresh)
+        {
+            _ = LoadStatsAsync();
+        }
     }
 
     [RelayCommand]

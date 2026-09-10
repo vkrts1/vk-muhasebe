@@ -107,10 +107,50 @@ public partial class MainViewModel : ViewModelBase
         return System.IO.Path.Combine(dir, $"notifications_{safeUser}.json");
     }
 
+    private HashSet<string> _dismissedAlertKeys = new();
+
+    private string GetDismissedAlertsFilePath()
+    {
+        var dir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe");
+        if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
+        var safeUser = string.IsNullOrWhiteSpace(CurrentUserName) ? "admin" : CurrentUserName.ToLower().Trim();
+        return System.IO.Path.Combine(dir, $"dismissed_alerts_{safeUser}.json");
+    }
+
+    private void LoadDismissedAlerts()
+    {
+        try
+        {
+            var filePath = GetDismissedAlertsFilePath();
+            if (System.IO.File.Exists(filePath))
+            {
+                var json = System.IO.File.ReadAllText(filePath);
+                var list = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
+                if (list != null)
+                {
+                    _dismissedAlertKeys = new HashSet<string>(list);
+                }
+            }
+        }
+        catch { }
+    }
+
+    private void SaveDismissedAlerts()
+    {
+        try
+        {
+            var filePath = GetDismissedAlertsFilePath();
+            var json = System.Text.Json.JsonSerializer.Serialize(_dismissedAlertKeys.ToList());
+            System.IO.File.WriteAllText(filePath, json);
+        }
+        catch { }
+    }
+
     public void LoadSavedNotifications()
     {
         try
         {
+            LoadDismissedAlerts();
             var filePath = GetNotificationsFilePath();
             if (System.IO.File.Exists(filePath))
             {
@@ -155,9 +195,27 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     public void ClearNotifications()
     {
+        foreach (var n in Notifications)
+        {
+            _dismissedAlertKeys.Add($"{n.Title}_{DateTime.Today:yyyyMMdd}");
+        }
         Notifications.Clear();
         HasUnreadNotifications = false;
         SaveCurrentNotifications();
+        SaveDismissedAlerts();
+    }
+
+    [RelayCommand]
+    public void DeleteNotification(NotificationItem item)
+    {
+        if (item != null)
+        {
+            _dismissedAlertKeys.Add($"{item.Title}_{DateTime.Today:yyyyMMdd}");
+            Notifications.Remove(item);
+            HasUnreadNotifications = Notifications.Any(n => !n.IsRead);
+            SaveCurrentNotifications();
+            SaveDismissedAlerts();
+        }
     }
 
     [RelayCommand]
@@ -192,11 +250,20 @@ public partial class MainViewModel : ViewModelBase
 
     public void AddNotification(string title, string message, string icon, Type? targetPageType = null)
     {
-        // Eğer son 10 dakika içinde aynı başlık ve mesajda bildirim zaten varsa mükerrer ekleme
-        var existing = Notifications.FirstOrDefault(n => n.Title == title && n.Message == message);
+        // Kullanıcı bu bildirimi bugün temizlediyse tekrar çıkarma
+        var alertKey = $"{title}_{DateTime.Today:yyyyMMdd}";
+        if (_dismissedAlertKeys.Contains(alertKey)) return;
+
+        // Başlık bazında kontrol et: Zaten listede varsa ve okunmuşsa, tekrar unread yapma
+        var existing = Notifications.FirstOrDefault(n => n.Title == title);
         if (existing != null)
         {
-            // Zaten var, tekrar ekleyip kalabalık yapma
+            if (existing.Message != message)
+            {
+                existing.Message = message;
+                existing.Timestamp = DateTime.Now;
+                SaveCurrentNotifications();
+            }
             return;
         }
 
@@ -413,14 +480,6 @@ public partial class MainViewModel : ViewModelBase
         });
 
         ActiveAuthView = LoginViewModel;
-
-        _dbService.OnDatabaseChanged += () =>
-        {
-            global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                WeakReferenceMessenger.Default.Send(new FinancialDataChangedMessage());
-            });
-        };
 
         System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged += async (s, e) => 
         {

@@ -145,7 +145,7 @@ app.MapPost("/generate/fatura", (PdfService pdfService, [FromBody] FaturaRequest
 {
     try
     {
-        pdfService.LogoBytes = request.LogoBytes;
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
         pdfService.ShowLogoFatura = request.ShowLogo;
         if (!string.IsNullOrEmpty(request.Size)) pdfService.FaturaSize = request.Size;
         if (!string.IsNullOrEmpty(request.Orientation)) pdfService.FaturaOrientation = request.Orientation;
@@ -164,7 +164,7 @@ app.MapPost("/generate/teklif", (PdfService pdfService, [FromBody] TeklifRequest
 {
     try
     {
-        pdfService.LogoBytes = request.LogoBytes;
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
         pdfService.ShowLogoTeklif = request.ShowLogo;
         if (!string.IsNullOrEmpty(request.Size)) pdfService.TeklifSize = request.Size;
         if (!string.IsNullOrEmpty(request.Orientation)) pdfService.TeklifOrientation = request.Orientation;
@@ -184,7 +184,7 @@ app.MapPost("/generate/siparis", (PdfService pdfService, [FromBody] SiparisReque
 {
     try
     {
-        pdfService.LogoBytes = request.LogoBytes;
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
         pdfService.ShowLogoSiparis = request.ShowLogo;
         if (!string.IsNullOrEmpty(request.Size)) pdfService.SiparisSize = request.Size;
         if (!string.IsNullOrEmpty(request.Orientation)) pdfService.SiparisOrientation = request.Orientation;
@@ -204,6 +204,8 @@ app.MapPost("/generate/generic", (PdfService pdfService, [FromBody] GenericTable
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         var pdfBytes = pdfService.GenerateGenericTablePdf(request.Title, request.Headers, request.Rows, request.Subtitle);
         return Results.File(pdfBytes, "application/pdf", $"{request.Title.Replace(" ", "_")}.pdf");
     }
@@ -217,6 +219,8 @@ app.MapPost("/generate/consolidated", (PdfService pdfService, [FromBody] Consoli
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"Konsolide PDF Üretiliyor: {request.Title} ({request.Sections?.Count ?? 0} bölüm)");
         var sections = request.Sections ?? new List<ReportSection>();
         var pdfBytes = pdfService.GenerateConsolidatedReportPdf(request.Title, sections);
@@ -234,6 +238,8 @@ app.MapPost("/generate/budget", (PdfService pdfService, [FromBody] BudgetReportR
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         var annual = request.Annual.Select(x => new ChartDataItem { Label = x.Label, Target = x.Target, Actual = x.Actual }).ToList();
         var monthly = request.Monthly.Select(x => new ChartDataItem { Label = x.Label, Target = x.Target, Actual = x.Actual }).ToList();
         var weekly = request.Weekly.Select(x => new ChartDataItem { Label = x.Label, Target = x.Target, Actual = x.Actual }).ToList();
@@ -251,6 +257,11 @@ app.MapPost("/generate/makbuz", (PdfService pdfService, [FromBody] MakbuzRequest
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoTahsilat = request.ShowLogo;
+        pdfService.ShowLogoOdeme = request.ShowLogo;
+        pdfService.ShowLogoAcilisBakiye = request.ShowLogo;
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         var pdfBytes = pdfService.GenerateMakbuzPdf(request.MakbuzTipi, request.CariUnvan, request.Tarih, request.Tutar, request.Aciklama);
         return Results.File(pdfBytes, "application/pdf", "Makbuz.pdf");
     }
@@ -264,6 +275,11 @@ app.MapPost("/generate/makbuz-from-kasa", (PdfService pdfService, [FromBody] Kas
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoTahsilat = request.ShowLogo;
+        pdfService.ShowLogoOdeme = request.ShowLogo;
+        pdfService.ShowLogoAcilisBakiye = request.ShowLogo;
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         var pdfBytes = pdfService.GenerateMakbuzFromKasaPdf(request.Hareket);
         return Results.File(pdfBytes, "application/pdf", "KasaMakbuz.pdf");
     }
@@ -278,6 +294,8 @@ app.MapPost("/generate/eft", (PdfService pdfService, [FromBody] EftRequest reque
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoTahsilat = request.ShowLogo;
         var pdfBytes = pdfService.GenerateEftSlipPdf(request.Islem);
         return Results.File(pdfBytes, "application/pdf", "EftSlip.pdf");
     }
@@ -291,6 +309,8 @@ app.MapPost("/generate/kk", (PdfService pdfService, [FromBody] KkRequest request
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoTahsilat = request.ShowLogo;
         var pdfBytes = pdfService.GenerateKrediKartiSlipPdf(request.Islem);
         return Results.File(pdfBytes, "application/pdf", "KkSlip.pdf");
     }
@@ -304,6 +324,8 @@ app.MapPost("/generate/ekstre", (PdfService pdfService, [FromBody] EkstreRequest
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoEkstre = request.ShowLogo;
         var pdfBytes = pdfService.GenerateCariEkstrePdf(request.Cari, request.Hareketler);
         return Results.File(pdfBytes, "application/pdf", $"Ekstre_{request.Cari.Unvan}_{DateTime.Now:ddMMyyyy}.pdf");
     }
@@ -318,6 +340,8 @@ app.MapPost("/generate/ekstre-detayli", (PdfService pdfService, [FromBody] Detay
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoEkstre = request.ShowLogo;
         var pdfBytes = pdfService.GenerateDetayliCariEkstrePdf(request.Cari, request.Hareketler, request.DetayDictionary);
         return Results.File(pdfBytes, "application/pdf", $"DetayliEkstre_{request.Cari.Unvan}_{DateTime.Now:ddMMyyyy}.pdf");
     }
@@ -334,9 +358,9 @@ app.MapPost("/generate/fatura-batch", (PdfService pdfService, [FromBody] List<Fa
     {
         if (requests == null || !requests.Any()) return Results.BadRequest("Hata: Fatura listesi boş.");
         
-        // Note: For now, we use the first request's logo/showLogo settings for the whole batch
         var first = requests.First();
-        pdfService.LogoBytes = first.LogoBytes;
+        pdfService.LogoBytes = (first.LogoBytes != null && first.LogoBytes.Length > 0) ? first.LogoBytes : new byte[0];
+        pdfService.ShowLogoFatura = first.ShowLogo;
         
         var pdfBytes = pdfService.GenerateFaturaBatchPdf(requests.Select(r => (r.Fatura, r.Detaylar)).ToList());
         return Results.File(pdfBytes, "application/pdf", $"Toplu_Faturalar_{DateTime.Now:yyyyMMdd}.pdf");
@@ -352,7 +376,7 @@ app.MapPost("/generate/stok-list", (PdfService pdfService, [FromBody] StokListRe
 {
     try
     {
-        if (request.LogoBytes != null && request.LogoBytes.Length > 0) pdfService.LogoBytes = request.LogoBytes;
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
         pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Stok Listesi PDF Üretiliyor ({request.Stoklar?.Count ?? 0} stok)");
         var pdfBytes = pdfService.GenerateStokListPdf(request.Stoklar ?? new List<StokKart>());
@@ -369,7 +393,7 @@ app.MapPost("/generate/stok-hareket", (PdfService pdfService, [FromBody] StokHar
 {
     try
     {
-        if (request.LogoBytes != null && request.LogoBytes.Length > 0) pdfService.LogoBytes = request.LogoBytes;
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
         pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Stok Hareket PDF Üretiliyor: {request.Stok?.StokKodu}");
         var pdfBytes = pdfService.GenerateStokHareketleriPdf(request.Stok ?? new StokKart(), request.Hareketler ?? new List<StokHareket>());
@@ -386,6 +410,8 @@ app.MapPost("/generate/kasa-ekstre", (PdfService pdfService, [FromBody] KasaEkst
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Kasa Ekstre PDF Üretiliyor: {request.Kasa?.BankaAdi}");
         var pdfBytes = pdfService.GenerateKasaEkstrePdf(request.Kasa ?? new BankaKart(), request.Hareketler ?? new List<KasaHareket>());
         return Results.File(pdfBytes, "application/pdf", $"KasaEkstresi_{request.Kasa?.BankaAdi ?? "rapor"}.pdf");
@@ -401,6 +427,8 @@ app.MapPost("/generate/cek", (PdfService pdfService, [FromBody] CekRequest reque
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Çek PDF Üretiliyor: {request.Cek?.PortfoyNo}");
         var pdfBytes = pdfService.GenerateCekPdf(request.Cek ?? new Cek());
         return Results.File(pdfBytes, "application/pdf", $"Cek_{request.Cek?.PortfoyNo ?? "form"}.pdf");
@@ -416,6 +444,8 @@ app.MapPost("/generate/cek-list", (PdfService pdfService, [FromBody] CekListRequ
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Çek Listesi PDF Üretiliyor");
         var pdfBytes = pdfService.GenerateCekListPdf(request.Cekler ?? new List<Cek>());
         return Results.File(pdfBytes, "application/pdf", $"CekListesi_{DateTime.Now:ddMMyyyy}.pdf");
@@ -431,6 +461,8 @@ app.MapPost("/generate/kk-list", (PdfService pdfService, [FromBody] KrediKartiLi
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] KK Listesi PDF Üretiliyor");
         var pdfBytes = pdfService.GenerateKrediKartiListPdf(request.Islemler ?? new List<KrediKartiIslem>());
         return Results.File(pdfBytes, "application/pdf", $"KrediKartiIslemleri_{DateTime.Now:ddMMyyyy}.pdf");
@@ -446,6 +478,8 @@ app.MapPost("/generate/eft-list", (PdfService pdfService, [FromBody] EftListRequ
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] EFT Listesi PDF Üretiliyor");
         var pdfBytes = pdfService.GenerateEftListPdf(request.Islemler ?? new List<EftIslem>());
         return Results.File(pdfBytes, "application/pdf", $"EftIslemleri_{DateTime.Now:ddMMyyyy}.pdf");
@@ -461,6 +495,8 @@ app.MapPost("/generate/kasa-list", (PdfService pdfService, [FromBody] KasaListRe
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Kasa Listesi PDF Üretiliyor");
         var pdfBytes = pdfService.GenerateKasaListesiPdf(request.Kasalar ?? new List<BankaKart>());
         return Results.File(pdfBytes, "application/pdf", $"KasaListesi_{DateTime.Now:ddMMyyyy}.pdf");
@@ -476,7 +512,7 @@ app.MapPost("/generate/fatura-list", (PdfService pdfService, [FromBody] FaturaLi
 {
     try
     {
-        if (request.LogoBytes != null && request.LogoBytes.Length > 0) pdfService.LogoBytes = request.LogoBytes;
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
         pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Fatura Listesi PDF Üretiliyor ({request.Faturalar?.Count ?? 0} fatura)");
         var pdfBytes = pdfService.GenerateFaturaListPdf(request.Faturalar ?? new List<Fatura>(), request.StartDate, request.EndDate);
@@ -493,6 +529,8 @@ app.MapPost("/generate/vade-rapor", (PdfService pdfService, [FromBody] VadeRapor
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
+        pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Vade Raporu PDF Üretiliyor ({request.Items?.Count ?? 0} kalem)");
         var pdfBytes = pdfService.GenerateVadeRaporuPdf(request.Items ?? new List<VadeReportItem>());
         return Results.File(pdfBytes, "application/pdf", $"VadeRaporu_{DateTime.Now:ddMMyyyy}.pdf");
@@ -508,6 +546,7 @@ app.MapPost("/generate/adres-etiketi", (PdfService pdfService, [FromBody] AdresE
 {
     try
     {
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
         var pdfBytes = pdfService.GenerateAdresEtiketiPdf(request.Unvan, request.AdSoyad, request.Adres, request.IlIlce, request.PostaKodu, request.Telefon);
         return Results.File(pdfBytes, "application/pdf", "AdresEtiketi.pdf");
     }
@@ -522,7 +561,7 @@ app.MapPost("/generate/finans-rapor", (PdfService pdfService, [FromBody] FinansR
 {
     try
     {
-        if (request.LogoBytes != null && request.LogoBytes.Length > 0) pdfService.LogoBytes = request.LogoBytes;
+        pdfService.LogoBytes = (request.LogoBytes != null && request.LogoBytes.Length > 0) ? request.LogoBytes : new byte[0];
         pdfService.ShowLogoRaporlar = request.ShowLogo;
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Finans Raporu PDF Üretiliyor: {request.Title}");
         var pdfBytes = pdfService.GenerateFinansRaporPdf(request.Title, request.Data);

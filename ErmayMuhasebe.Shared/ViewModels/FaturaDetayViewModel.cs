@@ -18,6 +18,8 @@ public partial class FaturaItemViewModel : ObservableObject
     private decimal _birimFiyat;
     private decimal _kdvOrani = 10;
 
+    private string _birim = "Adet";
+
     public StokKart Stok { get; }
 
     public FaturaItemViewModel(StokKart stok)
@@ -25,11 +27,19 @@ public partial class FaturaItemViewModel : ObservableObject
         Stok = stok;
         BirimFiyat = 0;
         KdvOrani = 10;
+        _birim = string.IsNullOrWhiteSpace(stok?.Birim) ? "Adet" : stok.Birim;
     }
+
+    public static readonly string[] BirimListesi = new[] { "Adet", "Kg", "Mt", "M2" };
+    public string[] Birimler => BirimListesi;
 
     public string Kod => Stok.StokKodu ?? "";
     public string Ad => Stok.StokAdi ?? "";
-    public string Birim => Stok.Birim ?? "Adet";
+    public string Birim
+    {
+        get => _birim;
+        set => SetProperty(ref _birim, value);
+    }
 
     public decimal Miktar
     {
@@ -269,9 +279,10 @@ public abstract partial class FaturaDetayViewModel : ViewModelBase
     [RelayCommand]
     public void RemoveSelectedItem()
     {
-        if (SelectedItem != null)
+        var itemToRemove = SelectedItem ?? Items.LastOrDefault();
+        if (itemToRemove != null)
         {
-            RemoveItem(SelectedItem);
+            RemoveItem(itemToRemove);
             SelectedItem = null;
         }
     }

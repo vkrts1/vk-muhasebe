@@ -28,6 +28,13 @@ namespace ErmayMuhasebe.Services
             if (!File.Exists(sourcePath)) 
                 throw new FileNotFoundException($"Veritabanı dosyası ({sourcePath}) bulunamadı.");
 
+            // WAL günlüğündeki tüm verileri ana .db3 dosyasına yazdır (checkpoint)
+            try
+            {
+                await _dbService.CheckpointAsync();
+            }
+            catch { }
+
             await Task.Run(() =>
             {
                 // SQLCipher ile şifreli olduğu için basit kopyalama yeterlidir (Dosya bazlı şifreleme korunur)

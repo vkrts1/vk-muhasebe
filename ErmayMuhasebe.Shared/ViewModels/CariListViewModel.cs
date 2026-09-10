@@ -232,12 +232,11 @@ public abstract partial class CariListViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public async Task LoadCarilerAsync()
+    public async Task LoadCarilerAsync(bool isSilent = false)
     {
         try
         {
-            IsLoading = true;
-            await _uow.RecalculateSystemBalancesAsync();
+            if (!isSilent) IsLoading = true;
             var selectedId = SelectedCari?.Id;
 
             Expression<Func<CariKart, bool>>? filter = null;
@@ -296,7 +295,7 @@ public abstract partial class CariListViewModel : ViewModelBase
         }
         finally
         {
-            IsLoading = false;
+            if (!isSilent) IsLoading = false;
         }
     }
 

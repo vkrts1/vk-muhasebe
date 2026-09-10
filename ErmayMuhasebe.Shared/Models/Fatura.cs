@@ -6,7 +6,7 @@ namespace ErmayMuhasebe.Models
 {
     public class Fatura : ITenantEntity, IBaseEntity
     {
-        [PrimaryKey]
+        [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         public string TenantId { get; set; } = "default";
         public long Version { get; set; } = 1;

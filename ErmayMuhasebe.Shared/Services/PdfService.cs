@@ -160,14 +160,27 @@ namespace ErmayMuhasebe.Services
             => Task.FromResult(GenerateVadeRaporuPdf(items));
 
         public string DefaultFontFamily { get; set; } = "Arial";
-        // Fatura çıktı düzeni kişiselleştirme (Fatura Tasarımı modülünden yüklenir)
         public FaturaTasarimi? AktifFaturaTasarimi { get; set; }
         private byte[]? _logoBytes;
         private bool _isLogoLoaded = false;
         public byte[]? LogoBytes 
         { 
-            get => _logoBytes; 
-            set { _logoBytes = value; _isLogoLoaded = true; } 
+            get 
+            {
+                if (_isLogoLoaded) return (_logoBytes != null && _logoBytes.Length > 0) ? _logoBytes : null;
+                return LoadLogoBytes();
+            }
+            set 
+            { 
+                _logoBytes = value ?? new byte[0]; 
+                _isLogoLoaded = true; 
+            } 
+        }
+
+        public void ResetLogoCache()
+        {
+            _logoBytes = null;
+            _isLogoLoaded = false;
         }
 
         public bool ShowLogoFatura { get; set; } = true;
@@ -291,7 +304,7 @@ namespace ErmayMuhasebe.Services
                                     var logoBytes = LoadLogoBytes();
                                     if (logoBytes != null && logoBytes.Length > 0)
                                     {
-                                        row.ConstantItem(130).AlignLeft().Image(logoBytes).FitArea();
+                                        row.ConstantItem(130).MaxHeight(50).AlignLeft().Image(logoBytes).FitArea();
                                     }
                                 });
                             }
@@ -1537,7 +1550,7 @@ namespace ErmayMuhasebe.Services
                             {
                                 column.Item().PaddingBottom(10).Row(row => 
                                 {
-                                    row.ConstantItem(120).Image(logoBytes).FitArea();
+                                    row.ConstantItem(120).MaxHeight(50).Image(logoBytes).FitArea();
                                 });
                             }
                         }
@@ -1768,7 +1781,7 @@ namespace ErmayMuhasebe.Services
                             {
                                 column.Item().PaddingBottom(10).Row(row => 
                                 {
-                                    row.ConstantItem(120).Image(logoBytes).FitArea();
+                                    row.ConstantItem(120).MaxHeight(50).Image(logoBytes).FitArea();
                                 });
                             }
                         }
@@ -2035,7 +2048,7 @@ namespace ErmayMuhasebe.Services
             {
                 Description = x.StokAdi ?? "",
                 Quantity = x.Miktar,
-                Unit = "kg",
+                Unit = string.IsNullOrWhiteSpace(x.Birim) ? "Adet" : x.Birim,
                 UnitPrice = x.BirimFiyat,
                 TaxRate = x.KdvOrani,
                 TotalPrice = x.Tutar
@@ -2089,7 +2102,7 @@ namespace ErmayMuhasebe.Services
             }
 
             var tasarim = AktifFaturaTasarimi;
-            bool showLogo = tasarim?.ShowLogo ?? true;
+            bool showLogo = tasarim?.ShowLogo ?? ShowLogoFatura;
             if (fatura.IsEArsiv) showLogo = true;
 
             return GenerateSharedA4Document(
@@ -2723,9 +2736,7 @@ namespace ErmayMuhasebe.Services
                             });
 
                             row.RelativeItem().AlignRight().Column(c => {
-                                var logoBytes = LoadLogoBytes();
-                                if (logoBytes != null) c.Item().MaxWidth(60).Image(logoBytes);
-                                else c.Item().Text("ERMAY").FontSize(10).Bold();
+                                c.Item().Text("ERMAY").FontSize(10).Bold();
                             });
                         });
 
@@ -2883,16 +2894,20 @@ namespace ErmayMuhasebe.Services
 
                     page.Header().Row(row =>
                     {
+                        if (ShowLogoRaporlar)
+                        {
+                            var logoBytes = LoadLogoBytes();
+                            if (logoBytes != null && logoBytes.Length > 0)
+                            {
+                                row.ConstantItem(80).Image(logoBytes).FitArea();
+                                row.ConstantItem(15);
+                            }
+                        }
+
                         row.RelativeItem(3).Column(col =>
                         {
                             col.Item().Text("TOPLU STOK RAPORU").Bold().FontSize(18).FontColor("#2563eb");
                             col.Item().Text($"{DateTime.Now:dd.MM.yyyy HH:mm}").FontSize(10).FontColor("#666");
-                        });
-                        row.RelativeItem().AlignRight().Column(col => {
-                            var logoBytes = LoadLogoBytes();
-                            if (logoBytes != null) col.Item().MaxWidth(80).Image(logoBytes);
-                            else col.Item().Text("ERMAY").Bold().FontSize(12);
-                            col.Item().Text("Muhasebe ve Yönetim").FontSize(9).FontColor("#666");
                         });
                     });
 
@@ -2981,15 +2996,20 @@ namespace ErmayMuhasebe.Services
 
                     page.Header().Row(row =>
                     {
+                        if (ShowLogoRaporlar)
+                        {
+                            var logoBytes = LoadLogoBytes();
+                            if (logoBytes != null && logoBytes.Length > 0)
+                            {
+                                row.ConstantItem(60).Image(logoBytes).FitArea();
+                                row.ConstantItem(10);
+                            }
+                        }
+
                         row.RelativeItem(3).Column(col =>
                         {
                             col.Item().Text("STOK HAREKET RAPORU").Bold().FontSize(18).FontColor("#1e3a8a");
                             col.Item().Text($"{stok.StokKodu} - {stok.StokAdi}").FontSize(12).Bold();
-                        });
-                        row.RelativeItem().AlignRight().Column(c => {
-                            var logoBytes = LoadLogoBytes();
-                            if (logoBytes != null) c.Item().MaxWidth(60).Image(logoBytes);
-                            else c.Item().Text("ERMAY").FontSize(10).Bold();
                         });
                     });
 
@@ -3111,11 +3131,6 @@ namespace ErmayMuhasebe.Services
                         {
                             col.Item().Text(title).FontSize(18).Bold().FontColor("#1e3a8a");
                             col.Item().Text($"{DateTime.Now:dd.MM.yyyy HH:mm}").FontSize(10).FontColor("#64748b");
-                        });
-                        row.RelativeItem().AlignRight().Column(c => {
-                            var logoBytes = LoadLogoBytes();
-                            if (logoBytes != null) c.Item().MaxWidth(60).Image(logoBytes);
-                            else c.Item().Text("ERMAY").FontSize(10).Bold();
                         });
                     });
 
@@ -3256,7 +3271,7 @@ namespace ErmayMuhasebe.Services
                                 {
                                     if (logoBytes != null && logoBytes.Length > 0)
                                     {
-                                        logoContainer.Image(logoBytes).FitArea();
+                                        logoContainer.MaxHeight(50).Image(logoBytes).FitArea();
                                     }
                                 });
                             }
@@ -3353,21 +3368,67 @@ namespace ErmayMuhasebe.Services
             return document.GeneratePdf();
         }
 
-        private byte[]? LoadLogoBytes()
+        protected byte[]? LoadLogoBytes()
         {
-            // 1. Eğer bir logo zaten atanmışsa (veya boş dizi ile silinmişse) onu kullan
+            // 1. Eğer daha önce yüklendiyse veya kullanıcı tarafından açıkça atandıysa doğrudan döndür
             if (_isLogoLoaded)
             {
                 return (_logoBytes != null && _logoBytes.Length > 0) ? _logoBytes : null;
             }
 
-            // 2. İlk defa çalışıyorsa ve henüz atanmamışsa, varsayılan dosya yollarını kontrol et
-            var path = GetLogoPath();
-            var bytes = LoadImageBytes(path);
-            
-            // Eğer diskte logo bulursak, cache'le ki her seferinde bakmasın. 
-            // Ama _isLogoLoaded'ı true yapmıyoruz ki DB'den yükleme yapıldığında ezilebilsin.
-            return bytes;
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string ermayDir = System.IO.Path.Combine(appData, "ErmayMuhasebe");
+            string customLogoPath = System.IO.Path.Combine(ermayDir, "company_logo.png");
+
+            // 2. Disk üzerindeki şirket logosunu oku (en garantili ve hızlı yöntem)
+            try
+            {
+                if (System.IO.File.Exists(customLogoPath))
+                {
+                    var fileBytes = System.IO.File.ReadAllBytes(customLogoPath);
+                    if (fileBytes != null && fileBytes.Length > 0)
+                    {
+                        _logoBytes = fileBytes;
+                        _isLogoLoaded = true;
+                        return _logoBytes;
+                    }
+                }
+            }
+            catch { }
+
+            // 3. Şifreli SQLite ana veritabanını kontrol et (ErmayV4_Stable.db3)
+            try
+            {
+                string dbPath = System.IO.Path.Combine(ermayDir, "ErmayV4_Stable.db3");
+                if (System.IO.File.Exists(dbPath))
+                {
+                    var pwd = ErmayMuhasebe.Data.Constants.DatabasePassword;
+                    var opts = new SQLite.SQLiteConnectionString(dbPath, SQLite.SQLiteOpenFlags.ReadOnly | SQLite.SQLiteOpenFlags.FullMutex, true, key: pwd);
+                    using var conn = new SQLite.SQLiteConnection(opts);
+                    var profil = conn.Table<FirmaProfili>().FirstOrDefault();
+                    if (profil != null && !string.IsNullOrEmpty(profil.LogoBase64))
+                    {
+                        var bytes = Convert.FromBase64String(profil.LogoBase64);
+                        if (bytes != null && bytes.Length > 0)
+                        {
+                            _logoBytes = bytes;
+                            _isLogoLoaded = true;
+                            try
+                            {
+                                if (!System.IO.Directory.Exists(ermayDir)) System.IO.Directory.CreateDirectory(ermayDir);
+                                System.IO.File.WriteAllBytes(customLogoPath, bytes);
+                            }
+                            catch { }
+                            return _logoBytes;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            _logoBytes = new byte[0];
+            _isLogoLoaded = true;
+            return null;
         }
 
         private byte[]? LoadImageBytes(string? path)

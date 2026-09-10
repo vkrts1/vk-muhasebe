@@ -8,7 +8,7 @@ echo.
 echo [1/3] Onceki yayin dosyalari temizleniyor...
 if exist "Publish_Output\Desktop" rd /s /q "Publish_Output\Desktop"
 mkdir "Publish_Output\Desktop"
-mkdir "Publish_Output\Installer"
+if not exist "Publish_Output\Installer" mkdir "Publish_Output\Installer"
 
 echo.
 echo [2/3] .NET 9 Self-Contained Masaustu Surumu Derleniyor...

@@ -496,4 +496,6 @@ public class FirebaseUnitOfWork : IUnitOfWork
         f.Id = 1;
         await _firebaseService.SaveAsync("FirmaProfili", f, 1);
     }
+
+    public Task ClearAllTablesAsync() => Task.CompletedTask;
 }

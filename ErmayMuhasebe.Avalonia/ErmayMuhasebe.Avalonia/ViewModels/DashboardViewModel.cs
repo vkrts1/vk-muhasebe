@@ -92,6 +92,7 @@ public partial class DashboardViewModel : ViewModelBase
 
     // State for Goal Toggling
     [ObservableProperty] private bool _isWeeklyGoal = true;
+    public bool DisableAutoRefresh { get; set; } = false;
 
     partial void OnCurrentThemeChanged(string value)
     {
@@ -100,8 +101,9 @@ public partial class DashboardViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsWindowsFluent));
     }
 
-    public DashboardViewModel(IUnitOfWork uow, ThemeService themeService, IPdfService pdfService)
+    public DashboardViewModel(IUnitOfWork uow, ThemeService themeService, IPdfService pdfService, bool disableAutoRefresh = false)
     {
+        DisableAutoRefresh = disableAutoRefresh;
         System.Diagnostics.Debug.WriteLine("=== DashboardViewModel Constructor START ===");
         
         _uow = uow;
@@ -113,7 +115,11 @@ public partial class DashboardViewModel : ViewModelBase
         System.Diagnostics.Debug.WriteLine($"CurrentTheme: {CurrentTheme}");
         
         _themeService.ThemeChanged += OnThemeChanged;
-        WeakReferenceMessenger.Default.Register<FinancialDataChangedMessage>(this, (r, m) => _ = LoadStatsAsync());
+        WeakReferenceMessenger.Default.Register<FinancialDataChangedMessage>(this, (r, m) =>
+        {
+            if (!DisableAutoRefresh)
+                _ = LoadStatsAsync();
+        });
 
         // Initialize LiveCharts series
         IncomeExpenseSeries = Array.Empty<ISeries>();
@@ -145,7 +151,10 @@ public partial class DashboardViewModel : ViewModelBase
 
     public override void OnNavigatedTo()
     {
-        _ = LoadStatsAsync();
+        if (!DisableAutoRefresh)
+        {
+            _ = LoadStatsAsync();
+        }
     }
 
     [RelayCommand]
@@ -298,7 +307,7 @@ public partial class DashboardViewModel : ViewModelBase
         };
     }
 
-    private async Task LoadStatsAsync()
+    public async Task LoadStatsAsync()
     {
         try
         {

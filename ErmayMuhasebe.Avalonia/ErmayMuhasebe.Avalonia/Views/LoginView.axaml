@@ -8,18 +8,33 @@
              x:Class="ErmayMuhasebe.Avalonia.Views.LoginView"
              x:DataType="vm:LoginViewModel">
 
+    <UserControl.Styles>
+        <Style Selector="Button.LinkButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                     Content="{TemplateBinding Content}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                     VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.LinkButton:pointerover TextBlock">
+            <Setter Property="Foreground" Value="#93C5FD"/>
+            <Setter Property="TextDecorations" Value="Underline"/>
+        </Style>
+    </UserControl.Styles>
+
     <Border Background="{DynamicResource BackgroundBrush}" Padding="40">
         <StackPanel VerticalAlignment="Center" Spacing="20" MaxWidth="350">
 
-            
-            <!-- Logo -->
-            <Image Source="avares://ErmayMuhasebe.Avalonia/Assets/app_icon.png" 
-                   Width="110" 
-                   Height="110" 
-                   HorizontalAlignment="Center" 
-                   Margin="0,0,0,5"/>
-            
-            <TextBlock Text="BAWSAQ" 
+            <TextBlock Text="VK" 
                        FontSize="28" 
                        FontWeight="ExtraBold" 
                        LetterSpacing="2"
@@ -48,32 +63,22 @@
                          VerticalContentAlignment="Center"
                          KeyDown="Password_KeyDown"/>
 
-                <Grid ColumnDefinitions="*, Auto" Margin="0,8,0,10" VerticalAlignment="Center">
+                <Grid ColumnDefinitions="*, Auto" Margin="0,10,0,12" VerticalAlignment="Center">
                     <CheckBox Grid.Column="0" Content="Beni Hatırla" 
                               IsChecked="{Binding RememberMe}"
                               FontSize="13" 
+                              Cursor="Hand"
                               VerticalAlignment="Center"
                               Foreground="{DynamicResource TextBrush}"/>
                     
-                    <Button Grid.Column="1" Command="{Binding ForgotPasswordCommand}"
-                            Background="Transparent" 
-                            BorderThickness="0"
-                            Padding="8,4"
-                            CornerRadius="6"
-                            Cursor="Hand"
+                    <Button Grid.Column="1" 
+                            Command="{Binding ForgotPasswordCommand}"
+                            Classes="LinkButton"
                             VerticalAlignment="Center">
                         <TextBlock Text="Şifremi Unuttum?" 
                                    FontSize="13" 
                                    FontWeight="Medium" 
-                                   Foreground="#3B82F6"/>
-                        <Button.Styles>
-                            <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-                                <Setter Property="Background" Value="#1E293B"/>
-                            </Style>
-                            <Style Selector="Button:pointerover TextBlock">
-                                <Setter Property="Foreground" Value="#60A5FA"/>
-                            </Style>
-                        </Button.Styles>
+                                   Foreground="#60A5FA"/>
                     </Button>
                 </Grid>
             </StackPanel>
@@ -111,13 +116,8 @@
                 </StackPanel>
 
                 <!-- Giriş Ekranına Dön Butonu -->
-                <Button Command="{Binding ForgotPasswordCommand}" Content="← Giriş Ekranına Dön" Background="Transparent" BorderThickness="0" HorizontalAlignment="Center" Foreground="#60A5FA">
-                    <Button.Styles>
-                        <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="Foreground" Value="#93C5FD"/>
-                        </Style>
-                    </Button.Styles>
+                <Button Command="{Binding ForgotPasswordCommand}" Classes="LinkButton" HorizontalAlignment="Center">
+                    <TextBlock Text="← Giriş Ekranına Dön" FontSize="13" Foreground="#60A5FA"/>
                 </Button>
             </StackPanel>
 
@@ -153,48 +153,6 @@
                     </Transitions>
                 </Button.Transitions>
             </Button>
-
-            <!-- VEYA Ayracı & Google ile Giriş Butonu (Cursor Tasarımı) -->
-            <StackPanel Spacing="12" IsVisible="{Binding !ShowResetPasswordPanel}">
-                <Grid ColumnDefinitions="*, Auto, *" Margin="0,5">
-                    <Rectangle Grid.Column="0" Height="1" Fill="#334155" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="VEYA" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="12,0"/>
-                    <Rectangle Grid.Column="2" Height="1" Fill="#334155" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Button Command="{Binding LoginWithGoogleCommand}"
-                        Background="#1E293B"
-                        BorderBrush="#334155"
-                        BorderThickness="1"
-                        Height="45"
-                        CornerRadius="8"
-                        HorizontalAlignment="Stretch"
-                        Cursor="Hand"
-                        IsEnabled="{Binding !IsBusy}">
-                    <Grid ColumnDefinitions="Auto, *" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Google "G" İkonu -->
-                        <TextBlock Grid.Column="0" Text="G" 
-                                   FontWeight="Black" 
-                                   FontSize="16" 
-                                   Foreground="#EA4335" 
-                                   Margin="0,0,10,0"
-                                   VerticalAlignment="Center"/>
-                        
-                        <TextBlock Grid.Column="1" 
-                                   Text="Google ile Giriş Yap" 
-                                   FontWeight="SemiBold" 
-                                   FontSize="13" 
-                                   Foreground="#F8FAFC" 
-                                   VerticalAlignment="Center"/>
-                    </Grid>
-                    <Button.Styles>
-                        <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-                            <Setter Property="Background" Value="#334155"/>
-                            <Setter Property="BorderBrush" Value="#475569"/>
-                        </Style>
-                    </Button.Styles>
-                </Button>
-            </StackPanel>
 
             <ProgressBar IsIndeterminate="True" 
                          IsVisible="{Binding IsBusy}" 

@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IFileService FileService
+@inject IPdfService PdfService
 @inject NavigationManager NavigationManager
 
 <style>
@@ -402,7 +403,7 @@
         if (selectedCari == null) return;
         try {
             var hareketler = await DbService.GetCariHareketleriAsync(selectedCari.Id);
-            var pdf = new PdfService().GenerateCariEkstrePdf(selectedCari, hareketler);
+            var pdf = await PdfService.GenerateCariEkstrePdfBytesAsync(selectedCari, hareketler);
             await FileService.SaveAndOpenFileAsync($"Ekstre_{selectedCari.Unvan}_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
         } catch (Exception ex) { Snackbar.Add("Hata: " + ex.Message, Severity.Error); }
     }
@@ -419,7 +420,7 @@
                 var details = await DbService.GetFaturaDetaylarAsync(fid);
                 detayDictionary.Add(fid, details);
             }
-            var pdf = new PdfService().GenerateDetayliCariEkstrePdf(selectedCari, hareketler, detayDictionary);
+            var pdf = await PdfService.GenerateDetayliCariEkstrePdfBytesAsync(selectedCari, hareketler, detayDictionary);
             await FileService.SaveAndOpenFileAsync($"Detayli_Ekstre_{selectedCari.Unvan}_{DateTime.Now:yyyyMMdd}.pdf", pdf, "application/pdf");
         } catch (Exception ex) { Snackbar.Add("Hata: " + ex.Message, Severity.Error); }
     }

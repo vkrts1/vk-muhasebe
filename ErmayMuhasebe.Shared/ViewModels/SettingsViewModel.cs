@@ -248,7 +248,7 @@ public abstract partial class SettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public async Task SaveAppearanceSettingsAsync()
+    public virtual async Task SaveAppearanceSettingsAsync()
     {
         try 
         {
@@ -267,11 +267,17 @@ public abstract partial class SettingsViewModel : ViewModelBase
             profil.TahsilatOrientation = TahsilatOrientation;
             profil.OdemeSize = OdemeSize;
             profil.OdemeOrientation = OdemeOrientation;
-            profil.AcilisBakiyeSize = AcilisBakiyeSize;
-            profil.AcilisBakiyeOrientation = AcilisBakiyeOrientation;
+            profil.LogoFatura = LogoFatura;
+            profil.LogoSiparis = LogoSiparis;
+            profil.LogoTeklif = LogoTeklif;
+            profil.LogoEkstre = LogoEkstre;
+            profil.LogoRaporlar = LogoRaporlar;
+            profil.LogoTahsilat = LogoTahsilat;
+            profil.LogoOdeme = LogoOdeme;
+            profil.LogoAcilisBakiye = LogoAcilisBakiye;
 
             await _uow.SaveFirmaProfiliAsync(profil);
-            SuccessMessage = "Görünüm ayarları kaydedildi.";
+            SuccessMessage = "Görünüm ve logo ayarları başarıyla kaydedildi.";
         }
         catch(Exception ex)
         {

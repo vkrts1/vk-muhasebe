@@ -138,11 +138,12 @@ public abstract partial class StokListViewModel : ViewModelBase
         }
     }
 
-    public async Task LoadStoklarAsync(int? selectId = null)
+    public async Task LoadStoklarAsync(int? selectId = null, bool isSilent = false)
     {
         try 
         {
-            IsLoading = true;
+            if (!isSilent) IsLoading = true;
+            int? targetSelectId = selectId ?? SelectedStok?.Id;
             
             Expression<Func<StokKart, bool>>? filter = null;
             bool hasKod = !string.IsNullOrWhiteSpace(FilterKod);
@@ -190,7 +191,10 @@ public abstract partial class StokListViewModel : ViewModelBase
                 CanNextPage = (CurrentPageIndex + 1) < totalPages;
                 CanPreviousPage = CurrentPageIndex > 0;
 
-                if (selectId.HasValue) SelectedStok = Stoklar.FirstOrDefault(x => x.Id == selectId.Value);
+                if (targetSelectId.HasValue) 
+                {
+                    SelectedStok = Stoklar.FirstOrDefault(x => x.Id == targetSelectId.Value);
+                }
             });
         }
         catch (Exception ex)
@@ -199,7 +203,7 @@ public abstract partial class StokListViewModel : ViewModelBase
         }
         finally
         {
-            IsLoading = false;
+            if (!isSilent) IsLoading = false;
         }
     }
 
@@ -567,30 +571,48 @@ public abstract partial class StokListViewModel : ViewModelBase
     [RelayCommand]
     public virtual async Task DeleteStokHareketAsync()
     {
-        if (SelectedStok == null || SelectedStokHareket == null) return;
+        var hareket = SelectedStokHareket;
+        var stok = SelectedStok;
+        if (stok == null || hareket == null) return;
         
-        // 1. Delete the movement
-        await _uow.Stoklar.DeleteHareketAsync(SelectedStokHareket);
+        int stokId = stok.Id;
 
-        // 2. Re-calculate EVERYTHING for this stock to ensure consistency
-        // Instead of manually adjusting +/- which is error prone for weighted averages,
-        // we just run the full recalculation for this specific stock (or all if easier).
-        // Since we have RecalculateCostsAsync already, let's use it. 
-        // Ideally we should have a RecalculateStockAsync(stokId) but RecalculateCostsAsync does all.
-        // For performance, let's manually adjust quantity but trigger cost recalc.
-        
-        if (SelectedStokHareket.IslemTuru == "GİRİŞ" || SelectedStokHareket.IslemTuru == "Alış Faturası") 
-             SelectedStok.Miktar -= (double)SelectedStokHareket.Miktar;
-        else 
-             SelectedStok.Miktar += (double)SelectedStokHareket.Miktar;
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = null;
 
-        await _uow.Stoklar.SaveAsync(SelectedStok);
-        
-        // Trigger full cost recalculation to fix Average Price
-        await _uow.Stoklar.RecalculateCostsAsync(SelectedStok.Id);
+            // 1. Delete the movement
+            await _uow.Stoklar.DeleteHareketAsync(hareket);
 
-        await LoadStoklarAsync(SelectedStok.Id);
-        await LoadStokHareketleriAsync(SelectedStok.Id);
+            // 2. Adjust stock quantity
+            var currentStok = await _uow.Stoklar.GetByIdAsync(stokId);
+            if (currentStok != null)
+            {
+                if (hareket.IslemTuru == "GİRİŞ" || hareket.IslemTuru == "Alış Faturası") 
+                    currentStok.Miktar -= (double)hareket.Miktar;
+                else 
+                    currentStok.Miktar += (double)hareket.Miktar;
+
+                await _uow.Stoklar.SaveAsync(currentStok);
+            }
+            
+            // 3. Trigger full cost recalculation to fix Average Price
+            await _uow.Stoklar.RecalculateCostsAsync(stokId);
+
+            SelectedStokHareket = null;
+            await LoadStoklarAsync(stokId);
+            await LoadStokHareketleriAsync(stokId);
+            SuccessMessage = "Stok hareketi başarıyla silindi.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Stok hareketi silinirken hata oluştu: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     [RelayCommand]

@@ -188,6 +188,10 @@ namespace ErmayMuhasebe.Models
         public string? FirebaseAuthDomain { get; set; } = "";
         public string? GoogleClientId { get; set; } = "";
         public string? GoogleClientSecret { get; set; } = "";
+
+        // Bulut QuestPDF & Cloud Run Servis Ayarları
+        public string? CloudPdfApiUrl { get; set; } = "https://ermay-pdf-api-916435485627.europe-west1.run.app";
+        public string? CloudPdfApiKey { get; set; } = "";
     }
 
     public class RecycleBinRecord

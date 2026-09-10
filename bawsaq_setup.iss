@@ -15,9 +15,9 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
-OutputDir=f:\avalonia yedek\ermaymuhasebe\Publish_Output\Installer
+OutputDir=Publish_Output\Installer
 OutputBaseFilename=BAWSAQ_Setup_v1.0.0
-SetupIconFile=f:\avalonia yedek\ermaymuhasebe\ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\avalonia-logo.ico
+SetupIconFile=ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\avalonia-logo.ico
 UninstallDisplayIcon={app}\Assets\avalonia-logo.ico
 UninstallDisplayName={#MyAppName} Programını Kaldır
 Compression=lzma
@@ -32,7 +32,7 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "f:\avalonia yedek\ermaymuhasebe\Publish_Output\Desktop\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "Publish_Output\Desktop\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\avalonia-logo.ico"
@@ -50,7 +50,6 @@ var
   EmailSmtpPage: TInputQueryWizardPage;
   User1Page: TInputQueryWizardPage;
   User2Page: TInputQueryWizardPage;
-  SecurityPage: TInputQueryWizardPage;
 
 procedure InitializeWizard;
 var
@@ -117,15 +116,17 @@ begin
   TelegramPage.Add('Telegram Bot Token (örn: 123456789:ABCdefGhIJKlmNoPQRstuVWXyz):', True);
   TelegramPage.Add('Telegram Yönetici Chat ID (örn: 987654321):', False);
 
-  // 5. Kullanıcı 1 (Ana Yönetici) Belirleme Sayfası
+  // 5. Kullanıcı 1 (Ana Yönetici) ve Sistem Sıfırlama Şifresi Belirleme Sayfası
   User1Page := CreateInputQueryPage(TelegramPage.ID,
-    'Kullanıcı Hesabı 1 (Ana Yönetici)',
-    'Sisteme giriş yapacak 1. Kullanıcı adı, şifresi ve kurtarma e-postasını belirleyin.',
+    'Kullanıcı Hesabı 1 (Ana Yönetici) & Sıfırlama Şifresi',
+    'Sisteme giriş yapacak yönetici hesabı ve fabrika ayarlarına sıfırlama onay şifresini belirleyin.',
     'Bu hesap oluşturulduğunda varsayılan admin/123 girişi tamamen engellenecektir:');
 
   User1Page.Add('1. Kullanıcı Adı (örn: patron, muhasebe):', False);
   User1Page.Add('1. Kullanıcı Şifresi:', True);
   User1Page.Add('1. Kullanıcı E-Posta Adresi (Şifre kurtarma için):', False);
+  User1Page.Add('Fabrika Ayarları & Sıfırlama Onay Şifresi:', True);
+  User1Page.Values[3] := 'BAWSAQ2026';
 
   // 6. Kullanıcı 2 (Ek Personel / Yedek Kullanıcı) Belirleme Sayfası
   User2Page := CreateInputQueryPage(User1Page.ID,
@@ -136,15 +137,6 @@ begin
   User2Page.Add('2. Kullanıcı Adı (İsteğe bağlı):', False);
   User2Page.Add('2. Kullanıcı Şifresi:', True);
   User2Page.Add('2. Kullanıcı E-Posta Adresi:', False);
-
-  // 7. Fabrika Ayarları & Sıfırlama Özel Güvenlik Onay Şifresi
-  SecurityPage := CreateInputQueryPage(User2Page.ID,
-    'Yönetici Fabrika Ayarları & Sıfırlama Güvenlik Şifresi',
-    'Veritabanı sıfırlama, bakım ve fabrika ayarlarına döndürme işlemlerinde istenecek yetkili şifresini belirleyin.',
-    'Standart fabrika şifresi silinecek ve belirleyeceğiniz şifre kalıcı onay şifresi olacaktır:');
-
-  SecurityPage.Add('Fabrika Ayarları & Sıfırlama Onay Şifresi:', True);
-  SecurityPage.Values[0] := 'BAWSAQ2026';
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -173,7 +165,7 @@ begin
     User2Pass := Trim(User2Page.Values[1]);
     User2Email := Trim(User2Page.Values[2]);
 
-    FactoryResetPass := Trim(SecurityPage.Values[0]);
+    FactoryResetPass := Trim(User1Page.Values[3]);
     if FactoryResetPass = '' then FactoryResetPass := 'BAWSAQ2026';
 
     // Eğer 1. kullanıcı boş bırakıldıysa varsayılan 'admin' / '123' olsun

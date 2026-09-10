@@ -82,6 +82,8 @@ public partial class LoginViewModel : ViewModelBase
         LoadSavedCredentials();
     }
 
+    private bool _isInitialStartup = true;
+
     public void LoadSavedCredentials()
     {
         try
@@ -187,16 +189,6 @@ public partial class LoginViewModel : ViewModelBase
                                     var val = spElem.GetString()?.Trim();
                                     if (!string.IsNullOrEmpty(val)) { profil.SmtpPass = val; updated = true; }
                                 }
-                                if (doc.RootElement.TryGetProperty("GoogleClientId", out var gcElem) && gcElem.ValueKind == System.Text.Json.JsonValueKind.String)
-                                {
-                                    var val = gcElem.GetString()?.Trim();
-                                    if (!string.IsNullOrEmpty(val)) { profil.GoogleClientId = val; updated = true; }
-                                }
-                                if (doc.RootElement.TryGetProperty("GoogleClientSecret", out var gcsElem) && gcsElem.ValueKind == System.Text.Json.JsonValueKind.String)
-                                {
-                                    var val = gcsElem.GetString()?.Trim();
-                                    if (!string.IsNullOrEmpty(val)) { profil.GoogleClientSecret = val; updated = true; }
-                                }
                                 if (doc.RootElement.TryGetProperty("TelegramBotToken", out var tbElem) && tbElem.ValueKind == System.Text.Json.JsonValueKind.String)
                                 {
                                     var val = tbElem.GetString()?.Trim();
@@ -232,14 +224,33 @@ public partial class LoginViewModel : ViewModelBase
             }
 
             var path = GetCredentialsPath();
-            if (System.IO.File.Exists(path) && string.IsNullOrEmpty(Username))
+            if (System.IO.File.Exists(path))
             {
                 var lines = System.IO.File.ReadAllLines(path);
                 if (lines.Length >= 2)
                 {
-                    Username = AuthService.Decrypt(lines[0]);
-                    Password = AuthService.Decrypt(lines[1]);
-                    RememberMe = true;
+                    var savedUser = AuthService.Decrypt(lines[0]);
+                    var savedPass = AuthService.Decrypt(lines[1]);
+                    if (!string.IsNullOrEmpty(savedUser) && !string.IsNullOrEmpty(savedPass))
+                    {
+                        Username = savedUser;
+                        Password = savedPass;
+                        RememberMe = true;
+
+                        // İlk açılışta Beni Hatırla seçili ise şifre girmeden otomatik giriş yap
+                        if (_isInitialStartup)
+                        {
+                            _isInitialStartup = false;
+                            _ = Task.Run(async () =>
+                            {
+                                await Task.Delay(150);
+                                await global::Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+                                {
+                                    await LoginAsync();
+                                });
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -336,207 +347,6 @@ public partial class LoginViewModel : ViewModelBase
                     break;
                 }
             }
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    [RelayCommand]
-    private async Task LoginWithGoogleAsync()
-    {
-        IsBusy = true;
-        ErrorMessage = "";
-        SuccessMessage = "";
-
-        try
-        {
-            var profil = await _dbService.GetFirmaProfiliAsync();
-            var cloudConfig = _dbService.GetFullCloudConfig();
-
-            // Client ID öncelik sırası: 1. FirmaProfili, 2. CloudConfig (kurulum)
-            string clientId = profil?.GoogleClientId?.Trim() ?? "";
-            if (string.IsNullOrEmpty(clientId)) clientId = cloudConfig?.GoogleClientId?.Trim() ?? "";
-            string clientSecret = profil?.GoogleClientSecret?.Trim() ?? cloudConfig?.GoogleClientSecret?.Trim() ?? "";
-
-            if (string.IsNullOrEmpty(clientId))
-            {
-                ErrorMessage = "Google Client ID tanımlanmamış. Lütfen kurulum esnasında veya Ayarlar menüsünden Google OAuth Client ID bilginizi girin.";
-                return;
-            }
-
-            // Google OAuth Loopback HTTP Listener (Port 5000)
-            int port = 5000;
-            string redirectUri = $"http://localhost:{port}/";
-            
-            string googleAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={Uri.EscapeDataString(clientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&scope=openid%20email%20profile";
-
-            using (var listener = new System.Net.HttpListener())
-            {
-                listener.Prefixes.Add(redirectUri);
-                try
-                {
-                    listener.Start();
-                }
-                catch
-                {
-                    // Port meşgulse alternatif port dene
-                    port = 5001;
-                    redirectUri = $"http://localhost:{port}/";
-                    googleAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={Uri.EscapeDataString(clientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&scope=openid%20email%20profile";
-                    listener.Prefixes.Clear();
-                    listener.Prefixes.Add(redirectUri);
-                    listener.Start();
-                }
-
-                // Varsayılan tarayıcıda Google giriş sayfasını aç
-                try
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = googleAuthUrl,
-                        UseShellExecute = true
-                    });
-                }
-                catch
-                {
-                    ErrorMessage = "Tarayıcı açılamadı. Lütfen varsayılan tarayıcınızı kontrol edin.";
-                    listener.Stop();
-                    return;
-                }
-
-                SuccessMessage = "Lütfen açılan tarayıcı penceresinden Google hesabınızı seçin...";
-
-                // Tarayıcıdan gelecek yanıtı bekle (Maksimum 60 saniye zaman aşımı)
-                var contextTask = listener.GetContextAsync();
-                var completedTask = await Task.WhenAny(contextTask, Task.Delay(60000));
-
-                if (completedTask != contextTask)
-                {
-                    listener.Stop();
-                    ErrorMessage = "Google ile giriş zaman aşımına uğradı (60 sn).";
-                    return;
-                }
-
-                var context = await contextTask;
-                var request = context.Request;
-                var code = request.QueryString["code"];
-                var error = request.QueryString["error"];
-
-                // Tarayıcıya şık bir başarı sayfası döndür
-                var response = context.Response;
-                string responseString = @"
-<!DOCTYPE html>
-<html lang='tr'>
-<head>
-    <meta charset='UTF-8'>
-    <title>BAWSAQ - Giriş Başarılı</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); border: 1px solid #334155; }
-        h1 { color: #38bdf8; font-size: 22px; margin-bottom: 10px; }
-        p { color: #94a3b8; font-size: 14px; line-height: 1.5; }
-        .success-icon { font-size: 48px; margin-bottom: 16px; }
-    </style>
-</head>
-<body>
-    <div class='card'>
-        <div class='success-icon'>✨</div>
-        <h1>Google ile Giriş Başarılı!</h1>
-        <p>BAWSAQ Masaüstü uygulamasına dönebilirsiniz. Bu sekmeyi kapatabilirsiniz.</p>
-    </div>
-</body>
-</html>";
-                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
-                response.ContentLength64 = buffer.Length;
-                response.ContentType = "text/html; charset=utf-8";
-                using (var output = response.OutputStream)
-                {
-                    await output.WriteAsync(buffer, 0, buffer.Length);
-                }
-                listener.Stop();
-
-                if (!string.IsNullOrEmpty(error) || string.IsNullOrEmpty(code))
-                {
-                    ErrorMessage = "Google girişi iptal edildi veya yetki verilmedi.";
-                    return;
-                }
-
-                // Google Token takası veya doğrudan Google Kullanıcı Profilini al
-                string userEmail = "google_user@bawsaq.com";
-                string googleUserName = "Google Kullanıcısı";
-
-                try
-                {
-                    // Code ile token ve kullanıcı profilini sorgula
-                    using (var client = new HttpClient())
-                    {
-                        var postParams = new Dictionary<string, string>
-                        {
-                            { "code", code },
-                            { "client_id", clientId },
-                            { "redirect_uri", redirectUri },
-                            { "grant_type", "authorization_code" }
-                        };
-                        if (!string.IsNullOrEmpty(clientSecret))
-                        {
-                            postParams.Add("client_secret", clientSecret);
-                        }
-
-                        var tokenRes = await client.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(postParams));
-
-                        if (tokenRes.IsSuccessStatusCode)
-                        {
-                            var tokenJson = await tokenRes.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-                            if (tokenJson.TryGetProperty("access_token", out var accTokenElem))
-                            {
-                                var accToken = accTokenElem.GetString();
-                                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accToken);
-                                var userinfoRes = await client.GetAsync("https://www.googleapis.com/oauth2/v2/userinfo");
-                                if (userinfoRes.IsSuccessStatusCode)
-                                {
-                                    var userinfo = await userinfoRes.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-                                    if (userinfo.TryGetProperty("email", out var em)) userEmail = em.GetString() ?? userEmail;
-                                    if (userinfo.TryGetProperty("name", out var nm)) googleUserName = nm.GetString() ?? googleUserName;
-                                }
-                            }
-                        }
-                    }
-                }
-                catch { }
-
-                // Veritabanında kullanıcıyı kontrol et veya oluştur
-                var conn = _dbService.GetGlobalConnection();
-                await conn.CreateTableAsync<Models.User>();
-                var targetUsername = userEmail.Split('@')[0].ToLower();
-
-                var existingUser = await conn.Table<Models.User>().FirstOrDefaultAsync(u => u.Email == userEmail || u.Username == targetUsername);
-                if (existingUser == null)
-                {
-                    var salt = AuthService.GenerateSalt();
-                    existingUser = new Models.User
-                    {
-                        Username = targetUsername,
-                        Email = userEmail,
-                        Role = "Admin",
-                        PasswordSalt = salt,
-                        Password = AuthService.HashPassword(Guid.NewGuid().ToString(), salt),
-                        CreatedAt = DateTime.Now
-                    };
-                    await conn.InsertAsync(existingUser);
-                }
-
-                _dbService.CurrentTenantId = existingUser.TenantId ?? "default";
-                SuccessMessage = $"Hoş geldiniz, {googleUserName}!";
-                await Task.Delay(800);
-
-                _onLoginSuccess?.Invoke(existingUser.Username ?? targetUsername);
-            }
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Google ile giriş yapılırken hata oluştu: {ex.Message}";
         }
         finally
         {
@@ -703,7 +513,7 @@ Lütfen bu kodu sisteme girerek doğrulamayı tamamlayın.";
 
                     using (var msg = new System.Net.Mail.MailMessage())
                     {
-                        msg.From = new System.Net.Mail.MailAddress(profil.SmtpUser.Trim(), "BAWSAQ Ön Muhasebe");
+                        msg.From = new System.Net.Mail.MailAddress(profil.SmtpUser.Trim(), "VK Ön Muhasebe");
                         msg.To.Add(toEmail.Trim());
                         msg.Subject = subject;
                         msg.Body = body;

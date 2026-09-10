@@ -1014,3 +1014,4 @@ C:\Users\mazik\AppData\Local\Temp\opencode\fnbuild\ErmayMuhasebe.Functions.deps.
 C:\Users\mazik\AppData\Local\Temp\opencode\fnbuild\ErmayMuhasebe.Functions.runtimeconfig.json
 C:\Users\mazik\AppData\Local\Temp\opencode\fnbuild\ErmayMuhasebe.Functions.dll
 C:\Users\mazik\AppData\Local\Temp\opencode\fnbuild\ErmayMuhasebe.Functions.pdb
+E:\avalonia yedek\ermaymuhasebe\ErmayMuhasebe.Functions\obj\Debug\net9.0\ErmayMuhasebe.Functions.sourcelink.json

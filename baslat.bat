@@ -4,6 +4,10 @@ echo Ermay Muhasebe (Avalonia Desktop) Baslatiliyor...
 echo ========================================
 echo.
 
+if exist "C:\Program Files\dotnet\dotnet.exe" (
+    set "PATH=C:\Program Files\dotnet;%PATH%"
+)
+
 cd ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia
 if %errorlevel% neq 0 (
     echo HATA: Klasor bulunamadi: ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia

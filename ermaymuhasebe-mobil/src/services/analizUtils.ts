@@ -106,12 +106,14 @@ export interface OptimalFiyatParam {
 
 /** Optimal satış fiyatı (desktop OptimalFiyatViewModel mantığı). */
 export const hesapOptimalFiyat = (p: OptimalFiyatParam & { hedefKarOrani?: number }) => {
-  const alis = p.alisFiyati || 0;
-  const ek = p.ekMaliyet || 0;
+  const alis = (isNaN(p.alisFiyati) || !p.alisFiyati) ? 0 : p.alisFiyati;
+  const ek = (isNaN(p.ekMaliyet as any) || !p.ekMaliyet) ? 0 : p.ekMaliyet;
   const karOrani = p.karOrani ?? p.hedefKarOrani ?? 0;
-  const kdvOrani = p.kdvOrani || 0;
+  const safeKar = isNaN(karOrani) ? 0 : karOrani;
+  const kdvOrani = (isNaN(p.kdvOrani as any) || !p.kdvOrani) ? 0 : p.kdvOrani;
+  
   const toplamMaliyet = alis + ek;
-  const karTutari = toplamMaliyet * (karOrani / 100);
+  const karTutari = toplamMaliyet * (safeKar / 100);
   const satisKdvHaric = toplamMaliyet + karTutari;
   const kdvTutari = satisKdvHaric * (kdvOrani / 100);
   return { satisFiyati: satisKdvHaric + kdvTutari, netKar: karTutari, kdv: kdvTutari };
@@ -149,7 +151,8 @@ export const hesapLtv = (faturalar: FaturaLite[]) => {
     const key = f.cariUnvan || 'Bilinmeyen';
     const tarih = f.tarih || f.kayitTarihi;
     const mevcut = map.get(key) || { ciro: 0, adet: 0 };
-    mevcut.ciro += f.genelToplam || 0;
+    const ciroGelen = isNaN(f.genelToplam as any) || !f.genelToplam ? 0 : f.genelToplam;
+    mevcut.ciro += ciroGelen;
     mevcut.adet += 1;
     if (tarih) {
       if (!mevcut.ilk || tarih < mevcut.ilk) mevcut.ilk = tarih;

@@ -32,17 +32,22 @@ public partial class VadeTakipViewModel : ViewModelBase
     [ObservableProperty] private string _selectedFilter = "Tümü";
     public string[] Filters { get; } = { "Tümü", "Bugün", "Bu Hafta", "Bu Ay", "Gecikmiş" };
 
-    public VadeTakipViewModel(IUnitOfWork uow, IExcelService excelService, IPdfService pdfService, IFileService fileService)
+    public bool DisableAutoRefresh { get; set; } = false;
+
+    public VadeTakipViewModel(IUnitOfWork uow, IExcelService excelService, IPdfService pdfService, IFileService fileService, bool disableAutoRefresh = false)
     {
+        DisableAutoRefresh = disableAutoRefresh;
         _uow = uow;
         _excelService = excelService;
         _pdfService = pdfService;
         _fileService = fileService;
-        _ = LoadVadelerAsync();
+        if (!DisableAutoRefresh)
+            _ = LoadVadelerAsync();
 
-        WeakReferenceMessenger.Default.Register<FinancialDataChangedMessage>(this, async (r, m) => 
+        WeakReferenceMessenger.Default.Register<FinancialDataChangedMessage>(this, (r, m) => 
         {
-            await LoadVadelerAsync();
+            if (!DisableAutoRefresh)
+                _ = LoadVadelerAsync();
         });
     }
 

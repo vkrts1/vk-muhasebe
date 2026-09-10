@@ -138,8 +138,11 @@ public partial class FinansDashboardViewModel : DashboardViewModel
 
     public override void OnNavigatedTo()
     {
-        base.OnNavigatedTo();
-        _ = LoadFinansStatsAsync();
+        if (!DisableAutoRefresh)
+        {
+            base.OnNavigatedTo();
+            _ = LoadFinansStatsAsync();
+        }
     }
 
     [RelayCommand]

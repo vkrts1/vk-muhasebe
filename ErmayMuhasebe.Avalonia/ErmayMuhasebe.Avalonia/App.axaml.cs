@@ -63,7 +63,14 @@ public partial class App : Application, IRecipient<ShowCariDetailMessage>, IReci
         services.AddSingleton<IFinansService, FinansService>();
         services.AddSingleton<ErmayMuhasebe.Repositories.DataProviders.IDataProvider, ErmayMuhasebe.Repositories.DataProviders.SqliteDataProvider>();
         services.AddSingleton<DovizService>();
-        services.AddSingleton<PdfService, HttpPdfService>();
+        if (OperatingSystem.IsIOS() || OperatingSystem.IsAndroid())
+        {
+            services.AddSingleton<PdfService, HttpPdfService>();
+        }
+        else
+        {
+            services.AddSingleton<PdfService>();
+        }
         services.AddSingleton<IPdfService>(sp => sp.GetRequiredService<PdfService>());
         services.AddSingleton<ExternalApiService>();
         services.AddSingleton<ThemeService>();
@@ -184,6 +191,16 @@ public partial class App : Application, IRecipient<ShowCariDetailMessage>, IReci
             }
 
             // Database will be initialized on-demand or during first use to avoid race conditions
+            try
+            {
+                var logoPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe", "company_logo.png");
+                if (System.IO.File.Exists(logoPath))
+                {
+                    var pdfService = Services?.GetService<PdfService>();
+                    if (pdfService != null) pdfService.LogoBytes = System.IO.File.ReadAllBytes(logoPath);
+                }
+            }
+            catch { }
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
         {
@@ -195,18 +212,54 @@ public partial class App : Application, IRecipient<ShowCariDetailMessage>, IReci
 
         base.OnFrameworkInitializationCompleted();
 
-        // 1. Firma Logosunu Başlangıçta Yükle
+        if (ApplicationLifetime is not global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)
+        {
+            return;
+        }
+
+        // 1. Firma Logosunu ve PDF Ayarlarını Başlangıçta Yükle
         _ = Task.Run(async () => {
             try {
-                var uow = Services?.GetRequiredService<ErmayMuhasebe.Repositories.IUnitOfWork>();
-                var pdf = Services?.GetRequiredService<IPdfService>();
+                var uow = Services?.GetService<ErmayMuhasebe.Repositories.IUnitOfWork>();
+                var pdf = Services?.GetService<PdfService>();
                 if (uow != null && pdf != null) {
                     var profil = await uow.GetFirmaProfiliAsync();
                     if (profil != null) {
+                        pdf.ShowLogoFatura = profil.LogoFatura;
+                        pdf.ShowLogoSiparis = profil.LogoSiparis;
+                        pdf.ShowLogoTeklif = profil.LogoTeklif;
+                        pdf.ShowLogoEkstre = profil.LogoEkstre;
+                        pdf.ShowLogoRaporlar = profil.LogoRaporlar;
+                        pdf.ShowLogoTahsilat = profil.LogoTahsilat;
+                        pdf.ShowLogoOdeme = profil.LogoOdeme;
+                        pdf.ShowLogoAcilisBakiye = profil.LogoAcilisBakiye;
+
                         if (!string.IsNullOrEmpty(profil.LogoBase64))
-                            pdf.LogoBytes = Convert.FromBase64String(profil.LogoBase64);
+                        {
+                            var bytes = Convert.FromBase64String(profil.LogoBase64);
+                            if (bytes != null && bytes.Length > 0)
+                            {
+                                pdf.LogoBytes = bytes;
+                                try
+                                {
+                                    string dir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe");
+                                    if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
+                                    System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir, "company_logo.png"), bytes);
+                                }
+                                catch { }
+                            }
+                        }
                         else
-                            pdf.LogoBytes = new byte[0]; // Logo yoksa metin moduna geç
+                        {
+                            pdf.LogoBytes = new byte[0];
+                            try
+                            {
+                                string dir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe");
+                                string logoFile = System.IO.Path.Combine(dir, "company_logo.png");
+                                if (System.IO.File.Exists(logoFile)) System.IO.File.Delete(logoFile);
+                            }
+                            catch { }
+                        }
                     }
                 }
             } catch { }
@@ -216,17 +269,25 @@ public partial class App : Application, IRecipient<ShowCariDetailMessage>, IReci
         var themeService = Services?.GetRequiredService<ThemeService>();
         if (themeService != null) themeService.SetTheme(themeService.CurrentTheme);
 
-        // Database değişikliklerini dinle ve UI'a mesaj gönder
+        // Database değişikliklerini dinle ve UI'a mesaj gönder (Debounced)
         var dbService = Services?.GetService<DatabaseService>();
         if (dbService != null)
         {
+            System.Threading.CancellationTokenSource? debounceCts = null;
             dbService.OnDatabaseChanged += () =>
             {
-                System.Diagnostics.Debug.WriteLine("[App] OnDatabaseChanged event received. Dispatching FinancialDataChangedMessage...");
-                Dispatcher.UIThread.Post(() =>
+                debounceCts?.Cancel();
+                debounceCts = new System.Threading.CancellationTokenSource();
+                var token = debounceCts.Token;
+                Task.Delay(300, token).ContinueWith(t =>
                 {
-                    WeakReferenceMessenger.Default.Send(new FinancialDataChangedMessage());
-                });
+                    if (t.IsCanceled) return;
+                    System.Diagnostics.Debug.WriteLine("[App] OnDatabaseChanged event received. Dispatching FinancialDataChangedMessage...");
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        WeakReferenceMessenger.Default.Send(new FinancialDataChangedMessage());
+                    });
+                }, TaskScheduler.Default);
             };
         }
 

@@ -85,7 +85,14 @@ public abstract partial class ViewModelBase : ObservableObject
         
         if (action != null)
         {
-            await action.Invoke();
+            try
+            {
+                await action.Invoke();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"İşlem sırasında bir hata oluştu: {ex.Message}";
+            }
         }
     }
 

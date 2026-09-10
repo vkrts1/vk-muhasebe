@@ -214,6 +214,8 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
             }
             else
             {
+                var maxId = tran.ExecuteScalar<int>("SELECT COALESCE(MAX(Id), 0) FROM Fatura");
+                fatura.Id = maxId + 1;
                 tran.Insert(fatura);
             }
 
@@ -336,6 +338,8 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
             }
             else 
             {
+                var maxId = tran.ExecuteScalar<int>("SELECT COALESCE(MAX(Id), 0) FROM Fatura");
+                fatura.Id = maxId + 1;
                 tran.Insert(fatura);
             }
             

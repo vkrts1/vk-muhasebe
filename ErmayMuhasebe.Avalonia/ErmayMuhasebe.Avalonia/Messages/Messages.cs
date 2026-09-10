@@ -13,6 +13,11 @@ public class CekSavedMessage : ValueChangedMessage<Cek>
 
 public class FinancialDataChangedMessage : MessageBase
 {
+    public object? Sender { get; }
+    public FinancialDataChangedMessage(object? sender = null)
+    {
+        Sender = sender;
+    }
 }
 
 public class NavigationRequestMessage : ValueChangedMessage<Type>

@@ -26,6 +26,37 @@ const formatMoney = (val: number) => {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 };
 
+const parseSafeDate = (val: any): Date | null => {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes('.') || trimmed.includes('/')) {
+      const parts = trimmed.split(/[\/.]/);
+      if (parts.length >= 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        const parsed = new Date(year, month, day);
+        return isNaN(parsed.getTime()) ? null : parsed;
+      }
+    }
+    const d = new Date(trimmed);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+};
+
+const getSafeIsoDateStr = (val: any): string => {
+  const d = parseSafeDate(val);
+  if (!d) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 export default function DashboardScreen() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<'recents' | 'receivables' | 'payables'>('recents');
@@ -78,7 +109,7 @@ export default function DashboardScreen() {
   // Compute stats
   const getStats = () => {
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = getSafeIsoDateStr(today);
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(today.getFullYear() - 1);
@@ -89,8 +120,8 @@ export default function DashboardScreen() {
 
     const gunlukCiro = activeFaturalar
       .filter(f => {
-        const d = new Date(f.tarih || f.Tarih || '');
-        return d.toISOString().split('T')[0] === todayStr && (f.tur === 'Satış' || f.tur === 'Satis' || f.Tur === 'Satış' || f.Tur === 'Satis');
+        const dStr = getSafeIsoDateStr(f.tarih || f.Tarih);
+        return dStr === todayStr && (f.tur === 'Satış' || f.tur === 'Satis' || f.Tur === 'Satış' || f.Tur === 'Satis');
       })
       .reduce((sum, f) => sum + (f.genelToplam || f.GenelToplam || 0), 0);
 
@@ -107,8 +138,8 @@ export default function DashboardScreen() {
 
     const yearlyPurchase = activeFaturalar
       .filter(f => {
-        const d = new Date(f.tarih || f.Tarih || '');
-        return d >= oneYearAgo && (f.tur === 'Alış' || f.tur === 'Alis' || f.Tur === 'Alış' || f.Tur === 'Alis');
+        const d = parseSafeDate(f.tarih || f.Tarih);
+        return d && d >= oneYearAgo && (f.tur === 'Alış' || f.tur === 'Alis' || f.Tur === 'Alış' || f.Tur === 'Alis');
       })
       .reduce((sum, f) => sum + (f.genelToplam || f.GenelToplam || 0), 0);
 
@@ -116,23 +147,23 @@ export default function DashboardScreen() {
 
     const yearlySales = activeFaturalar
       .filter(f => {
-        const d = new Date(f.tarih || f.Tarih || '');
-        return d >= oneYearAgo && (f.tur === 'Satış' || f.tur === 'Satis' || f.Tur === 'Satış' || f.Tur === 'Satis');
+        const d = parseSafeDate(f.tarih || f.Tarih);
+        return d && d >= oneYearAgo && (f.tur === 'Satış' || f.tur === 'Satis' || f.Tur === 'Satış' || f.Tur === 'Satis');
       })
       .reduce((sum, f) => sum + (f.genelToplam || f.GenelToplam || 0), 0);
     const dso = yearlySales > 0 ? Math.round((toplamAlacak / yearlySales) * 365) : 0;
 
     const aylikCiro = activeFaturalar
       .filter(f => {
-        const d = new Date(f.tarih || f.Tarih || '');
-        return d >= startOfMonth && (f.tur === 'Satış' || f.tur === 'Satis' || f.Tur === 'Satış' || f.Tur === 'Satis');
+        const d = parseSafeDate(f.tarih || f.Tarih);
+        return d && d >= startOfMonth && (f.tur === 'Satış' || f.tur === 'Satis' || f.Tur === 'Satış' || f.Tur === 'Satis');
       })
       .reduce((sum, f) => sum + (f.genelToplam || f.GenelToplam || 0), 0);
 
     const aylikAlis = activeFaturalar
       .filter(f => {
-        const d = new Date(f.tarih || f.Tarih || '');
-        return d >= startOfMonth && (f.tur === 'Alış' || f.tur === 'Alis' || f.Tur === 'Alış' || f.Tur === 'Alis');
+        const d = parseSafeDate(f.tarih || f.Tarih);
+        return d && d >= startOfMonth && (f.tur === 'Alış' || f.tur === 'Alis' || f.Tur === 'Alış' || f.Tur === 'Alis');
       })
       .reduce((sum, f) => sum + (f.genelToplam || f.GenelToplam || 0), 0);
 
@@ -194,7 +225,11 @@ export default function DashboardScreen() {
         });
       }
     });
-    return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+    return list.sort((a, b) => {
+      const timeB = parseSafeDate(b.date)?.getTime() || 0;
+      const timeA = parseSafeDate(a.date)?.getTime() || 0;
+      return timeB - timeA;
+    }).slice(0, 5);
   };
 
   // En eski vadesi geçmiş açık faturaya göre gün farkı (masaüstü OrtalamaVade paritesi)
@@ -202,8 +237,15 @@ export default function DashboardScreen() {
     const todayMs = new Date().setHours(0, 0, 0, 0);
     const vadeFaturalar = faturalar
       .filter(f => !f.isDeleted && f.cariUnvan === cariUnvan && f.vadeTarihi && (f.tur === tur || f.tur === tur.replace('ış', 'is').replace('ş', 's')))
-      .map(f => ({ vade: new Date(f.vadeTarihi).setHours(0, 0, 0, 0), odenen: f.odenen || 0, toplam: f.genelToplam || 0 }))
-      .filter(f => f.odenen < f.toplam);
+      .map(f => {
+        const vDate = parseSafeDate(f.vadeTarihi);
+        return {
+          vade: vDate ? vDate.setHours(0, 0, 0, 0) : 0,
+          odenen: f.odenen || 0,
+          toplam: f.genelToplam || 0
+        };
+      })
+      .filter(f => f.vade > 0 && f.odenen < f.toplam);
     if (vadeFaturalar.length === 0) return 0;
     const enEski = Math.min(...vadeFaturalar.map(f => f.vade));
     return Math.round((enEski - todayMs) / 86400000);
@@ -250,8 +292,8 @@ export default function DashboardScreen() {
       const actual = faturalar
         .filter(f => !f.isDeleted && (f.tur === 'Satış' || f.tur === 'Satis'))
         .filter(f => {
-          const fd = new Date(f.tarih);
-          return fd.getMonth() === idx && fd.getFullYear() === currentYear;
+          const fd = parseSafeDate(f.tarih);
+          return fd ? (fd.getMonth() === idx && fd.getFullYear() === currentYear) : false;
         })
         .reduce((sum, f) => sum + (f.genelToplam || 0), 0);
 

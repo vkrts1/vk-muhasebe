@@ -197,5 +197,6 @@ public class UnitOfWork : IUnitOfWork
 
     public Task<FirmaProfili> GetFirmaProfiliAsync() => _dbService.GetFirmaProfiliAsync();
     public Task SaveFirmaProfiliAsync(FirmaProfili f) => _dbService.SaveFirmaProfiliAsync(f);
+    public Task ClearAllTablesAsync() => _dbService.ClearAllTablesAsync();
 }
 

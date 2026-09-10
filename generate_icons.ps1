@@ -1,4 +1,4 @@
-$src = "C:\Users\vkrts\.gemini\antigravity-ide\brain\abc99617-a343-4c09-ae27-4c9449258259\.user_uploaded\media_1788604401490.png"
+$src = "C:\Users\vkrts\.gemini\antigravity-ide\brain\f5a15436-05b5-4440-b16f-fce80d80093c\.user_uploaded\media_1788633043875.png"
 
 # Hedef klasörlerin varlığını kontrol et ve oluştur
 $targetDirs = @(

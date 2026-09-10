@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, FlatList, TextInput, ActivityIndicator, TouchableOpacity, Modal, ScrollView, Alert, Switch, PanResponder } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, FlatList, TextInput, ActivityIndicator, TouchableOpacity, Modal, ScrollView, Alert, Switch, PanResponder, Platform } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Search, UserCircle2, Plus, X, Save, Edit3, Trash2, Phone, Mail, MapPin, Coins, ArrowUpRight, ArrowDownRight, FileText, Table, BarChart4 } from 'lucide-react-native';
 import { subscribeToPath, writeData, deleteData, readData, mapAppToDatabase, splitAccounts, mergeKasalar, updateCariBaseInfoInAllYears } from '../services/firebase';
@@ -2014,21 +2014,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   header: {
-    padding: 20,
-    paddingTop: 40,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 12 : 28,
+    paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#FFFFFF',
+    letterSpacing: -0.4,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#0061FF',
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 12,
   },
@@ -2041,15 +2043,16 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 12,
+    height: 44,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 8,
     color: '#FFFFFF',
     fontSize: 15,

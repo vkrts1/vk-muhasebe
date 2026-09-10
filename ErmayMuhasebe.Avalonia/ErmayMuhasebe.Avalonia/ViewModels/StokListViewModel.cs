@@ -17,7 +17,11 @@ public partial class StokListViewModel : ErmayMuhasebe.Shared.ViewModels.StokLis
     public StokListViewModel(IUnitOfWork uow, IExcelService excelService, IPdfService pdfService, IFileService fileService) 
         : base(uow, excelService, pdfService, fileService)
     {
-        WeakReferenceMessenger.Default.Register<FinancialDataChangedMessage>(this, (r, m) => _ = LoadStoklarAsync());
+        WeakReferenceMessenger.Default.Register<FinancialDataChangedMessage>(this, (r, m) => 
+        {
+            if (m.Sender == this) return;
+            _ = LoadStoklarAsync(isSilent: true);
+        });
     }
 
     protected override async Task InvokeOnUIThreadAsync(Action action)
@@ -27,6 +31,11 @@ public partial class StokListViewModel : ErmayMuhasebe.Shared.ViewModels.StokLis
 
     protected override async Task HandleFileOpenAsync(byte[] content, string fileName)
     {
+        if (content == null || content.Length == 0 || string.IsNullOrWhiteSpace(fileName))
+        {
+            return;
+        }
+
         try 
         {
             string tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ErmayFiles");

@@ -25,15 +25,16 @@ public partial class CariListViewModel : ErmayMuhasebe.Shared.ViewModels.CariLis
 
         WeakReferenceMessenger.Default.Register<FinancialDataChangedMessage>(this, async (r, m) => 
         {
-            System.Diagnostics.Debug.WriteLine("[CariListViewModel] FinancialDataChangedMessage received. Reloading cariler...");
-            await LoadCarilerAsync();
+            if (m.Sender == this) return;
+            System.Diagnostics.Debug.WriteLine("[CariListViewModel] FinancialDataChangedMessage received. Reloading cariler silently...");
+            await LoadCarilerAsync(isSilent: true);
             if (SelectedCari != null) await LoadHareketlerAsync(SelectedCari.Id);
         });
     }
 
     protected override void NotifyFinancialDataChanged()
     {
-        WeakReferenceMessenger.Default.Send(new FinancialDataChangedMessage());
+        WeakReferenceMessenger.Default.Send(new FinancialDataChangedMessage(this));
     }
 
     protected override async Task InvokeOnUIThreadAsync(Action action)

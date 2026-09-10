@@ -1,24 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\ErmayMuhasebe.Functions.csproj": {}
+    "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\ErmayMuhasebe.Functions.csproj": {}
   },
   "projects": {
-    "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\ErmayMuhasebe.Functions.csproj": {
+    "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\ErmayMuhasebe.Functions.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\ErmayMuhasebe.Functions.csproj",
+        "projectUniqueName": "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\ErmayMuhasebe.Functions.csproj",
         "projectName": "ErmayMuhasebe.Functions",
-        "projectPath": "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\ErmayMuhasebe.Functions.csproj",
-        "packagesPath": "C:\\Users\\vkrts\\.nuget\\packages\\",
-        "outputPath": "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\obj\\",
+        "projectPath": "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\ErmayMuhasebe.Functions.csproj",
+        "packagesPath": "C:\\Users\\mazik\\.nuget\\packages\\",
+        "outputPath": "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Functions\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\vkrts\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\mazik\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -34,8 +34,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj": {
-                "projectPath": "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj"
+              "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj": {
+                "projectPath": "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj"
               }
             }
           }
@@ -50,7 +50,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
@@ -128,24 +128,6 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[9.0.14, 9.0.14]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[9.0.14, 9.0.14]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[9.0.14, 9.0.14]"
-            },
-            {
-              "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[9.0.14, 9.0.14]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -154,25 +136,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.316/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj": {
+    "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj",
+        "projectUniqueName": "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj",
         "projectName": "ErmayMuhasebe.Shared",
-        "projectPath": "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj",
-        "packagesPath": "C:\\Users\\vkrts\\.nuget\\packages\\",
-        "outputPath": "F:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\obj\\",
+        "projectPath": "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\ErmayMuhasebe.Shared.csproj",
+        "packagesPath": "C:\\Users\\mazik\\.nuget\\packages\\",
+        "outputPath": "E:\\avalonia yedek\\ermaymuhasebe\\ErmayMuhasebe.Shared\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\vkrts\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\mazik\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -200,7 +182,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
@@ -348,26 +330,12 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[9.0.14, 9.0.14]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[9.0.14, 9.0.14]"
-            },
-            {
-              "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[9.0.14, 9.0.14]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.316/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

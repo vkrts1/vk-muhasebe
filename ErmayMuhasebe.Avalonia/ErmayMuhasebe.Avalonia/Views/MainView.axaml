@@ -82,7 +82,7 @@
                                 <ic:SymbolIcon Symbol="Navigation" FontSize="20" Foreground="{DynamicResource TextBrush}"/> 
                               </Button>
                               <Image Grid.Column="1" Source="avares://ErmayMuhasebe.Avalonia/Assets/bawsaq_logo.png" Width="26" Height="26" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                              <TextBlock Grid.Column="2" Text="BAWSAQ" VerticalAlignment="Center" FontWeight="ExtraBold" FontSize="18" LetterSpacing="2" Foreground="{DynamicResource TextBrush}"/>
+                              <TextBlock Grid.Column="2" Text="VK" VerticalAlignment="Center" FontWeight="ExtraBold" FontSize="18" LetterSpacing="2" Foreground="{DynamicResource TextBrush}"/>
                               
                               <!-- BİLDİRİM BUTONU -->
                               <Button Grid.Column="2" Classes="IconButton" Width="40" Height="50" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
@@ -139,10 +139,15 @@
                                                                                       <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}" FontSize="9" Opacity="0.5"/>
                                                                                   </StackPanel>
                                                                                   
-                                                                                  <!-- Mark as Read Button -->
-                                                                                  <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].DataContext.MarkAsReadCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsRead}" Classes="IconButton" VerticalAlignment="Center">
-                                                                                      <ic:SymbolIcon Symbol="Checkmark" FontSize="14" Foreground="#10B981"/>
-                                                                                  </Button>
+                                                                                  <!-- Actions -->
+                                                                                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                                                      <Button Command="{Binding $parent[ItemsControl].DataContext.MarkAsReadCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsRead}" Classes="IconButton" ToolTip.Tip="Okundu İşaretle">
+                                                                                          <ic:SymbolIcon Symbol="Checkmark" FontSize="14" Foreground="#10B981"/>
+                                                                                      </Button>
+                                                                                      <Button Command="{Binding $parent[ItemsControl].DataContext.DeleteNotificationCommand}" CommandParameter="{Binding}" Classes="IconButton" ToolTip.Tip="Sil">
+                                                                                          <ic:SymbolIcon Symbol="Dismiss" FontSize="14" Foreground="#EF4444"/>
+                                                                                      </Button>
+                                                                                  </StackPanel>
                                                                               </Grid>
                                                                           </Border>
                                                                       </Button>
@@ -423,7 +428,7 @@
                                     <Border Grid.Row="0" Height="30" Background="{DynamicResource BackgroundBrush}" Padding="15,0">
                                        <Grid ColumnDefinitions="*, Auto">
                                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8" Opacity="0.5">
-                                              <TextBlock Text="BAWSAQ" FontSize="11" FontWeight="Bold"/>
+                                              <TextBlock Text="VK" FontSize="11" FontWeight="Bold"/>
                                               <TextBlock Text=">" FontSize="11"/>
                                               <TextBlock Text="{Binding SelectedMenuItem.Name}" FontSize="11" FontWeight="SemiBold"/>
                                            </StackPanel>
@@ -501,10 +506,15 @@
                                                                                                      <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}" FontSize="9" Opacity="0.5"/>
                                                                                                  </StackPanel>
                                                                                                  
-                                                                                                 <!-- Mark as Read Button -->
-                                                                                                 <Button Grid.Column="2" Command="{Binding $parent[ItemsControl].DataContext.MarkAsReadCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsRead}" Classes="IconButton" VerticalAlignment="Center">
-                                                                                                     <ic:SymbolIcon Symbol="Checkmark" FontSize="14" Foreground="#10B981"/>
-                                                                                                 </Button>
+                                                                                                 <!-- Actions -->
+                                                                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                                                                     <Button Command="{Binding $parent[ItemsControl].DataContext.MarkAsReadCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsRead}" Classes="IconButton" ToolTip.Tip="Okundu İşaretle">
+                                                                                                         <ic:SymbolIcon Symbol="Checkmark" FontSize="14" Foreground="#10B981"/>
+                                                                                                     </Button>
+                                                                                                     <Button Command="{Binding $parent[ItemsControl].DataContext.DeleteNotificationCommand}" CommandParameter="{Binding}" Classes="IconButton" ToolTip.Tip="Sil">
+                                                                                                         <ic:SymbolIcon Symbol="Dismiss" FontSize="14" Foreground="#EF4444"/>
+                                                                                                     </Button>
+                                                                                                 </StackPanel>
                                                                                              </Grid>
                                                                                          </Border>
                                                                                      </Button>
