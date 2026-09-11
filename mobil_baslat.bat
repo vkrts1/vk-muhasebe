@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title BAWSAQ Muhasebe - Mobil Baslatici (Expo Go)
+title VK Muhasebe - Mobil Baslatici (Expo Go)
 cls
 
 echo =====================================================================
-echo           BAWSAQ ON MUHASEBE - iPHONE MOBIL BASLATICI
+echo           VK ON MUHASEBE - iPHONE MOBIL BASLATICI
 echo =====================================================================
 echo.
 echo 1. iPhone'unuzda App Store'dan ucretsiz "Expo Go" uygulamasini acin.

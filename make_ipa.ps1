@@ -1,10 +1,10 @@
-$sourceApp = "C:\Users\vkrts\Downloads\application-fc0b377a-ec96-4afe-aa79-a88931afcc2e (1)\BAWSAQ"
+$sourceApp = "C:\Users\vkrts\Downloads\application-fc0b377a-ec96-4afe-aa79-a88931afcc2e (1)\VK"
 $tempFolder = "C:\Users\vkrts\Downloads\IpaTemp"
 $payloadFolder = "C:\Users\vkrts\Downloads\IpaTemp\Payload"
-$targetAppFolder = "C:\Users\vkrts\Downloads\IpaTemp\Payload\BAWSAQ.app"
-$zipPath = "C:\Users\vkrts\Downloads\BAWSAQ.zip"
-$ipaDownloads = "C:\Users\vkrts\Downloads\BAWSAQ.ipa"
-$ipaDesktop = "C:\Users\vkrts\Desktop\BAWSAQ.ipa"
+$targetAppFolder = "C:\Users\vkrts\Downloads\IpaTemp\Payload\VK.app"
+$zipPath = "C:\Users\vkrts\Downloads\VK.zip"
+$ipaDownloads = "C:\Users\vkrts\Downloads\VK.ipa"
+$ipaDesktop = "C:\Users\vkrts\Desktop\VK.ipa"
 
 if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
 if (Test-Path $zipPath) { Remove-Item -Force $zipPath }

@@ -38,8 +38,8 @@ jobs:
         run: |
           WORKSPACE=$(ls -d *.xcworkspace 2>/dev/null | head -n 1)
           if [ -z "$WORKSPACE" ]; then
-            WORKSPACE="BAWSAQ.xcworkspace"
-            SCHEME="BAWSAQ"
+            WORKSPACE="VK.xcworkspace"
+            SCHEME="VK"
           else
             SCHEME=$(basename "$WORKSPACE" .xcworkspace)
           fi
@@ -62,13 +62,13 @@ jobs:
           APP_PATH=$(find build/Build/Products/Release-iphoneos -name "*.app" -maxdepth 1 | head -n 1)
           echo "Packaging App: $APP_PATH"
           cp -R "$APP_PATH" Payload/
-          zip -r -y BAWSAQ.ipa Payload
+          zip -r -y VK.ipa Payload
           mkdir -p ../../output
-          cp BAWSAQ.ipa ../../output/
+          cp VK.ipa ../../output/
 
-      - name: 🚀 Upload BAWSAQ.ipa Artifact
+      - name: 🚀 Upload VK.ipa Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BAWSAQ-iOS-IPA
-          path: output/BAWSAQ.ipa
+          name: VK-iOS-IPA
+          path: output/VK.ipa
           retention-days: 7

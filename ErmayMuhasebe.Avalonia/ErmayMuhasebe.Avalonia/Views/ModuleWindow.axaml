@@ -5,6 +5,7 @@
         xmlns:ic="using:FluentIcons.Avalonia.Fluent"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
         x:Class="ErmayMuhasebe.Avalonia.Views.ModuleWindow"
+        Icon="avares://ErmayMuhasebe.Avalonia/Assets/avalonia-logo.ico"
         Title="Modül"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BackgroundBrush}"

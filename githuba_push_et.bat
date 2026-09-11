@@ -4,7 +4,7 @@ title GitHub'a Yukle ve Derlemeyi Baslat
 cls
 
 echo =====================================================================
-echo           BAWSAQ ON MUHASEBE - GITHUB'A YUKLEME SIHIRBAZI
+echo           VK ON MUHASEBE - GITHUB'A YUKLEME SIHIRBAZI
 echo =====================================================================
 echo.
 echo Repo: https://github.com/vkrts02-cell/bawsaq-muhasebe.git
@@ -18,7 +18,7 @@ echo [1/3] Dosyalar ekleniyor...
 git add .
 
 echo [2/3] Paket hazirlaniyor...
-git commit -m "feat: setup BAWSAQ iOS ARM64 GitHub Actions IPA build"
+git commit -m "feat: setup VK iOS ARM64 GitHub Actions IPA build"
 
 echo [3/3] GitHub'a yukleniyor (Push)...
 git push -u origin main

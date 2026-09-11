@@ -9,6 +9,7 @@
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
         x:Class="ErmayMuhasebe.Avalonia.Views.CariDetayWindow"
         x:DataType="vm:CariDetayViewModel"
+        Icon="avares://ErmayMuhasebe.Avalonia/Assets/avalonia-logo.ico"
         Title="Cari Kart Detayı"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BackgroundBrush}"

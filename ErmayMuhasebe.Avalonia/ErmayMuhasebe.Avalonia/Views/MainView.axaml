@@ -81,7 +81,7 @@
                               <Button Click="TogglePaneButton_Click" Background="Transparent" Width="60" Height="50" Padding="0" Grid.Column="0">
                                 <ic:SymbolIcon Symbol="Navigation" FontSize="20" Foreground="{DynamicResource TextBrush}"/> 
                               </Button>
-                              <Image Grid.Column="1" Source="avares://ErmayMuhasebe.Avalonia/Assets/bawsaq_logo.png" Width="26" Height="26" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                              <Image Grid.Column="1" Source="avares://ErmayMuhasebe.Avalonia/Assets/vk_logo.png" Width="26" Height="26" Margin="0,0,8,0" VerticalAlignment="Center"/>
                               <TextBlock Grid.Column="2" Text="VK" VerticalAlignment="Center" FontWeight="ExtraBold" FontSize="18" LetterSpacing="2" Foreground="{DynamicResource TextBrush}"/>
                               
                               <!-- BİLDİRİM BUTONU -->

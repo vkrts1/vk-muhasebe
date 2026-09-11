@@ -142,6 +142,18 @@ namespace ErmayMuhasebe.Services
             }
         }
 
+        public async Task ClearCloudTablesAsync(string tenantId = "default")
+        {
+            await SafeRun(async () =>
+            {
+                if (_firebase != null)
+                {
+                    int year = _yearContext?.CurrentYear ?? DateTime.Now.Year;
+                    await _firebase.Child("companies").Child(tenantId).Child("years").Child(year.ToString()).DeleteAsync();
+                }
+            });
+        }
+
         public async Task SyncCariAsync(CariKart cari)
         {
             await SafeRun(async () => 
@@ -888,6 +900,65 @@ namespace ErmayMuhasebe.Services
             {
                 await _firebase!.Child(GetYearlyPath(resourceName)).Child(id.ToString()).DeleteAsync();
             });
+        }
+
+        // --- USER SYNC METHODS (GLOBAL / MULTI-DEVICE) ---
+        public async Task SyncUserAsync(User user)
+        {
+            await SafeRun(async () =>
+            {
+                if (_firebase != null && user != null)
+                {
+                    var key = user.Id > 0 ? user.Id.ToString() : (user.Username?.ToLower().Trim() ?? "1");
+                    await _firebase.Child("users").Child(key).PutAsync(user);
+                }
+            });
+        }
+
+        public async Task DeleteUserFromCloudAsync(int userId, string? username = null)
+        {
+            await SafeRun(async () =>
+            {
+                if (_firebase != null)
+                {
+                    if (userId > 0)
+                    {
+                        await _firebase.Child("users").Child(userId.ToString()).DeleteAsync();
+                    }
+                    if (!string.IsNullOrEmpty(username))
+                    {
+                        await _firebase.Child("users").Child(username.ToLower().Trim()).DeleteAsync();
+                    }
+                }
+            });
+        }
+
+        public async Task<List<User>> PullUsersAsync()
+        {
+            if (!IsConnected) return new List<User>();
+            try
+            {
+                var collection = await _firebase!.Child("users").OnceAsync<User>();
+                var list = new List<User>();
+                foreach (var item in collection)
+                {
+                    if (item?.Object != null)
+                    {
+                        var u = item.Object;
+                        if (u.Id == 0 && int.TryParse(item.Key, out int idVal))
+                        {
+                            u.Id = idVal;
+                        }
+                        list.Add(u);
+                    }
+                }
+                return list;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CloudSync] PullUsersAsync Error: {ex.Message}");
+                return new List<User>();
+            }
         }
     }
 }

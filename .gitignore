@@ -31,3 +31,4 @@ dist-ssr/
 .DS_Store
 Thumbs.db
 *.sw?
+Publish_Output/

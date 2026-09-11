@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ===================================================
-echo   BAWSAQ ON MUHASEBE - MASAUSTU YAYIN VE SETUP
+echo   VK ON MUHASEBE - MASAUSTU YAYIN VE SETUP
 echo ===================================================
 echo.
 
@@ -23,24 +23,28 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [3/3] Inno Setup Kurulum Paketi (Setup.exe) Olusturuluyor...
-set "ISCC_PATH=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+set "ISCC_PATH=%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe"
+if not exist "%ISCC_PATH%" set "ISCC_PATH=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 if not exist "%ISCC_PATH%" set "ISCC_PATH=C:\Program Files\Inno Setup 6\ISCC.exe"
+if not exist "%ISCC_PATH%" (
+    for /f "delims=" %%I in ('where iscc.exe 2^>nul') do set "ISCC_PATH=%%I"
+)
 
 if exist "%ISCC_PATH%" (
-    "%ISCC_PATH%" "bawsaq_setup.iss"
+    "%ISCC_PATH%" "vk_setup.iss"
     if %ERRORLEVEL% EQU 0 (
         echo.
         echo ===================================================
         echo [TEBRIKLER] Kurulum dosyasi basariyla uretildi!
-        echo Kurulum Dosyasi: Publish_Output\Installer\BAWSAQ_Setup_v1.0.0.exe
+        echo Kurulum Dosyasi: Publish_Output\Installer\VK_Setup_v1.0.0.exe
         echo ===================================================
     ) else (
         echo.
-        echo [UYARI] Setup olusturulamadi, lutfen bawsaq_setup.iss dosyasini Inno Setup ile acip Compile edin.
+        echo [UYARI] Setup olusturulamadi, lutfen vk_setup.iss dosyasini Inno Setup ile acip Compile edin.
     )
 ) else (
     echo.
-    echo Inno Setup bulunamadi. Setup uretmek icin 'bawsaq_setup.iss' dosyasini Inno Setup ile derleyebilirsiniz.
+    echo Inno Setup bulunamadi. Setup uretmek icin 'vk_setup.iss' dosyasini Inno Setup ile derleyebilirsiniz.
 )
 
 echo.

@@ -1,4 +1,9 @@
-$srcPng = "C:\Users\vkrts\.gemini\antigravity-ide\brain\abc99617-a343-4c09-ae27-4c9449258259\.user_uploaded\media_1788604401490.png"
+$projectDir = $PSScriptRoot
+$srcPng = Join-Path $projectDir "ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\vk_logo_master.png"
+
+# Copy to Avalonia Assets as vk_logo.png and app_icon.png
+Copy-Item $srcPng (Join-Path $projectDir "ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\vk_logo.png") -Force
+Copy-Item $srcPng (Join-Path $projectDir "ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\app_icon.png") -Force
 
 Add-Type -AssemblyName System.Drawing
 
@@ -65,7 +70,8 @@ function Convert-PngToMultiSizeIco($sourcePngPath, $destIcoPath) {
     Write-Host "Multi-size ICO olusturuldu: $destIcoPath"
 }
 
-Convert-PngToMultiSizeIco $srcPng "f:\avalonia yedek\ermaymuhasebe\ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\avalonia-logo.ico"
-Convert-PngToMultiSizeIco $srcPng "f:\avalonia yedek\ermaymuhasebe\ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\app_icon.ico"
-Convert-PngToMultiSizeIco $srcPng "f:\avalonia yedek\ermaymuhasebe\ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia.Desktop\Assets\avalonia-logo.ico"
-Convert-PngToMultiSizeIco $srcPng "f:\avalonia yedek\ermaymuhasebe\ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia.Desktop\Assets\app.ico"
+Convert-PngToMultiSizeIco $srcPng (Join-Path $projectDir "ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\avalonia-logo.ico")
+Convert-PngToMultiSizeIco $srcPng (Join-Path $projectDir "ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia\Assets\app_icon.ico")
+Convert-PngToMultiSizeIco $srcPng (Join-Path $projectDir "ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia.Desktop\Assets\avalonia-logo.ico")
+Convert-PngToMultiSizeIco $srcPng (Join-Path $projectDir "ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia.Desktop\Assets\app.ico")
+Write-Host "Tum VK ikonlari guncellendi!"

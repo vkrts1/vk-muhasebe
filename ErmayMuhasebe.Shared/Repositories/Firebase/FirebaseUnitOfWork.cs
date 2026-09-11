@@ -497,5 +497,11 @@ public class FirebaseUnitOfWork : IUnitOfWork
         await _firebaseService.SaveAsync("FirmaProfili", f, 1);
     }
 
-    public Task ClearAllTablesAsync() => Task.CompletedTask;
+    public async Task ClearAllTablesAsync()
+    {
+        if (_firebaseService != null)
+        {
+            await _firebaseService.DeleteYearAsync(DateTime.Now.Year);
+        }
+    }
 }

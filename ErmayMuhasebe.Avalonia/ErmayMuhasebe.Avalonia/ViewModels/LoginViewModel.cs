@@ -89,80 +89,112 @@ public partial class LoginViewModel : ViewModelBase
         try
         {
             // Setup kurulumundan gelen kullanıcı/şifre yapılandırmasını kontrol et
-            var setupUserPath = System.IO.Path.Combine(
+            var configDir = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "ErmayMuhasebe",
-                "setup_initial_user.json");
+                "ErmayMuhasebe");
+            if (!System.IO.Directory.Exists(configDir)) System.IO.Directory.CreateDirectory(configDir);
+
+            var setupUserPath = System.IO.Path.Combine(configDir, "setup_initial_user.json");
+            var permanentConfigPath = System.IO.Path.Combine(configDir, "setup_config.json");
+
+            string? jsonToProcess = null;
+            bool isNewSetup = false;
 
             if (System.IO.File.Exists(setupUserPath))
             {
                 try
                 {
-                    var json = System.IO.File.ReadAllText(setupUserPath);
-                    var doc = System.Text.Json.JsonDocument.Parse(json);
+                    jsonToProcess = System.IO.File.ReadAllText(setupUserPath);
+                    isNewSetup = true;
+                    try { System.IO.File.Copy(setupUserPath, permanentConfigPath, true); } catch { }
+                    try { System.IO.File.Delete(setupUserPath); } catch { }
+                }
+                catch { }
+            }
+            else if (System.IO.File.Exists(permanentConfigPath))
+            {
+                try
+                {
+                    var conn = _dbService.GetGlobalConnection();
+                    var count = conn.Table<Models.User>().CountAsync().GetAwaiter().GetResult();
+                    if (count == 0)
+                    {
+                        jsonToProcess = System.IO.File.ReadAllText(permanentConfigPath);
+                    }
+                }
+                catch { }
+            }
+
+            if (!string.IsNullOrEmpty(jsonToProcess))
+            {
+                try
+                {
+                    var doc = System.Text.Json.JsonDocument.Parse(jsonToProcess);
                     
+                    var conn = _dbService.GetGlobalConnection();
+                    conn.CreateTableAsync<Models.User>().GetAwaiter().GetResult();
+
+                    if (doc.RootElement.TryGetProperty("Users", out var usersArray))
+                    {
+                        bool hasCustomUser = false;
+                        foreach (var userElem in usersArray.EnumerateArray())
+                        {
+                            var uName = userElem.GetProperty("Username").GetString()?.Trim();
+                            var uPass = userElem.GetProperty("Password").GetString()?.Trim();
+                            var uEmail = userElem.TryGetProperty("Email", out var emElem) ? emElem.GetString()?.Trim() : null;
+
+                            if (!string.IsNullOrEmpty(uName) && !string.IsNullOrEmpty(uPass))
+                            {
+                                var existing = conn.Table<Models.User>().FirstOrDefaultAsync(u => u.Username == uName.ToLower()).GetAwaiter().GetResult();
+                                var salt = AuthService.GenerateSalt();
+                                var hash = AuthService.HashPassword(uPass, salt);
+
+                                if (existing != null)
+                                {
+                                    existing.Password = hash;
+                                    existing.PasswordSalt = salt;
+                                    if (!string.IsNullOrEmpty(uEmail)) existing.Email = uEmail;
+                                    conn.UpdateAsync(existing).GetAwaiter().GetResult();
+                                    _ = Task.Run(async () => await _dbService.SyncService.SyncUserAsync(existing));
+                                }
+                                else
+                                {
+                                    var nu = new Models.User
+                                    {
+                                        Username = uName.ToLower(),
+                                        Password = hash,
+                                        PasswordSalt = salt,
+                                        Email = uEmail,
+                                        Role = "Admin",
+                                        CreatedAt = DateTime.Now
+                                    };
+                                    conn.InsertAsync(nu).GetAwaiter().GetResult();
+                                    _ = Task.Run(async () => await _dbService.SyncService.SyncUserAsync(nu));
+                                }
+
+                                if (uName.ToLower() != "admin")
+                                {
+                                    hasCustomUser = true;
+                                }
+                            }
+                        }
+
+                        // Özel kullanıcılar girilmişse varsayılan admin/123 hesabını sil
+                        if (hasCustomUser)
+                        {
+                            var defaultAdmin = conn.Table<Models.User>().FirstOrDefaultAsync(u => u.Username == "admin").GetAwaiter().GetResult();
+                            if (defaultAdmin != null)
+                            {
+                                conn.DeleteAsync(defaultAdmin).GetAwaiter().GetResult();
+                            }
+                        }
+                    }
+
+                    // Fabrika Ayarları Sıfırlama Şifresi, SMTP ve Telegram Yapılandırması
                     Task.Run(async () =>
                     {
                         try
                         {
-                            var conn = _dbService.GetGlobalConnection();
-                            await conn.CreateTableAsync<Models.User>();
-
-                            if (doc.RootElement.TryGetProperty("Users", out var usersArray))
-                            {
-                                bool hasCustomUser = false;
-                                foreach (var userElem in usersArray.EnumerateArray())
-                                {
-                                    var uName = userElem.GetProperty("Username").GetString()?.Trim();
-                                    var uPass = userElem.GetProperty("Password").GetString()?.Trim();
-
-                                    var uEmail = userElem.TryGetProperty("Email", out var emElem) ? emElem.GetString()?.Trim() : null;
-
-                                    if (!string.IsNullOrEmpty(uName) && !string.IsNullOrEmpty(uPass))
-                                    {
-                                        var existing = await conn.Table<Models.User>().FirstOrDefaultAsync(u => u.Username == uName.ToLower());
-                                        var salt = AuthService.GenerateSalt();
-                                        var hash = AuthService.HashPassword(uPass, salt);
-
-                                        if (existing != null)
-                                        {
-                                            existing.Password = hash;
-                                            existing.PasswordSalt = salt;
-                                            if (!string.IsNullOrEmpty(uEmail)) existing.Email = uEmail;
-                                            await conn.UpdateAsync(existing);
-                                        }
-                                        else
-                                        {
-                                            await conn.InsertAsync(new Models.User
-                                            {
-                                                Username = uName.ToLower(),
-                                                Password = hash,
-                                                PasswordSalt = salt,
-                                                Email = uEmail,
-                                                Role = "Admin",
-                                                CreatedAt = DateTime.Now
-                                            });
-                                        }
-
-                                        if (uName.ToLower() != "admin")
-                                        {
-                                            hasCustomUser = true;
-                                        }
-                                    }
-                                }
-
-                                // Özel kullanıcılar girilmişse varsayılan admin/123 hesabını sil
-                                if (hasCustomUser)
-                                {
-                                    var defaultAdmin = await conn.Table<Models.User>().FirstOrDefaultAsync(u => u.Username == "admin");
-                                    if (defaultAdmin != null)
-                                    {
-                                        await conn.DeleteAsync(defaultAdmin);
-                                    }
-                                }
-                            }
-
-                            // Fabrika Ayarları Sıfırlama Şifresi, SMTP ve Telegram Yapılandırması
                             var profil = await _dbService.GetFirmaProfiliAsync();
                             if (profil != null)
                             {
@@ -209,19 +241,20 @@ public partial class LoginViewModel : ViewModelBase
                     });
 
                     // İlk kullanıcıyı form alanlarına doldur
-                    if (doc.RootElement.TryGetProperty("Users", out var uArr) && uArr.GetArrayLength() > 0)
+                    if (isNewSetup && doc.RootElement.TryGetProperty("Users", out var uArr) && uArr.GetArrayLength() > 0)
                     {
                         var first = uArr[0];
                         Username = first.GetProperty("Username").GetString() ?? "";
                         Password = first.GetProperty("Password").GetString() ?? "";
                         RememberMe = true;
+                        SaveCredentials();
                     }
-
-                    // İşlendikten sonra geçici setup dosyasını temizle
-                    System.IO.File.Delete(setupUserPath);
                 }
                 catch { }
             }
+
+            // Arka planda buluttaki kullanıcıları yerel veritabanına senkronize et
+            _ = Task.Run(async () => await _dbService.SyncUsersWithCloudAsync());
 
             var path = GetCredentialsPath();
             if (System.IO.File.Exists(path))
@@ -312,7 +345,17 @@ public partial class LoginViewModel : ViewModelBase
                 try
                 {
                     var user = await _dbService.GetUserByUsernameAsync(trimmedUsername);
-                    if (user != null && AuthService.VerifyPassword(trimmedPassword, user.Password!, user.PasswordSalt!))
+                    bool verified = user != null && AuthService.VerifyPassword(trimmedPassword, user.Password!, user.PasswordSalt!);
+
+                    // Yerelde bulunamadıysa veya doğrulanamadıysa, buluttan güncel kullanıcıları çekmeyi dene
+                    if (!verified && _dbService.SyncService.IsConnected)
+                    {
+                        await _dbService.SyncUsersWithCloudAsync();
+                        user = await _dbService.GetUserByUsernameAsync(trimmedUsername);
+                        verified = user != null && AuthService.VerifyPassword(trimmedPassword, user.Password!, user.PasswordSalt!);
+                    }
+
+                    if (verified && user != null)
                     {
                         Username = trimmedUsername;
                         Password = trimmedPassword;

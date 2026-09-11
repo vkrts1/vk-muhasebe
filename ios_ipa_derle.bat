@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title BAWSAQ Muhasebe - Imzasiz Fiziksel IPA Derleyici
+title VK Muhasebe - Imzasiz Fiziksel IPA Derleyici
 cls
 
 echo =====================================================================
-echo      BAWSAQ ON MUHASEBE - iPHONE (ARM64) IMZASIZ IPA DERLEME
+echo      VK ON MUHASEBE - iPHONE (ARM64) IMZASIZ IPA DERLEME
 echo =====================================================================
 echo.
 echo Bu islem Apple hesabi sormadan bulutta Sideloadly icin 

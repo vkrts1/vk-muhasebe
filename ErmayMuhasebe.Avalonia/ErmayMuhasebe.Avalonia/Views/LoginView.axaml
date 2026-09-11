@@ -34,6 +34,11 @@
     <Border Background="{DynamicResource BackgroundBrush}" Padding="40">
         <StackPanel VerticalAlignment="Center" Spacing="20" MaxWidth="350">
 
+            <Image Source="avares://ErmayMuhasebe.Avalonia/Assets/vk_logo.png"
+                   Width="72" Height="72"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,5"/>
+
             <TextBlock Text="VK" 
                        FontSize="28" 
                        FontWeight="ExtraBold" 

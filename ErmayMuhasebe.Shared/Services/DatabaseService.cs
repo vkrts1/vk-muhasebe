@@ -638,19 +638,165 @@ namespace ErmayMuhasebe.Services
             return results.FirstOrDefault();
         }
 
+        public async Task<List<User>> GetUsersAsync()
+        {
+            var globalConn = GetGlobalConnection();
+            await globalConn.CreateTableAsync<User>();
+            return await globalConn.Table<User>().ToListAsync();
+        }
+
+        public async Task SyncUsersWithCloudAsync()
+        {
+            if (!_sync.IsConnected) return;
+            try
+            {
+                var cloudUsers = await _sync.PullUsersAsync();
+                var globalConn = GetGlobalConnection();
+                await globalConn.CreateTableAsync<User>();
+                var localUsers = await globalConn.Table<User>().ToListAsync();
+
+                if (cloudUsers == null || cloudUsers.Count == 0)
+                {
+                    // Bulutta henüz kullanıcı yoksa fakat yerelde gerçek kullanıcılar varsa, buluta yükle
+                    var nonDefaultUsers = localUsers.Where(u => !string.IsNullOrEmpty(u.Username) && (u.Username.ToLower() != "admin" || localUsers.Count == 1)).ToList();
+                    foreach (var lu in nonDefaultUsers)
+                    {
+                        await _sync.SyncUserAsync(lu);
+                    }
+                    return;
+                }
+
+                // Bulutta kullanıcılar var:
+                bool hasRealCloudUsers = cloudUsers.Any(u => !string.IsNullOrEmpty(u.Username) && u.Username.ToLower() != "admin");
+
+                foreach (var cu in cloudUsers)
+                {
+                    if (string.IsNullOrEmpty(cu.Username)) continue;
+                    var existing = localUsers.FirstOrDefault(u => (u.Username ?? "").ToLower() == cu.Username.ToLower());
+                    if (existing != null)
+                    {
+                        bool changed = false;
+                        if (existing.Password != cu.Password) { existing.Password = cu.Password; changed = true; }
+                        if (existing.PasswordSalt != cu.PasswordSalt) { existing.PasswordSalt = cu.PasswordSalt; changed = true; }
+                        if (existing.Role != cu.Role) { existing.Role = cu.Role; changed = true; }
+                        if (existing.Email != cu.Email) { existing.Email = cu.Email; changed = true; }
+                        if (existing.TenantId != cu.TenantId) { existing.TenantId = cu.TenantId; changed = true; }
+                        if (existing.TelegramChatId != cu.TelegramChatId) { existing.TelegramChatId = cu.TelegramChatId; changed = true; }
+                        if (existing.FirebaseAuthUid != cu.FirebaseAuthUid) { existing.FirebaseAuthUid = cu.FirebaseAuthUid; changed = true; }
+                        if (changed)
+                        {
+                            await globalConn.UpdateAsync(existing);
+                        }
+                    }
+                    else
+                    {
+                        var newUser = new User
+                        {
+                            Username = cu.Username.ToLower(),
+                            Password = cu.Password,
+                            PasswordSalt = cu.PasswordSalt,
+                            Role = cu.Role ?? "Admin",
+                            Email = cu.Email,
+                            TenantId = cu.TenantId ?? "default",
+                            TelegramChatId = cu.TelegramChatId,
+                            FirebaseAuthUid = cu.FirebaseAuthUid,
+                            CreatedAt = cu.CreatedAt == default ? DateTime.Now : cu.CreatedAt
+                        };
+                        await globalConn.InsertAsync(newUser);
+                        localUsers.Add(newUser);
+                    }
+                }
+
+                // Eğer bulutta gerçek kullanıcılar varsa ve yerelde sadece dokunulmamış varsayılan admin duruyorsa, yerel admin'i temizle
+                if (hasRealCloudUsers)
+                {
+                    var defaultAdmin = await globalConn.Table<User>().FirstOrDefaultAsync(u => u.Username == "admin");
+                    if (defaultAdmin != null && !cloudUsers.Any(u => (u.Username ?? "").ToLower() == "admin"))
+                    {
+                        await globalConn.DeleteAsync(defaultAdmin);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DatabaseService] SyncUsersWithCloudAsync Error: {ex.Message}");
+            }
+        }
+
         private async Task SeedDataAsync()
         {
-            var salt = AuthService.GenerateSalt();
-            var hashedPassword = AuthService.HashPassword("123", salt);
-            var admin = new User 
-            { 
-                Username = "admin", 
-                Password = hashedPassword, 
-                PasswordSalt = salt,
-                Role = "Admin", 
-                CreatedAt = DateTime.Now 
-            };
-            await _db.InsertAsync(admin);
+            try
+            {
+                var globalConn = GetGlobalConnection();
+                await globalConn.CreateTableAsync<User>();
+                var count = await globalConn.Table<User>().CountAsync();
+                if (count > 0) return; // Keep existing users!
+
+                // Check if setup_config.json or setup_initial_user.json exists to restore user's setup credentials
+                var configDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe");
+                var setupConfigPath = Path.Combine(configDir, "setup_config.json");
+                var setupInitialPath = Path.Combine(configDir, "setup_initial_user.json");
+                var pathToRead = File.Exists(setupConfigPath) ? setupConfigPath : (File.Exists(setupInitialPath) ? setupInitialPath : null);
+
+                if (pathToRead != null)
+                {
+                    try
+                    {
+                        var json = await File.ReadAllTextAsync(pathToRead);
+                        var doc = System.Text.Json.JsonDocument.Parse(json);
+                        if (doc.RootElement.TryGetProperty("Users", out var usersArray))
+                        {
+                            bool added = false;
+                            foreach (var userElem in usersArray.EnumerateArray())
+                            {
+                                var uName = userElem.GetProperty("Username").GetString()?.Trim();
+                                var uPass = userElem.GetProperty("Password").GetString()?.Trim();
+                                var uEmail = userElem.TryGetProperty("Email", out var emElem) ? emElem.GetString()?.Trim() : null;
+
+                                if (!string.IsNullOrEmpty(uName) && !string.IsNullOrEmpty(uPass))
+                                {
+                                    var salt = AuthService.GenerateSalt();
+                                    var hash = AuthService.HashPassword(uPass, salt);
+                                    await globalConn.InsertAsync(new User
+                                    {
+                                        Username = uName.ToLower(),
+                                        Password = hash,
+                                        PasswordSalt = salt,
+                                        Email = uEmail,
+                                        Role = "Admin",
+                                        CreatedAt = DateTime.Now
+                                    });
+                                    added = true;
+                                }
+                            }
+                            if (added) return;
+                        }
+                    }
+                    catch { }
+                }
+
+                // Bulut aktifse, varsayılan admin/123 yerine önce buluttaki kullanıcıları çekmeyi dene
+                if (_sync.IsConnected)
+                {
+                    await SyncUsersWithCloudAsync();
+                    count = await globalConn.Table<User>().CountAsync();
+                    if (count > 0) return;
+                }
+
+                // Default fallback: admin / 123
+                var defaultSalt = AuthService.GenerateSalt();
+                var defaultHashedPassword = AuthService.HashPassword("123", defaultSalt);
+                var admin = new User 
+                { 
+                    Username = "admin", 
+                    Password = defaultHashedPassword, 
+                    PasswordSalt = defaultSalt,
+                    Role = "Admin", 
+                    CreatedAt = DateTime.Now 
+                };
+                await globalConn.InsertAsync(admin);
+            }
+            catch { }
         }
 
         public SQLiteAsyncConnection GetConnection() 
@@ -721,70 +867,119 @@ namespace ErmayMuhasebe.Services
         {
             await EnsureInitializedAsync();
 
-            // 1. Close all connections to release file locks
-            await CloseAsync();
+            // 1. Transactionally delete all accounting data from local year database
+            var tablesToClear = new[]
+            {
+                "CariHareket", "CariKart", "CariDosya",
+                "StokHareket", "StokKart", "StokGrupDef", "StokSayimFisi", "StokSayimDetay", "StockBarcode",
+                "FaturaDetay", "Fatura", "FaturaKalemSablon",
+                "SiparisDetay", "Siparis",
+                "TeklifDetay", "Teklif",
+                "BankaHareket", "BankaKart",
+                "KasaHareket", "KasaSayimFisi",
+                "Cek", "Senet",
+                "KrediKartiIslem", "EftIslem",
+                "Personel", "Gorev", "DovizKur",
+                "AcilisKapanisFisiDetay", "AcilisKapanisFisi",
+                "MaliyetMerkeziDef", "PortfoyKart",
+                "SatisHedefi", "HaftalikSatisHedefi", "YillikSatisHedefi",
+                "SmsGecmisi", "SilinenKayit",
+                "BelgeArsiv", "Belge", "Note",
+                "SyncQueueItem", "RecycleBinRecord", "CronJobRecord",
+                "MusteriTakipDetay", "MusteriTakipKlasor",
+                "AuditLog", "Bildirim", "Gider", "GiderKategori"
+            };
 
-            // 2. Delete all database files physically
             try
             {
-                string dir = Path.GetDirectoryName(_dbPath) ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                if (Directory.Exists(dir))
+                await _db.RunInTransactionAsync(conn =>
                 {
-                    var dbFiles = Directory.GetFiles(dir, "ermay_*.db");
-                    foreach (var file in dbFiles)
+                    foreach (var table in tablesToClear)
                     {
-                        try { File.Delete(file); } catch { }
-                        try { File.Delete(file + "-wal"); } catch { }
-                        try { File.Delete(file + "-shm"); } catch { }
+                        try { conn.Execute($"DELETE FROM [{table}];"); } catch { }
                     }
+                    try { conn.Execute("DELETE FROM sqlite_sequence WHERE name != 'User';"); } catch { }
+                });
 
-                    var v4db = Path.Combine(dir, "ErmayV4_Stable.db3");
-                    try { File.Delete(v4db); } catch { }
-                    try { File.Delete(v4db + "-wal"); } catch { }
-                    try { File.Delete(v4db + "-shm"); } catch { }
+                try { await _db.ExecuteAsync("VACUUM;"); } catch { }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DatabaseService] ClearAllTables local error: {ex.Message}");
+            }
+
+            // 2. Clear any legacy accounting tables from global DB (ErmayV4_Stable.db3), but PRESERVE User accounts!
+            try
+            {
+                var globalConn = GetGlobalConnection();
+                if (globalConn != null)
+                {
+                    var legacyTables = new[] {
+                        "CariHareket", "CariKart", "StokHareket", "StokKart",
+                        "FaturaDetay", "Fatura", "SiparisDetay", "Siparis",
+                        "TeklifDetay", "Teklif", "BankaHareket", "BankaKart",
+                        "KasaHareket", "Cek", "Senet"
+                    };
+                    await globalConn.RunInTransactionAsync(conn =>
+                    {
+                        foreach (var t in legacyTables)
+                        {
+                            try { conn.Execute($"DELETE FROM [{t}];"); } catch { }
+                        }
+                    });
+                    try { await globalConn.ExecuteAsync("VACUUM;"); } catch { }
                 }
             }
             catch { }
 
-            // 3. Remove custom company logo file if present
+            // 3. Ensure User table has at least 1 user (preserving existing users, fallback to admin only if 0)
             try
             {
-                string logoFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe", "company_logo.png");
+                var globalConn = GetGlobalConnection();
+                if (globalConn != null)
+                {
+                    await globalConn.CreateTableAsync<User>();
+                    var userCount = await globalConn.Table<User>().CountAsync();
+                    if (userCount == 0)
+                    {
+                        await SeedDataAsync();
+                    }
+                }
+            }
+            catch { }
+
+            // 4. Remove custom company logo file if present
+            try
+            {
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe");
+                string logoFile = Path.Combine(dir, "company_logo.png");
                 if (File.Exists(logoFile)) File.Delete(logoFile);
             }
             catch { }
 
-            // 4. Reinitialize databases
-            await InitializeAsync();
-
-            // 5. Re-seed default admin
+            // 5. Clear cloud tables in Firebase Realtime Database
             try
             {
-                await SeedDataAsync();
+                await _sync.ClearCloudTablesAsync(CurrentTenantId);
             }
             catch { }
 
-            // 6. Re-seed default FirmaProfili
+            // 6. Reset LogoBase64 on FirmaProfili while keeping settings
             try
             {
-                await _db.InsertAsync(new FirmaProfili
+                var profil = await GetFirmaProfiliAsync();
+                if (profil != null)
                 {
-                    FirmaAdi = "ERMAY YAZILIM",
-                    FactoryResetPassword = "123",
-                    LogoFatura = true,
-                    LogoSiparis = true,
-                    LogoTeklif = true,
-                    LogoEkstre = true,
-                    LogoRaporlar = true,
-                    LogoTahsilat = true,
-                    LogoOdeme = true,
-                    LogoAcilisBakiye = true
-                });
+                    profil.LogoBase64 = null;
+                    await SaveFirmaProfiliAsync(profil);
+                }
             }
             catch { }
 
+            // 7. Invalidate caches and notify
             try
             {
+                InvalidateAllCache();
                 OnDatabaseChanged?.Invoke();
             }
             catch { }

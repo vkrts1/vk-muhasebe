@@ -30,6 +30,7 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "cleandatabase"; Description: "Temiz Kurulum: Mevcut yerel veritabanını sıfırla (Bütün eski test verilerini temizle)"; GroupDescription: "Veritabanı Seçenekleri:"; Flags: unchecked
 
 [Files]
 Source: "Publish_Output\Desktop\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -139,9 +140,26 @@ begin
   User2Page.Add('2. Kullanıcı E-Posta Adresi:', False);
 end;
 
+procedure DeleteFilesByPattern(const Dir, Pattern: String);
+var
+  FindRec: TFindRec;
+begin
+  if FindFirst(Dir + '\' + Pattern, FindRec) then
+  begin
+    try
+      repeat
+        DeleteFile(Dir + '\' + FindRec.Name);
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  UrlVal, SecretVal, GoogleApiKeyVal, GoogleClientIdVal, GoogleClientSecretVal, SmtpEmailVal, SmtpPassVal, BotTokenVal, ChatIdVal, User1Name, User1Pass, User1Email, User2Name, User2Pass, User2Email, FactoryResetPass, AppDataDir, ConfigPath, UserConfigPath, JsonContent, UserJsonContent: String;
+  UrlVal, SecretVal, GoogleApiKeyVal, GoogleClientIdVal, GoogleClientSecretVal, SmtpEmailVal, SmtpPassVal, BotTokenVal, ChatIdVal, User1Name, User1Pass, User1Email, User2Name, User2Pass, User2Email, FactoryResetPass, AppDataDir, ConfigPath, UserConfigPath, JsonContent, UserJsonContent, AuthQuery, FirebasePostScript: String;
+  ResultCode: Integer;
 begin
   if CurStep = ssPostInstall then
   begin
@@ -168,11 +186,16 @@ begin
     FactoryResetPass := Trim(User1Page.Values[3]);
     if FactoryResetPass = '' then FactoryResetPass := 'VK2026';
 
-    // Eğer 1. kullanıcı boş bırakıldıysa varsayılan 'admin' / '123' olsun
+    // Eğer 1. kullanıcı boş bırakıldıysa:
+    // Eğer Firebase URL girilmişse (Bulut senkronizasyonu aktif), kullanıcı boş bırakılır böylece uygulama açılışta buluttan hesapları çeker.
+    // Eğer Firebase URL de girilmemişse (tamamen yerel kurulum), varsayılan 'admin' / '123' atanır.
     if User1Name = '' then 
     begin
-      User1Name := 'admin';
-      User1Pass := '123';
+      if (UrlVal = '') and (GoogleApiKeyVal = '') then
+      begin
+        User1Name := 'admin';
+        User1Pass := '123';
+      end;
     end
     else if User1Pass = '' then
     begin
@@ -180,6 +203,18 @@ begin
     end;
 
     AppDataDir := ExpandConstant('{localappdata}');
+    
+    // 0. Temiz Kurulum: Veritabanı Sıfırla
+    if WizardIsTaskSelected('cleandatabase') then
+    begin
+      DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db');
+      DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db-wal');
+      DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db-shm');
+      DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db3');
+      DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db3-wal');
+      DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db3-shm');
+      DeleteFile(AppDataDir + '\ErmayMuhasebe\login_settings.txt');
+    end;
     
     // 1. Bulut Config Kaydet
     if (UrlVal <> '') or (GoogleApiKeyVal <> '') or (GoogleClientIdVal <> '') then
@@ -193,15 +228,24 @@ begin
     ForceDirectories(AppDataDir + '\ErmayMuhasebe');
     UserConfigPath := AppDataDir + '\ErmayMuhasebe\setup_initial_user.json';
     
-    UserJsonContent := '{"Users":[' +
-      '{"Username":"' + User1Name + '","Password":"' + User1Pass + '","Email":"' + User1Email + '"}' ;
-    
-    if (User2Name <> '') and (User2Pass <> '') then
+    if User1Name <> '' then
     begin
-      UserJsonContent := UserJsonContent + ',{"Username":"' + User2Name + '","Password":"' + User2Pass + '","Email":"' + User2Email + '"}';
+      UserJsonContent := '{"Users":[' +
+        '{"Username":"' + User1Name + '","Password":"' + User1Pass + '","Email":"' + User1Email + '"}' ;
+      
+      if (User2Name <> '') and (User2Pass <> '') then
+      begin
+        UserJsonContent := UserJsonContent + ',{"Username":"' + User2Name + '","Password":"' + User2Pass + '","Email":"' + User2Email + '"}';
+      end;
+      
+      UserJsonContent := UserJsonContent + '],' ;
+    end
+    else
+    begin
+      UserJsonContent := '{"Users":[],' ;
     end;
     
-    UserJsonContent := UserJsonContent + '],' +
+    UserJsonContent := UserJsonContent +
       '"FactoryResetPassword":"' + FactoryResetPass + '",' +
       '"GoogleClientId":"' + GoogleClientIdVal + '",' +
       '"GoogleClientSecret":"' + GoogleClientSecretVal + '",' +
@@ -211,5 +255,30 @@ begin
       '"TelegramChatId":"' + ChatIdVal + '"}';
       
     SaveStringToFile(UserConfigPath, UserJsonContent, False);
+
+    // 3. Eger kullanici adi ve Firebase URL girilmisse, Firebase'e de aninda gonder
+    if (UrlVal <> '') and (User1Name <> '') and (User1Pass <> '') then
+    begin
+      try
+        begin
+          AuthQuery := '';
+          if SecretVal <> '' then
+            AuthQuery := '?auth=' + SecretVal;
+
+          FirebasePostScript :=
+            '$sb = New-Object byte[] 16; ' +
+            '[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($sb); ' +
+            '$salt = [Convert]::ToBase64String($sb); ' +
+            '$sha = [System.Security.Cryptography.SHA256]::Create(); ' +
+            '$h = [Convert]::ToBase64String($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(''' + User1Pass + ''' + $salt))); ' +
+            '$body = ''{\""Id\"":1,\""Username\"":\""' + User1Name + '\"",\""Password\"":\""'' + $h + ''\"",\""PasswordSalt\"":\""'' + $salt + ''\"",\""Role\"":\""Admin\"",\""CreatedAt\"":\""'' + (Get-Date -Format s) + ''\""}''; ' +
+            '$u = ''' + UrlVal + '/users/1.json' + AuthQuery + '''; ' +
+            'try { Invoke-RestMethod -Uri $u -Method Put -Body $body -ContentType ''application/json'' } catch {}';
+
+          Exec('powershell.exe', '-WindowStyle Hidden -ExecutionPolicy Bypass -Command "' + FirebasePostScript + '"', '', SW_HIDE, ewNoWait, ResultCode);
+        end;
+      except
+      end;
+    end;
   end;
 end;
