@@ -10,10 +10,21 @@ export interface FirebaseConfig {
   tenantId?: string;
 }
 
+export interface ExtendedFirebaseConfig extends FirebaseConfig {
+  googleApiKey?: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  smtpEmail?: string;
+  smtpPass?: string;
+}
+
 let dbInstance: any = null;
 let currentUrl: string = '';
 
 let cachedConfig: FirebaseConfig | null = null;
+let cachedExtendedConfig: ExtendedFirebaseConfig | null = null;
 let cachedYear: string = '';
 let cachedTenantId: string = 'default';
 let cachedIdToken: string | null = null;
@@ -61,22 +72,23 @@ const readCache = async (path: string): Promise<any | null> => {
   }
 };
 
-export const writeCache = async (path: string, data: any) => {
+const writeCache = async (path: string, val: any) => {
   try {
-    if (data === undefined || data === null) {
+    if (val === null || val === undefined) {
       await AsyncStorage.removeItem(getCacheKey(path));
     } else {
-      await AsyncStorage.setItem(getCacheKey(path), JSON.stringify(data));
+      await AsyncStorage.setItem(getCacheKey(path), JSON.stringify(val));
     }
   } catch (e) {
-    // cache failures are non-fatal
+    // Non-fatal
   }
 };
 
 const readQueue = async (): Promise<QueuedWrite[]> => {
   try {
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    return JSON.parse(raw);
   } catch (e) {
     return [];
   }
@@ -84,19 +96,15 @@ const readQueue = async (): Promise<QueuedWrite[]> => {
 
 const saveQueue = async (queue: QueuedWrite[]) => {
   try {
-    if (queue.length === 0) {
-      await AsyncStorage.removeItem(QUEUE_KEY);
-    } else {
-      await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-    }
+    await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
   } catch (e) {
-    // queue persistence failures are non-fatal
+    // Non-fatal
   }
 };
 
-const enqueue = async (op: QueuedWrite) => {
+const enqueue = async (item: QueuedWrite) => {
   const queue = await readQueue();
-  queue.push(op);
+  queue.push(item);
   await saveQueue(queue);
 };
 
@@ -117,10 +125,33 @@ export const loadConfigFromStorage = async () => {
     const secret = await AsyncStorage.getItem('ermay_firebase_secret');
     const year = await AsyncStorage.getItem('ermay_active_year');
     const tenantId = await AsyncStorage.getItem('ermay_tenant_id');
+    const googleApiKey = await AsyncStorage.getItem('ermay_google_api_key');
+    const googleClientId = await AsyncStorage.getItem('ermay_google_client_id');
+    const googleClientSecret = await AsyncStorage.getItem('ermay_google_client_secret');
+    const telegramBotToken = await AsyncStorage.getItem('ermay_telegram_bot_token');
+    const telegramChatId = await AsyncStorage.getItem('ermay_telegram_chat_id');
+    const smtpEmail = await AsyncStorage.getItem('ermay_smtp_email');
+    const smtpPass = await AsyncStorage.getItem('ermay_smtp_pass');
     cachedIdToken = await AsyncStorage.getItem('ermay_firebase_id_token');
     
-    if (url) cachedConfig = { url, secret: secret || undefined, tenantId: tenantId || 'default' };
-    else cachedConfig = null;
+    if (url) {
+      cachedConfig = { url, secret: secret || undefined, tenantId: tenantId || 'default' };
+      cachedExtendedConfig = {
+        url,
+        secret: secret || undefined,
+        tenantId: tenantId || 'default',
+        googleApiKey: googleApiKey || undefined,
+        googleClientId: googleClientId || undefined,
+        googleClientSecret: googleClientSecret || undefined,
+        telegramBotToken: telegramBotToken || undefined,
+        telegramChatId: telegramChatId || undefined,
+        smtpEmail: smtpEmail || undefined,
+        smtpPass: smtpPass || undefined,
+      };
+    } else {
+      cachedConfig = null;
+      cachedExtendedConfig = null;
+    }
     
     if (year) cachedYear = year;
     else cachedYear = new Date().getFullYear().toString();
@@ -139,7 +170,24 @@ export const getFirebaseConfig = (): FirebaseConfig | null => {
   return cachedConfig;
 };
 
-export const saveFirebaseConfig = async (url: string, secret?: string, tenantId?: string) => {
+export const getExtendedConfig = (): ExtendedFirebaseConfig | null => {
+  return cachedExtendedConfig;
+};
+
+export const saveFirebaseConfig = async (
+  url: string,
+  secret?: string,
+  tenantId?: string,
+  extra?: {
+    googleApiKey?: string;
+    googleClientId?: string;
+    googleClientSecret?: string;
+    telegramBotToken?: string;
+    telegramChatId?: string;
+    smtpEmail?: string;
+    smtpPass?: string;
+  }
+) => {
   try {
     if (url) {
       await AsyncStorage.setItem('ermay_firebase_url', url.trim());
@@ -156,6 +204,29 @@ export const saveFirebaseConfig = async (url: string, secret?: string, tenantId?
     if (tenantId) {
       await AsyncStorage.setItem('ermay_tenant_id', tenantId.trim());
       cachedTenantId = tenantId.trim();
+    }
+
+    if (extra) {
+      if (extra.googleApiKey) await AsyncStorage.setItem('ermay_google_api_key', extra.googleApiKey.trim());
+      else await AsyncStorage.removeItem('ermay_google_api_key');
+
+      if (extra.googleClientId) await AsyncStorage.setItem('ermay_google_client_id', extra.googleClientId.trim());
+      else await AsyncStorage.removeItem('ermay_google_client_id');
+
+      if (extra.googleClientSecret) await AsyncStorage.setItem('ermay_google_client_secret', extra.googleClientSecret.trim());
+      else await AsyncStorage.removeItem('ermay_google_client_secret');
+
+      if (extra.telegramBotToken) await AsyncStorage.setItem('ermay_telegram_bot_token', extra.telegramBotToken.trim());
+      else await AsyncStorage.removeItem('ermay_telegram_bot_token');
+
+      if (extra.telegramChatId) await AsyncStorage.setItem('ermay_telegram_chat_id', extra.telegramChatId.trim());
+      else await AsyncStorage.removeItem('ermay_telegram_chat_id');
+
+      if (extra.smtpEmail) await AsyncStorage.setItem('ermay_smtp_email', extra.smtpEmail.trim());
+      else await AsyncStorage.removeItem('ermay_smtp_email');
+
+      if (extra.smtpPass) await AsyncStorage.setItem('ermay_smtp_pass', extra.smtpPass.trim());
+      else await AsyncStorage.removeItem('ermay_smtp_pass');
     }
 
     await loadConfigFromStorage();

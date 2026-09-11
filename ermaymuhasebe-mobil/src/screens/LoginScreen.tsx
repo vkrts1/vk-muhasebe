@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { Key, Link, Calendar, ShieldAlert, LogIn, Settings, CheckCircle2, User, History, ChevronRight } from 'lucide-react-native';
+import { Key, Link, Calendar, ShieldAlert, LogIn, Settings, CheckCircle2, User, History, ChevronRight, Send, Mail, Globe, Shield, Smartphone } from 'lucide-react-native';
 import AsyncStorage from '../services/storage';
-import { saveFirebaseConfig, saveActiveYear, readData, loginUser, logoutUser, fetchAvailableYears, loadConfigFromStorage } from '../services/firebase';
+import { saveFirebaseConfig, saveActiveYear, readData, writeData, loginUser, logoutUser, fetchAvailableYears, loadConfigFromStorage } from '../services/firebase';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -12,9 +12,23 @@ interface LoginScreenProps {
 export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'config' }: LoginScreenProps) {
   const [mode, setMode] = useState<'config' | 'user' | 'year_selection'>(initialMode);
   
-  // Config Mode States
+  // Config Mode States (Masaüstü Kurulum Sihirbazı ile %100 Birebir Eşleşen Alanlar)
+  const [activeConfigTab, setActiveConfigTab] = useState<'cloud' | 'telegram' | 'smtp'>('cloud');
   const [url, setUrl] = useState('');
   const [secret, setSecret] = useState('');
+  const [googleApiKey, setGoogleApiKey] = useState('');
+  const [googleClientId, setGoogleClientId] = useState('');
+  const [googleClientSecret, setGoogleClientSecret] = useState('');
+  
+  // Telegram States
+  const [telegramBotToken, setTelegramBotToken] = useState('');
+  const [telegramChatId, setTelegramChatId] = useState('');
+  
+  // SMTP / Gmail States
+  const [smtpEmail, setSmtpEmail] = useState('');
+  const [smtpPass, setSmtpPass] = useState('');
+
+  // Çalışma Yılı
   const [year, setYear] = useState(new Date().getFullYear().toString());
 
   // User Mode States
@@ -37,8 +51,30 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
   useEffect(() => {
     setMode(initialMode);
     
-    const loadCredentials = async () => {
+    const loadSavedSettings = async () => {
       try {
+        const savedUrl = await AsyncStorage.getItem('ermay_firebase_url');
+        const savedSecret = await AsyncStorage.getItem('ermay_firebase_secret');
+        const savedGoogleApiKey = await AsyncStorage.getItem('ermay_google_api_key');
+        const savedGoogleClientId = await AsyncStorage.getItem('ermay_google_client_id');
+        const savedGoogleClientSecret = await AsyncStorage.getItem('ermay_google_client_secret');
+        const savedTelegramBotToken = await AsyncStorage.getItem('ermay_telegram_bot_token');
+        const savedTelegramChatId = await AsyncStorage.getItem('ermay_telegram_chat_id');
+        const savedSmtpEmail = await AsyncStorage.getItem('ermay_smtp_email');
+        const savedSmtpPass = await AsyncStorage.getItem('ermay_smtp_pass');
+        const savedYear = await AsyncStorage.getItem('ermay_active_year');
+
+        if (savedUrl) setUrl(savedUrl);
+        if (savedSecret) setSecret(savedSecret);
+        if (savedGoogleApiKey) setGoogleApiKey(savedGoogleApiKey);
+        if (savedGoogleClientId) setGoogleClientId(savedGoogleClientId);
+        if (savedGoogleClientSecret) setGoogleClientSecret(savedGoogleClientSecret);
+        if (savedTelegramBotToken) setTelegramBotToken(savedTelegramBotToken);
+        if (savedTelegramChatId) setTelegramChatId(savedTelegramChatId);
+        if (savedSmtpEmail) setSmtpEmail(savedSmtpEmail);
+        if (savedSmtpPass) setSmtpPass(savedSmtpPass);
+        if (savedYear) setYear(savedYear);
+
         const savedUsername = await AsyncStorage.getItem('ermay_saved_username');
         const savedPassword = await AsyncStorage.getItem('ermay_saved_password');
         const isRemembered = await AsyncStorage.getItem('ermay_remember_me');
@@ -49,13 +85,14 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
           setRememberMe(true);
         }
       } catch (err) {
-        console.error('Beni hatırla verileri yüklenemedi:', err);
+        console.error('Ayarlar yüklenemedi:', err);
       }
     };
 
+    loadSavedSettings();
+
     if (initialMode === 'user') {
       checkAuthStatus();
-      loadCredentials();
     }
   }, [initialMode]);
 
@@ -67,7 +104,6 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
         try {
           const years = await fetchAvailableYears();
           setAvailableYears(prev => {
-            // Liste değiştiyse güncelle
             if (JSON.stringify(prev) !== JSON.stringify(years)) {
               return years;
             }
@@ -76,7 +112,7 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
         } catch (err) {
           // Sessiz hata yakalama
         }
-      }, 5000); // Her 5 saniyede bir yılları kontrol et
+      }, 5000);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -87,7 +123,17 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
     try {
       const profil = await readData('FirmaProfili/1');
       if (profil) {
-        setIsAuthEnabled(!!profil.isFirebaseAuthEnabled);
+        setIsAuthEnabled(!!(profil.isFirebaseAuthEnabled || profil.IsFirebaseAuthEnabled));
+        // Eğer Firebase'de Telegram veya API bilgileri varsa ve yerelde boşsa otomatik doldur
+        if (!telegramBotToken && (profil.telegramBotToken || profil.TelegramBotToken)) {
+          setTelegramBotToken(profil.telegramBotToken || profil.TelegramBotToken);
+        }
+        if (!telegramChatId && (profil.telegramChatId || profil.TelegramChatId)) {
+          setTelegramChatId(profil.telegramChatId || profil.TelegramChatId);
+        }
+        if (!googleApiKey && (profil.cloudPdfApiKey || profil.CloudPdfApiKey || profil.firebaseAuthApiKey || profil.FirebaseAuthApiKey)) {
+          setGoogleApiKey(profil.cloudPdfApiKey || profil.CloudPdfApiKey || profil.firebaseAuthApiKey || profil.FirebaseAuthApiKey);
+        }
       }
     } catch {}
   };
@@ -114,12 +160,12 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
   };
 
   const handleConfigSave = async () => {
-    if (!url) {
-      setError('Lütfen Firebase veritabanı URL\'sini girin.');
+    if (!url.trim()) {
+      setError('Lütfen Firebase Realtime Database URL\'sini girin.');
       return;
     }
-    if (!year) {
-      setError('Lütfen çalışılacak yılı girin.');
+    if (!year.trim()) {
+      setError('Lütfen çalışılacak mali yılı girin (Örn: 2026).');
       return;
     }
 
@@ -127,14 +173,42 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
     setError('');
 
     try {
-      await saveFirebaseConfig(url, secret);
-      await saveActiveYear(year);
+      await saveFirebaseConfig(url.trim(), secret.trim(), 'default', {
+        googleApiKey: googleApiKey.trim(),
+        googleClientId: googleClientId.trim(),
+        googleClientSecret: googleClientSecret.trim(),
+        telegramBotToken: telegramBotToken.trim(),
+        telegramChatId: telegramChatId.trim(),
+        smtpEmail: smtpEmail.trim(),
+        smtpPass: smtpPass.trim(),
+      });
+      await saveActiveYear(year.trim());
 
-      // Modal açık kaldı - kullanıcı giriş moduna geçecek
+      // FirmaProfili ile senkronize et (Eğer Firebase'de bu alanlar boşsa mobilden doldur)
+      try {
+        const profil = await readData('FirmaProfili/1');
+        if (profil) {
+          const patch: any = {};
+          if (telegramBotToken.trim() && !(profil.telegramBotToken || profil.TelegramBotToken)) {
+            patch.telegramBotToken = telegramBotToken.trim();
+          }
+          if (telegramChatId.trim() && !(profil.telegramChatId || profil.TelegramChatId)) {
+            patch.telegramChatId = telegramChatId.trim();
+          }
+          if (googleApiKey.trim() && !(profil.cloudPdfApiKey || profil.CloudPdfApiKey)) {
+            patch.cloudPdfApiKey = googleApiKey.trim();
+          }
+          if (Object.keys(patch).length > 0) {
+            await writeData('FirmaProfili/1', { ...profil, ...patch });
+          }
+        }
+      } catch {}
+
+      // Kurulum tamamlandı -> Doğrudan kullanıcı giriş ekranına geç
       setMode('user');
       checkAuthStatus();
     } catch (err: any) {
-      setError('Veritabanına bağlanılamadı. Bilgilerinizi kontrol edin.');
+      setError('Veritabanına bağlanılamadı. Bilgilerinizi kontrol edin: ' + (err?.message || ''));
       console.error(err);
     } finally {
       setLoading(false);
@@ -253,44 +327,215 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
             ) : null}
 
             {mode === 'config' ? (
-              /* CONFIG MODE FORM */
+              /* CONFIG MODE FORM (Masaüstü Kurulumu ile Birebir Uyumlu) */
               <View>
-                <View style={styles.inputGroup}>
-                  <View style={styles.labelRow}>
-                    <Link color="#64748B" size={16} />
-                    <Text style={styles.label}>Firebase Database URL</Text>
-                  </View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="https://projeniz.firebaseio.com"
-                    placeholderTextColor="#64748B"
-                    value={url}
-                    onChangeText={setUrl}
-                    autoCapitalize="none"
-                    keyboardType="url"
-                  />
+                {/* Sekme Butonları */}
+                <View style={styles.tabContainer}>
+                  <TouchableOpacity
+                    style={[styles.tabButton, activeConfigTab === 'cloud' && styles.tabButtonActive]}
+                    onPress={() => setActiveConfigTab('cloud')}
+                  >
+                    <Globe color={activeConfigTab === 'cloud' ? '#0061FF' : '#94A3B8'} size={16} style={{ marginRight: 6 }} />
+                    <Text style={[styles.tabButtonText, activeConfigTab === 'cloud' && styles.tabButtonTextActive]}>
+                      Bulut & API
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tabButton, activeConfigTab === 'telegram' && styles.tabButtonActive]}
+                    onPress={() => setActiveConfigTab('telegram')}
+                  >
+                    <Send color={activeConfigTab === 'telegram' ? '#0061FF' : '#94A3B8'} size={16} style={{ marginRight: 6 }} />
+                    <Text style={[styles.tabButtonText, activeConfigTab === 'telegram' && styles.tabButtonTextActive]}>
+                      Telegram
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tabButton, activeConfigTab === 'smtp' && styles.tabButtonActive]}
+                    onPress={() => setActiveConfigTab('smtp')}
+                  >
+                    <Mail color={activeConfigTab === 'smtp' ? '#0061FF' : '#94A3B8'} size={16} style={{ marginRight: 6 }} />
+                    <Text style={[styles.tabButtonText, activeConfigTab === 'smtp' && styles.tabButtonTextActive]}>
+                      E-Posta
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
-                <View style={styles.inputGroup}>
-                  <View style={styles.labelRow}>
-                    <Key color="#64748B" size={16} />
-                    <Text style={styles.label}>Database Secret (Gizli Anahtar)</Text>
-                  </View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="İsteğe bağlı (Auth devre dışıysa)"
-                    placeholderTextColor="#64748B"
-                    value={secret}
-                    onChangeText={setSecret}
-                    secureTextEntry
-                    autoCapitalize="none"
-                  />
-                </View>
+                {/* 1. SEKME: BULUT & API */}
+                {activeConfigTab === 'cloud' && (
+                  <View>
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Link color="#64748B" size={16} />
+                        <Text style={styles.label}>Firebase Realtime Database URL *</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="https://projeniz.firebaseio.com"
+                        placeholderTextColor="#64748B"
+                        value={url}
+                        onChangeText={setUrl}
+                        autoCapitalize="none"
+                        keyboardType="url"
+                      />
+                    </View>
 
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Key color="#64748B" size={16} />
+                        <Text style={styles.label}>Firebase Database Secret (Gizli Anahtar)</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Firebase Database Secret"
+                        placeholderTextColor="#64748B"
+                        value={secret}
+                        onChangeText={setSecret}
+                        secureTextEntry
+                        autoCapitalize="none"
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Shield color="#64748B" size={16} />
+                        <Text style={styles.label}>Google Web API Key (Bulut & PDF Servisleri)</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="AIzaSy..."
+                        placeholderTextColor="#64748B"
+                        value={googleApiKey}
+                        onChangeText={setGoogleApiKey}
+                        autoCapitalize="none"
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Globe color="#64748B" size={16} />
+                        <Text style={styles.label}>Google OAuth Client ID (İsteğe bağlı)</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="xxxx.apps.googleusercontent.com"
+                        placeholderTextColor="#64748B"
+                        value={googleClientId}
+                        onChangeText={setGoogleClientId}
+                        autoCapitalize="none"
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Key color="#64748B" size={16} />
+                        <Text style={styles.label}>Google OAuth Client Secret (İsteğe bağlı)</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Client Secret"
+                        placeholderTextColor="#64748B"
+                        value={googleClientSecret}
+                        onChangeText={setGoogleClientSecret}
+                        secureTextEntry
+                        autoCapitalize="none"
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {/* 2. SEKME: TELEGRAM */}
+                {activeConfigTab === 'telegram' && (
+                  <View>
+                    <View style={styles.infoBox}>
+                      <Text style={styles.infoBoxText}>
+                        💡 Telegram'da @BotFather ile bot oluşturup Token alın. Chat ID için @userinfobot botuna mesaj atarak sayısal ID numaranızı öğrenin.
+                      </Text>
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Send color="#64748B" size={16} />
+                        <Text style={styles.label}>Telegram Bot Token</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="123456789:ABCdefGhIJKlmNoPQRstuVWXyz"
+                        placeholderTextColor="#64748B"
+                        value={telegramBotToken}
+                        onChangeText={setTelegramBotToken}
+                        secureTextEntry
+                        autoCapitalize="none"
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <User color="#64748B" size={16} />
+                        <Text style={styles.label}>Telegram Yönetici Chat ID</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Örn: 987654321"
+                        placeholderTextColor="#64748B"
+                        value={telegramChatId}
+                        onChangeText={setTelegramChatId}
+                        keyboardType="numeric"
+                        autoCapitalize="none"
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {/* 3. SEKME: GMAIL / SMTP */}
+                {activeConfigTab === 'smtp' && (
+                  <View>
+                    <View style={styles.infoBox}>
+                      <Text style={styles.infoBoxText}>
+                        💡 E-posta ile şifre kurtarma ve bildirim göndermek için Gmail 2 Adımlı Doğrulama altındaki "Uygulama Şifresi" (16 haneli) kullanınız.
+                      </Text>
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Mail color="#64748B" size={16} />
+                        <Text style={styles.label}>Gönderici Gmail / E-Posta Adresi</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="muhasebe@gmail.com"
+                        placeholderTextColor="#64748B"
+                        value={smtpEmail}
+                        onChangeText={setSmtpEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Key color="#64748B" size={16} />
+                        <Text style={styles.label}>Gmail 16 Haneli Uygulama Şifresi</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="xxxx xxxx xxxx xxxx"
+                        placeholderTextColor="#64748B"
+                        value={smtpPass}
+                        onChangeText={setSmtpPass}
+                        secureTextEntry
+                        autoCapitalize="none"
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {/* HER ZAMAN GÖRÜNEN: ÇALIŞMA YILI & KAYDET */}
                 <View style={styles.inputGroup}>
                   <View style={styles.labelRow}>
                     <Calendar color="#64748B" size={16} />
-                    <Text style={styles.label}>Varsayılan Çalışma Yılı</Text>
+                    <Text style={styles.label}>Varsayılan Çalışma Yılı *</Text>
                   </View>
                   <TextInput
                     style={styles.input}
@@ -313,7 +558,7 @@ export default function LoginScreen({ onLoginSuccess, mode: initialMode = 'confi
                   ) : (
                     <>
                       <Settings color="#FFF" size={18} style={styles.buttonIcon} />
-                      <Text style={styles.buttonText}>Bağlantıyı Kur</Text>
+                      <Text style={styles.buttonText}>Kurulumu Tamamla ve Girişe Geç</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -744,6 +989,51 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 15,
     fontWeight: '600',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  tabButtonActive: {
+    backgroundColor: '#0F172A',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabButtonText: {
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tabButtonTextActive: {
+    color: '#38BDF8',
+    fontWeight: '700',
+  },
+  infoBox: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  infoBoxText: {
+    color: '#93C5FD',
+    fontSize: 12,
+    lineHeight: 18,
   },
 });
 
