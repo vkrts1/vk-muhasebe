@@ -1235,12 +1235,7 @@ export const loginUser = async (usernameOrEmail: string, password: string): Prom
       console.log('[loginUser] Geçerli kullanıcı sayısı:', usersList.length);
 
       if (usersList.length === 0) {
-        if (cleanLogin.toLowerCase() === 'admin' && password === '123') {
-          const defaultUser = { id: 1, username: 'admin', role: 'Admin' };
-          await AsyncStorage.setItem('ermay_logged_user', JSON.stringify(defaultUser));
-          return { success: true, user: defaultUser };
-        }
-        return { success: false, error: 'Sistemde kayıtlı kullanıcı bulunamadı. İlk giriş için admin / 123 deneyebilirsiniz.' };
+        return { success: false, error: 'Sistemde kayıtlı kullanıcı bulunamadı. Lütfen masaüstünden veya kurulumdan kullanıcı oluşturun.' };
       }
 
       const target = cleanLogin.toLowerCase();
@@ -1254,12 +1249,6 @@ export const loginUser = async (usernameOrEmail: string, password: string): Prom
       console.log('[loginUser] matchedUser:', matchedUser ? (matchedUser.username || matchedUser.Username) : 'BULUNAMADI');
 
       if (!matchedUser) {
-        // Eğer admin / 123 ile giriliyorsa ve listede admin yoksa fallback
-        if (target === 'admin' && password === '123') {
-          const defaultUser = { id: 1, username: 'admin', role: 'Admin' };
-          await AsyncStorage.setItem('ermay_logged_user', JSON.stringify(defaultUser));
-          return { success: true, user: defaultUser };
-        }
         return { success: false, error: 'Kullanıcı adı veya şifre hatalı.' };
       }
 

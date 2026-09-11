@@ -207,13 +207,27 @@ begin
     // 0. Temiz Kurulum: Veritabanı Sıfırla
     if WizardIsTaskSelected('cleandatabase') then
     begin
+      Exec('taskkill.exe', '/F /IM VK.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      Exec('taskkill.exe', '/F /IM ErmayMuhasebe.Desktop.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      Sleep(1000);
+
       DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db');
       DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db-wal');
       DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db-shm');
       DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db3');
       DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db3-wal');
       DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', '*.db3-shm');
+      DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', 'notifications_*.json');
+      DeleteFilesByPattern(AppDataDir + '\ErmayMuhasebe', 'dismissed_alerts_*.json');
       DeleteFile(AppDataDir + '\ErmayMuhasebe\login_settings.txt');
+      DeleteFile(AppDataDir + '\ErmayMuhasebe\company_logo.png');
+
+      if UrlVal <> '' then
+      begin
+        AuthQuery := '';
+        if SecretVal <> '' then AuthQuery := '?auth=' + SecretVal;
+        Exec('powershell.exe', '-WindowStyle Hidden -ExecutionPolicy Bypass -Command "try { Invoke-RestMethod -Uri ''' + UrlVal + '/companies.json' + AuthQuery + ''' -Method Delete } catch {}"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      end;
     end;
     
     // 1. Bulut Config Kaydet
