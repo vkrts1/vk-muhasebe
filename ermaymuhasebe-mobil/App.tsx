@@ -6,6 +6,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import LockScreen from './src/screens/LockScreen';
 import { loadConfigFromStorage, getFirebaseConfig, addConfigListener, getLoggedUser } from './src/services/firebase';
 import { recordBackground, shouldLock, clearBackgroundRecord } from './src/services/lockService';
+import { loadFirmaProfili } from './src/services/pdfService';
 
 export default function App() {
   const [isConfigured, setIsConfigured] = useState<boolean>(false);
@@ -23,6 +24,9 @@ export default function App() {
       
       const user = await getLoggedUser();
       setLoggedUser(user);
+
+      // Şirket profilini ve logosunu arka planda önbelleğe al
+      loadFirmaProfili().catch(() => {});
     } catch (e) {
       console.warn("Error in checkConfigAndUser:", e);
     } finally {

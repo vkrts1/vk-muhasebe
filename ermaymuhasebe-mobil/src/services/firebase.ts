@@ -484,6 +484,13 @@ export const mapPathToDatabase = (path: string): string => {
   return `companies/${tenant}/years/${year}/${mappedPath}`;
 };
 
+export const getAuthParam = (config: FirebaseConfig | null): string => {
+  if (!config) return '';
+  if (config.secret) return `auth=${config.secret}`;
+  if (cachedIdToken) return `auth=${cachedIdToken}`;
+  return '';
+};
+
 const getRestUrl = (path: string): { url: string; hasAuth: boolean } => {
   const config = getFirebaseConfig();
   if (!config) {
@@ -493,10 +500,10 @@ const getRestUrl = (path: string): { url: string; hasAuth: boolean } => {
   const mappedPath = mapPathToDatabase(path);
   const cleanBaseUrl = config.url.replace(/\/$/, '');
   
-  // Use Firebase Auth ID Token if available, fallback to DB Secret
-  const authParam = cachedIdToken ? `auth=${cachedIdToken}` : (config.secret ? `auth=${config.secret}` : '');
+  // Prefer Database Secret (permanent admin access, never expires). Fallback to Firebase Auth ID Token.
+  const authParam = getAuthParam(config);
   const url = `${cleanBaseUrl}/${mappedPath}.json${authParam ? `?${authParam}` : ''}`;
-  return { url, hasAuth: !!(cachedIdToken || config.secret) };
+  return { url, hasAuth: !!(config.secret || cachedIdToken) };
 };
 
 export const subscribeToPath = (path: string, callback: (data: any) => void): (() => void) => {
@@ -649,7 +656,7 @@ export const updateDataBatch = async (updates: Record<string, any>): Promise<boo
   const tenant = config.tenantId || 'default';
   const year = cachedYear || new Date().getFullYear().toString();
   const cleanBaseUrl = config.url.replace(/\/$/, '');
-  const authParam = cachedIdToken ? `auth=${cachedIdToken}` : (config.secret ? `auth=${config.secret}` : '');
+  const authParam = getAuthParam(config);
 
   // Kök URL'ye (veya year seviyesine) PATCH atarak atomik güncelleme yapıyoruz
   const url = `${cleanBaseUrl}/companies/${tenant}/years/${year}.json${authParam ? `?${authParam}` : ''}`;
@@ -726,7 +733,7 @@ export const updateFutureBalances = async (entityType: string, entityId: string 
     
     const tenant = config.tenantId || 'default';
     const cleanBaseUrl = config.url.replace(/\/$/, '');
-    const authParam = cachedIdToken ? `auth=${cachedIdToken}` : (config.secret ? `auth=${config.secret}` : '');
+    const authParam = getAuthParam(config);
 
     const years = await fetchAvailableYears();
     const currentYear = parseInt(cachedYear || new Date().getFullYear().toString(), 10);
@@ -779,7 +786,7 @@ export const updateCariBaseInfoInAllYears = async (cariId: number | string, base
     
     const tenant = config.tenantId || 'default';
     const cleanBaseUrl = config.url.replace(/\/$/, '');
-    const authParam = cachedIdToken ? `auth=${cachedIdToken}` : (config.secret ? `auth=${config.secret}` : '');
+    const authParam = getAuthParam(config);
 
     const years = await fetchAvailableYears();
     const currentYear = cachedYear || new Date().getFullYear().toString();
@@ -900,6 +907,9 @@ export const fetchWithTimeout = async (url: string, options: any = {}, timeoutMs
 };
 
 export const readData = async (path: string, timeoutMs = 5000): Promise<any> => {
+  if (!cachedConfig) {
+    await loadConfigFromStorage();
+  }
   const { url } = getRestUrl(path);
   if (!url) return null;
 
@@ -911,6 +921,26 @@ export const readData = async (path: string, timeoutMs = 5000): Promise<any> => 
       writeCache(path, mapped);
       return mapped;
     }
+
+    // 401 token expiration check
+    if (res.status === 401 && cachedIdToken) {
+      console.warn(`[Firebase REST] 401 Unauthorized on path "${path}". Clearing expired idToken...`);
+      await saveIdToken(null);
+      const config = getFirebaseConfig();
+      if (config?.secret) {
+        const mappedPath = mapPathToDatabase(path);
+        const cleanBaseUrl = config.url.replace(/\/$/, '');
+        const fallbackUrl = `${cleanBaseUrl}/${mappedPath}.json?auth=${config.secret}`;
+        const retryRes = await fetchWithTimeout(fallbackUrl, {}, timeoutMs);
+        if (retryRes.ok) {
+          const val = await retryRes.json();
+          const mapped = mapDatabaseToApp(path, val);
+          writeCache(path, mapped);
+          return mapped;
+        }
+      }
+    }
+
     console.warn(`[Firebase REST] Read error on path "${path}": Status ${res.status}`);
     // Server reachable but error -> serve cached snapshot if present
     const cached = await readCache(path);

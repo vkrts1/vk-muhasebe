@@ -2,7 +2,7 @@ import AsyncStorage from './storage';
 import { Alert, Share } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { readData, mapAppToDatabase } from './firebase';
+import { readData, mapAppToDatabase, getFirebaseConfig, loadConfigFromStorage, fetchWithTimeout, getAuthParam } from './firebase';
 
 // Fatura tasarımı için desteklenen PDF endpoint'leri.
 // Bu endpoint'ler Functions tarafında FaturaTasarimi nesnesiyle
@@ -55,7 +55,30 @@ export const loadFirmaProfili = async (): Promise<any | null> => {
       }
     }
 
-    // 3. companies/default/FirmaProfili/1 yolunu dene (Tenant yapısı)
+    // 3. Doğrudan REST URL ile Firebase'den çek (mapping/token engellerini aşar)
+    if (!node || !(node.logoBase64 || node.LogoBase64)) {
+      try {
+        const config = getFirebaseConfig() || await loadConfigFromStorage();
+        if (config?.url) {
+          const cleanUrl = config.url.replace(/\/$/, '');
+          const authParam = getAuthParam(config);
+          const directUrl = `${cleanUrl}/FirmaProfili/1.json${authParam ? `?${authParam}` : ''}`;
+          const directRes = await fetchWithTimeout(directUrl, {
+            headers: { 'Cache-Control': 'no-cache', 'Accept': 'application/json' }
+          }, 8000);
+          if (directRes.ok) {
+            const directData = await directRes.json();
+            if (directData && (directData.LogoBase64 || directData.logoBase64)) {
+              node = { ...(node || {}), ...directData, logoBase64: directData.LogoBase64 || directData.logoBase64 };
+            }
+          }
+        }
+      } catch (directErr) {
+        console.warn('[pdfService] Direct Firebase fetch error:', directErr);
+      }
+    }
+
+    // 4. companies/default/FirmaProfili/1 yolunu dene (Tenant yapısı)
     if (!node || !(node.logoBase64 || node.LogoBase64)) {
       const scopedNode = await readData('companies/default/FirmaProfili/1', 8000);
       if (scopedNode) {
@@ -63,7 +86,7 @@ export const loadFirmaProfili = async (): Promise<any | null> => {
       }
     }
 
-    // 4. companies/default/settings/company_logo yolunu dene (Blazor / Cloud ayar yolu)
+    // 5. companies/default/settings/company_logo yolunu dene (Blazor / Cloud ayar yolu)
     if (!node || !(node.logoBase64 || node.LogoBase64)) {
       const directLogo = await readData('companies/default/settings/company_logo', 8000);
       if (directLogo && typeof directLogo === 'string') {
@@ -71,7 +94,7 @@ export const loadFirmaProfili = async (): Promise<any | null> => {
       }
     }
 
-    // 5. Yıllık yoldan dene (companies/default/years/{year}/FirmaProfili/1)
+    // 6. Yıllık yoldan dene (companies/default/years/{year}/FirmaProfili/1)
     if (!node || !(node.logoBase64 || node.LogoBase64)) {
       const curYear = new Date().getFullYear().toString();
       const yearlyNode = await readData(`companies/default/years/${curYear}/FirmaProfili/1`, 8000);
@@ -196,7 +219,12 @@ const enrichWithTasarim = async (endpoint: string, payload: any): Promise<any> =
     loadFirmaProfili(),
   ]);
 
-  const rawLogo = profil?.logoBase64 || profil?.LogoBase64 || null;
+  let rawLogo = profil?.logoBase64 || profil?.LogoBase64 || null;
+  if (!rawLogo) {
+    try {
+      rawLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
+    } catch {}
+  }
   const cleanLogo = cleanBase64Logo(rawLogo);
   const isLogoAllowed = isLogoEnabledForEndpoint(endpoint, profil);
   const shouldShowLogo = Boolean(cleanLogo && isLogoAllowed);

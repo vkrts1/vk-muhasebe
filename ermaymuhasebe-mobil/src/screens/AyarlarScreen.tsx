@@ -92,6 +92,9 @@ export default function AyarlarScreen() {
           // Logo verisi
           const incomingLogo = data.logoBase64 || data.LogoBase64 || null;
           setLogoBase64(incomingLogo);
+          if (incomingLogo) {
+            AsyncStorage.setItem('ermay_cached_company_logo', String(incomingLogo)).catch(() => {});
+          }
 
           // Belge Logo Bayrakları
           if (data.logoFatura !== undefined) setLogoFatura(Boolean(data.logoFatura));
@@ -204,6 +207,10 @@ export default function AyarlarScreen() {
       if (!ok) {
         Alert.alert('Hata', 'Ayarlar kaydedilemedi. (Bağlantı sorunu — kayıt sıraya alındı.)');
         return;
+      }
+
+      if (logoBase64) {
+        await AsyncStorage.setItem('ermay_cached_company_logo', String(logoBase64));
       }
 
       Alert.alert('Başarılı', 'Sistem ayarları, firma profili ve logo tercihleri kaydedildi.');

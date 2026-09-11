@@ -14,6 +14,10 @@ jest.mock('../storage', () => ({
 jest.mock('../firebase', () => ({
   readData: jest.fn(),
   mapAppToDatabase: jest.fn((_, val) => val),
+  getFirebaseConfig: jest.fn(() => null),
+  loadConfigFromStorage: jest.fn(async () => null),
+  fetchWithTimeout: jest.fn(async () => ({ ok: false, json: async () => null })),
+  getAuthParam: jest.fn(() => ''),
 }));
 
 jest.mock('expo-file-system/legacy', () => ({
