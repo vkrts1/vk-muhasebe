@@ -166,9 +166,10 @@
             <!-- Yeni Görüşme Ekle Kartı -->
             <Border Grid.Row="0" Background="#111827" CornerRadius="10" Padding="15" Margin="0,0,0,15" BorderBrush="#25FFFFFF" BorderThickness="1">
               <Grid RowDefinitions="Auto, Auto">
-                <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,10">
-                  <TextBox Text="{Binding NewGorusmeBaslik}" Watermark="Görüşme Konusu (Örn: Telefon Görüşmesi, Fiyat Revizesi İstendi...)" Height="38" CornerRadius="8"/>
-                  <Button Grid.Column="1" Command="{Binding AddGorusmeCommand}" Classes="ActionButton" Background="#2563EB" Margin="10,0,0,0">
+                <Grid Grid.Row="0" ColumnDefinitions="*, 150, Auto" Margin="0,0,0,10">
+                  <TextBox Grid.Column="0" Text="{Binding NewGorusmeBaslik}" Watermark="Görüşme Konusu (Örn: Telefon Görüşmesi, Fiyat Revizesi İstendi...)" Height="38" CornerRadius="8" Margin="0,0,8,0"/>
+                  <CalendarDatePicker Grid.Column="1" SelectedDate="{Binding NewGorusmeTarih, Mode=TwoWay}" CustomDateFormatString="dd.MM.yyyy" Height="38" CornerRadius="8" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                  <Button Grid.Column="2" Command="{Binding AddGorusmeCommand}" Classes="ActionButton" Background="#2563EB">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <ic:SymbolIcon Symbol="Add" FontSize="16" Foreground="White"/>
                       <TextBlock Text="GÖRÜŞME EKLE" VerticalAlignment="Center"/>
@@ -215,11 +216,12 @@
             <!-- Yeni Fiyat Teklifi Ekle Kartı -->
             <Border Grid.Row="0" Background="#111827" CornerRadius="10" Padding="15" Margin="0,0,0,15" BorderBrush="#25FFFFFF" BorderThickness="1">
               <Grid RowDefinitions="Auto, Auto">
-                <Grid Grid.Row="0" ColumnDefinitions="*, 140, 70, Auto" Margin="0,0,0,10">
+                <Grid Grid.Row="0" ColumnDefinitions="*, 130, 65, 140, Auto" Margin="0,0,0,10">
                   <TextBox Grid.Column="0" Text="{Binding NewFiyatBaslik}" Watermark="Teklif Başlığı / Ürün Adı..." Height="38" CornerRadius="8" Margin="0,0,8,0"/>
                   <NumericUpDown Grid.Column="1" Value="{Binding NewFiyatTutar}" Watermark="Tutar" Height="38" CornerRadius="8" Margin="0,0,8,0" Minimum="0" FormatString="N2"/>
                   <ComboBox Grid.Column="2" ItemsSource="{Binding ParaBirimleri}" SelectedItem="{Binding NewFiyatParaBirimi}" Height="38" CornerRadius="8" Margin="0,0,8,0"/>
-                  <Button Grid.Column="3" Command="{Binding AddFiyatCommand}" Classes="ActionButton" Background="#10B981">
+                  <CalendarDatePicker Grid.Column="3" SelectedDate="{Binding NewFiyatTarih, Mode=TwoWay}" CustomDateFormatString="dd.MM.yyyy" Height="38" CornerRadius="8" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                  <Button Grid.Column="4" Command="{Binding AddFiyatCommand}" Classes="ActionButton" Background="#10B981">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <ic:SymbolIcon Symbol="Add" FontSize="16" Foreground="White"/>
                       <TextBlock Text="FİYAT EKLE" VerticalAlignment="Center"/>
@@ -330,9 +332,10 @@
             <!-- Yeni Not Ekle Kartı -->
             <Border Grid.Row="0" Background="#111827" CornerRadius="10" Padding="15" Margin="0,0,0,15" BorderBrush="#25FFFFFF" BorderThickness="1">
               <Grid RowDefinitions="Auto, Auto">
-                <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,10">
-                  <TextBox Text="{Binding NewNotBaslik}" Watermark="Not Başlığı (Örn: Ödeme Hatırlatması, Sevkiyat Tercihi...)" Height="38" CornerRadius="8"/>
-                  <Button Grid.Column="1" Command="{Binding AddNotCommand}" Classes="ActionButton" Background="#D97706" Margin="10,0,0,0">
+                <Grid Grid.Row="0" ColumnDefinitions="*, 150, Auto" Margin="0,0,0,10">
+                  <TextBox Grid.Column="0" Text="{Binding NewNotBaslik}" Watermark="Not Başlığı (Örn: Ödeme Hatırlatması, Sevkiyat Tercihi...)" Height="38" CornerRadius="8" Margin="0,0,8,0"/>
+                  <CalendarDatePicker Grid.Column="1" SelectedDate="{Binding NewNotTarih, Mode=TwoWay}" CustomDateFormatString="dd.MM.yyyy" Height="38" CornerRadius="8" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                  <Button Grid.Column="2" Command="{Binding AddNotCommand}" Classes="ActionButton" Background="#D97706">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <ic:SymbolIcon Symbol="Add" FontSize="16" Foreground="White"/>
                       <TextBlock Text="NOT EKLE" VerticalAlignment="Center"/>

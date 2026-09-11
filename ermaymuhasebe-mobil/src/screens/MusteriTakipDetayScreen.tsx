@@ -66,12 +66,14 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
   // Görüşme Formu State
   const [gorusmeBaslik, setGorusmeBaslik] = useState('');
   const [gorusmeIcerik, setGorusmeIcerik] = useState('');
+  const [gorusmeTarih, setGorusmeTarih] = useState(new Date().toISOString().split('T')[0]);
 
   // Fiyat Formu State
   const [fiyatBaslik, setFiyatBaslik] = useState('');
   const [fiyatTutar, setFiyatTutar] = useState('');
   const [fiyatParaBirimi, setFiyatParaBirimi] = useState('₺');
   const [fiyatAciklama, setFiyatAciklama] = useState('');
+  const [fiyatTarih, setFiyatTarih] = useState(new Date().toISOString().split('T')[0]);
 
   // Görsel Formu State
   const [gorselBaslik, setGorselBaslik] = useState('');
@@ -81,6 +83,14 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
   // Not Formu State
   const [notBaslik, setNotBaslik] = useState('');
   const [notIcerik, setNotIcerik] = useState('');
+  const [notTarih, setNotTarih] = useState(new Date().toISOString().split('T')[0]);
+
+  const getTodayStr = () => new Date().toISOString().split('T')[0];
+  const getYesterdayStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  };
 
   // Tam ekran görsel önizleme modalı
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -151,7 +161,7 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
     triggerSelectionHaptic();
 
     const newId = generateInt32Id();
-    const now = new Date().toISOString();
+    const finalTarih = gorusmeTarih ? new Date(gorusmeTarih).toISOString() : new Date().toISOString();
     const newDetay: MusteriTakipDetay = {
       id: newId,
       tenantId: 'default',
@@ -160,15 +170,16 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
       tip: 'Gorusme',
       baslik: gorusmeBaslik.trim() || 'Müşteri Görüşmesi',
       icerik: gorusmeIcerik.trim(),
-      tarih: now,
+      tarih: finalTarih,
       isDeleted: false,
     };
 
     try {
       await writeData(`MusteriTakipDetaylar/${newId}`, newDetay);
-      await writeData(`MusteriTakipKlasorler/${klasor.id}/sonIslemTarihi`, now);
+      await writeData(`MusteriTakipKlasorler/${klasor.id}/sonIslemTarihi`, finalTarih);
       setGorusmeBaslik('');
       setGorusmeIcerik('');
+      setGorusmeTarih(getTodayStr());
     } catch (e) {
       Alert.alert('Hata', 'Görüşme eklenemedi.');
     }
@@ -184,7 +195,7 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
 
     const cleanTutar = parseFloat(fiyatTutar.replace(',', '.'));
     const newId = generateInt32Id();
-    const now = new Date().toISOString();
+    const finalTarih = fiyatTarih ? new Date(fiyatTarih).toISOString() : new Date().toISOString();
     const newDetay: MusteriTakipDetay = {
       id: newId,
       tenantId: 'default',
@@ -195,16 +206,17 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
       fiyatBilgisi: isNaN(cleanTutar) ? 0 : cleanTutar,
       paraBirimi: fiyatParaBirimi,
       icerik: fiyatAciklama.trim(),
-      tarih: now,
+      tarih: finalTarih,
       isDeleted: false,
     };
 
     try {
       await writeData(`MusteriTakipDetaylar/${newId}`, newDetay);
-      await writeData(`MusteriTakipKlasorler/${klasor.id}/sonIslemTarihi`, now);
+      await writeData(`MusteriTakipKlasorler/${klasor.id}/sonIslemTarihi`, finalTarih);
       setFiyatBaslik('');
       setFiyatTutar('');
       setFiyatAciklama('');
+      setFiyatTarih(getTodayStr());
     } catch (e) {
       Alert.alert('Hata', 'Fiyat teklifi eklenemedi.');
     }
@@ -277,7 +289,7 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
     triggerSelectionHaptic();
 
     const newId = generateInt32Id();
-    const now = new Date().toISOString();
+    const finalTarih = notTarih ? new Date(notTarih).toISOString() : new Date().toISOString();
     const newDetay: MusteriTakipDetay = {
       id: newId,
       tenantId: 'default',
@@ -286,15 +298,16 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
       tip: 'Not',
       baslik: notBaslik.trim() || 'Genel Not',
       icerik: notIcerik.trim(),
-      tarih: now,
+      tarih: finalTarih,
       isDeleted: false,
     };
 
     try {
       await writeData(`MusteriTakipDetaylar/${newId}`, newDetay);
-      await writeData(`MusteriTakipKlasorler/${klasor.id}/sonIslemTarihi`, now);
+      await writeData(`MusteriTakipKlasorler/${klasor.id}/sonIslemTarihi`, finalTarih);
       setNotBaslik('');
       setNotIcerik('');
+      setNotTarih(getTodayStr());
     } catch (e) {
       Alert.alert('Hata', 'Not kaydedilemedi.');
     }
@@ -714,6 +727,33 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
             {/* Ekleme Kartı */}
             <View style={styles.addCard}>
               <Text style={styles.addCardTitle}>Yeni Görüşme Kaydet</Text>
+              
+              {/* Tarih Seçimi */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E293B', borderRadius: 8, paddingHorizontal: 10, height: 42, borderWidth: 1, borderColor: '#334155' }}>
+                  <Calendar color="#38BDF8" size={16} style={{ marginRight: 8 }} />
+                  <TextInput
+                    style={{ flex: 1, color: '#F8FAFC', fontSize: 13, padding: 0 }}
+                    placeholder="YYYY-AA-GG (Örn: 2026-09-11)"
+                    placeholderTextColor="#64748B"
+                    value={gorusmeTarih}
+                    onChangeText={setGorusmeTarih}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#334155', paddingHorizontal: 12, height: 42, borderRadius: 8, justifyContent: 'center', alignItems: 'center' }}
+                  onPress={() => setGorusmeTarih(getTodayStr())}
+                >
+                  <Text style={{ color: '#F8FAFC', fontSize: 12, fontWeight: '600' }}>Bugün</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155', paddingHorizontal: 12, height: 42, borderRadius: 8, justifyContent: 'center', alignItems: 'center' }}
+                  onPress={() => setGorusmeTarih(getYesterdayStr())}
+                >
+                  <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '600' }}>Dün</Text>
+                </TouchableOpacity>
+              </View>
+
               <TextInput
                 style={styles.formInput}
                 placeholder="Görüşme Konusu (Örn: Fiyat Revizesi İstendi, Toplantı...)"
@@ -776,6 +816,33 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
             {/* Ekleme Kartı */}
             <View style={styles.addCard}>
               <Text style={styles.addCardTitle}>Yeni Fiyat Teklifi Ekle</Text>
+
+              {/* Tarih Seçimi */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E293B', borderRadius: 8, paddingHorizontal: 10, height: 42, borderWidth: 1, borderColor: '#334155' }}>
+                  <Calendar color="#34D399" size={16} style={{ marginRight: 8 }} />
+                  <TextInput
+                    style={{ flex: 1, color: '#F8FAFC', fontSize: 13, padding: 0 }}
+                    placeholder="YYYY-AA-GG (Örn: 2026-09-11)"
+                    placeholderTextColor="#64748B"
+                    value={fiyatTarih}
+                    onChangeText={setFiyatTarih}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#334155', paddingHorizontal: 12, height: 42, borderRadius: 8, justifyContent: 'center', alignItems: 'center' }}
+                  onPress={() => setFiyatTarih(getTodayStr())}
+                >
+                  <Text style={{ color: '#F8FAFC', fontSize: 12, fontWeight: '600' }}>Bugün</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155', paddingHorizontal: 12, height: 42, borderRadius: 8, justifyContent: 'center', alignItems: 'center' }}
+                  onPress={() => setFiyatTarih(getYesterdayStr())}
+                >
+                  <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '600' }}>Dün</Text>
+                </TouchableOpacity>
+              </View>
+
               <TextInput
                 style={styles.formInput}
                 placeholder="Teklif Başlığı / Ürün Adı..."
@@ -999,6 +1066,33 @@ export default function MusteriTakipDetayScreen({ route, navigation }: any) {
             {/* Ekleme Kartı */}
             <View style={styles.addCard}>
               <Text style={styles.addCardTitle}>Yeni Özel Not Ekle</Text>
+
+              {/* Tarih Seçimi */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E293B', borderRadius: 8, paddingHorizontal: 10, height: 42, borderWidth: 1, borderColor: '#334155' }}>
+                  <Calendar color="#FBBF24" size={16} style={{ marginRight: 8 }} />
+                  <TextInput
+                    style={{ flex: 1, color: '#F8FAFC', fontSize: 13, padding: 0 }}
+                    placeholder="YYYY-AA-GG (Örn: 2026-09-11)"
+                    placeholderTextColor="#64748B"
+                    value={notTarih}
+                    onChangeText={setNotTarih}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#334155', paddingHorizontal: 12, height: 42, borderRadius: 8, justifyContent: 'center', alignItems: 'center' }}
+                  onPress={() => setNotTarih(getTodayStr())}
+                >
+                  <Text style={{ color: '#F8FAFC', fontSize: 12, fontWeight: '600' }}>Bugün</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155', paddingHorizontal: 12, height: 42, borderRadius: 8, justifyContent: 'center', alignItems: 'center' }}
+                  onPress={() => setNotTarih(getYesterdayStr())}
+                >
+                  <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '600' }}>Dün</Text>
+                </TouchableOpacity>
+              </View>
+
               <TextInput
                 style={styles.formInput}
                 placeholder="Not Başlığı (Örn: Sevkiyat Hatırlatması, Ödeme Talebi...)"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Share } from 'react-native';
-import { Settings, Globe, Key, Calendar, Wifi, Save, Database, User, MapPin, Phone, Building, Lock, MonitorSmartphone, ArrowLeft, Trash2 } from 'lucide-react-native';
+import { StyleSheet, Text, View, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Share, Image, Switch } from 'react-native';
+import { Settings, Globe, Key, Calendar, Wifi, Save, Database, User, MapPin, Phone, Building, Lock, MonitorSmartphone, ArrowLeft, Trash2, Image as ImageIcon, UploadCloud } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '../services/storage';
 import { saveFirebaseConfig, saveActiveYear, getFirebaseConfig, loadConfigFromStorage, goOfflineMode, writeData, subscribeToPath, logoutUser, deleteData, readData, fetchAvailableYears } from '../services/firebase';
 import { getLockSettings, savePin, setLockEnabled, clearLock, setLockTimeout, DEFAULT_LOCK_MINUTES } from '../services/lockService';
@@ -23,6 +24,17 @@ export default function AyarlarScreen() {
   const [firmaVergiNo, setFirmaVergiNo] = useState('');
   const [firmaEposta, setFirmaEposta] = useState('');
   const [firmaWebSitesi, setFirmaWebSitesi] = useState('');
+
+  // Logo & Belge Gösterim Tercihleri (Masaüstü ile Tam Senkron)
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [logoFatura, setLogoFatura] = useState(true);
+  const [logoSiparis, setLogoSiparis] = useState(true);
+  const [logoTeklif, setLogoTeklif] = useState(true);
+  const [logoEkstre, setLogoEkstre] = useState(true);
+  const [logoRaporlar, setLogoRaporlar] = useState(true);
+  const [logoTahsilat, setLogoTahsilat] = useState(true);
+  const [logoOdeme, setLogoOdeme] = useState(true);
+  const [logoAcilisBakiye, setLogoAcilisBakiye] = useState(true);
 
   // Yedek Geri Yükleme JSON State
   const [backupJsonInput, setBackupJsonInput] = useState('');
@@ -76,6 +88,35 @@ export default function AyarlarScreen() {
           setFirmaVergiNo(data.vergiNo || '');
           setFirmaEposta(data.eposta || data.email || '');
           setFirmaWebSitesi(data.webSitesi || '');
+
+          // Logo verisi
+          const incomingLogo = data.logoBase64 || data.LogoBase64 || null;
+          setLogoBase64(incomingLogo);
+
+          // Belge Logo Bayrakları
+          if (data.logoFatura !== undefined) setLogoFatura(Boolean(data.logoFatura));
+          else if (data.LogoFatura !== undefined) setLogoFatura(Boolean(data.LogoFatura));
+
+          if (data.logoSiparis !== undefined) setLogoSiparis(Boolean(data.logoSiparis));
+          else if (data.LogoSiparis !== undefined) setLogoSiparis(Boolean(data.LogoSiparis));
+
+          if (data.logoTeklif !== undefined) setLogoTeklif(Boolean(data.logoTeklif));
+          else if (data.LogoTeklif !== undefined) setLogoTeklif(Boolean(data.LogoTeklif));
+
+          if (data.logoEkstre !== undefined) setLogoEkstre(Boolean(data.logoEkstre));
+          else if (data.LogoEkstre !== undefined) setLogoEkstre(Boolean(data.LogoEkstre));
+
+          if (data.logoRaporlar !== undefined) setLogoRaporlar(Boolean(data.logoRaporlar));
+          else if (data.LogoRaporlar !== undefined) setLogoRaporlar(Boolean(data.LogoRaporlar));
+
+          if (data.logoTahsilat !== undefined) setLogoTahsilat(Boolean(data.logoTahsilat));
+          else if (data.LogoTahsilat !== undefined) setLogoTahsilat(Boolean(data.LogoTahsilat));
+
+          if (data.logoOdeme !== undefined) setLogoOdeme(Boolean(data.logoOdeme));
+          else if (data.LogoOdeme !== undefined) setLogoOdeme(Boolean(data.LogoOdeme));
+
+          if (data.logoAcilisBakiye !== undefined) setLogoAcilisBakiye(Boolean(data.logoAcilisBakiye));
+          else if (data.LogoAcilisBakiye !== undefined) setLogoAcilisBakiye(Boolean(data.LogoAcilisBakiye));
         }
       });
 
@@ -85,6 +126,35 @@ export default function AyarlarScreen() {
 
     fetchSettings();
   }, []);
+
+  const handlePickLogo = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('İzin Gerekli', 'Logo seçmek için galeri erişim izni gereklidir.');
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        base64: true,
+      });
+      if (!res.canceled && res.assets && res.assets.length > 0 && res.assets[0].base64) {
+        setLogoBase64(res.assets[0].base64);
+        Alert.alert('Bilgi', 'Logo başarıyla seçildi. Kalıcı olması için "Firma Profilini Kaydet" butonuna basınız.');
+      }
+    } catch (e) {
+      Alert.alert('Hata', 'Logo seçilirken bir hata oluştu.');
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    Alert.alert('Logo Kaldır', 'Şirket logosunu kaldırmak istediğinize emin misiniz?', [
+      { text: 'Vazgeç', style: 'cancel' },
+      { text: 'Kaldır', style: 'destructive', onPress: () => setLogoBase64(null) }
+    ]);
+  };
 
   const handleSave = async () => {
     if (!dbUrl) {
@@ -98,7 +168,7 @@ export default function AyarlarScreen() {
       await saveActiveYear(activeYear);
       await AsyncStorage.setItem('pdf_server_url', pdfServerUrl);
 
-      // Firma Profilini Firebase'e Kaydet
+      // Firma Profilini Firebase'e Kaydet (Logo ve Belge Ayarları Dahil)
       const profilePayload = {
         id: 1,
         firmaAdi: firmaUnvan,
@@ -111,6 +181,24 @@ export default function AyarlarScreen() {
         eposta: firmaEposta,
         email: firmaEposta,
         webSitesi: firmaWebSitesi,
+        logoBase64: logoBase64 || null,
+        LogoBase64: logoBase64 || null,
+        logoFatura,
+        LogoFatura: logoFatura,
+        logoSiparis,
+        LogoSiparis: logoSiparis,
+        logoTeklif,
+        LogoTeklif: logoTeklif,
+        logoEkstre,
+        LogoEkstre: logoEkstre,
+        logoRaporlar,
+        LogoRaporlar: logoRaporlar,
+        logoTahsilat,
+        LogoTahsilat: logoTahsilat,
+        logoOdeme,
+        LogoOdeme: logoOdeme,
+        logoAcilisBakiye,
+        LogoAcilisBakiye: logoAcilisBakiye,
       };
       const ok = await writeData('FirmaProfili/1', profilePayload);
       if (!ok) {
@@ -118,7 +206,7 @@ export default function AyarlarScreen() {
         return;
       }
 
-      Alert.alert('Başarılı', 'Sistem ayarları ve firma profili kaydedildi.');
+      Alert.alert('Başarılı', 'Sistem ayarları, firma profili ve logo tercihleri kaydedildi.');
     } catch (e) {
       Alert.alert('Hata', 'Ayarlar kaydedilirken hata oluştu.');
     } finally {
@@ -495,12 +583,81 @@ export default function AyarlarScreen() {
               </View>
             )}
 
-            {/* 2. Firma Profili */}
+            {/* 2. Firma Profili & Logo */}
             {currentCategory === 'profile' && (
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
                   <Building color="#8B5CF6" size={22} />
-                  <Text style={styles.cardTitle}>Firma Profili Bilgileri</Text>
+                  <Text style={styles.cardTitle}>Firma Profili & Logo Yönetimi</Text>
+                </View>
+
+                {/* Logo Önizleme & Yükleme Alanı */}
+                <View style={[styles.inputGroup, { backgroundColor: '#0B1120', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#1E293B', alignItems: 'center' }]}>
+                  <Text style={[styles.inputLabel, { alignSelf: 'flex-start', color: '#EC4899', fontWeight: 'bold' }]}>
+                    Şirket Logosu (Masaüstü & Mobil Ortak)
+                  </Text>
+                  
+                  {logoBase64 ? (
+                    <View style={{ width: '100%', alignItems: 'center', marginVertical: 10, padding: 10, backgroundColor: '#0F172A', borderRadius: 8, borderWidth: 1, borderColor: '#334155' }}>
+                      <Image 
+                        source={{ uri: logoBase64.startsWith('data:') ? logoBase64 : `data:image/png;base64,${logoBase64}` }} 
+                        style={{ width: '100%', height: 75, resizeMode: 'contain' }} 
+                      />
+                    </View>
+                  ) : (
+                    <View style={{ width: '100%', height: 75, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F172A', borderRadius: 8, marginVertical: 10, borderWidth: 1, borderColor: '#1E293B', borderStyle: 'dashed' }}>
+                      <ImageIcon color="#64748B" size={32} />
+                      <Text style={{ color: '#64748B', fontSize: 12, marginTop: 4 }}>Henüz Şirket Logosu Eklenmedi</Text>
+                    </View>
+                  )}
+
+                  <View style={{ flexDirection: 'row', gap: 10, width: '100%', marginTop: 6 }}>
+                    <TouchableOpacity 
+                      style={[styles.saveButton, { flex: 1, backgroundColor: '#8B5CF6', marginTop: 0, paddingVertical: 10 }]} 
+                      onPress={handlePickLogo}
+                    >
+                      <UploadCloud color="#FFF" size={18} style={{ marginRight: 6 }} />
+                      <Text style={[styles.saveButtonText, { fontSize: 13 }]}>{logoBase64 ? 'Logoyu Değiştir' : 'Logo Yükle'}</Text>
+                    </TouchableOpacity>
+
+                    {logoBase64 ? (
+                      <TouchableOpacity 
+                        style={[styles.saveButton, { flex: 0.8, backgroundColor: '#EF4444', marginTop: 0, paddingVertical: 10 }]} 
+                        onPress={handleRemoveLogo}
+                      >
+                        <Trash2 color="#FFF" size={18} style={{ marginRight: 6 }} />
+                        <Text style={[styles.saveButtonText, { fontSize: 13 }]}>Logoyu Sil</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+
+                {/* Belgelerde Logo Gösterimi Seçenekleri */}
+                <View style={[styles.inputGroup, { backgroundColor: '#0B1120', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#1E293B' }]}>
+                  <Text style={[styles.inputLabel, { color: '#EC4899', fontWeight: 'bold', marginBottom: 12 }]}>
+                    Belgelerde Logo Gösterimi
+                  </Text>
+                  
+                  {[
+                    { label: 'Faturalarda Göster', value: logoFatura, setter: setLogoFatura },
+                    { label: 'Sipariş Belgelerinde Göster', value: logoSiparis, setter: setLogoSiparis },
+                    { label: 'Teklif Belgelerinde Göster', value: logoTeklif, setter: setLogoTeklif },
+                    { label: 'Cari Ekstrelerde Göster', value: logoEkstre, setter: setLogoEkstre },
+                    { label: 'Genel Raporlarda Göster', value: logoRaporlar, setter: setLogoRaporlar },
+                    { label: 'Tahsilat Makbuzlarında Göster', value: logoTahsilat, setter: setLogoTahsilat },
+                    { label: 'Ödeme Makbuzlarında Göster', value: logoOdeme, setter: setLogoOdeme },
+                    { label: 'Açılış Bakiye Fişlerinde Göster', value: logoAcilisBakiye, setter: setLogoAcilisBakiye },
+                  ].map((item, idx) => (
+                    <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: idx < 7 ? 1 : 0, borderBottomColor: '#1E293B' }}>
+                      <Text style={{ color: '#E2E8F0', fontSize: 13.5 }}>{item.label}</Text>
+                      <Switch 
+                        value={item.value} 
+                        onValueChange={item.setter} 
+                        trackColor={{ false: '#334155', true: '#8B5CF6' }}
+                        thumbColor={item.value ? '#FFF' : '#94A3B8'}
+                      />
+                    </View>
+                  ))}
                 </View>
 
                 <View style={styles.inputGroup}>
@@ -543,7 +700,7 @@ export default function AyarlarScreen() {
 
                 <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                   <Save color="#FFF" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.saveButtonText}>Firma Profilini Kaydet</Text>
+                  <Text style={styles.saveButtonText}>Firma Profilini & Logoyu Kaydet</Text>
                 </TouchableOpacity>
               </View>
             )}

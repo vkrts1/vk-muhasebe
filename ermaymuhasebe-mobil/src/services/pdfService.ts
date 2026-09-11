@@ -23,40 +23,36 @@ const loadFirmaProfili = async (): Promise<any | null> => {
     return cachedProfil;
   }
   try {
-    const raw = await readData('FirmaProfili');
-    if (!raw) return null;
-    const node = raw[1] || raw; // "FirmaProfili/1" düğümü
-    cachedProfil = node;
-    cachedProfilAt = Date.now();
-    return node;
+    // Önce doğrudan 1 numaralı profili dene
+    let node = await readData('FirmaProfili/1');
+    if (!node) {
+      const raw = await readData('FirmaProfili');
+      if (raw) {
+        node = raw[1] || raw;
+      }
+    }
+    if (node) {
+      cachedProfil = node;
+      cachedProfilAt = Date.now();
+      return node;
+    }
+    return null;
   } catch (e) {
     console.error('FirmaProfili okunamadı:', e);
     return null;
   }
 };
 
-const base64ToBytes = (base64: string): number[] | null => {
-  try {
-    if (typeof globalThis !== 'undefined' && typeof globalThis.atob === 'function') {
-      const binary = globalThis.atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      return Array.from(bytes);
-    }
-  } catch (e) {
-    console.error('Logo base64 çözülemedi:', e);
-  }
-  return null;
-};
-
-// LogoBytes'i FirmaProfili'nden getirir. Masaüstü logo'yu bu düğüme
-// senkron eder, mobil de PDF isteklerinde aynı görseli gönderir.
-const getLogoBytes = async (): Promise<number[] | null> => {
-  const profil = await loadFirmaProfili();
-  if (!profil) return null;
-  const logoBase64 = profil.logoBase64 || profil.LogoBase64 || '';
-  if (!logoBase64) return null;
-  return base64ToBytes(logoBase64);
+// Döküman tipine göre logo gösterim iznini belirle
+const isLogoEnabledForEndpoint = (endpoint: string, profil: any): boolean => {
+  if (!profil) return true;
+  const ep = endpoint.toLowerCase();
+  if (ep.includes('fatura')) return profil.logoFatura ?? profil.LogoFatura ?? true;
+  if (ep.includes('siparis')) return profil.logoSiparis ?? profil.LogoSiparis ?? true;
+  if (ep.includes('teklif')) return profil.logoTeklif ?? profil.LogoTeklif ?? true;
+  if (ep.includes('ekstre')) return profil.logoEkstre ?? profil.LogoEkstre ?? true;
+  if (ep.includes('makbuz') || ep.includes('eft') || ep.includes('kk')) return profil.logoTahsilat ?? profil.LogoTahsilat ?? true;
+  return profil.logoRaporlar ?? profil.LogoRaporlar ?? true;
 };
 
 const loadFaturaTasarimi = async (): Promise<any | null> => {
@@ -64,9 +60,12 @@ const loadFaturaTasarimi = async (): Promise<any | null> => {
     return cachedTasarim;
   }
   try {
-    const raw = await readData('FaturaTasarimi');
-    if (!raw) return null;
-    const node = raw[1] || raw; // "FaturaTasarimi/1" düğümü
+    let node = await readData('FaturaTasarimi/1');
+    if (!node) {
+      const raw = await readData('FaturaTasarimi');
+      if (raw) node = raw[1] || raw;
+    }
+    if (!node) return null;
     const tasarim = mapAppToDatabase('FaturaTasarimi', node);
     cachedTasarim = tasarim;
     cachedTasarimAt = Date.now();
@@ -81,22 +80,33 @@ const loadFaturaTasarimi = async (): Promise<any | null> => {
 // - Logo (FirmaProfili.LogoBase64) her PDF'e gider — masaüstü bunu aynı şekilde basar.
 // - Tasarım (FaturaTasarimi) yalnızca fatura/teklif/sipariş endpoint'lerinde uygulanır.
 const enrichWithTasarim = async (endpoint: string, payload: any): Promise<any> => {
-  const [tasarim, logoBytes] = await Promise.all([
+  const [tasarim, profil] = await Promise.all([
     TASARIM_ENDPOINTS.has(endpoint) ? loadFaturaTasarimi() : Promise.resolve(null),
-    getLogoBytes(),
+    loadFirmaProfili(),
   ]);
 
+  const logoBase64 = profil?.logoBase64 || profil?.LogoBase64 || null;
+  const isLogoAllowed = isLogoEnabledForEndpoint(endpoint, profil);
+  const shouldShowLogo = Boolean(logoBase64 && isLogoAllowed);
+
   if (Array.isArray(payload)) {
-    return payload.map((item) => injectParams(item, tasarim, logoBytes));
+    return payload.map((item) => injectParams(item, tasarim, logoBase64, shouldShowLogo));
   }
-  return injectParams(payload, tasarim, logoBytes);
+  return injectParams(payload, tasarim, logoBase64, shouldShowLogo);
 };
 
-const injectParams = (item: any, tasarim: any, logoBytes: number[] | null): any => {
+const injectParams = (item: any, tasarim: any, logoBase64: string | null, shouldShowLogo: boolean): any => {
   if (!item || typeof item !== 'object') return item;
   const result = { ...item };
-  result.LogoBytes = null; // Bypass logo bytes serialization issue
-  result.ShowLogo = false; // Disable logo rendering to isolate crashes
+  
+  if (shouldShowLogo && logoBase64) {
+    result.LogoBytes = logoBase64;
+    result.ShowLogo = true;
+  } else {
+    result.LogoBytes = null;
+    result.ShowLogo = false;
+  }
+
   if (!tasarim) return result;
   if (result.Tasarim === undefined) result.Tasarim = tasarim;
   if (result.Size === undefined && tasarim.FaturaSize) result.Size = tasarim.FaturaSize;

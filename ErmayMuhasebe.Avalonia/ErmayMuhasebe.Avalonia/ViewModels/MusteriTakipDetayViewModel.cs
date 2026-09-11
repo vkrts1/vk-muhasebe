@@ -80,17 +80,19 @@ namespace ErmayMuhasebe.Avalonia.ViewModels
         // Not Ekleme Alanları
         [ObservableProperty] private string _newNotBaslik = string.Empty;
         [ObservableProperty] private string _newNotIcerik = string.Empty;
+        [ObservableProperty] private DateTimeOffset? _newNotTarih = DateTimeOffset.Now;
 
         // Görüşme Ekleme Alanları
         [ObservableProperty] private string _newGorusmeBaslik = string.Empty;
         [ObservableProperty] private string _newGorusmeIcerik = string.Empty;
-        [ObservableProperty] private DateTime _newGorusmeTarih = DateTime.Now;
+        [ObservableProperty] private DateTimeOffset? _newGorusmeTarih = DateTimeOffset.Now;
 
         // Fiyat Ekleme Alanları
         [ObservableProperty] private string _newFiyatBaslik = string.Empty;
         [ObservableProperty] private decimal? _newFiyatTutar;
         [ObservableProperty] private string _newFiyatParaBirimi = "₺";
         [ObservableProperty] private string _newFiyatAciklama = string.Empty;
+        [ObservableProperty] private DateTimeOffset? _newFiyatTarih = DateTimeOffset.Now;
 
         // Görsel Ekleme
         [ObservableProperty] private string _newGorselBaslik = string.Empty;
@@ -177,13 +179,13 @@ namespace ErmayMuhasebe.Avalonia.ViewModels
                 Tip = "Gorusme",
                 Baslik = string.IsNullOrWhiteSpace(NewGorusmeBaslik) ? "Müşteri Görüşmesi" : NewGorusmeBaslik.Trim(),
                 Icerik = NewGorusmeIcerik?.Trim(),
-                Tarih = NewGorusmeTarih
+                Tarih = NewGorusmeTarih?.DateTime ?? DateTime.Now
             };
 
             await _uow.MusteriTakip.SaveDetayAsync(detay);
             NewGorusmeBaslik = string.Empty;
             NewGorusmeIcerik = string.Empty;
-            NewGorusmeTarih = DateTime.Now;
+            NewGorusmeTarih = DateTimeOffset.Now;
 
             await LoadDetaylarAsync();
         }
@@ -201,12 +203,13 @@ namespace ErmayMuhasebe.Avalonia.ViewModels
                 Tip = "Not",
                 Baslik = string.IsNullOrWhiteSpace(NewNotBaslik) ? "Genel Not" : NewNotBaslik.Trim(),
                 Icerik = NewNotIcerik?.Trim(),
-                Tarih = DateTime.Now
+                Tarih = NewNotTarih?.DateTime ?? DateTime.Now
             };
 
             await _uow.MusteriTakip.SaveDetayAsync(detay);
             NewNotBaslik = string.Empty;
             NewNotIcerik = string.Empty;
+            NewNotTarih = DateTimeOffset.Now;
 
             await LoadDetaylarAsync();
         }
@@ -226,13 +229,14 @@ namespace ErmayMuhasebe.Avalonia.ViewModels
                 FiyatBilgisi = NewFiyatTutar,
                 ParaBirimi = NewFiyatParaBirimi ?? "₺",
                 Icerik = NewFiyatAciklama?.Trim(),
-                Tarih = DateTime.Now
+                Tarih = NewFiyatTarih?.DateTime ?? DateTime.Now
             };
 
             await _uow.MusteriTakip.SaveDetayAsync(detay);
             NewFiyatBaslik = string.Empty;
             NewFiyatTutar = null;
             NewFiyatAciklama = string.Empty;
+            NewFiyatTarih = DateTimeOffset.Now;
 
             await LoadDetaylarAsync();
         }
