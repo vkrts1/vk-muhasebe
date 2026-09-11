@@ -506,7 +506,14 @@ namespace ErmayMuhasebe.Services
                 catch { }
             }
 
-            _ = Task.Run(() => _sync.SyncFirmaProfiliAsync(f));
+            try
+            {
+                await _sync.SyncFirmaProfiliAsync(f);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DatabaseService] SyncFirmaProfiliAsync hatası: {ex.Message}");
+            }
         }
 
         // --- FATURA TASARIMI ---

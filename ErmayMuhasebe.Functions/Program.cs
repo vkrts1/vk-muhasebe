@@ -17,9 +17,11 @@ CultureInfo.DefaultThreadCurrentUICulture = culture;
 builder.Services.AddScoped<PdfService>();
 builder.Services.ConfigureHttpJsonOptions(options => {
     options.SerializerOptions.MaxDepth = 256;
+    options.SerializerOptions.Converters.Add(new ByteArrayBase64Converter());
 });
 builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options => {
     options.SerializerOptions.MaxDepth = 256;
+    options.SerializerOptions.Converters.Add(new ByteArrayBase64Converter());
 });
 
 // Explicitly set max request body size for Kestrel
@@ -577,4 +579,57 @@ app.MapPost("/generate/finans-rapor", (PdfService pdfService, [FromBody] FinansR
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5244";
 app.Run($"http://0.0.0.0:{port}");
 
-// Records moved to ErmayMuhasebe.Models.PdfRequests.cs in Shared project
+// Custom converter to handle both clean Base64, data-prefixed Base64 (data:image/...;base64,), and byte arrays
+public class ByteArrayBase64Converter : System.Text.Json.Serialization.JsonConverter<byte[]>
+{
+    public override byte[]? Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert, System.Text.Json.JsonSerializerOptions options)
+    {
+        if (reader.TokenType == System.Text.Json.JsonTokenType.Null)
+            return null;
+
+        if (reader.TokenType == System.Text.Json.JsonTokenType.String)
+        {
+            var str = reader.GetString();
+            if (string.IsNullOrWhiteSpace(str))
+                return Array.Empty<byte>();
+
+            var clean = str.Trim();
+            if (clean.Contains("base64,"))
+            {
+                clean = clean.Substring(clean.IndexOf("base64,", StringComparison.OrdinalIgnoreCase) + 7);
+            }
+            clean = clean.Replace(" ", "").Replace("\r", "").Replace("\n", "");
+
+            try
+            {
+                return Convert.FromBase64String(clean);
+            }
+            catch
+            {
+                return Array.Empty<byte>();
+            }
+        }
+
+        if (reader.TokenType == System.Text.Json.JsonTokenType.StartArray)
+        {
+            var byteList = new List<byte>();
+            while (reader.Read())
+            {
+                if (reader.TokenType == System.Text.Json.JsonTokenType.EndArray)
+                    break;
+                byteList.Add(reader.GetByte());
+            }
+            return byteList.ToArray();
+        }
+
+        return Array.Empty<byte>();
+    }
+
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, byte[] value, System.Text.Json.JsonSerializerOptions options)
+    {
+        if (value == null)
+            writer.WriteNullValue();
+        else
+            writer.WriteStringValue(Convert.ToBase64String(value));
+    }
+}

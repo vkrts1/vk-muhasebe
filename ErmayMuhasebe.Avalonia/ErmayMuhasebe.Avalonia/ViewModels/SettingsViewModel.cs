@@ -430,9 +430,11 @@ public partial class SettingsViewModel : ErmayMuhasebe.Shared.ViewModels.Setting
 
             if (LogoBytes != null && LogoBytes.Length > 0)
             {
-                profil.LogoBase64 = Convert.ToBase64String(LogoBytes);
+                var optimizedBytes = ErmayMuhasebe.Services.ImageHelper.OptimizeLogo(LogoBytes);
+                LogoBytes = optimizedBytes;
+                profil.LogoBase64 = Convert.ToBase64String(optimizedBytes);
                 if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
-                await System.IO.File.WriteAllBytesAsync(logoPath, LogoBytes);
+                await System.IO.File.WriteAllBytesAsync(logoPath, optimizedBytes);
             }
             else
             {
@@ -440,10 +442,12 @@ public partial class SettingsViewModel : ErmayMuhasebe.Shared.ViewModels.Setting
                 if (System.IO.File.Exists(logoPath)) System.IO.File.Delete(logoPath);
             }
             await _uow.SaveFirmaProfiliAsync(profil);
+            SuccessMessage = "Görünüm ve logo ayarları başarıyla kaydedildi.";
         }
-        catch { }
-
-        await base.SaveAppearanceSettingsAsync();
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Ayarlar kaydedilemedi: {ex.Message}";
+        }
         
         var ps = ((ErmayMuhasebe.Avalonia.App)App.Current!).Services?.GetRequiredService<PdfService>();
         if (ps != null)
@@ -504,8 +508,11 @@ public partial class SettingsViewModel : ErmayMuhasebe.Shared.ViewModels.Setting
                 await using var stream = await files[0].OpenReadAsync();
                 using var ms = new System.IO.MemoryStream();
                 await stream.CopyToAsync(ms);
-                var bytes = ms.ToArray();
+                var rawBytes = ms.ToArray();
                 
+                // Logo görselini Firebase ve mobil için optimize et (maks 800x800 ve hafif PNG baytları)
+                var bytes = ErmayMuhasebe.Services.ImageHelper.OptimizeLogo(rawBytes);
+
                 // Save database asynchronously first with all document types enabled
                 var profil = await _uow.GetFirmaProfiliAsync();
                 profil.LogoBase64 = Convert.ToBase64String(bytes);

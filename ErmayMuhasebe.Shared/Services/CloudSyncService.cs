@@ -304,13 +304,64 @@ namespace ErmayMuhasebe.Services
             });
         }
 
-        // Firma profili (logo dahil) kök düğümde tutulur — mobil Ayarlar ekranı
-        // aynı path'i kullandığı için masaüstü kapalı olsa bile logo PDF'lere taşınır.
+        // Firma profili (logo dahil) kök düğümde ve şirket ayarlarında tutulur — mobil Ayarlar ekranı
+        // ve PDF servisleri farklı Firebase kurallarında dahi logoya kesinlikle erişebilsin diye çoklu yola yazılır.
         public async Task SyncFirmaProfiliAsync(FirmaProfili profil)
         {
+            if (_firebase == null)
+            {
+                LoadConfig();
+            }
+
             await SafeRun(async () => 
             {
-                await _firebase!.Child("FirmaProfili").Child("1").PutAsync(profil);
+                if (_firebase == null) return;
+
+                // 1. Kök düğüme yaz (Mobil doğrudan buradan okur)
+                try
+                {
+                    await _firebase.Child("FirmaProfili").Child("1").PutAsync(profil);
+                    Console.WriteLine("[CloudSync] FirmaProfili/1 basariyla Firebase'e yazildi.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[CloudSync] FirmaProfili/1 yazma hatasi: {ex.Message}");
+                }
+
+                // 2. companies/default/FirmaProfili/1 yoluna yaz (Tenant yapısı için)
+                try
+                {
+                    await _firebase.Child("companies").Child("default").Child("FirmaProfili").Child("1").PutAsync(profil);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[CloudSync] companies/default/FirmaProfili/1 yazma hatasi: {ex.Message}");
+                }
+
+                // 3. Yillik yola yaz (companies/default/years/{year}/FirmaProfili/1)
+                try
+                {
+                    int year = _yearContext?.CurrentYear ?? DateTime.Now.Year;
+                    await _firebase.Child("companies").Child("default").Child("years").Child(year.ToString()).Child("FirmaProfili").Child("1").PutAsync(profil);
+                }
+                catch { }
+
+                // 4. Bulut/Web ayar yoluna yaz (companies/default/settings/company_logo)
+                try
+                {
+                    if (!string.IsNullOrEmpty(profil.LogoBase64))
+                    {
+                        await _firebase.Child("companies").Child("default").Child("settings").Child("company_logo").PutAsync(profil.LogoBase64);
+                    }
+                    else
+                    {
+                        await _firebase.Child("companies").Child("default").Child("settings").Child("company_logo").DeleteAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[CloudSync] company_logo ayar yazma hatasi: {ex.Message}");
+                }
             });
         }
 

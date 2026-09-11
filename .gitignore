@@ -32,3 +32,5 @@ dist-ssr/
 Thumbs.db
 *.sw?
 Publish_Output/
+output/
+*.ipa

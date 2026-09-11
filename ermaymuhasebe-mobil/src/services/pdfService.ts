@@ -15,30 +15,141 @@ let cachedTasarim: any | null = null;
 let cachedTasarimAt: number = 0;
 const TASARIM_CACHE_MS = 15000;
 
+const LOGO_CACHE_KEY = 'ermay_cached_company_logo';
+const PROFIL_CACHE_KEY = 'ermay_cached_firma_profili';
+
 let cachedProfil: any | null = null;
 let cachedProfilAt: number = 0;
 
-const loadFirmaProfili = async (): Promise<any | null> => {
+export const resetPdfServiceCache = () => {
+  cachedProfil = null;
+  cachedProfilAt = 0;
+  cachedTasarim = null;
+  cachedTasarimAt = 0;
+};
+
+export const cleanBase64Logo = (rawLogo: string | null | undefined): string | null => {
+  if (!rawLogo || typeof rawLogo !== 'string') return null;
+  let clean = rawLogo.trim();
+  // data:image/...;base64, prefiksini temizle (ASP.NET Core deserializer için saf Base64 gerekli)
+  if (clean.includes('base64,')) {
+    clean = clean.split('base64,')[1];
+  }
+  clean = clean.replace(/\s+/g, '');
+  return clean.length > 0 ? clean : null;
+};
+
+export const loadFirmaProfili = async (): Promise<any | null> => {
   if (cachedProfil && Date.now() - cachedProfilAt < TASARIM_CACHE_MS) {
     return cachedProfil;
   }
   try {
-    // Önce doğrudan 1 numaralı profili dene
-    let node = await readData('FirmaProfili/1');
-    if (!node) {
-      const raw = await readData('FirmaProfili');
+    // 1. Önce doğrudan 1 numaralı profili dene (12 saniye timeout)
+    let node = await readData('FirmaProfili/1', 12000);
+    
+    // 2. FirmaProfili genel düğümünü dene
+    if (!node || !(node.logoBase64 || node.LogoBase64)) {
+      const raw = await readData('FirmaProfili', 12000);
       if (raw) {
         node = raw[1] || raw;
       }
     }
+
+    // 3. companies/default/FirmaProfili/1 yolunu dene (Tenant yapısı)
+    if (!node || !(node.logoBase64 || node.LogoBase64)) {
+      const scopedNode = await readData('companies/default/FirmaProfili/1', 8000);
+      if (scopedNode) {
+        node = { ...(node || {}), ...scopedNode };
+      }
+    }
+
+    // 4. companies/default/settings/company_logo yolunu dene (Blazor / Cloud ayar yolu)
+    if (!node || !(node.logoBase64 || node.LogoBase64)) {
+      const directLogo = await readData('companies/default/settings/company_logo', 8000);
+      if (directLogo && typeof directLogo === 'string') {
+        node = { ...(node || {}), logoBase64: directLogo, LogoBase64: directLogo };
+      }
+    }
+
+    // 5. Yıllık yoldan dene (companies/default/years/{year}/FirmaProfili/1)
+    if (!node || !(node.logoBase64 || node.LogoBase64)) {
+      const curYear = new Date().getFullYear().toString();
+      const yearlyNode = await readData(`companies/default/years/${curYear}/FirmaProfili/1`, 8000);
+      if (yearlyNode) {
+        node = { ...(node || {}), ...yearlyNode };
+      }
+    }
+
+    const foundLogo = node?.logoBase64 || node?.LogoBase64;
+    if (foundLogo) {
+      cachedProfil = node;
+      cachedProfilAt = Date.now();
+      // Kalıcı depolamaya sakla (çevrimdışı ve yavaş ağ durumları için)
+      AsyncStorage.setItem(LOGO_CACHE_KEY, String(foundLogo)).catch(() => {});
+      AsyncStorage.setItem(PROFIL_CACHE_KEY, JSON.stringify(node)).catch(() => {});
+      return node;
+    }
+
     if (node) {
+      // Profil var ama logo alanı boşsa, daha önceden önbelleğe alınmış kalıcı logoyu ekle
+      const cachedLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
+      if (cachedLogo) {
+        node.logoBase64 = cachedLogo;
+        node.LogoBase64 = cachedLogo;
+      }
       cachedProfil = node;
       cachedProfilAt = Date.now();
       return node;
     }
+
+    // Ağdan hiçbir veri gelmediyse kalıcı önbellekten yükle
+    const savedProfilJson = await AsyncStorage.getItem(PROFIL_CACHE_KEY);
+    if (savedProfilJson) {
+      const parsed = JSON.parse(savedProfilJson);
+      cachedProfil = parsed;
+      cachedProfilAt = Date.now();
+      return parsed;
+    }
+
+    const savedLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
+    if (savedLogo) {
+      const fallback = {
+        logoBase64: savedLogo,
+        LogoBase64: savedLogo,
+        logoFatura: true,
+        logoSiparis: true,
+        logoTeklif: true,
+        logoEkstre: true,
+        logoRaporlar: true,
+        logoTahsilat: true,
+        logoOdeme: true,
+        logoAcilisBakiye: true
+      };
+      cachedProfil = fallback;
+      cachedProfilAt = Date.now();
+      return fallback;
+    }
+
     return null;
   } catch (e) {
     console.error('FirmaProfili okunamadı:', e);
+    try {
+      const savedLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
+      if (savedLogo) {
+        return {
+          logoBase64: savedLogo,
+          LogoBase64: savedLogo,
+          logoFatura: true,
+          logoSiparis: true,
+          logoTeklif: true,
+          logoEkstre: true,
+          logoRaporlar: true,
+          logoTahsilat: true,
+          logoOdeme: true,
+          logoAcilisBakiye: true
+        };
+      }
+    } catch {}
     return null;
   }
 };
@@ -85,22 +196,25 @@ const enrichWithTasarim = async (endpoint: string, payload: any): Promise<any> =
     loadFirmaProfili(),
   ]);
 
-  const logoBase64 = profil?.logoBase64 || profil?.LogoBase64 || null;
+  const rawLogo = profil?.logoBase64 || profil?.LogoBase64 || null;
+  const cleanLogo = cleanBase64Logo(rawLogo);
   const isLogoAllowed = isLogoEnabledForEndpoint(endpoint, profil);
-  const shouldShowLogo = Boolean(logoBase64 && isLogoAllowed);
+  const shouldShowLogo = Boolean(cleanLogo && isLogoAllowed);
 
   if (Array.isArray(payload)) {
-    return payload.map((item) => injectParams(item, tasarim, logoBase64, shouldShowLogo));
+    return payload.map((item) => injectParams(item, tasarim, cleanLogo, shouldShowLogo));
   }
-  return injectParams(payload, tasarim, logoBase64, shouldShowLogo);
+  return injectParams(payload, tasarim, cleanLogo, shouldShowLogo);
 };
 
 const injectParams = (item: any, tasarim: any, logoBase64: string | null, shouldShowLogo: boolean): any => {
   if (!item || typeof item !== 'object') return item;
   const result = { ...item };
   
-  if (shouldShowLogo && logoBase64) {
-    result.LogoBytes = logoBase64;
+  const cleanLogo = cleanBase64Logo(logoBase64);
+
+  if (shouldShowLogo && cleanLogo) {
+    result.LogoBytes = cleanLogo;
     result.ShowLogo = true;
   } else {
     result.LogoBytes = null;

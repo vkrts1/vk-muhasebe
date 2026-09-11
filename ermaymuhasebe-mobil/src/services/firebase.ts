@@ -899,12 +899,12 @@ export const fetchWithTimeout = async (url: string, options: any = {}, timeoutMs
   }
 };
 
-export const readData = async (path: string): Promise<any> => {
+export const readData = async (path: string, timeoutMs = 5000): Promise<any> => {
   const { url } = getRestUrl(path);
   if (!url) return null;
 
   try {
-    const res = await fetchWithTimeout(url, {}, 5000);
+    const res = await fetchWithTimeout(url, {}, timeoutMs);
     if (res.ok) {
       const val = await res.json();
       const mapped = mapDatabaseToApp(path, val);
@@ -917,7 +917,7 @@ export const readData = async (path: string): Promise<any> => {
     return cached !== null ? cached : null;
   } catch (error: any) {
     if (error?.message === 'Timeout' || error?.name === 'AbortError') {
-      console.warn(`[Firebase REST] Timeout on path "${path}" (5s)`);
+      console.warn(`[Firebase REST] Timeout on path "${path}" (${timeoutMs}ms)`);
     } else {
       console.warn(`[Firebase REST] Read error on path "${path}":`, error.message || error);
     }
