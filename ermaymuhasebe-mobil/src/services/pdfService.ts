@@ -248,21 +248,17 @@ const injectParams = (item: any, tasarim: any, logoBase64: string | null, should
   const cleanLogo = cleanBase64Logo(logoBase64);
 
   if (shouldShowLogo && cleanLogo) {
-    result.LogoBytes = cleanLogo;
     result.logoBytes = cleanLogo;
-    result.ShowLogo = true;
     result.showLogo = true;
   } else {
-    result.LogoBytes = null;
     result.logoBytes = null;
-    result.ShowLogo = false;
     result.showLogo = false;
   }
 
   if (!tasarim) return result;
-  if (result.Tasarim === undefined) result.Tasarim = tasarim;
-  if (result.Size === undefined && tasarim.FaturaSize) result.Size = tasarim.FaturaSize;
-  if (result.Orientation === undefined && tasarim.FaturaOrientation) result.Orientation = tasarim.FaturaOrientation;
+  if (result.tasarim === undefined) result.tasarim = tasarim;
+  if (result.size === undefined && tasarim.FaturaSize) result.size = tasarim.FaturaSize;
+  if (result.orientation === undefined && tasarim.FaturaOrientation) result.orientation = tasarim.FaturaOrientation;
   return result;
 };
 
