@@ -2,7 +2,15 @@ import AsyncStorage from './storage';
 import { Alert, Share } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 import { readData, mapAppToDatabase, getFirebaseConfig, loadConfigFromStorage, fetchWithTimeout, getAuthParam } from './firebase';
+import {
+  generateCariEkstreHtml,
+  generateGenericTableHtml,
+  generateMakbuzHtml,
+  generateKasaEkstreHtml,
+  generateFaturaHtml,
+} from './nativePdfTemplates';
 
 // Fatura tasarımı için desteklenen PDF endpoint'leri.
 // Bu endpoint'ler Functions tarafında FaturaTasarimi nesnesiyle
@@ -309,7 +317,84 @@ const fallbackShareAsText = async (payload: any, reportName: string) => {
   }
 };
 
+export const renderNativePdfAndShare = async (
+  html: string,
+  reportName: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { uri } = await Print.printToFileAsync({
+      html,
+    });
+
+    const filename = reportName.endsWith('.pdf') ? reportName : `${reportName}.pdf`;
+    const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const targetUri = `${(FileSystem as any).cacheDirectory}${cleanFilename}`;
+
+    let shareUri = uri;
+    try {
+      await FileSystem.copyAsync({ from: uri, to: targetUri });
+      shareUri = targetUri;
+    } catch {
+      shareUri = uri;
+    }
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(shareUri, {
+        mimeType: 'application/pdf',
+        dialogTitle: `${reportName} Paylaş`,
+        UTI: 'com.adobe.pdf',
+      });
+      return { success: true };
+    } else {
+      Alert.alert('Hata', 'Paylaşım bu cihazda desteklenmiyor.');
+      return { success: false, error: 'Sharing not available' };
+    }
+  } catch (err: any) {
+    console.error('[pdfService] Native PDF generation failed:', err);
+    Alert.alert('Hata', 'PDF oluşturulamadı: ' + (err?.message || err));
+    return { success: false, error: err?.message };
+  }
+};
+
 export const generateReportPdf = async (endpoint: string, payload: any, reportName: string, maxRetries = 3) => {
+  const profil = await loadFirmaProfili();
+  let rawLogo = profil?.logoBase64 || profil?.LogoBase64 || null;
+  if (!rawLogo) {
+    try {
+      rawLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
+    } catch {}
+  }
+  const cleanLogo = cleanBase64Logo(rawLogo);
+  const isLogoAllowed = isLogoEnabledForEndpoint(endpoint, profil);
+  const effectiveLogo = isLogoAllowed ? cleanLogo : null;
+
+  // 1. Cihaz üzerinde doğrudan ve garantili çalışan Native PDF Şablonları
+  // Cloud Run sunucusunda ekstre/generic/makbuz/kasa-ekstre endpoint'leri sunucu tarafında logoyu basamadığı için,
+  // bu belgeler doğrudan iOS WebKit Native PDF motoruyla ve masaüstüyle birebir aynı şablonla logolu olarak üretilir.
+  if (endpoint === 'ekstre') {
+    const html = generateCariEkstreHtml(payload, effectiveLogo, false);
+    return await renderNativePdfAndShare(html, reportName);
+  }
+  if (endpoint === 'ekstre-detayli') {
+    const html = generateCariEkstreHtml(payload, effectiveLogo, true);
+    return await renderNativePdfAndShare(html, reportName);
+  }
+  if (endpoint === 'generic') {
+    const html = generateGenericTableHtml(payload, effectiveLogo);
+    return await renderNativePdfAndShare(html, reportName);
+  }
+  if (endpoint === 'makbuz') {
+    const html = generateMakbuzHtml(payload, effectiveLogo);
+    return await renderNativePdfAndShare(html, reportName);
+  }
+  if (endpoint === 'kasa-ekstre') {
+    const html = generateKasaEkstreHtml(payload, effectiveLogo);
+    return await renderNativePdfAndShare(html, reportName);
+  }
+
+  // 2. Diğer belgeler (Fatura, Teklif, Sipariş, Stok Listesi vb.):
+  // Cloud Run PDF API'sine gönderilir (bu endpoint'ler sunucuda da logoyu destekler).
+  // Ancak sunucuya ulaşılamazsa veya hata verirse otomatik olarak native HTML şablonuna düşer.
   let attempt = 0;
   
   while (attempt < maxRetries) {
@@ -350,6 +435,13 @@ export const generateReportPdf = async (endpoint: string, payload: any, reportNa
       } else if (response.status >= 500) {
         throw new Error(`Server Error: ${response.status}`);
       } else {
+        // Fallback to native if available
+        if (endpoint === 'fatura' || endpoint === 'teklif' || endpoint === 'siparis') {
+          console.warn('[pdfService] Server error, falling back to native HTML PDF...');
+          const html = generateFaturaHtml(payload, effectiveLogo, endpoint as any);
+          return await renderNativePdfAndShare(html, reportName);
+        }
+
         const errText = await response.text();
         console.warn('PDF Sunucu Hatası:', errText);
         Alert.alert(
@@ -367,6 +459,13 @@ export const generateReportPdf = async (endpoint: string, payload: any, reportNa
       console.warn(`[pdfService] Fetch attempt ${attempt} failed:`, error.message);
       
       if (attempt >= maxRetries) {
+        // Fallback to native HTML PDF before showing text share
+        if (endpoint === 'fatura' || endpoint === 'teklif' || endpoint === 'siparis') {
+          console.warn('[pdfService] Network error, falling back to native HTML PDF...');
+          const html = generateFaturaHtml(payload, effectiveLogo, endpoint as any);
+          return await renderNativePdfAndShare(html, reportName);
+        }
+
         console.error('PDF generation error after retries:', error);
         Alert.alert(
           'Bağlantı Hatası',

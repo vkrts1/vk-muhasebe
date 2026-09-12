@@ -83,3 +83,67 @@ describe('loadFirmaProfili', () => {
     expect(result.logoBase64).toBe('cached_fallback_logo');
   });
 });
+
+describe('Native PDF Templates', () => {
+  const { generateCariEkstreHtml, generateGenericTableHtml, generateMakbuzHtml } = require('../nativePdfTemplates');
+
+  it('embeds the company logo in Cari Ekstre HTML when provided', () => {
+    const payload = {
+      Cari: { unvan: 'Örnek Müşteri Ltd.' },
+      Hareketler: [
+        { id: 1, tarih: '2026-09-12', islemTuru: 'Satış', aciklama: 'Fatura No 101', borc: 1500, alacak: 0 }
+      ]
+    };
+    const logo = 'iVBORw0KGgoAAAANSUhEUgAAAAE=';
+    const html = generateCariEkstreHtml(payload, logo, false);
+
+    expect(html).toContain('data:image/png;base64,' + logo);
+    expect(html).toContain('Örnek Müşteri Ltd.');
+    expect(html).toContain('Genel Bilgiler');
+    expect(html).toContain('İşlem Detayları');
+    expect(html).toContain('₺1.500,00');
+  });
+
+  it('renders Cari Ekstre HTML cleanly without logo when logo is null', () => {
+    const payload = {
+      Cari: { unvan: 'Test Cari' },
+      Hareketler: []
+    };
+    const html = generateCariEkstreHtml(payload, null, false);
+
+    expect(html).not.toContain('data:image/png;base64,');
+    expect(html).toContain('Test Cari');
+    expect(html).toContain('Bu müşteri için herhangi bir işlem bulunamadı.');
+  });
+
+  it('embeds logo in Generic Table HTML', () => {
+    const payload = {
+      Title: 'Cari Bakiye Listesi',
+      Headers: ['Kod', 'Ünvan', 'Bakiye'],
+      Rows: [['C01', 'Müşteri A', '₺500,00']]
+    };
+    const logo = 'testLogoBase64';
+    const html = generateGenericTableHtml(payload, logo);
+
+    expect(html).toContain('data:image/png;base64,testLogoBase64');
+    expect(html).toContain('Cari Bakiye Listesi');
+    expect(html).toContain('Müşteri A');
+  });
+
+  it('embeds logo in Makbuz HTML', () => {
+    const payload = {
+      MakbuzTipi: 'Tahsilat',
+      CariUnvan: 'Ahmet Yılmaz',
+      Tarih: '2026-09-12',
+      Tutar: 2500,
+      Aciklama: 'Nakit Tahsilat'
+    };
+    const logo = 'testLogoBase64';
+    const html = generateMakbuzHtml(payload, logo);
+
+    expect(html).toContain('data:image/png;base64,testLogoBase64');
+    expect(html).toContain('TAHSİLAT MAKBUZU');
+    expect(html).toContain('Ahmet Yılmaz');
+    expect(html).toContain('₺2.500,00');
+  });
+});
