@@ -190,7 +190,7 @@ namespace ErmayMuhasebe.Models
         public string? GoogleClientSecret { get; set; } = "";
 
         // Bulut QuestPDF & Cloud Run Servis Ayarları
-        public string? CloudPdfApiUrl { get; set; } = "https://ermay-pdf-api-916435485627.europe-west1.run.app";
+        public string? CloudPdfApiUrl { get; set; } = "https://ermay-pdf-api-390930978984.europe-west1.run.app";
         public string? CloudPdfApiKey { get; set; } = "";
     }
 

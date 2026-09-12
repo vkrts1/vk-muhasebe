@@ -115,7 +115,7 @@ public partial class SettingsViewModel : ErmayMuhasebe.Shared.ViewModels.Setting
     [ObservableProperty] private string _firebaseAuthDomain = "";
     [ObservableProperty] private string _newUserFirebaseAuthUid = "";
 
-    [ObservableProperty] private string _cloudPdfApiUrl = "https://ermay-pdf-api-916435485627.europe-west1.run.app";
+    [ObservableProperty] private string _cloudPdfApiUrl = "https://ermay-pdf-api-390930978984.europe-west1.run.app";
     [ObservableProperty] private string _cloudPdfApiKey = "";
 
 
@@ -329,7 +329,7 @@ public partial class SettingsViewModel : ErmayMuhasebe.Shared.ViewModels.Setting
             IsFirebaseAuthEnabled = profil.IsFirebaseAuthEnabled;
             FirebaseAuthApiKey = profil.FirebaseAuthApiKey ?? "";
             FirebaseAuthDomain = profil.FirebaseAuthDomain ?? "";
-            CloudPdfApiUrl = string.IsNullOrWhiteSpace(profil.CloudPdfApiUrl) ? "https://ermay-pdf-api-916435485627.europe-west1.run.app" : profil.CloudPdfApiUrl;
+            CloudPdfApiUrl = (string.IsNullOrWhiteSpace(profil.CloudPdfApiUrl) || profil.CloudPdfApiUrl.Contains("916435485627")) ? "https://ermay-pdf-api-390930978984.europe-west1.run.app" : profil.CloudPdfApiUrl;
             CloudPdfApiKey = profil.CloudPdfApiKey ?? "";
 
             // Gelişmiş Bildirim Ayarları

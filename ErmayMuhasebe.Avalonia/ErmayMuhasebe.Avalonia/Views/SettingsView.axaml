@@ -669,7 +669,7 @@
 
                                         <StackPanel Spacing="6">
                                             <TextBlock Text="QuestPDF Bulut Servis URL'si" FontSize="13" FontWeight="SemiBold" Opacity="0.8"/>
-                                            <TextBox Text="{Binding CloudPdfApiUrl}" Watermark="https://ermay-pdf-api-916435485627.europe-west1.run.app" Height="46" CornerRadius="10"/>
+                                            <TextBox Text="{Binding CloudPdfApiUrl}" Watermark="https://ermay-pdf-api-390930978984.europe-west1.run.app" Height="46" CornerRadius="10"/>
                                         </StackPanel>
 
                                         <StackPanel Spacing="6">

@@ -16,7 +16,7 @@ public class CloudPdfService : IPdfService
     private readonly IUnitOfWork _uow;
     
     // API URL - Google Cloud Run 7/24 Canlı PDF Servisi
-    private const string ApiBaseUrl = "https://ermay-pdf-api-916435485627.europe-west1.run.app";
+    private const string ApiBaseUrl = "https://ermay-pdf-api-390930978984.europe-west1.run.app";
     private readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new() { MaxDepth = 256, PropertyNameCaseInsensitive = true };
 
     public CloudPdfService(HttpClient httpClient, IJSRuntime js, IUnitOfWork uow)

@@ -66,7 +66,7 @@ export default function AyarlarScreen() {
       setActiveYear(year || new Date().getFullYear().toString());
 
       const savedPdfUrl = await AsyncStorage.getItem('pdf_server_url');
-      setPdfServerUrl(savedPdfUrl || 'https://ermay-pdf-api-916435485627.europe-west1.run.app');
+      setPdfServerUrl((savedPdfUrl && !savedPdfUrl.includes('916435485627')) ? savedPdfUrl : 'https://ermay-pdf-api-390930978984.europe-west1.run.app');
 
       // Oturum kilidi ayarını yükle
       const lockSettings = await getLockSettings();

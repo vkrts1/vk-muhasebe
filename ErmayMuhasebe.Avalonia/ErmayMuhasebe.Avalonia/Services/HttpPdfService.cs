@@ -23,7 +23,7 @@ namespace ErmayMuhasebe.Services
             var apiUrl = Environment.GetEnvironmentVariable("ERMAY_PDF_API");
             if (string.IsNullOrWhiteSpace(apiUrl))
             {
-                apiUrl = "https://ermay-pdf-api-916435485627.europe-west1.run.app";
+                apiUrl = "https://ermay-pdf-api-390930978984.europe-west1.run.app";
             }
             if (_http.BaseAddress == null)
             {

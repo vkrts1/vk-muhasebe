@@ -265,12 +265,12 @@ const injectParams = (item: any, tasarim: any, logoBase64: string | null, should
 const getPdfServerUrl = async () => {
   try {
     const savedUrl = await AsyncStorage.getItem('pdf_server_url');
-    if (savedUrl) return savedUrl;
+    if (savedUrl && !savedUrl.includes('916435485627')) return savedUrl;
     
     // Default to 7/24 Cloud Run PDF API
-    return 'https://ermay-pdf-api-916435485627.europe-west1.run.app';
+    return 'https://ermay-pdf-api-390930978984.europe-west1.run.app';
   } catch (e) {
-    return 'https://ermay-pdf-api-916435485627.europe-west1.run.app';
+    return 'https://ermay-pdf-api-390930978984.europe-west1.run.app';
   }
 };
 
