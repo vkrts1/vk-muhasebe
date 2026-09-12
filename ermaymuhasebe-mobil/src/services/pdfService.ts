@@ -36,6 +36,12 @@ export const cleanBase64Logo = (rawLogo: string | null | undefined): string | nu
     clean = clean.split('base64,')[1];
   }
   clean = clean.replace(/\s+/g, '');
+  
+  const mod4 = clean.length % 4;
+  if (mod4 > 0) {
+    clean += '='.repeat(4 - mod4);
+  }
+  
   return clean.length > 0 ? clean : null;
 };
 
@@ -243,10 +249,14 @@ const injectParams = (item: any, tasarim: any, logoBase64: string | null, should
 
   if (shouldShowLogo && cleanLogo) {
     result.LogoBytes = cleanLogo;
+    result.logoBytes = cleanLogo;
     result.ShowLogo = true;
+    result.showLogo = true;
   } else {
     result.LogoBytes = null;
+    result.logoBytes = null;
     result.ShowLogo = false;
+    result.showLogo = false;
   }
 
   if (!tasarim) return result;

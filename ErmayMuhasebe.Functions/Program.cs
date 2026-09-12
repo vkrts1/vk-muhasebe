@@ -602,10 +602,13 @@ public class ByteArrayBase64Converter : System.Text.Json.Serialization.JsonConve
 
             try
             {
+                int mod4 = clean.Length % 4;
+                if (mod4 > 0) clean += new string('=', 4 - mod4);
                 return Convert.FromBase64String(clean);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[Base64] Logo conversion failed: {ex.Message}");
                 return Array.Empty<byte>();
             }
         }
