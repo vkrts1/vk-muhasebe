@@ -3,7 +3,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const TOKEN = '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';
-// Fetch latest run dynamically
+const RUN_ID = 34643714410;
 const REPO = 'vkrts1/bawsaq-muhasebe';
 
 const headers = {
@@ -17,27 +17,7 @@ async function sleep(ms) {
 }
 
 async function checkAndDownload() {
-  console.log(`[IPA Builder] Searching for latest GitHub Actions Run...`);
-
-  let RUN_ID = null;
-  while (!RUN_ID) {
-    try {
-      const runsRes = await fetch(`https://api.github.com/repos/${REPO}/actions/runs?per_page=1`, { headers });
-      const runsData = await runsRes.json();
-      if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
-        RUN_ID = runsData.workflow_runs[0].id;
-        console.log(`[IPA Builder] Found latest Run ID: ${RUN_ID}`);
-      } else {
-        console.log(`[IPA Builder] No runs found yet, waiting...`);
-        await sleep(10000);
-      }
-    } catch(e) {
-      console.error(`[Error fetching runs] ${e.message}`);
-      await sleep(10000);
-    }
-  }
-
-  console.log(`[IPA Builder] Monitoring GitHub Actions Run ID: ${RUN_ID}...`);
+  console.log(`[IPA Builder] Monitoring GitHub Actions Clean Run ID: ${RUN_ID}...`);
 
   while (true) {
     try {
