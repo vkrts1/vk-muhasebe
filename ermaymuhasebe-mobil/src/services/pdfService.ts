@@ -2,7 +2,7 @@ import AsyncStorage from './storage';
 import { Alert, Share } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { readData, mapAppToDatabase, getFirebaseConfig, loadConfigFromStorage, fetchWithTimeout, getAuthParam } from './firebase';
+import { readData, mapAppToDatabase, getFirebaseConfig, loadConfigFromStorage, fetchWithTimeout, getAuthParam, subscribeToPath } from './firebase';
 
 // Fatura tasarımı için desteklenen PDF endpoint'leri.
 // Bu endpoint'ler Functions tarafında FaturaTasarimi nesnesiyle
@@ -20,6 +20,31 @@ const PROFIL_CACHE_KEY = 'ermay_cached_firma_profili';
 
 let cachedProfil: any | null = null;
 let cachedProfilAt: number = 0;
+let isProfileSubscribed = false;
+
+export const initRealtimeProfileSync = () => {
+  if (isProfileSubscribed) return;
+  isProfileSubscribed = true;
+  try {
+    subscribeToPath('FirmaProfili/1', (data) => {
+      if (data && typeof data === 'object') {
+        const logo = data.logoBase64 || data.LogoBase64 || null;
+        const cleanLogo = cleanBase64Logo(logo);
+        cachedProfil = { ...data, logoBase64: cleanLogo, LogoBase64: cleanLogo };
+        cachedProfilAt = Date.now();
+        if (cleanLogo) {
+          AsyncStorage.setItem(LOGO_CACHE_KEY, cleanLogo).catch(() => {});
+          AsyncStorage.setItem(PROFIL_CACHE_KEY, JSON.stringify(cachedProfil)).catch(() => {});
+        } else {
+          AsyncStorage.removeItem(LOGO_CACHE_KEY).catch(() => {});
+          AsyncStorage.setItem(PROFIL_CACHE_KEY, JSON.stringify(cachedProfil)).catch(() => {});
+        }
+      }
+    });
+  } catch (e) {
+    // Non-fatal
+  }
+};
 
 export const resetPdfServiceCache = () => {
   cachedProfil = null;
@@ -46,23 +71,24 @@ export const cleanBase64Logo = (rawLogo: string | null | undefined): string | nu
 };
 
 export const loadFirmaProfili = async (): Promise<any | null> => {
+  initRealtimeProfileSync();
   if (cachedProfil && Date.now() - cachedProfilAt < TASARIM_CACHE_MS) {
     return cachedProfil;
   }
   try {
-    // 1. Önce doğrudan 1 numaralı profili dene (12 saniye timeout)
-    let node = await readData('FirmaProfili/1', 12000);
+    // 1. Önce doğrudan 1 numaralı profili dene
+    let node = await readData('FirmaProfili/1', 10000);
     
-    // 2. FirmaProfili genel düğümünü dene
-    if (!node || !(node.logoBase64 || node.LogoBase64)) {
-      const raw = await readData('FirmaProfili', 12000);
+    // 2. Eğer 1 numaralı profil bulunamadıysa genel düğümü dene
+    if (!node) {
+      const raw = await readData('FirmaProfili', 8000);
       if (raw) {
         node = raw[1] || raw;
       }
     }
 
-    // 3. Doğrudan REST URL ile Firebase'den çek (mapping/token engellerini aşar)
-    if (!node || !(node.logoBase64 || node.LogoBase64)) {
+    // 3. Hala profil yoksa doğrudan REST URL ile Firebase'den çek
+    if (!node) {
       try {
         const config = getFirebaseConfig() || await loadConfigFromStorage();
         if (config?.url) {
@@ -71,11 +97,11 @@ export const loadFirmaProfili = async (): Promise<any | null> => {
           const directUrl = `${cleanUrl}/FirmaProfili/1.json${authParam ? `?${authParam}` : ''}`;
           const directRes = await fetchWithTimeout(directUrl, {
             headers: { 'Cache-Control': 'no-cache', 'Accept': 'application/json' }
-          }, 8000);
+          }, 6000);
           if (directRes.ok) {
             const directData = await directRes.json();
-            if (directData && (directData.LogoBase64 || directData.logoBase64)) {
-              node = { ...(node || {}), ...directData, logoBase64: directData.LogoBase64 || directData.logoBase64 };
+            if (directData) {
+              node = directData;
             }
           }
         }
@@ -84,101 +110,69 @@ export const loadFirmaProfili = async (): Promise<any | null> => {
       }
     }
 
-    // 4. companies/default/FirmaProfili/1 yolunu dene (Tenant yapısı)
-    if (!node || !(node.logoBase64 || node.LogoBase64)) {
-      const scopedNode = await readData('companies/default/FirmaProfili/1', 8000);
+    // 4. Hala yoksa companies/default/FirmaProfili/1 yolunu dene (Tenant yapısı)
+    if (!node) {
+      const scopedNode = await readData('companies/default/FirmaProfili/1', 6000);
       if (scopedNode) {
-        node = { ...(node || {}), ...scopedNode };
+        node = scopedNode;
       }
     }
 
-    // 5. companies/default/settings/company_logo yolunu dene (Blazor / Cloud ayar yolu)
-    if (!node || !(node.logoBase64 || node.LogoBase64)) {
-      const directLogo = await readData('companies/default/settings/company_logo', 8000);
-      if (directLogo && typeof directLogo === 'string') {
-        node = { ...(node || {}), logoBase64: directLogo, LogoBase64: directLogo };
-      }
-    }
-
-    // 6. Yıllık yoldan dene (companies/default/years/{year}/FirmaProfili/1)
-    if (!node || !(node.logoBase64 || node.LogoBase64)) {
-      const curYear = new Date().getFullYear().toString();
-      const yearlyNode = await readData(`companies/default/years/${curYear}/FirmaProfili/1`, 8000);
-      if (yearlyNode) {
-        node = { ...(node || {}), ...yearlyNode };
-      }
-    }
-
-    const foundLogo = node?.logoBase64 || node?.LogoBase64;
-    if (foundLogo) {
-      cachedProfil = node;
-      cachedProfilAt = Date.now();
-      // Kalıcı depolamaya sakla (çevrimdışı ve yavaş ağ durumları için)
-      AsyncStorage.setItem(LOGO_CACHE_KEY, String(foundLogo)).catch(() => {});
-      AsyncStorage.setItem(PROFIL_CACHE_KEY, JSON.stringify(node)).catch(() => {});
-      return node;
-    }
-
+    // 5. Sunucudan profil alındıysa (Canlı / Online durum):
     if (node) {
-      // Profil var ama logo alanı boşsa, daha önceden önbelleğe alınmış kalıcı logoyu ekle
-      const cachedLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
-      if (cachedLogo) {
-        node.logoBase64 = cachedLogo;
-        node.LogoBase64 = cachedLogo;
-      }
+      const rawLogo = node.logoBase64 || node.LogoBase64 || null;
+      const clean = cleanBase64Logo(rawLogo);
+      node.logoBase64 = clean;
+      node.LogoBase64 = clean;
       cachedProfil = node;
       cachedProfilAt = Date.now();
+
+      if (clean) {
+        AsyncStorage.setItem(LOGO_CACHE_KEY, clean).catch(() => {});
+        AsyncStorage.setItem(PROFIL_CACHE_KEY, JSON.stringify(node)).catch(() => {});
+      } else {
+        // Kullanıcı masaüstünden veya mobilden logoyu sildi!
+        // Eski önbellekte kalmış logo varsa kesinlikle ve anında silinmelidir!
+        AsyncStorage.removeItem(LOGO_CACHE_KEY).catch(() => {});
+        AsyncStorage.setItem(PROFIL_CACHE_KEY, JSON.stringify(node)).catch(() => {});
+      }
       return node;
     }
 
-    // Ağdan hiçbir veri gelmediyse kalıcı önbellekten yükle
+    // 6. Yalnızca tamamen çevrimdışı / ağ yoksa yerel önbellekten oku:
     const savedProfilJson = await AsyncStorage.getItem(PROFIL_CACHE_KEY);
     if (savedProfilJson) {
-      const parsed = JSON.parse(savedProfilJson);
-      cachedProfil = parsed;
-      cachedProfilAt = Date.now();
-      return parsed;
+      try {
+        const parsed = JSON.parse(savedProfilJson);
+        cachedProfil = parsed;
+        cachedProfilAt = Date.now();
+        return parsed;
+      } catch { }
     }
 
-    const savedLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
-    if (savedLogo) {
-      const fallback = {
-        logoBase64: savedLogo,
-        LogoBase64: savedLogo,
-        logoFatura: true,
-        logoSiparis: true,
-        logoTeklif: true,
-        logoEkstre: true,
-        logoRaporlar: true,
-        logoTahsilat: true,
-        logoOdeme: true,
-        logoAcilisBakiye: true
-      };
-      cachedProfil = fallback;
-      cachedProfilAt = Date.now();
-      return fallback;
+    // Fallback: Çevrimdışı ve yalnızca LOGO_CACHE_KEY mevcutsa
+    const fallbackLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
+    if (fallbackLogo) {
+      const cleanFallback = cleanBase64Logo(fallbackLogo);
+      if (cleanFallback) {
+        return {
+          id: 1,
+          firmaAdi: 'Ermay Muhasebe',
+          logoBase64: cleanFallback,
+          LogoBase64: cleanFallback,
+          logoFatura: true,
+          logoSiparis: true,
+          logoTeklif: true,
+          logoEkstre: true,
+          logoTahsilat: true,
+          logoRaporlar: true,
+        };
+      }
     }
 
     return null;
   } catch (e) {
     console.error('FirmaProfili okunamadı:', e);
-    try {
-      const savedLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
-      if (savedLogo) {
-        return {
-          logoBase64: savedLogo,
-          LogoBase64: savedLogo,
-          logoFatura: true,
-          logoSiparis: true,
-          logoTeklif: true,
-          logoEkstre: true,
-          logoRaporlar: true,
-          logoTahsilat: true,
-          logoOdeme: true,
-          logoAcilisBakiye: true
-        };
-      }
-    } catch {}
     return null;
   }
 };
@@ -225,12 +219,7 @@ const enrichWithTasarim = async (endpoint: string, payload: any): Promise<any> =
     loadFirmaProfili(),
   ]);
 
-  let rawLogo = profil?.logoBase64 || profil?.LogoBase64 || null;
-  if (!rawLogo) {
-    try {
-      rawLogo = await AsyncStorage.getItem(LOGO_CACHE_KEY);
-    } catch {}
-  }
+  const rawLogo = profil?.logoBase64 || profil?.LogoBase64 || null;
   const cleanLogo = cleanBase64Logo(rawLogo);
   const isLogoAllowed = isLogoEnabledForEndpoint(endpoint, profil);
   const shouldShowLogo = Boolean(cleanLogo && isLogoAllowed);

@@ -18,6 +18,7 @@ jest.mock('../firebase', () => ({
   loadConfigFromStorage: jest.fn(async () => null),
   fetchWithTimeout: jest.fn(async () => ({ ok: false, json: async () => null })),
   getAuthParam: jest.fn(() => ''),
+  subscribeToPath: jest.fn(() => () => {}),
 }));
 
 jest.mock('expo-file-system/legacy', () => ({
@@ -62,13 +63,13 @@ describe('loadFirmaProfili', () => {
   });
 
   it('loads profile directly from FirmaProfili/1 when available', async () => {
-    const mockProfile = { id: 1, firmaAdi: 'Ermay', logoBase64: 'abc123logo' };
+    const mockProfile = { id: 1, firmaAdi: 'Ermay', logoBase64: 'abcd1234wxyz' };
     (firebaseModule.readData as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     const result = await loadFirmaProfili();
     expect(result).not.toBeNull();
-    expect(result.logoBase64).toBe('abc123logo');
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith('ermay_cached_company_logo', 'abc123logo');
+    expect(result.logoBase64).toBe('abcd1234wxyz');
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('ermay_cached_company_logo', 'abcd1234wxyz');
   });
 
   it('falls back to AsyncStorage when network returns null', async () => {
@@ -81,5 +82,15 @@ describe('loadFirmaProfili', () => {
     const result = await loadFirmaProfili();
     expect(result).not.toBeNull();
     expect(result.logoBase64).toBe('cached_fallback_logo');
+  });
+
+  it('clears logo and AsyncStorage when profile on server has no logo', async () => {
+    const mockProfileNoLogo = { id: 1, firmaAdi: 'Ermay', logoBase64: null, LogoBase64: null };
+    (firebaseModule.readData as jest.Mock).mockResolvedValueOnce(mockProfileNoLogo);
+
+    const result = await loadFirmaProfili();
+    expect(result).not.toBeNull();
+    expect(result.logoBase64).toBeNull();
+    expect(AsyncStorage.removeItem).toHaveBeenCalledWith('ermay_cached_company_logo');
   });
 });

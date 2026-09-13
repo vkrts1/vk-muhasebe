@@ -3,7 +3,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const TOKEN = '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';
-const RUN_ID = 34643714410;
+const RUN_ID = 34720458472;
 const REPO = 'vkrts1/bawsaq-muhasebe';
 
 const headers = {

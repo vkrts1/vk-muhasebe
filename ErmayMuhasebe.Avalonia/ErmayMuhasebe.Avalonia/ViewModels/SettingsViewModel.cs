@@ -178,6 +178,41 @@ public partial class SettingsViewModel : ErmayMuhasebe.Shared.ViewModels.Setting
                 UpdateManagerSelectionVisibility();
             }
         };
+
+        WeakReferenceMessenger.Default.Register<FirmaProfiliChangedMessage>(this, (r, m) =>
+        {
+            global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                var profil = m.Value;
+                if (profil != null)
+                {
+                    if (!string.IsNullOrEmpty(profil.LogoBase64))
+                    {
+                        try
+                        {
+                            LogoBytes = Convert.FromBase64String(profil.LogoBase64);
+                        }
+                        catch
+                        {
+                            LogoBytes = null;
+                        }
+                    }
+                    else
+                    {
+                        LogoBytes = null;
+                    }
+
+                    LogoFatura = profil.LogoFatura;
+                    LogoSiparis = profil.LogoSiparis;
+                    LogoTeklif = profil.LogoTeklif;
+                    LogoEkstre = profil.LogoEkstre;
+                    LogoRaporlar = profil.LogoRaporlar;
+                    LogoTahsilat = profil.LogoTahsilat;
+                    LogoOdeme = profil.LogoOdeme;
+                    LogoAcilisBakiye = profil.LogoAcilisBakiye;
+                }
+            });
+        });
     }
 
     private void InitializeCategories()

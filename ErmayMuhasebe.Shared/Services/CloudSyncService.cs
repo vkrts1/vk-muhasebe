@@ -306,6 +306,8 @@ namespace ErmayMuhasebe.Services
 
         // Firma profili (logo dahil) kök düğümde ve şirket ayarlarında tutulur — mobil Ayarlar ekranı
         // ve PDF servisleri farklı Firebase kurallarında dahi logoya kesinlikle erişebilsin diye çoklu yola yazılır.
+        // Firma profili (logo dahil) kök düğümde ve şirket ayarlarında tutulur — mobil Ayarlar ekranı
+        // ve PDF servisleri farklı Firebase kurallarında dahi logoya kesinlikle erişebilsin diye çoklu yola yazılır.
         public async Task SyncFirmaProfiliAsync(FirmaProfili profil)
         {
             if (_firebase == null)
@@ -317,10 +319,22 @@ namespace ErmayMuhasebe.Services
             {
                 if (_firebase == null) return;
 
+                int year = _yearContext?.CurrentYear ?? DateTime.Now.Year;
+                bool hasLogo = !string.IsNullOrEmpty(profil.LogoBase64);
+
                 // 1. Kök düğüme yaz (Mobil doğrudan buradan okur)
                 try
                 {
                     await _firebase.Child("FirmaProfili").Child("1").PutAsync(profil);
+                    if (hasLogo)
+                    {
+                        await _firebase.Child("FirmaProfili").Child("1").Child("logoBase64").PutAsync(profil.LogoBase64);
+                    }
+                    else
+                    {
+                        try { await _firebase.Child("FirmaProfili").Child("1").Child("LogoBase64").DeleteAsync(); } catch { }
+                        try { await _firebase.Child("FirmaProfili").Child("1").Child("logoBase64").DeleteAsync(); } catch { }
+                    }
                     Console.WriteLine("[CloudSync] FirmaProfili/1 basariyla Firebase'e yazildi.");
                 }
                 catch (Exception ex)
@@ -332,6 +346,15 @@ namespace ErmayMuhasebe.Services
                 try
                 {
                     await _firebase.Child("companies").Child("default").Child("FirmaProfili").Child("1").PutAsync(profil);
+                    if (hasLogo)
+                    {
+                        await _firebase.Child("companies").Child("default").Child("FirmaProfili").Child("1").Child("logoBase64").PutAsync(profil.LogoBase64);
+                    }
+                    else
+                    {
+                        try { await _firebase.Child("companies").Child("default").Child("FirmaProfili").Child("1").Child("LogoBase64").DeleteAsync(); } catch { }
+                        try { await _firebase.Child("companies").Child("default").Child("FirmaProfili").Child("1").Child("logoBase64").DeleteAsync(); } catch { }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -341,15 +364,23 @@ namespace ErmayMuhasebe.Services
                 // 3. Yillik yola yaz (companies/default/years/{year}/FirmaProfili/1)
                 try
                 {
-                    int year = _yearContext?.CurrentYear ?? DateTime.Now.Year;
                     await _firebase.Child("companies").Child("default").Child("years").Child(year.ToString()).Child("FirmaProfili").Child("1").PutAsync(profil);
+                    if (hasLogo)
+                    {
+                        await _firebase.Child("companies").Child("default").Child("years").Child(year.ToString()).Child("FirmaProfili").Child("1").Child("logoBase64").PutAsync(profil.LogoBase64);
+                    }
+                    else
+                    {
+                        try { await _firebase.Child("companies").Child("default").Child("years").Child(year.ToString()).Child("FirmaProfili").Child("1").Child("LogoBase64").DeleteAsync(); } catch { }
+                        try { await _firebase.Child("companies").Child("default").Child("years").Child(year.ToString()).Child("FirmaProfili").Child("1").Child("logoBase64").DeleteAsync(); } catch { }
+                    }
                 }
                 catch { }
 
                 // 4. Bulut/Web ayar yoluna yaz (companies/default/settings/company_logo)
                 try
                 {
-                    if (!string.IsNullOrEmpty(profil.LogoBase64))
+                    if (hasLogo)
                     {
                         await _firebase.Child("companies").Child("default").Child("settings").Child("company_logo").PutAsync(profil.LogoBase64);
                     }
@@ -363,6 +394,23 @@ namespace ErmayMuhasebe.Services
                     Console.WriteLine($"[CloudSync] company_logo ayar yazma hatasi: {ex.Message}");
                 }
             });
+        }
+
+        public async Task<FirmaProfili?> PullFirmaProfiliAsync()
+        {
+            if (!IsConnected || _firebase == null) return null;
+            try
+            {
+                var item = await _firebase.Child("FirmaProfili").Child("1").OnceSingleAsync<FirmaProfili>();
+                if (item != null) return item;
+                
+                return await _firebase.Child("companies").Child("default").Child("FirmaProfili").Child("1").OnceSingleAsync<FirmaProfili>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CloudSync] PullFirmaProfiliAsync Error: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task DeleteNoteAsync(int id)

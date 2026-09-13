@@ -23,6 +23,7 @@ namespace ErmayMuhasebe.Services
         private readonly CloudSyncService _sync;
         private readonly List<IDisposable> _realtimeSubscriptions = new();
         public event Action? OnDatabaseChanged;
+        public event Action<FirmaProfili>? OnFirmaProfiliChanged;
 
         public CloudSyncService SyncService => _sync;
 
@@ -4181,6 +4182,60 @@ namespace ErmayMuhasebe.Services
             OnDatabaseChanged?.Invoke();
         }
 
+        public void NotifyFirmaProfiliChanged(FirmaProfili profil)
+        {
+            System.Diagnostics.Debug.WriteLine("[DatabaseService] NotifyFirmaProfiliChanged triggered.");
+            OnFirmaProfiliChanged?.Invoke(profil);
+        }
+
+        public async Task ApplyIncomingFirmaProfiliAsync(FirmaProfili item)
+        {
+            await EnsureInitializedAsync();
+            item.Id = 1;
+            var existing = await _db.Table<FirmaProfili>().FirstOrDefaultAsync(x => x.Id == 1);
+            if (existing == null)
+            {
+                await _db.InsertAsync(item);
+            }
+            else
+            {
+                await _db.UpdateAsync(item);
+            }
+
+            // Global SQLite DB
+            try
+            {
+                var globalConn = GetGlobalConnection();
+                if (globalConn != null)
+                {
+                    var existingGlobal = await globalConn.Table<FirmaProfili>().FirstOrDefaultAsync(x => x.Id == 1);
+                    if (existingGlobal != null) await globalConn.UpdateAsync(item); else await globalConn.InsertAsync(item);
+                }
+            }
+            catch { }
+
+            // File on disk (company_logo.png)
+            try
+            {
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe");
+                string logoPath = Path.Combine(dir, "company_logo.png");
+                if (!string.IsNullOrEmpty(item.LogoBase64))
+                {
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    var bytes = Convert.FromBase64String(item.LogoBase64);
+                    await File.WriteAllBytesAsync(logoPath, bytes);
+                }
+                else
+                {
+                    if (File.Exists(logoPath)) File.Delete(logoPath);
+                }
+            }
+            catch { }
+
+            NotifyFirmaProfiliChanged(item);
+            NotifyDatabaseChanged();
+        }
+
         private bool AreObjectsEqual<T>(T obj1, T obj2)
         {
             if (obj1 == null || obj2 == null) return ReferenceEquals(obj1, obj2);
@@ -4812,6 +4867,45 @@ namespace ErmayMuhasebe.Services
                         NotifyDatabaseChanged();
                     }
                 });
+
+                // FirmaProfili Realtime Listener (Root node)
+                try
+                {
+                    var profilSub = client
+                        .Child("FirmaProfili")
+                        .AsObservable<FirmaProfili>()
+                        .Subscribe(async eventArgs =>
+                        {
+                            try
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[DatabaseService] FirmaProfili Realtime Event: Key={eventArgs.Key}, EventType={eventArgs.EventType}");
+                                if (eventArgs.Object != null)
+                                {
+                                    var incoming = eventArgs.Object;
+                                    incoming.Id = 1;
+                                    await ApplyIncomingFirmaProfiliAsync(incoming);
+                                }
+                                else if (eventArgs.EventType == Firebase.Database.Streaming.FirebaseEventType.Delete && (eventArgs.Key == "1" || eventArgs.Key == "logoBase64" || eventArgs.Key == "LogoBase64"))
+                                {
+                                    var current = await GetFirmaProfiliAsync();
+                                    current.LogoBase64 = null;
+                                    await ApplyIncomingFirmaProfiliAsync(current);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[DatabaseService] FirmaProfili realtime event error: {ex.Message}");
+                            }
+                        }, ex =>
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[DatabaseService] FirmaProfili subscription error: {ex.Message}");
+                        });
+                    _realtimeSubscriptions.Add(profilSub);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DatabaseService] FirmaProfili RegisterRealtimeListener Error: {ex.Message}");
+                }
 
                 System.Diagnostics.Debug.WriteLine("[DatabaseService] Realtime Sync STARTED successfully.");
             }
@@ -5471,6 +5565,20 @@ namespace ErmayMuhasebe.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Sync PullMusteriTakip error: {ex.Message}");
+            }
+
+            // 21. Pull FirmaProfili from Cloud
+            try
+            {
+                var cloudProfil = await _sync.PullFirmaProfiliAsync();
+                if (cloudProfil != null)
+                {
+                    await ApplyIncomingFirmaProfiliAsync(cloudProfil);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Sync PullFirmaProfili error: {ex.Message}");
             }
 
             // Trigger database changed event ONLY if actual records changed from cloud

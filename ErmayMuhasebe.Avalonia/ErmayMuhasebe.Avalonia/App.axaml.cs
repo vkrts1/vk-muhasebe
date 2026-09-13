@@ -289,6 +289,48 @@ public partial class App : Application, IRecipient<ShowCariDetailMessage>, IReci
                     });
                 }, TaskScheduler.Default);
             };
+
+            dbService.OnFirmaProfiliChanged += (profil) =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    try
+                    {
+                        var pdf = Services?.GetService<PdfService>();
+                        if (pdf != null)
+                        {
+                            if (!string.IsNullOrEmpty(profil.LogoBase64))
+                            {
+                                try
+                                {
+                                    pdf.LogoBytes = Convert.FromBase64String(profil.LogoBase64);
+                                }
+                                catch
+                                {
+                                    pdf.LogoBytes = new byte[0];
+                                }
+                            }
+                            else
+                            {
+                                pdf.LogoBytes = new byte[0];
+                            }
+                            pdf.ShowLogoFatura = profil.LogoFatura;
+                            pdf.ShowLogoSiparis = profil.LogoSiparis;
+                            pdf.ShowLogoTeklif = profil.LogoTeklif;
+                            pdf.ShowLogoEkstre = profil.LogoEkstre;
+                            pdf.ShowLogoRaporlar = profil.LogoRaporlar;
+                            pdf.ShowLogoTahsilat = profil.LogoTahsilat;
+                            pdf.ShowLogoOdeme = profil.LogoOdeme;
+                            pdf.ShowLogoAcilisBakiye = profil.LogoAcilisBakiye;
+                        }
+                        WeakReferenceMessenger.Default.Send(new FirmaProfiliChangedMessage(profil));
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[App] Error in OnFirmaProfiliChanged handler: {ex.Message}");
+                    }
+                });
+            };
         }
 
         // Cari Detay Penceresini Açan Mesajı Dinle

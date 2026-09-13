@@ -6,6 +6,7 @@ import AsyncStorage from '../services/storage';
 import { saveFirebaseConfig, saveActiveYear, getFirebaseConfig, loadConfigFromStorage, goOfflineMode, writeData, subscribeToPath, logoutUser, deleteData, readData, fetchAvailableYears } from '../services/firebase';
 import { getLockSettings, savePin, setLockEnabled, clearLock, setLockTimeout, DEFAULT_LOCK_MINUTES } from '../services/lockService';
 import { getUiScale, saveUiScale, UiScale } from '../services/themeService';
+import { resetPdfServiceCache, cleanBase64Logo } from '../services/pdfService';
 
 export default function AyarlarScreen() {
   const [dbUrl, setDbUrl] = useState('');
@@ -94,6 +95,9 @@ export default function AyarlarScreen() {
           setLogoBase64(incomingLogo);
           if (incomingLogo) {
             AsyncStorage.setItem('ermay_cached_company_logo', String(incomingLogo)).catch(() => {});
+          } else {
+            AsyncStorage.removeItem('ermay_cached_company_logo').catch(() => {});
+            resetPdfServiceCache();
           }
 
           // Belge Logo Bayrakları
@@ -144,8 +148,19 @@ export default function AyarlarScreen() {
         base64: true,
       });
       if (!res.canceled && res.assets && res.assets.length > 0 && res.assets[0].base64) {
-        setLogoBase64(res.assets[0].base64);
-        Alert.alert('Bilgi', 'Logo başarıyla seçildi. Kalıcı olması için "Firma Profilini Kaydet" butonuna basınız.');
+        const clean = cleanBase64Logo(res.assets[0].base64);
+        setLogoBase64(clean);
+        if (clean) {
+          await AsyncStorage.setItem('ermay_cached_company_logo', clean);
+          resetPdfServiceCache();
+          // Anında Firebase'e ve masaüstüne canlı yansıt
+          await writeData('FirmaProfili/1/logoBase64', clean);
+          await writeData('FirmaProfili/1/LogoBase64', clean);
+          await writeData('companies/default/FirmaProfili/1/logoBase64', clean);
+          await writeData('companies/default/FirmaProfili/1/LogoBase64', clean);
+          await writeData('companies/default/settings/company_logo', clean);
+        }
+        Alert.alert('Başarılı', 'Şirket logosu güncellendi ve masaüstüyle anında senkronize edildi.');
       }
     } catch (e) {
       Alert.alert('Hata', 'Logo seçilirken bir hata oluştu.');
@@ -155,7 +170,22 @@ export default function AyarlarScreen() {
   const handleRemoveLogo = () => {
     Alert.alert('Logo Kaldır', 'Şirket logosunu kaldırmak istediğinize emin misiniz?', [
       { text: 'Vazgeç', style: 'cancel' },
-      { text: 'Kaldır', style: 'destructive', onPress: () => setLogoBase64(null) }
+      { 
+        text: 'Kaldır', 
+        style: 'destructive', 
+        onPress: async () => {
+          setLogoBase64(null);
+          await AsyncStorage.removeItem('ermay_cached_company_logo');
+          resetPdfServiceCache();
+          // Anında Firebase'den kaldırarak masaüstüyle anında senkronize et
+          await writeData('FirmaProfili/1/logoBase64', null);
+          await writeData('FirmaProfili/1/LogoBase64', null);
+          await writeData('companies/default/FirmaProfili/1/logoBase64', null);
+          await writeData('companies/default/FirmaProfili/1/LogoBase64', null);
+          await writeData('companies/default/settings/company_logo', null);
+          Alert.alert('Başarılı', 'Şirket logosu kaldırıldı ve masaüstüyle senkronize edildi.');
+        } 
+      }
     ]);
   };
 
@@ -211,7 +241,18 @@ export default function AyarlarScreen() {
 
       if (logoBase64) {
         await AsyncStorage.setItem('ermay_cached_company_logo', String(logoBase64));
+        await writeData('companies/default/FirmaProfili/1/logoBase64', String(logoBase64));
+        await writeData('companies/default/FirmaProfili/1/LogoBase64', String(logoBase64));
+        await writeData('companies/default/settings/company_logo', String(logoBase64));
+      } else {
+        await AsyncStorage.removeItem('ermay_cached_company_logo');
+        await writeData('FirmaProfili/1/logoBase64', null);
+        await writeData('FirmaProfili/1/LogoBase64', null);
+        await writeData('companies/default/FirmaProfili/1/logoBase64', null);
+        await writeData('companies/default/FirmaProfili/1/LogoBase64', null);
+        await writeData('companies/default/settings/company_logo', null);
       }
+      resetPdfServiceCache();
 
       Alert.alert('Başarılı', 'Sistem ayarları, firma profili ve logo tercihleri kaydedildi.');
     } catch (e) {
