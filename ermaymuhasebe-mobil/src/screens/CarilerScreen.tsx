@@ -146,21 +146,27 @@ export default function CarilerScreen({ route, navigation }: any) {
   useEffect(() => {
     const unsubCariler = subscribeToPath('Cariler', (data) => {
       if (data) {
-        const list = Array.isArray(data) ? data.filter(Boolean) : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
+        const list = Array.isArray(data)
+          ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
+          : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
         setCariler(list.filter(c => !c.isDeleted));
       }
     });
 
     const unsubHareketler = subscribeToPath('CariHareketler', (data) => {
       if (data) {
-        const list = Array.isArray(data) ? data.filter(Boolean) : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
+        const list = Array.isArray(data)
+          ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
+          : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
         setCariHareketler(list.filter(h => !h.isDeleted));
       }
     });
 
     const unsubKasalar = subscribeToPath('Kasalar', (data) => {
       if (data) {
-        const list = Array.isArray(data) ? data.filter(Boolean) : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
+        const list = Array.isArray(data)
+          ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
+          : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
         legacyKasalarRef.current = list.filter(k => k && k.isDeleted !== true);
         setKasalar(mergeKasalar(bankKasalarRef.current, legacyKasalarRef.current));
       } else {
@@ -171,7 +177,9 @@ export default function CarilerScreen({ route, navigation }: any) {
 
     const unsubBankalar = subscribeToPath('Bankalar', (data) => {
       if (data) {
-        const list = Array.isArray(data) ? data.filter(Boolean) : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
+        const list = Array.isArray(data)
+          ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
+          : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
         const { kasalar, bankalar } = splitAccounts(list.filter(b => b && b.isDeleted !== true));
         bankKasalarRef.current = kasalar;
         setKasalar(mergeKasalar(bankKasalarRef.current, legacyKasalarRef.current));
@@ -980,88 +988,83 @@ export default function CarilerScreen({ route, navigation }: any) {
 
                     }
 
-                    if (h.evrakNo) {
-
-                      const moveId = h.evrakNo;
-
+                    if (h.evrakNo || h.refId || h.id) {
                       try {
+                        const kHareketler = (await readData('KasaHareketler')) || {};
+                        const kList = Array.isArray(kHareketler)
+                          ? kHareketler.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
+                          : Object.keys(kHareketler).map(key => ({ ...kHareketler[key], firebaseKey: key }));
 
-                        const kHareketler = await readData('KasaHareketler') || {};
-
-                        const kList = Array.isArray(kHareketler) ? kHareketler.filter(Boolean) : Object.keys(kHareketler).map(key => ({ ...kHareketler[key], firebaseKey: key }));
-
-                        const kasaH = kList.find(kh => String(kh.id) === moveId);
+                        const kasaH = kList.find(kh =>
+                          (h.evrakNo && kh.evrakNo && String(kh.evrakNo) === String(h.evrakNo)) ||
+                          (h.refId && kh.refId && String(kh.refId) === String(h.refId)) ||
+                          (h.evrakNo && String(kh.id) === String(h.evrakNo))
+                        );
 
                         if (kasaH) {
-
-                          await deleteData(`KasaHareketler/${kasaH.id || kasaH.firebaseKey}`);
-
-                          const kasa = kasalar.find(k => k.id === kasaH.hesapId);
-
-                          if (kasa) {
-
-                            const yeniBakiye = (kasa.bakiye || 0) - (kasaH.giren || 0) + (kasaH.cikan || 0);
-
-                            const okKasa = await writeData(`Bankalar/${kasa.id}`, { ...kasa, kartTuru: 'Kasa', bakiye: yeniBakiye });
-
-                            if (!okKasa) {
-
-                              Alert.alert('Uyarı', 'Kasa bakiyesi güncellenemedi. (Bağlantı sorunu — bakiye sıraya alındı.)');
-
-                            }
-
+                          const kKey = kasaH.firebaseKey || kasaH.id;
+                          if (kKey) await deleteData(`KasaHareketler/${kKey}`);
+                          if (kasaH.id && String(kasaH.id) !== String(kKey)) {
+                            try { await deleteData(`KasaHareketler/${kasaH.id}`); } catch {}
                           }
 
+                          const kasaId = kasaH.kasaId || kasaH.hesapId;
+                          const kasa = kasalar.find(k => k.id === kasaId);
+                          if (kasa) {
+                            const yeniBakiye = (kasa.bakiye || 0) - (kasaH.giren || 0) + (kasaH.cikan || 0);
+                            const okKasa = await writeData(`Bankalar/${kasa.id}`, { ...kasa, kartTuru: 'Kasa', bakiye: yeniBakiye });
+                            if (!okKasa) {
+                              Alert.alert('Uyarı', 'Kasa bakiyesi güncellenemedi. (Bağlantı sorunu — bakiye sıraya alındı.)');
+                            }
+                          }
                         }
 
-                        const bHareketler = await readData('BankaHareketler') || {};
+                        const bHareketler = (await readData('BankaHareketler')) || {};
+                        const bList = Array.isArray(bHareketler)
+                          ? bHareketler.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
+                          : Object.keys(bHareketler).map(key => ({ ...bHareketler[key], firebaseKey: key }));
 
-                        const bList = Array.isArray(bHareketler) ? bHareketler.filter(Boolean) : Object.keys(bHareketler).map(key => ({ ...bHareketler[key], firebaseKey: key }));
-
-                        const bankaH = bList.find(bh => String(bh.id) === moveId);
+                        const bankaH = bList.find(bh =>
+                          (h.evrakNo && bh.evrakNo && String(bh.evrakNo) === String(h.evrakNo)) ||
+                          (h.refId && bh.refId && String(bh.refId) === String(h.refId)) ||
+                          (h.evrakNo && String(bh.id) === String(h.evrakNo))
+                        );
 
                         if (bankaH) {
-
-                          await deleteData(`BankaHareketler/${bankaH.id || bankaH.firebaseKey}`);
-
-                          const bankaId = bankaH.bankaId || bankaH.hesapId;
-
-                          const banka = bankalar.find(b => b.id === bankaId);
-
-                          if (banka) {
-
-                            const giren = bankaH.giren || bankaH.borc || 0;
-
-                            const cikan = bankaH.cikan || bankaH.alacak || 0;
-
-                            const yeniBakiye = (banka.bakiye || 0) - giren + cikan;
-
-                            const okBanka = await writeData(`Bankalar/${banka.id}`, { ...banka, bakiye: yeniBakiye });
-
-                            if (!okBanka) {
-
-                              Alert.alert('Uyarı', 'Banka bakiyesi güncellenemedi. (Bağlantı sorunu — bakiye sıraya alındı.)');
-
-                            }
-
+                          const bKey = bankaH.firebaseKey || bankaH.id;
+                          if (bKey) await deleteData(`BankaHareketler/${bKey}`);
+                          if (bankaH.id && String(bankaH.id) !== String(bKey)) {
+                            try { await deleteData(`BankaHareketler/${bankaH.id}`); } catch {}
                           }
 
+                          const bankaId = bankaH.bankaId || bankaH.hesapId;
+                          const banka = bankalar.find(b => b.id === bankaId);
+                          if (banka) {
+                            const giren = bankaH.giren || bankaH.borc || 0;
+                            const cikan = bankaH.cikan || bankaH.alacak || 0;
+                            const yeniBakiye = (banka.bakiye || 0) - giren + cikan;
+                            const okBanka = await writeData(`Bankalar/${banka.id}`, { ...banka, bakiye: yeniBakiye });
+                            if (!okBanka) {
+                              Alert.alert('Uyarı', 'Banka bakiyesi güncellenemedi. (Bağlantı sorunu — bakiye sıraya alındı.)');
+                            }
+                          }
                         }
-
                       } catch (err) {
-
                         console.error('Kasa/Banka bakiye guncelleme hatasi:', err);
-
                       }
-
                     }
 
-                    const success = await deleteData(`CariHareketler/${h.id}`);
+                    const chKey = h.firebaseKey || h.id;
+                    let success = false;
+                    if (chKey) {
+                      success = await deleteData(`CariHareketler/${chKey}`);
+                    }
+                    if (h.id && String(h.id) !== String(chKey)) {
+                      try { await deleteData(`CariHareketler/${h.id}`); } catch {}
+                    }
 
                     if (success) {
-
                       Alert.alert('Başarılı', 'Cari hareketi başarıyla silindi.');
-
                     }
 
                   }

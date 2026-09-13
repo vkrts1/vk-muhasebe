@@ -585,7 +585,7 @@ export default function FinansScreen({ route }: any) {
           setter([]);
         } else {
           const list = Array.isArray(data)
-            ? data.filter(Boolean)
+            ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
             : Object.keys(data).map((key) => ({
                 ...data[key],
                 firebaseKey: key,
@@ -597,7 +597,7 @@ export default function FinansScreen({ route }: any) {
 
     const unsubBankalar = listHelper("Bankalar", (data: any) => {
       const raw = Array.isArray(data)
-        ? data.filter(Boolean)
+        ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
         : Object.keys(data || {}).map((key) => ({
             ...data[key],
             firebaseKey: key,
@@ -610,7 +610,7 @@ export default function FinansScreen({ route }: any) {
     });
     const unsubKasalar = listHelper("Kasalar", (data: any) => {
       const raw = Array.isArray(data)
-        ? data.filter(Boolean)
+        ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
         : Object.keys(data || {}).map((key) => ({
             ...data[key],
             firebaseKey: key,
@@ -917,6 +917,7 @@ export default function FinansScreen({ route }: any) {
     return cariHareketler.find(
       (h) =>
         (move.refId && h.refId === move.refId) ||
+        (move.evrakNo && h.evrakNo && String(h.evrakNo) === String(move.evrakNo)) ||
         (h.cariId === move.cariId &&
           h.evrakNo &&
           String(h.evrakNo) === String(move.evrakNo || move.id)),
@@ -977,9 +978,15 @@ export default function FinansScreen({ route }: any) {
                     );
                   }
                 }
-                if (linked.firebaseKey) {
+                const linkedKey = linked.firebaseKey || linked.id;
+                if (linkedKey) {
                   try {
-                    await deleteData(`CariHareketler/${linked.firebaseKey}`);
+                    await deleteData(`CariHareketler/${linkedKey}`);
+                  } catch {}
+                }
+                if (linked.id && String(linked.id) !== String(linkedKey)) {
+                  try {
+                    await deleteData(`CariHareketler/${linked.id}`);
                   } catch {}
                 }
               }
@@ -988,7 +995,7 @@ export default function FinansScreen({ route }: any) {
                 try {
                   const kkRaw = (await readData("KrediKartlari")) || {};
                   const kkList = Array.isArray(kkRaw)
-                    ? kkRaw.filter(Boolean)
+                    ? kkRaw.map((k, idx) => k ? ({ ...k, firebaseKey: String(k?.id ?? idx) }) : null).filter(Boolean)
                     : Object.keys(kkRaw).map((k) => ({
                         ...kkRaw[k],
                         firebaseKey: k,
@@ -996,12 +1003,13 @@ export default function FinansScreen({ route }: any) {
                   for (const k of kkList.filter(
                     (x: any) => x.onayKodu === move.refId,
                   )) {
-                    if (k.firebaseKey)
-                      await deleteData(`KrediKartlari/${k.firebaseKey}`);
+                    const kKey = k.firebaseKey || k.id;
+                    if (kKey)
+                      await deleteData(`KrediKartlari/${kKey}`);
                   }
                   const eftRaw = (await readData("EftIslemleri")) || {};
                   const eftList = Array.isArray(eftRaw)
-                    ? eftRaw.filter(Boolean)
+                    ? eftRaw.map((e, idx) => e ? ({ ...e, firebaseKey: String(e?.id ?? idx) }) : null).filter(Boolean)
                     : Object.keys(eftRaw).map((k) => ({
                         ...eftRaw[k],
                         firebaseKey: k,
@@ -1009,15 +1017,22 @@ export default function FinansScreen({ route }: any) {
                   for (const e of eftList.filter(
                     (x: any) => x.dekontNo === move.refId,
                   )) {
-                    if (e.firebaseKey)
-                      await deleteData(`EftIslemleri/${e.firebaseKey}`);
+                    const eKey = e.firebaseKey || e.id;
+                    if (eKey)
+                      await deleteData(`EftIslemleri/${eKey}`);
                   }
                 } catch {}
               }
 
-              if (move.firebaseKey) {
+              const moveKey = move.firebaseKey || move.id;
+              if (moveKey) {
                 try {
-                  await deleteData(`${hesapPath}/${move.firebaseKey}`);
+                  await deleteData(`${hesapPath}/${moveKey}`);
+                } catch {}
+              }
+              if (move.id && String(move.id) !== String(moveKey)) {
+                try {
+                  await deleteData(`${hesapPath}/${move.id}`);
                 } catch {}
               }
               Alert.alert("Başarılı", "Finans hareketi silindi.");

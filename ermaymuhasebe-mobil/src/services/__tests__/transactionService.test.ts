@@ -19,6 +19,11 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
+jest.mock('@react-native-community/netinfo', () => ({
+  fetch: jest.fn(async () => ({ isConnected: true, isInternetReachable: true })),
+  addEventListener: jest.fn(() => () => {}),
+}));
+
 jest.mock('firebase/app', () => ({
   initializeApp: jest.fn(() => ({})),
   getApps: jest.fn(() => []),
@@ -33,10 +38,8 @@ jest.mock('firebase/database', () => ({
 
 const DB_URL = 'https://test-firebase.firebaseio.com';
 
-const resetFetch = (dataByPath: Record<string, any> = {}) => {
+const resetFetch = () => {
   (global as any).fetch = jest.fn(async (url: string) => {
-    const method = (url as any).includes ? '' : '';
-    // method is inferred from the init arg, we just mock a generic response
     return {
       ok: true,
       status: 200,
@@ -45,21 +48,19 @@ const resetFetch = (dataByPath: Record<string, any> = {}) => {
   });
 };
 
-import { getFirebaseConfig, loadConfigFromStorage, saveFirebaseConfig, writeData, readData } from '../firebase';
-import { saveFinancialTransaction } from '../transactionService';
+import { getFirebaseConfig, saveFirebaseConfig, writeData } from '../firebase';
+import { saveFinancialTransaction, deleteFinancialTransaction } from '../transactionService';
 
 describe('saveFinancialTransaction (firebase REST eşleniği)', () => {
   beforeAll(async () => {
     await saveFirebaseConfig(DB_URL, 'S3cret');
-    const cfg = getFirebaseConfig();
-    expect(cfg && cfg.url).toBe('https://test-firebase.firebaseio.com');
   });
 
   beforeEach(() => {
     resetFetch();
   });
 
-  it('firebase config yüklenebilir', async () => {
+  it('firebase config yüklenebilir', () => {
     const cfg = getFirebaseConfig();
     expect(cfg).not.toBeNull();
     expect(cfg!.url).toBe(DB_URL);
@@ -120,5 +121,47 @@ describe('saveFinancialTransaction (firebase REST eşleniği)', () => {
 
     expect(ok).toBe(true);
     expect(putCalls).toBeGreaterThanOrEqual(5);
+  });
+
+  it('deleteFinancialTransaction refId veya evrakNo ile Firebase DELETE çağrılarını yapar ve bakiyeleri günceller', async () => {
+    const deletedPaths: string[] = [];
+    (global as any).fetch = jest.fn(async (url: string, init?: any) => {
+      if (init && init.method === 'DELETE') {
+        deletedPaths.push(url);
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => {
+          if (url.includes('CariHareketler')) {
+            return {
+              "-K1": { id: 101, refId: "REF-123", evrakNo: "TAH-001", cariId: 5, alacak: 500, borc: 0, islemTuru: "Tahsilat" }
+            };
+          }
+          if (url.includes('KasaHareketler')) {
+            return [
+              { id: 201, refId: "REF-123", evrakNo: "TAH-001", kasaId: 3, gelir: 500, gider: 0 }
+            ];
+          }
+          if (url.includes('Cariler/5')) {
+            return { id: 5, bakiye: 1000, unvan: 'Test Cari' };
+          }
+          if (url.includes('Bankalar/3')) {
+            return { id: 3, bakiye: 2000, ad: 'Kasa' };
+          }
+          return {};
+        },
+      };
+    });
+
+    const ok = await deleteFinancialTransaction({
+      refId: 'REF-123',
+      evrakNo: 'TAH-001',
+      id: 101,
+      cariId: 5,
+    });
+
+    expect(ok).toBe(true);
+    expect(deletedPaths.some((u) => u.includes('CariHareketler'))).toBe(true);
   });
 });

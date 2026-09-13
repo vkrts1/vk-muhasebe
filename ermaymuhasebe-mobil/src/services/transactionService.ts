@@ -253,29 +253,55 @@ export const saveFinancialTransaction = async (req: FinancialTransactionRequest)
 export const deleteFinancialTransaction = async (cariHareket: any): Promise<boolean> => {
   if (!cariHareket) return false;
   const refId = cariHareket.refId;
-  if (!refId) return false;
-  const baseRefId = refId.endsWith('-SUP') ? refId.substring(0, refId.length - 4) : refId;
+  const evrakNo = cariHareket.evrakNo;
+  const cariHareketId = cariHareket.id;
+  if (!refId && !evrakNo && !cariHareketId) return false;
+
+  const baseRefId = refId ? (refId.endsWith('-SUP') ? refId.substring(0, refId.length - 4) : refId) : '';
 
   try {
+    const toKeyList = (raw: any) => {
+      if (!raw) return [];
+      if (Array.isArray(raw)) {
+        return raw.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean);
+      }
+      return Object.keys(raw).map((k) => ({ ...raw[k], firebaseKey: k }));
+    };
+
     // Cari harekete bağlı kayıtları topla
     const cariH = (await readData('CariHareketler')) || {};
-    const cariHList = Array.isArray(cariH) ? cariH : Object.keys(cariH).map((k) => ({ ...cariH[k], firebaseKey: k }));
+    const cariHList = toKeyList(cariH);
     const kasaH = (await readData('KasaHareketler')) || {};
-    const kasaHList = Array.isArray(kasaH) ? kasaH : Object.keys(kasaH).map((k) => ({ ...kasaH[k], firebaseKey: k }));
+    const kasaHList = toKeyList(kasaH);
     const bankaH = (await readData('BankaHareketler')) || {};
-    const bankaHList = Array.isArray(bankaH) ? bankaH : Object.keys(bankaH).map((k) => ({ ...bankaH[k], firebaseKey: k }));
+    const bankaHList = toKeyList(bankaH);
     const kk = (await readData('KrediKartlari')) || {};
-    const kkList = Array.isArray(kk) ? kk : Object.keys(kk).map((k) => ({ ...kk[k], firebaseKey: k }));
+    const kkList = toKeyList(kk);
     const eft = (await readData('EftIslemleri')) || {};
-    const eftList = Array.isArray(eft) ? eft : Object.keys(eft).map((k) => ({ ...eft[k], firebaseKey: k }));
+    const eftList = toKeyList(eft);
+
+    const matchHareket = (h: any) => {
+      if (refId && (h.refId === baseRefId || h.refId === refId + '-SUP' || h.refId === refId)) return true;
+      if (evrakNo && h.evrakNo && String(h.evrakNo) === String(evrakNo)) return true;
+      if (cariHareketId && (h.id === cariHareketId || (h.firebaseKey && String(h.firebaseKey) === String(cariHareketId)))) return true;
+      return false;
+    };
 
     const supReads: string[] = [];
     const farkCariler: any[] = [];
     let revertFailed = false;
 
-    for (const h of cariHList.filter((x: any) => x.refId === baseRefId || x.refId === refId + '-SUP' || x.refId === refId)) {
-      if (h.firebaseKey && supReads.indexOf(h.firebaseKey) === -1) supReads.push(h.firebaseKey);
+    for (const h of cariHList.filter(matchHareket)) {
+      const k = h.firebaseKey || h.id;
+      if (k && supReads.indexOf(String(k)) === -1) supReads.push(String(k));
       farkCariler.push({ cariId: h.cariId, borc: h.borc || 0, alacak: h.alacak || 0 });
+    }
+
+    if (cariHareket.firebaseKey && supReads.indexOf(String(cariHareket.firebaseKey)) === -1) {
+      supReads.push(String(cariHareket.firebaseKey));
+    }
+    if (cariHareket.id && supReads.indexOf(String(cariHareket.id)) === -1) {
+      supReads.push(String(cariHareket.id));
     }
 
     // Cari bakiyeleri geri al
@@ -293,7 +319,7 @@ export const deleteFinancialTransaction = async (cariHareket: any): Promise<bool
     }
 
     // Kasa hareketlerini sil + bakiye geri
-    for (const h of kasaHList.filter((x: any) => x.refId === baseRefId || x.refId === refId + '-SUP' || x.refId === refId)) {
+    for (const h of kasaHList.filter(matchHareket)) {
       if (h.kasaId !== undefined && h.kasaId !== null) {
         const kRef = await readData(`Bankalar/${h.kasaId}`);
         if (kRef) {
@@ -301,10 +327,11 @@ export const deleteFinancialTransaction = async (cariHareket: any): Promise<bool
           if (!okRevert) revertFailed = true;
         }
       }
-      if (h.firebaseKey) { try { await deleteData(`KasaHareketler/${h.firebaseKey}`); } catch {} }
+      const kKey = h.firebaseKey || h.id;
+      if (kKey) { try { await deleteData(`KasaHareketler/${kKey}`); } catch {} }
     }
 
-    for (const h of bankaHList.filter((x: any) => x.refId === baseRefId || x.refId === refId + '-SUP' || x.refId === refId)) {
+    for (const h of bankaHList.filter(matchHareket)) {
       if (h.bankaId !== undefined && h.bankaId !== null) {
         const bRef = await readData(`Bankalar/${h.bankaId}`);
         if (bRef) {
@@ -312,15 +339,18 @@ export const deleteFinancialTransaction = async (cariHareket: any): Promise<bool
           if (!okRevert) revertFailed = true;
         }
       }
-      if (h.firebaseKey) { try { await deleteData(`BankaHareketler/${h.firebaseKey}`); } catch {} }
+      const bKey = h.firebaseKey || h.id;
+      if (bKey) { try { await deleteData(`BankaHareketler/${bKey}`); } catch {} }
     }
 
     // KK / EFT kayıtlarını sil
-    for (const k of kkList.filter((x: any) => x.onayKodu === baseRefId)) {
-      if (k.firebaseKey) { try { await deleteData(`KrediKartlari/${k.firebaseKey}`); } catch {} }
+    for (const k of kkList.filter((x: any) => (baseRefId && x.onayKodu === baseRefId) || (evrakNo && x.evrakNo === evrakNo))) {
+      const kkKey = k.firebaseKey || k.id;
+      if (kkKey) { try { await deleteData(`KrediKartlari/${kkKey}`); } catch {} }
     }
-    for (const e of eftList.filter((x: any) => x.dekontNo === baseRefId)) {
-      if (e.firebaseKey) { try { await deleteData(`EftIslemleri/${e.firebaseKey}`); } catch {} }
+    for (const e of eftList.filter((x: any) => (baseRefId && x.dekontNo === baseRefId) || (evrakNo && x.evrakNo === evrakNo))) {
+      const eftKey = e.firebaseKey || e.id;
+      if (eftKey) { try { await deleteData(`EftIslemleri/${eftKey}`); } catch {} }
     }
 
     // Cari hareketleri sil

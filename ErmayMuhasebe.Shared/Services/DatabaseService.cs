@@ -4996,6 +4996,18 @@ namespace ErmayMuhasebe.Services
             var cloudCariler = await _sync.PullCarilerAsync();
             if (cloudCariler != null)
             {
+                var cloudCariIds = cloudCariler.Where(x => x != null && !x.IsDeleted).Select(x => x.Id).ToHashSet();
+                var localCariler = await _db.Table<CariKart>().ToListAsync();
+                foreach (var local in localCariler)
+                {
+                    if (!cloudCariIds.Contains(local.Id) && !local.IsDeleted)
+                    {
+                        local.IsDeleted = true;
+                        await _db.UpdateAsync(local);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var c in cloudCariler)
                 {
                     if (c == null) continue;
@@ -5020,6 +5032,17 @@ namespace ErmayMuhasebe.Services
             var cloudCariHareketler = await _sync.PullCariHareketlerAsync();
             if (cloudCariHareketler != null)
             {
+                var cloudCariHareketIds = cloudCariHareketler.Where(x => x != null).Select(x => x.Id).ToHashSet();
+                var localCariHareketler = await _db.Table<CariHareket>().ToListAsync();
+                foreach (var local in localCariHareketler)
+                {
+                    if (!cloudCariHareketIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var ch in cloudCariHareketler)
                 {
                     if (ch == null) continue;
@@ -5037,6 +5060,18 @@ namespace ErmayMuhasebe.Services
             var cloudStoklar = await _sync.PullStoklarAsync();
             if (cloudStoklar != null)
             {
+                var cloudStokIds = cloudStoklar.Where(x => x != null && !x.IsDeleted).Select(x => x.Id).ToHashSet();
+                var localStoklar = await _db.Table<StokKart>().ToListAsync();
+                foreach (var local in localStoklar)
+                {
+                    if (!cloudStokIds.Contains(local.Id) && !local.IsDeleted)
+                    {
+                        local.IsDeleted = true;
+                        await _db.UpdateAsync(local);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var s in cloudStoklar)
                 {
                     if (s == null) continue;
@@ -5061,6 +5096,17 @@ namespace ErmayMuhasebe.Services
             var cloudStokHareketler = await _sync.PullStokHareketlerAsync();
             if (cloudStokHareketler != null)
             {
+                var cloudStokHareketIds = cloudStokHareketler.Where(x => x != null).Select(x => x.Id).ToHashSet();
+                var localStokHareketler = await _db.Table<StokHareket>().ToListAsync();
+                foreach (var local in localStokHareketler)
+                {
+                    if (!cloudStokHareketIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var sh in cloudStokHareketler)
                 {
                     if (sh == null) continue;
@@ -5078,6 +5124,19 @@ namespace ErmayMuhasebe.Services
             var cloudFaturalar = await _sync.PullFaturalarAsync();
             if (cloudFaturalar != null)
             {
+                var cloudFaturaIds = cloudFaturalar.Where(x => x != null && !x.IsDeleted).Select(x => x.Id).ToHashSet();
+                var localFaturalar = await _db.Table<Fatura>().ToListAsync();
+                foreach (var local in localFaturalar)
+                {
+                    if (!cloudFaturaIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        var localDetails = await _db.Table<FaturaDetay>().Where(x => x.FaturaId == local.Id).ToListAsync();
+                        foreach (var d in localDetails) await _db.DeleteAsync(d);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var f in cloudFaturalar)
                 {
                     if (f == null) continue;
@@ -5133,6 +5192,19 @@ namespace ErmayMuhasebe.Services
             var cloudSiparisler = await _sync.PullSiparislerAsync();
             if (cloudSiparisler != null)
             {
+                var cloudSiparisIds = cloudSiparisler.Where(x => x != null && !x.IsDeleted).Select(x => x.Id).ToHashSet();
+                var localSiparisler = await _db.Table<Siparis>().ToListAsync();
+                foreach (var local in localSiparisler)
+                {
+                    if (!cloudSiparisIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        var localDetails = await _db.Table<SiparisDetay>().Where(x => x.SiparisId == local.Id).ToListAsync();
+                        foreach (var d in localDetails) await _db.DeleteAsync(d);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var s in cloudSiparisler)
                 {
                     if (s == null) continue;
@@ -5188,6 +5260,19 @@ namespace ErmayMuhasebe.Services
             var cloudTeklifler = await _sync.PullTekliflerAsync();
             if (cloudTeklifler != null)
             {
+                var cloudTeklifIds = cloudTeklifler.Where(x => x != null && !x.IsDeleted).Select(x => x.Id).ToHashSet();
+                var localTeklifler = await _db.Table<Teklif>().ToListAsync();
+                foreach (var local in localTeklifler)
+                {
+                    if (!cloudTeklifIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        var localDetails = await _db.Table<TeklifDetay>().Where(x => x.TeklifId == local.Id).ToListAsync();
+                        foreach (var d in localDetails) await _db.DeleteAsync(d);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var t in cloudTeklifler)
                 {
                     if (t == null) continue;
@@ -5245,17 +5330,28 @@ namespace ErmayMuhasebe.Services
                 var cloudBankalar = await _sync.PullBankalarAsync();
                 if (cloudBankalar != null)
                 {
+                    var cloudBankaIds = cloudBankalar.Where(x => x != null && !x.IsDeleted).Select(x => x.Id).ToHashSet();
+                    var localBankalar = await _db.Table<BankaKart>().ToListAsync();
+                    foreach (var local in localBankalar)
+                    {
+                        if (!cloudBankaIds.Contains(local.Id))
+                        {
+                            await _db.DeleteAsync(local);
+                            hasAnyChanges = true;
+                        }
+                    }
+
                     foreach (var b in cloudBankalar)
                     {
                         if (b == null) continue;
                         var existing = await _db.Table<BankaKart>().FirstOrDefaultAsync(x => x.Id == b.Id);
                         if (existing == null)
                         {
-                            if (!b.IsDeleted) await _db.InsertAsync(b);
+                            if (!b.IsDeleted) { await _db.InsertAsync(b); hasAnyChanges = true; }
                         }
                         else
                         {
-                            if (b.IsDeleted) await _db.DeleteAsync(existing);
+                            if (b.IsDeleted) { await _db.DeleteAsync(existing); hasAnyChanges = true; }
                             else await _db.UpdateAsync(b);
                         }
                     }
@@ -5272,17 +5368,28 @@ namespace ErmayMuhasebe.Services
                 var cloudKK = await _sync.PullKrediKartlariAsync();
                 if (cloudKK != null)
                 {
+                    var cloudKKIds = cloudKK.Where(x => x != null && !x.IsDeleted).Select(x => x.Id).ToHashSet();
+                    var localKK = await _db.Table<KrediKartiIslem>().ToListAsync();
+                    foreach (var local in localKK)
+                    {
+                        if (!cloudKKIds.Contains(local.Id))
+                        {
+                            await _db.DeleteAsync(local);
+                            hasAnyChanges = true;
+                        }
+                    }
+
                     foreach (var kk in cloudKK)
                     {
                         if (kk == null) continue;
                         var existing = await _db.Table<KrediKartiIslem>().FirstOrDefaultAsync(x => x.Id == kk.Id);
                         if (existing == null)
                         {
-                            if (!kk.IsDeleted) await _db.InsertAsync(kk);
+                            if (!kk.IsDeleted) { await _db.InsertAsync(kk); hasAnyChanges = true; }
                         }
                         else
                         {
-                            if (kk.IsDeleted) await _db.DeleteAsync(existing);
+                            if (kk.IsDeleted) { await _db.DeleteAsync(existing); hasAnyChanges = true; }
                             else await _db.UpdateAsync(kk);
                         }
                     }
@@ -5299,17 +5406,28 @@ namespace ErmayMuhasebe.Services
                 var cloudEFT = await _sync.PullEftIslemleriAsync();
                 if (cloudEFT != null)
                 {
+                    var cloudEftIds = cloudEFT.Where(x => x != null && !x.IsDeleted).Select(x => x.Id).ToHashSet();
+                    var localEft = await _db.Table<EftIslem>().ToListAsync();
+                    foreach (var local in localEft)
+                    {
+                        if (!cloudEftIds.Contains(local.Id))
+                        {
+                            await _db.DeleteAsync(local);
+                            hasAnyChanges = true;
+                        }
+                    }
+
                     foreach (var eft in cloudEFT)
                     {
                         if (eft == null) continue;
                         var existing = await _db.Table<EftIslem>().FirstOrDefaultAsync(x => x.Id == eft.Id);
                         if (existing == null)
                         {
-                            if (!eft.IsDeleted) await _db.InsertAsync(eft);
+                            if (!eft.IsDeleted) { await _db.InsertAsync(eft); hasAnyChanges = true; }
                         }
                         else
                         {
-                            if (eft.IsDeleted) await _db.DeleteAsync(existing);
+                            if (eft.IsDeleted) { await _db.DeleteAsync(existing); hasAnyChanges = true; }
                             else await _db.UpdateAsync(eft);
                         }
                     }
@@ -5324,11 +5442,22 @@ namespace ErmayMuhasebe.Services
             var cloudKasaHareketler = await _sync.PullKasaHareketlerAsync();
             if (cloudKasaHareketler != null)
             {
+                var cloudKasaHareketIds = cloudKasaHareketler.Where(x => x != null).Select(x => x.Id).ToHashSet();
+                var localKasaHareketler = await _db.Table<KasaHareket>().ToListAsync();
+                foreach (var local in localKasaHareketler)
+                {
+                    if (!cloudKasaHareketIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var kh in cloudKasaHareketler)
                 {
                     if (kh == null) continue;
                     var existing = await _db.Table<KasaHareket>().FirstOrDefaultAsync(x => x.Id == kh.Id);
-                    if (existing == null) await _db.InsertAsync(kh);
+                    if (existing == null) { await _db.InsertAsync(kh); hasAnyChanges = true; }
                     else await _db.UpdateAsync(kh);
                 }
             }
@@ -5337,11 +5466,22 @@ namespace ErmayMuhasebe.Services
             var cloudBankaHareketler = await _sync.PullBankaHareketlerAsync();
             if (cloudBankaHareketler != null)
             {
+                var cloudBankaHareketIds = cloudBankaHareketler.Where(x => x != null).Select(x => x.Id).ToHashSet();
+                var localBankaHareketler = await _db.Table<BankaHareket>().ToListAsync();
+                foreach (var local in localBankaHareketler)
+                {
+                    if (!cloudBankaHareketIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var bh in cloudBankaHareketler)
                 {
                     if (bh == null) continue;
                     var existing = await _db.Table<BankaHareket>().FirstOrDefaultAsync(x => x.Id == bh.Id);
-                    if (existing == null) await _db.InsertAsync(bh);
+                    if (existing == null) { await _db.InsertAsync(bh); hasAnyChanges = true; }
                     else await _db.UpdateAsync(bh);
                 }
             }
@@ -5350,11 +5490,22 @@ namespace ErmayMuhasebe.Services
             var cloudCekler = await _sync.PullCeklerAsync();
             if (cloudCekler != null)
             {
+                var cloudCekIds = cloudCekler.Where(x => x != null).Select(x => x.Id).ToHashSet();
+                var localCekler = await _db.Table<Cek>().ToListAsync();
+                foreach (var local in localCekler)
+                {
+                    if (!cloudCekIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var ck in cloudCekler)
                 {
                     if (ck == null) continue;
                     var existing = await _db.Table<Cek>().FirstOrDefaultAsync(x => x.Id == ck.Id);
-                    if (existing == null) await _db.InsertAsync(ck);
+                    if (existing == null) { await _db.InsertAsync(ck); hasAnyChanges = true; }
                     else await _db.UpdateAsync(ck);
                 }
             }
@@ -5363,11 +5514,22 @@ namespace ErmayMuhasebe.Services
             var cloudSenetler = await _sync.PullSenetlerAsync();
             if (cloudSenetler != null)
             {
+                var cloudSenetIds = cloudSenetler.Where(x => x != null).Select(x => x.Id).ToHashSet();
+                var localSenetler = await _db.Table<Senet>().ToListAsync();
+                foreach (var local in localSenetler)
+                {
+                    if (!cloudSenetIds.Contains(local.Id))
+                    {
+                        await _db.DeleteAsync(local);
+                        hasAnyChanges = true;
+                    }
+                }
+
                 foreach (var sn in cloudSenetler)
                 {
                     if (sn == null) continue;
                     var existing = await _db.Table<Senet>().FirstOrDefaultAsync(x => x.Id == sn.Id);
-                    if (existing == null) await _db.InsertAsync(sn);
+                    if (existing == null) { await _db.InsertAsync(sn); hasAnyChanges = true; }
                     else await _db.UpdateAsync(sn);
                 }
             }
@@ -5586,6 +5748,7 @@ namespace ErmayMuhasebe.Services
             {
                 try
                 {
+                    await RecalculateSystemBalancesAsync();
                     OnDatabaseChanged?.Invoke();
                 }
                 catch (Exception ex)

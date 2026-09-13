@@ -899,9 +899,9 @@ namespace ErmayMuhasebe.Services
         }
 
         // --- PULL METHODS ---
-        private async Task<List<T>> GlobalGetAllAsync<T>(string resourceName) where T : class
+        private async Task<List<T>?> GlobalGetAllAsync<T>(string resourceName) where T : class
         {
-             if (!IsConnected) return new List<T>();
+             if (!IsConnected) return null;
              try {
                 var collection = await _firebase!.Child(GetYearlyPath(resourceName)).OnceAsync<T>();
                 var list = new List<T>();
@@ -923,14 +923,17 @@ namespace ErmayMuhasebe.Services
                     }
                 }
                 return list;
-             } catch { return new List<T>(); }
+             } catch (Exception ex) {
+                 System.Diagnostics.Debug.WriteLine($"[CloudSync] GlobalGetAllAsync error for {resourceName}: {ex.Message}");
+                 return null;
+             }
         }
 
-        public async Task<List<DovizKur>> PullDovizKurlariAsync() => await GlobalGetAllAsync<DovizKur>("DovizKurlari");
+        public async Task<List<DovizKur>?> PullDovizKurlariAsync() => await GlobalGetAllAsync<DovizKur>("DovizKurlari");
 
-        public async Task<List<BelgeArsiv>> PullBelgeArsivAsync() => await GlobalGetAllAsync<BelgeArsiv>("BelgeArsiv");
+        public async Task<List<BelgeArsiv>?> PullBelgeArsivAsync() => await GlobalGetAllAsync<BelgeArsiv>("BelgeArsiv");
 
-        public async Task<List<Siparis>> PullSiparislerAsync() => await GlobalGetAllAsync<Siparis>("Siparisler");
+        public async Task<List<Siparis>?> PullSiparislerAsync() => await GlobalGetAllAsync<Siparis>("Siparisler");
 
         public async Task<List<SiparisDetay>> PullSiparisDetaylarAsync(int siparisId)
         {
@@ -944,7 +947,7 @@ namespace ErmayMuhasebe.Services
              }
         }
 
-        public async Task<List<Teklif>> PullTekliflerAsync() => await GlobalGetAllAsync<Teklif>("Teklifler");
+        public async Task<List<Teklif>?> PullTekliflerAsync() => await GlobalGetAllAsync<Teklif>("Teklifler");
 
         public async Task<List<TeklifDetay>> PullTeklifDetaylarAsync(int teklifId)
         {
@@ -957,11 +960,11 @@ namespace ErmayMuhasebe.Services
                  return new List<TeklifDetay>();
              }
         }
-        public async Task<List<CariKart>> PullCarilerAsync() => await GlobalGetAllAsync<CariKart>("Cariler");
-        public async Task<List<CariHareket>> PullCariHareketlerAsync() => await GlobalGetAllAsync<CariHareket>("CariHareketler");
-        public async Task<List<StokKart>> PullStoklarAsync() => await GlobalGetAllAsync<StokKart>("Stoklar");
-        public async Task<List<StokHareket>> PullStokHareketlerAsync() => await GlobalGetAllAsync<StokHareket>("StokHareketler");
-        public async Task<List<Fatura>> PullFaturalarAsync() => await GlobalGetAllAsync<Fatura>("Faturalar");
+        public async Task<List<CariKart>?> PullCarilerAsync() => await GlobalGetAllAsync<CariKart>("Cariler");
+        public async Task<List<CariHareket>?> PullCariHareketlerAsync() => await GlobalGetAllAsync<CariHareket>("CariHareketler");
+        public async Task<List<StokKart>?> PullStoklarAsync() => await GlobalGetAllAsync<StokKart>("Stoklar");
+        public async Task<List<StokHareket>?> PullStokHareketlerAsync() => await GlobalGetAllAsync<StokHareket>("StokHareketler");
+        public async Task<List<Fatura>?> PullFaturalarAsync() => await GlobalGetAllAsync<Fatura>("Faturalar");
         
         public async Task<List<FaturaDetay>> PullFaturaDetaylarAsync(int faturaId)
         {
@@ -975,15 +978,15 @@ namespace ErmayMuhasebe.Services
              }
         }
 
-        public async Task<List<BankaKart>> PullBankalarAsync() => await GlobalGetAllAsync<BankaKart>("Bankalar");
-        public async Task<List<KrediKartiIslem>> PullKrediKartlariAsync() => await GlobalGetAllAsync<KrediKartiIslem>("KrediKartlari");
-        public async Task<List<EftIslem>> PullEftIslemleriAsync() => await GlobalGetAllAsync<EftIslem>("EftIslemleri");
-        public async Task<List<KasaHareket>> PullKasaHareketlerAsync() => await GlobalGetAllAsync<KasaHareket>("KasaHareketler");
-        public async Task<List<BankaHareket>> PullBankaHareketlerAsync() => await GlobalGetAllAsync<BankaHareket>("BankaHareketler");
-        public async Task<List<Cek>> PullCeklerAsync() => await GlobalGetAllAsync<Cek>("Cekler");
-        public async Task<List<Senet>> PullSenetlerAsync() => await GlobalGetAllAsync<Senet>("Senetler");
-        public async Task<List<MusteriTakipKlasor>> PullMusteriTakipKlasorlerAsync() => await GlobalGetAllAsync<MusteriTakipKlasor>("MusteriTakipKlasorler");
-        public async Task<List<MusteriTakipDetay>> PullMusteriTakipDetaylarAsync() => await GlobalGetAllAsync<MusteriTakipDetay>("MusteriTakipDetaylar");
+        public async Task<List<BankaKart>?> PullBankalarAsync() => await GlobalGetAllAsync<BankaKart>("Bankalar");
+        public async Task<List<KrediKartiIslem>?> PullKrediKartlariAsync() => await GlobalGetAllAsync<KrediKartiIslem>("KrediKartlari");
+        public async Task<List<EftIslem>?> PullEftIslemleriAsync() => await GlobalGetAllAsync<EftIslem>("EftIslemleri");
+        public async Task<List<KasaHareket>?> PullKasaHareketlerAsync() => await GlobalGetAllAsync<KasaHareket>("KasaHareketler");
+        public async Task<List<BankaHareket>?> PullBankaHareketlerAsync() => await GlobalGetAllAsync<BankaHareket>("BankaHareketler");
+        public async Task<List<Cek>?> PullCeklerAsync() => await GlobalGetAllAsync<Cek>("Cekler");
+        public async Task<List<Senet>?> PullSenetlerAsync() => await GlobalGetAllAsync<Senet>("Senetler");
+        public async Task<List<MusteriTakipKlasor>?> PullMusteriTakipKlasorlerAsync() => await GlobalGetAllAsync<MusteriTakipKlasor>("MusteriTakipKlasorler");
+        public async Task<List<MusteriTakipDetay>?> PullMusteriTakipDetaylarAsync() => await GlobalGetAllAsync<MusteriTakipDetay>("MusteriTakipDetaylar");
 
         public async Task SyncGenericAsync<T>(string resourceName, T item, int id)
         {
