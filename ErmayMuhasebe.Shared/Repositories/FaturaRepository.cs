@@ -163,8 +163,10 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
                 {
                     kasa.GuncelBakiye -= (k.Giren - k.Cikan);
                     await db.UpdateAsync(kasa);
+                    await _syncService.SyncBankaAsync(kasa);
                 }
                 await db.DeleteAsync(k);
+                await _syncService.DeleteKasaHareketAsync(k.Id);
             }
             
             var mbanka = await db.Table<BankaHareket>()
@@ -177,8 +179,10 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
                 {
                     banka.GuncelBakiye -= (b.Giren - b.Cikan);
                     await db.UpdateAsync(banka);
+                    await _syncService.SyncBankaAsync(banka);
                 }
                 await db.DeleteAsync(b);
+                await _syncService.DeleteBankaHareketAsync(b.Id);
             }
         }
 

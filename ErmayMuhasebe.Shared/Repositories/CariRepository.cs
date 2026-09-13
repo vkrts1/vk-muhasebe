@@ -288,8 +288,10 @@ public class CariRepository : BaseRepository<CariKart>, ICariRepository
                     {
                         kasa.GuncelBakiye -= (k.Giren - k.Cikan);
                         await db.UpdateAsync(kasa);
+                        await _syncService.SyncBankaAsync(kasa);
                     }
                     await db.DeleteAsync(k);
+                    await _syncService.DeleteKasaHareketAsync(k.Id);
                 }
             }
 
@@ -315,8 +317,10 @@ public class CariRepository : BaseRepository<CariKart>, ICariRepository
                     {
                         banka.GuncelBakiye -= (b.Giren - b.Cikan);
                         await db.UpdateAsync(banka);
+                        await _syncService.SyncBankaAsync(banka);
                     }
                     await db.DeleteAsync(b);
+                    await _syncService.DeleteBankaHareketAsync(b.Id);
                 }
             }
 
@@ -334,6 +338,7 @@ public class CariRepository : BaseRepository<CariKart>, ICariRepository
                 if (kkMatch)
                 {
                     await db.DeleteAsync(kk);
+                    await _syncService.DeleteKrediKartiIslemAsync(kk.Id);
                 }
             }
 
@@ -341,10 +346,18 @@ public class CariRepository : BaseRepository<CariKart>, ICariRepository
             if (!string.IsNullOrEmpty(hareket.EvrakNo))
             {
                 var ceks = await db.Table<Cek>().Where(c => c.CariId == hareket.CariId && c.PortfoyNo == hareket.EvrakNo).ToListAsync();
-                foreach(var c in ceks) await db.DeleteAsync(c);
+                foreach(var c in ceks) 
+                {
+                    await db.DeleteAsync(c);
+                    await _syncService.DeleteCekAsync(c.Id);
+                }
                 
                 var senets = await db.Table<Senet>().Where(s => s.CariId == hareket.CariId && s.PortfoyNo == hareket.EvrakNo).ToListAsync();
-                foreach(var s in senets) await db.DeleteAsync(s);
+                foreach(var s in senets) 
+                {
+                    await db.DeleteAsync(s);
+                    await _syncService.DeleteSenetAsync(s.Id);
+                }
             }
         }
         catch (System.Exception ex)

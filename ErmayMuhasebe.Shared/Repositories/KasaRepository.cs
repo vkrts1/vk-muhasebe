@@ -54,12 +54,20 @@ public class KasaRepository : BaseRepository<KasaHareket>, IKasaRepository
     public override async Task<int> DeleteAsync(KasaHareket entity)
     {
         var db = await GetConnectionAsync();
+        if (entity != null && entity.Id > 0)
+        {
+            await _syncService.DeleteKasaHareketAsync(entity.Id);
+        }
         return await db.DeleteAsync(entity);
     }
 
     public override async Task<int> DeleteAsync(int id)
     {
         var db = await GetConnectionAsync();
+        if (id > 0)
+        {
+            await _syncService.DeleteKasaHareketAsync(id);
+        }
         return await db.ExecuteAsync("DELETE FROM KasaHareket WHERE Id = ?", id);
     }
 

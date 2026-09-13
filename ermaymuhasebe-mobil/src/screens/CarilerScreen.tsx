@@ -150,6 +150,8 @@ export default function CarilerScreen({ route, navigation }: any) {
           ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
           : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
         setCariler(list.filter(c => !c.isDeleted));
+      } else {
+        setCariler([]);
       }
     });
 
@@ -159,6 +161,8 @@ export default function CarilerScreen({ route, navigation }: any) {
           ? data.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
           : Object.keys(data).map(key => ({ ...data[key], firebaseKey: key }));
         setCariHareketler(list.filter(h => !h.isDeleted));
+      } else {
+        setCariHareketler([]);
       }
     });
 
@@ -968,6 +972,10 @@ export default function CarilerScreen({ route, navigation }: any) {
                   onPress: async () => {
                     const success = await deleteFinancialTransaction(h);
                     if (success) {
+                      setCariHareketler(prev => prev.filter(item => 
+                        String(item.id) !== String(h.id) && 
+                        String(item.firebaseKey || '') !== String(h.firebaseKey || h.id)
+                      ));
                       Alert.alert('Başarılı', isFatura ? 'Fatura ve ilişkili tüm hareketler başarıyla silindi.' : 'Cari hareketi başarıyla silindi.');
                     } else {
                       Alert.alert('Hata', 'Silme işlemi gerçekleştirilemedi.');
@@ -1074,7 +1082,10 @@ export default function CarilerScreen({ route, navigation }: any) {
 
   };
 
-  const currentCariHareketler = cariHareketler.filter(h => h.cariId === (selectedCari?.id || 0));
+  const currentCariHareketler = cariHareketler.filter(h => 
+    !h.isDeleted && 
+    (String(h.cariId) === String(selectedCari?.id || 0) || Number(h.cariId) === Number(selectedCari?.id || 0))
+  );
 
   const renderItem = ({ item, index }: { item: any; index: number }) => {
     const borc = item.borc || 0;

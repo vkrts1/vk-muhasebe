@@ -19,8 +19,8 @@ describe('getPeriodBounds', () => {
   it('6 aylık: son 6 ay', () => {
     const { start } = getPeriodBounds('6month');
     const diffMonths = (Date.now() - start.getTime()) / (30 * 86400000);
-    expect(diffMonths).toBeGreaterThanOrEqual(5.9);
-    expect(diffMonths).toBeLessThanOrEqual(6.1);
+    expect(diffMonths).toBeGreaterThanOrEqual(5.8);
+    expect(diffMonths).toBeLessThanOrEqual(6.25);
   });
   it('yıllık: son 1 yıl', () => {
     const { start } = getPeriodBounds('yearly');

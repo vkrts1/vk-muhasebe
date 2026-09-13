@@ -198,12 +198,27 @@ public class BankaRepository : BaseRepository<BankaKart>, IBankaRepository
                     cari.Borc -= cariHareket.Borc;
                     cari.Alacak -= cariHareket.Alacak;
                     await db.UpdateAsync(cari);
+                    await _syncService.SyncCariAsync(cari);
                 }
                 await db.DeleteAsync(cariHareket);
+                await _syncService.DeleteCariHareketAsync(cariHareket.Id);
             }
         }
 
-        return await db.DeleteAsync(hareket);
+        await _syncService.DeleteBankaHareketAsync(hareket.Id);
+        int result = await db.DeleteAsync(hareket);
+
+        if (hareket.BankaId > 0)
+        {
+            await RecalculateBalanceAsync(hareket.BankaId);
+            var updatedBanka = await GetByIdAsync(hareket.BankaId);
+            if (updatedBanka != null)
+            {
+                await _syncService.SyncBankaAsync(updatedBanka);
+            }
+        }
+
+        return result;
     }
 
     public async Task<int> DeleteHareketAsync(int id)
