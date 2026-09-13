@@ -1496,13 +1496,47 @@ namespace ErmayMuhasebe.Services
         public async Task SoftDeleteFaturaAsync(Fatura item) 
         {
             await EnsureInitializedAsync();
-            
+            string fNo = item.FaturaNo?.Trim() ?? "";
+            string kplNo = !string.IsNullOrEmpty(fNo) ? $"KPL-{fNo}" : "";
+
             // 1. Get Details to reverse stock
             var detaylar = await _db.Table<FaturaDetay>().Where(d => d.FaturaId == item.Id).ToListAsync();
             
+            // Fallback: If no FaturaDetay records, infer from StokHareket
+            if (!detaylar.Any())
+            {
+                var movements = await _db.Table<StokHareket>()
+                    .Where(s => s.FaturaId == item.Id || (!string.IsNullOrEmpty(fNo) && (s.EvrakNo == fNo || s.EvrakNo == kplNo)))
+                    .ToListAsync();
+                foreach (var m in movements)
+                {
+                    double miktar = m.Miktar > 0 ? (double)m.Miktar : (double)(m.Giren > 0 ? m.Giren : (m.Cikan > 0 ? m.Cikan : 0));
+                    detaylar.Add(new FaturaDetay 
+                    { 
+                        FaturaId = item.Id, 
+                        StokId = m.StokId, 
+                        Miktar = miktar,
+                        BirimFiyat = m.Fiyat
+                    });
+                }
+            }
+
             // 2. Reverse Stock Balances
-            bool isSatis = (item.Tur ?? "").Equals("Satış", StringComparison.OrdinalIgnoreCase) || 
-                           (item.Tur ?? "").Equals("Satis", StringComparison.OrdinalIgnoreCase);
+            string tur = (item.Tur ?? "").Trim();
+            bool isSatis = tur.Contains("Satış", StringComparison.OrdinalIgnoreCase) || 
+                           tur.Contains("Satis", StringComparison.OrdinalIgnoreCase);
+
+            if (!isSatis && !tur.Contains("Alış", StringComparison.OrdinalIgnoreCase) && !tur.Contains("Alis", StringComparison.OrdinalIgnoreCase))
+            {
+                var sampleSh = await _db.Table<StokHareket>().FirstOrDefaultAsync(s => s.FaturaId == item.Id || (!string.IsNullOrEmpty(fNo) && s.EvrakNo == fNo));
+                if (sampleSh != null)
+                {
+                    if (sampleSh.Cikan > 0 || (sampleSh.IslemTuru != null && (sampleSh.IslemTuru.Contains("Satış", StringComparison.OrdinalIgnoreCase) || sampleSh.IslemTuru.Contains("Satis", StringComparison.OrdinalIgnoreCase))))
+                        isSatis = true;
+                }
+            }
+
+            var affectedStokIds = detaylar.Select(d => d.StokId).Where(id => id > 0).Distinct().ToList();
 
             foreach (var d in detaylar)
             {
@@ -1529,23 +1563,15 @@ namespace ErmayMuhasebe.Services
             // 4. Delete Movements (Hard Delete needed to clear history)
             string islemTuru = isSatis ? "Satış Faturası" : "Alış Faturası";
             
-            // Prefer FaturaId for precise deletion
-            int deletedStokCount = await _db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ?", item.Id);
-            int deletedCariCount = await _db.ExecuteAsync("DELETE FROM CariHareket WHERE FaturaId = ?", item.Id);
-
-            // Fallback to EvrakNo only if NOTHING was deleted by Id (supports older records) AND EvrakNo is NOT empty
-            if (deletedStokCount == 0 && !string.IsNullOrWhiteSpace(item.FaturaNo))
-            {
-               await _db.ExecuteAsync("DELETE FROM StokHareket WHERE EvrakNo = ?", item.FaturaNo);
-            }
-            if (deletedCariCount == 0 && !string.IsNullOrWhiteSpace(item.FaturaNo))
-            {
-               await _db.ExecuteAsync("DELETE FROM CariHareket WHERE CariId = ? AND EvrakNo = ? AND IslemTuru = ?", item.CariId, item.FaturaNo, islemTuru);
-            }
+            // Delete with FaturaId or EvrakNo
+            await _db.ExecuteAsync("DELETE FROM FaturaDetay WHERE FaturaId = ?", item.Id);
+            await _db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ? OR (EvrakNo IS NOT NULL AND EvrakNo != '' AND (EvrakNo = ? OR EvrakNo = ?))", item.Id, fNo, kplNo);
+            await _db.ExecuteAsync("DELETE FROM CariHareket WHERE FaturaId = ? OR (CariId = ? AND EvrakNo IS NOT NULL AND EvrakNo != '' AND (EvrakNo = ? OR EvrakNo = ?))", item.Id, item.CariId, fNo, kplNo);
 
             // Sync Deletions
-            await _sync.DeleteStokHareketByFaturaIdAsync(item.Id);
-            await _sync.DeleteCariHareketByFaturaIdAsync(item.Id);
+            await _sync.DeleteStokHareketByFaturaIdAsync(item.Id, item.FaturaNo);
+            await _sync.DeleteCariHareketByFaturaIdAsync(item.Id, item.FaturaNo);
+            await _sync.DeleteFaturaDetaylarAsync(item.Id);
 
             item.IsDeleted = true;
             await _db.UpdateAsync(item);
@@ -1555,9 +1581,22 @@ namespace ErmayMuhasebe.Services
             var startDay = item.Tarih.Date;
             var endDay = startDay.AddDays(1);
             
-            var fNo = item.FaturaNo ?? "";
-            var mkasa = await _db.Table<KasaHareket>().Where(k => k.Tarih >= startDay && k.Tarih < endDay && (k.EvrakNo == fNo || (k.Aciklama != null && fNo != "" && k.Aciklama.Contains(fNo)))).ToListAsync();
+            var mkasa = await _db.Table<KasaHareket>().Where(k => (k.Tarih >= startDay && k.Tarih < endDay && (k.EvrakNo == fNo || (k.Aciklama != null && fNo != "" && k.Aciklama.Contains(fNo)))) || (k.EvrakNo == kplNo)).ToListAsync();
             foreach(var k in mkasa) await DeleteKasaHareketAsync(k);
+
+            // 6. Recalculate remaining exact stock quantities and costs
+            foreach (var sId in affectedStokIds)
+            {
+                var currentStok = await _db.Table<StokKart>().FirstOrDefaultAsync(s => s.Id == sId);
+                if (currentStok != null)
+                {
+                    var sumGiren = await _db.ExecuteScalarAsync<double>("SELECT IFNULL(SUM(CASE WHEN Giren > 0 THEN Giren WHEN Miktar > 0 AND (IslemTuru LIKE '%Giriş%' OR IslemTuru LIKE '%Alış%' OR IslemTuru LIKE '%Açılış%') THEN Miktar ELSE 0 END), 0) FROM StokHareket WHERE StokId = ?", sId);
+                    var sumCikan = await _db.ExecuteScalarAsync<double>("SELECT IFNULL(SUM(CASE WHEN Cikan > 0 THEN Cikan WHEN Miktar > 0 AND (IslemTuru LIKE '%Çıkış%' OR IslemTuru LIKE '%Satış%') THEN Miktar ELSE 0 END), 0) FROM StokHareket WHERE StokId = ?", sId);
+                    currentStok.Miktar = sumGiren - sumCikan;
+                    await _db.UpdateAsync(currentStok);
+                    await _sync.SyncStokAsync(currentStok);
+                }
+            }
             
             var mbanka = await _db.Table<BankaHareket>().Where(b => b.Tarih >= startDay && b.Tarih < endDay && (b.EvrakNo == fNo || (b.Aciklama != null && fNo != "" && b.Aciklama.Contains(fNo)))).ToListAsync();
             foreach(var b in mbanka) await DeleteBankaHareketAsync(b);

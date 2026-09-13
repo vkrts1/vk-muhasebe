@@ -64,26 +64,56 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
     public override async Task<int> DeleteAsync(Fatura entity)
     {
         var db = await GetConnectionAsync();
-        
+        string fNo = entity.FaturaNo?.Trim() ?? "";
+        string kplNo = !string.IsNullOrEmpty(fNo) ? $"KPL-{fNo}" : "";
+
         // 1. Get Details to reverse stock
         var detaylar = await db.Table<FaturaDetay>().Where(d => d.FaturaId == entity.Id).ToListAsync();
         
         // Fallback: If no FaturaDetay records, infer from StokHareket
-        if (!detaylar.Any() && !string.IsNullOrWhiteSpace(entity.FaturaNo))
+        if (!detaylar.Any())
         {
             var movements = await db.Table<StokHareket>()
-                .Where(s => s.FaturaId == entity.Id || s.EvrakNo == entity.FaturaNo)
+                .Where(s => s.FaturaId == entity.Id || (!string.IsNullOrEmpty(fNo) && (s.EvrakNo == fNo || s.EvrakNo == kplNo)))
                 .ToListAsync();
             foreach (var m in movements)
             {
-                detaylar.Add(new FaturaDetay { FaturaId = entity.Id, StokId = m.StokId, Miktar = (double)m.Miktar });
+                double miktar = m.Miktar > 0 ? (double)m.Miktar : (double)(m.Giren > 0 ? m.Giren : (m.Cikan > 0 ? m.Cikan : 0));
+                detaylar.Add(new FaturaDetay 
+                { 
+                    FaturaId = entity.Id, 
+                    StokId = m.StokId, 
+                    Miktar = miktar,
+                    BirimFiyat = m.Fiyat
+                });
             }
         }
 
-        // 2. Reverse Stock Balances
-        bool isSatis = (entity.Tur ?? "").Equals("Satış", System.StringComparison.OrdinalIgnoreCase) || 
-                       (entity.Tur ?? "").Equals("Satis", System.StringComparison.OrdinalIgnoreCase);
+        // 2. Determine Invoice Direction (Sale vs Purchase)
+        string tur = (entity.Tur ?? "").Trim();
+        bool isSatis = tur.Contains("Satış", System.StringComparison.OrdinalIgnoreCase) || 
+                       tur.Contains("Satis", System.StringComparison.OrdinalIgnoreCase);
 
+        // Fallback detection for Tur if not explicit
+        if (!isSatis && !tur.Contains("Alış", System.StringComparison.OrdinalIgnoreCase) && !tur.Contains("Alis", System.StringComparison.OrdinalIgnoreCase))
+        {
+            var sampleSh = await db.Table<StokHareket>().FirstOrDefaultAsync(s => s.FaturaId == entity.Id || (!string.IsNullOrEmpty(fNo) && s.EvrakNo == fNo));
+            if (sampleSh != null)
+            {
+                if (sampleSh.Cikan > 0 || (sampleSh.IslemTuru != null && (sampleSh.IslemTuru.Contains("Satış", System.StringComparison.OrdinalIgnoreCase) || sampleSh.IslemTuru.Contains("Satis", System.StringComparison.OrdinalIgnoreCase))))
+                    isSatis = true;
+            }
+            else
+            {
+                var sampleCh = await db.Table<CariHareket>().FirstOrDefaultAsync(c => c.FaturaId == entity.Id || (!string.IsNullOrEmpty(fNo) && c.EvrakNo == fNo));
+                if (sampleCh != null && (sampleCh.Borc > 0 || (sampleCh.IslemTuru != null && sampleCh.IslemTuru.Contains("Satış", System.StringComparison.OrdinalIgnoreCase))))
+                    isSatis = true;
+            }
+        }
+
+        var affectedStokIds = detaylar.Select(d => d.StokId).Where(id => id > 0).Distinct().ToList();
+
+        // 3. Reverse Stock Balances
         foreach (var d in detaylar)
         {
             var stok = await db.Table<StokKart>().FirstOrDefaultAsync(s => s.Id == d.StokId);
@@ -96,7 +126,7 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
             }
         }
 
-        // 3. Reverse Cari Balance
+        // 4. Reverse Cari Balance
         var cari = await db.Table<CariKart>().FirstOrDefaultAsync(c => c.Id == entity.CariId);
         if (cari != null)
         {
@@ -106,12 +136,9 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
             await _syncService.SyncCariAsync(cari);
         }
 
-        // 4. Delete Details & Movements
-        string fNo = entity.FaturaNo?.Trim() ?? "";
-        string kplNo = !string.IsNullOrEmpty(fNo) ? $"KPL-{fNo}" : "";
-
+        // 5. Delete Details & Movements
         await db.ExecuteAsync("DELETE FROM FaturaDetay WHERE FaturaId = ?", entity.Id);
-        await db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ? OR (EvrakNo IS NOT NULL AND EvrakNo != '' AND EvrakNo = ?)", entity.Id, fNo);
+        await db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ? OR (EvrakNo IS NOT NULL AND EvrakNo != '' AND (EvrakNo = ? OR EvrakNo = ?))", entity.Id, fNo, kplNo);
         await db.ExecuteAsync("DELETE FROM CariHareket WHERE FaturaId = ? OR (CariId = ? AND EvrakNo IS NOT NULL AND EvrakNo != '' AND (EvrakNo = ? OR EvrakNo = ?))", entity.Id, entity.CariId, fNo, kplNo);
 
         // Sync Deletions to Cloud
@@ -123,7 +150,7 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
         await db.UpdateAsync(entity);
         await _syncService.SyncFaturaAsync(entity);
 
-        // 5. Clean up linked financial records (Kasa / Banka)
+        // 6. Clean up linked financial records (Kasa / Banka)
         if (!string.IsNullOrEmpty(fNo))
         {
             var mkasa = await db.Table<KasaHareket>()
@@ -155,12 +182,25 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
             }
         }
 
-        // 6. Recalculate Stock Costs
+        // 7. Ensure Exact Stock Quantities & Costs from remaining movements
+        foreach (var sId in affectedStokIds)
+        {
+            var currentStok = await db.Table<StokKart>().FirstOrDefaultAsync(s => s.Id == sId);
+            if (currentStok != null)
+            {
+                var sumGiren = await db.ExecuteScalarAsync<double>("SELECT IFNULL(SUM(CASE WHEN Giren > 0 THEN Giren WHEN Miktar > 0 AND (IslemTuru LIKE '%Giriş%' OR IslemTuru LIKE '%Alış%' OR IslemTuru LIKE '%Açılış%') THEN Miktar ELSE 0 END), 0) FROM StokHareket WHERE StokId = ?", sId);
+                var sumCikan = await db.ExecuteScalarAsync<double>("SELECT IFNULL(SUM(CASE WHEN Cikan > 0 THEN Cikan WHEN Miktar > 0 AND (IslemTuru LIKE '%Çıkış%' OR IslemTuru LIKE '%Satış%') THEN Miktar ELSE 0 END), 0) FROM StokHareket WHERE StokId = ?", sId);
+                currentStok.Miktar = sumGiren - sumCikan;
+                await db.UpdateAsync(currentStok);
+                await _syncService.SyncStokAsync(currentStok);
+            }
+        }
+
         await db.RunInTransactionAsync(tran => 
         {
-            foreach(var d in detaylar)
+            foreach(var sId in affectedStokIds)
             {
-                _recalculateStockCostInternal(tran, d.StokId);
+                _recalculateStockCostInternal(tran, sId);
             }
         });
 
@@ -191,9 +231,19 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
     // Özel metodlar
     public async Task<Fatura?> GetByNoAsync(string faturaNo)
     {
+        if (string.IsNullOrWhiteSpace(faturaNo)) return null;
         var db = await GetConnectionAsync();
-        return await db.Table<Fatura>()
-            .FirstOrDefaultAsync(f => f.FaturaNo == faturaNo && !f.IsDeleted);
+        string clean = faturaNo.Trim();
+        if (clean.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase))
+        {
+            clean = clean.Substring(4).Trim();
+        }
+
+        var exact = await db.Table<Fatura>().FirstOrDefaultAsync(f => f.FaturaNo == clean && !f.IsDeleted);
+        if (exact != null) return exact;
+
+        var allActive = await db.Table<Fatura>().Where(f => !f.IsDeleted).ToListAsync();
+        return allActive.FirstOrDefault(f => !string.IsNullOrEmpty(f.FaturaNo) && f.FaturaNo.Trim().Equals(clean, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<List<Fatura>> GetByCariIdAsync(int cariId)
@@ -333,8 +383,20 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
                 var oldFatura = tran.Find<Fatura>(fatura.Id);
                 if (oldFatura != null)
                 {
-                    bool oldIsSatis = (oldFatura.Tur ?? "").Equals("Satış", System.StringComparison.OrdinalIgnoreCase) || 
-                                      (oldFatura.Tur ?? "").Equals("Satis", System.StringComparison.OrdinalIgnoreCase);
+                    string oldTur = (oldFatura.Tur ?? "").Trim();
+                    bool oldIsSatis = oldTur.Contains("Satış", System.StringComparison.OrdinalIgnoreCase) || 
+                                      oldTur.Contains("Satis", System.StringComparison.OrdinalIgnoreCase);
+
+                    // If oldDetails is empty in table, fallback to existing StokHareket
+                    if (!oldDetails.Any())
+                    {
+                        var oldMovements = tran.Query<StokHareket>("SELECT * FROM StokHareket WHERE FaturaId = ? OR EvrakNo = ?", fatura.Id, fatura.FaturaNo ?? "");
+                        foreach (var m in oldMovements)
+                        {
+                            double miktar = m.Miktar > 0 ? (double)m.Miktar : (double)(m.Giren > 0 ? m.Giren : (m.Cikan > 0 ? m.Cikan : 0));
+                            oldDetails.Add(new FaturaDetay { FaturaId = fatura.Id, StokId = m.StokId, Miktar = miktar });
+                        }
+                    }
 
                     foreach (var od in oldDetails)
                     {
@@ -370,8 +432,9 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
                 tran.Insert(fatura);
             }
             
-            bool currentIsSatis = (fatura.Tur ?? "").Equals("Satış", System.StringComparison.OrdinalIgnoreCase) || 
-                                  (fatura.Tur ?? "").Equals("Satis", System.StringComparison.OrdinalIgnoreCase);
+            string curTur = (fatura.Tur ?? "").Trim();
+            bool currentIsSatis = curTur.Contains("Satış", System.StringComparison.OrdinalIgnoreCase) || 
+                                  curTur.Contains("Satis", System.StringComparison.OrdinalIgnoreCase);
 
             // Automated Payment Movement
             if (fatura.OdemeSekli == "Nakit" && fatura.KasaId.HasValue && fatura.KasaId > 0)

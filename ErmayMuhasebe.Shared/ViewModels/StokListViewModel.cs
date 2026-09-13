@@ -585,14 +585,14 @@ public abstract partial class StokListViewModel : ViewModelBase
             // 1. Delete the movement
             await _uow.Stoklar.DeleteHareketAsync(hareket);
 
-            // 2. Adjust stock quantity
+            // 2. Adjust stock quantity accurately from remaining movements
             var currentStok = await _uow.Stoklar.GetByIdAsync(stokId);
             if (currentStok != null)
             {
-                if (hareket.IslemTuru == "GİRİŞ" || hareket.IslemTuru == "Alış Faturası") 
-                    currentStok.Miktar -= (double)hareket.Miktar;
-                else 
-                    currentStok.Miktar += (double)hareket.Miktar;
+                var remainingMovements = await _uow.Stoklar.GetHareketlerAsync(stokId);
+                double sumGiren = (double)remainingMovements.Sum(h => h.Giren > 0 ? h.Giren : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Giriş", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Alış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Açılış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                double sumCikan = (double)remainingMovements.Sum(h => h.Cikan > 0 ? h.Cikan : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                currentStok.Miktar = sumGiren - sumCikan;
 
                 await _uow.Stoklar.SaveAsync(currentStok);
             }

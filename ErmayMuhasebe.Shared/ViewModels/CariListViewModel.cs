@@ -1706,6 +1706,10 @@ public abstract partial class CariListViewModel : ViewModelBase
             }
             else 
             {
+                if (isInvoiceMovement)
+                {
+                    await CleanupOrphanInvoiceStockAsync(targetHareket);
+                }
                 await _finansService.DeleteTransactionAsync(targetHareket);
             }
 
@@ -1721,6 +1725,49 @@ public abstract partial class CariListViewModel : ViewModelBase
         {
             ErrorMessage = $"Silme hatası: {ex.Message}";
             SelectedHareket = targetHareket;
+        }
+    }
+
+    private async Task CleanupOrphanInvoiceStockAsync(CariHareket hareket)
+    {
+        try
+        {
+            string fNo = hareket.EvrakNo?.Trim() ?? "";
+            if (fNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase)) fNo = fNo.Substring(4).Trim();
+            int? fId = hareket.FaturaId;
+
+            var allHareketler = await _uow.Stoklar.GetAllHareketlerAsync();
+            var orphanStokMoves = allHareketler.Where(s => 
+                (fId.HasValue && fId.Value > 0 && s.FaturaId == fId.Value) || 
+                (!string.IsNullOrEmpty(fNo) && !string.IsNullOrEmpty(s.EvrakNo) && s.EvrakNo.Trim().Equals(fNo, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+
+            if (!orphanStokMoves.Any()) return;
+
+            bool isSatis = (hareket.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase) || hareket.Borc > 0;
+            var affectedStokIds = orphanStokMoves.Select(s => s.StokId).Distinct().ToList();
+
+            foreach (var m in orphanStokMoves)
+            {
+                var stk = await _uow.Stoklar.GetByIdAsync(m.StokId);
+                if (stk != null)
+                {
+                    double qty = m.Miktar > 0 ? (double)m.Miktar : (double)(m.Giren > 0 ? m.Giren : (m.Cikan > 0 ? m.Cikan : 0));
+                    if (isSatis) stk.Miktar += qty;
+                    else stk.Miktar -= qty;
+                    await _uow.Stoklar.SaveAsync(stk);
+                }
+                await _uow.Stoklar.DeleteHareketAsync(m);
+            }
+
+            foreach (var sId in affectedStokIds)
+            {
+                await _uow.Stoklar.RecalculateCostsAsync(sId);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CariListViewModel] CleanupOrphanInvoiceStockAsync error: {ex.Message}");
         }
     }
 
@@ -1760,6 +1807,10 @@ public abstract partial class CariListViewModel : ViewModelBase
                 }
                 else 
                 {
+                    if (isInvoiceMovement)
+                    {
+                        await CleanupOrphanInvoiceStockAsync(h);
+                    }
                     await _finansService.DeleteTransactionAsync(h);
                 }
             }

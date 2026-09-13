@@ -290,42 +290,46 @@ export const deleteFaturaCascade = async (faturaIdOrNo: number | string): Promis
 
     const faturaId = oldFatura.id;
     const faturaNo = oldFatura.faturaNo || '';
-    const isSatis = oldFatura.tur === 'Satış' || oldFatura.tur === 'Satis';
+    const turLower = (oldFatura.tur || '').toLowerCase();
+    let isSatis = turLower.includes('sat') || turLower.includes('çık') || turLower.includes('cik');
     const genelToplam = parseFloat(oldFatura.genelToplam) || 0;
     const isPaid = (oldFatura.odenen || 0) > 0 || (oldFatura.odemeSekli && oldFatura.odemeSekli !== 'Açık' && oldFatura.odemeSekli !== 'Acik');
 
-    // 2. Revert Stock balances
+    // 2. Prepare Details & Movements for stock rollback
     const detayRaw = (await readData(`FaturaDetaylar/${faturaId}`)) || [];
     let detaylar = Array.isArray(detayRaw)
       ? detayRaw.filter(Boolean)
       : Object.keys(detayRaw).map(key => ({ ...(detayRaw as any)[key], id: parseInt(key) || key }));
 
-    if (!detaylar.length && faturaNo) {
-      const shRaw = (await readData('StokHareketler')) || {};
-      const shList = toKeyList(shRaw);
-      const matchSh = shList.filter((h: any) =>
-        (h.faturaId !== undefined && (h.faturaId === faturaId || String(h.faturaId) === String(faturaId))) ||
-        (h.evrakNo && String(h.evrakNo) === faturaNo)
-      );
-      detaylar = matchSh.map((m: any) => ({
-        stokId: m.stokId,
-        miktar: m.miktar || (isSatis ? m.cikan : m.giren) || 0
-      }));
+    const shRaw = (await readData('StokHareketler')) || {};
+    const shList = toKeyList(shRaw);
+    const matchSh = shList.filter((h: any) =>
+      (h.faturaId !== undefined && (h.faturaId === faturaId || String(h.faturaId) === String(faturaId))) ||
+      (faturaNo && h.evrakNo && String(h.evrakNo).trim().toLowerCase() === faturaNo.trim().toLowerCase())
+    );
+
+    if (!detaylar.length && matchSh.length > 0) {
+      detaylar = matchSh.map((m: any) => {
+        const mGiren = parseFloat(m.giren) || 0;
+        const mCikan = parseFloat(m.cikan) || 0;
+        const mMiktar = parseFloat(m.miktar) || 0;
+        if (!isSatis && mCikan > 0 && mGiren === 0) {
+          isSatis = true;
+        }
+        return {
+          stokId: m.stokId,
+          miktar: mMiktar > 0 ? mMiktar : (mCikan > 0 ? mCikan : (mGiren > 0 ? mGiren : 0))
+        };
+      });
     }
 
+    // Identify all affected stock IDs
+    const affectedStokIds = new Set<string>();
     for (const d of detaylar) {
-      if (!d.stokId) continue;
-      try {
-        const freshStok = await readData(`Stoklar/${d.stokId}`);
-        if (freshStok) {
-          const miktar = parseFloat(d.miktar) || 0;
-          const currentMiktar = parseFloat(freshStok.miktar) || 0;
-          const yeniMiktar = isSatis ? (currentMiktar + miktar) : (currentMiktar - miktar);
-          await writeData(`Stoklar/${d.stokId}`, { ...freshStok, miktar: yeniMiktar, id: d.stokId });
-        }
-      } catch (e) {
-        console.error(`[transactionService] Stok ${d.stokId} bakiye geri alınamadı:`, e);
-      }
+      if (d.stokId) affectedStokIds.add(String(d.stokId));
+    }
+    for (const m of matchSh) {
+      if (m.stokId) affectedStokIds.add(String(m.stokId));
     }
 
     // 3. Revert Cari balance
@@ -349,20 +353,52 @@ export const deleteFaturaCascade = async (faturaIdOrNo: number | string): Promis
       }
     }
 
-    // 4. Delete StokHareketler
-    const shRaw = (await readData('StokHareketler')) || {};
-    const shList = toKeyList(shRaw);
-    for (const h of shList) {
-      const match =
-        (h.faturaId !== undefined && (h.faturaId === faturaId || String(h.faturaId) === String(faturaId))) ||
-        (faturaNo && h.evrakNo && String(h.evrakNo) === faturaNo);
-      if (match) {
-        const k = h.firebaseKey || h.id;
-        if (k) { try { await deleteData(`StokHareketler/${k}`); } catch {} }
+    // 4. Delete StokHareketler first
+    for (const h of matchSh) {
+      const k = h.firebaseKey || h.id;
+      if (k) { try { await deleteData(`StokHareketler/${k}`); } catch {} }
+    }
+
+    // 5. Revert & verify Stock balances (supports both firebaseKey and numeric ID, recalculates from remaining movements)
+    const allStoklarRaw = (await readData('Stoklar')) || {};
+    const allStoklar = toKeyList(allStoklarRaw);
+    const remainingShRaw = (await readData('StokHareketler')) || {};
+    const remainingShList = toKeyList(remainingShRaw);
+
+    for (const sid of affectedStokIds) {
+      try {
+        let stokObj = allStoklar.find((s: any) => String(s.id) === sid || s.firebaseKey === sid);
+        if (!stokObj) {
+          stokObj = await readData(`Stoklar/${sid}`);
+        }
+        if (!stokObj) continue;
+        const stokTargetKey = stokObj.firebaseKey || sid;
+
+        const myRemainingSh = remainingShList.filter((h: any) =>
+          String(h.stokId) === sid &&
+          !matchSh.some((m: any) => (m.firebaseKey && h.firebaseKey && m.firebaseKey === h.firebaseKey) || (m.id && h.id && String(m.id) === String(h.id)))
+        );
+        if (myRemainingSh.length > 0) {
+          const netMiktar = myRemainingSh.reduce((acc: number, h: any) => {
+            const g = parseFloat(h.giren) || 0;
+            const c = parseFloat(h.cikan) || 0;
+            return acc + (g - c);
+          }, 0);
+          await writeData(`Stoklar/${stokTargetKey}`, { ...stokObj, miktar: netMiktar, id: stokObj.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) });
+        } else {
+          // If no remaining movements, apply the delta reversal
+          const relatedD = detaylar.filter((d: any) => String(d.stokId) === sid);
+          const totalMiktar = relatedD.reduce((acc: number, d: any) => acc + (parseFloat(d.miktar) || 0), 0);
+          const currentMiktar = parseFloat(stokObj.miktar) || 0;
+          const yeniMiktar = isSatis ? (currentMiktar + totalMiktar) : (currentMiktar - totalMiktar);
+          await writeData(`Stoklar/${stokTargetKey}`, { ...stokObj, miktar: yeniMiktar, id: stokObj.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) });
+        }
+      } catch (e) {
+        console.error(`[transactionService] Stok ${sid} bakiye geri alınamadı:`, e);
       }
     }
 
-    // 5. Delete CariHareketler (including KPL- closing movement)
+    // 6. Delete CariHareketler (including KPL- closing movement)
     const chRaw = (await readData('CariHareketler')) || {};
     const chList = toKeyList(chRaw);
     for (const h of chList) {
@@ -376,7 +412,7 @@ export const deleteFaturaCascade = async (faturaIdOrNo: number | string): Promis
       }
     }
 
-    // 6. Delete Kasa / Banka movements if closed
+    // 7. Delete Kasa / Banka movements if closed
     const khRaw = (await readData('KasaHareketler')) || {};
     const khList = toKeyList(khRaw);
     for (const kh of khList) {
@@ -423,7 +459,7 @@ export const deleteFaturaCascade = async (faturaIdOrNo: number | string): Promis
       }
     }
 
-    // 7. Delete FaturaDetaylar & mark Fatura isDeleted
+    // 8. Delete FaturaDetaylar & mark Fatura isDeleted
     try { await deleteData(`FaturaDetaylar/${faturaId}`); } catch {}
     try {
       await writeData(`Faturalar/${faturaId}`, { ...oldFatura, isDeleted: true });
@@ -449,6 +485,52 @@ export const deleteFinancialTransaction = async (cariHareket: any): Promise<bool
     const fId = rawFaturaId || cariHareket.evrakNo;
     const okCascade = await deleteFaturaCascade(fId);
     if (okCascade) return true;
+
+    // Fallback: If invoice document was not found, still cleanup any orphan stock movements linked to this invoice
+    try {
+      const shRaw = (await readData('StokHareketler')) || {};
+      const toKeyListFallback = (raw: any) => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean);
+        return Object.keys(raw).map((k) => ({ ...raw[k], firebaseKey: k }));
+      };
+      const shList = toKeyListFallback(shRaw);
+      const cleanEvrak = String(cariHareket.evrakNo || '').replace(/^KPL-/, '').trim().toLowerCase();
+      const fIdStr = String(rawFaturaId || '');
+      const orphanSh = shList.filter((h: any) =>
+        (fIdStr && (String(h.faturaId) === fIdStr)) ||
+        (cleanEvrak && h.evrakNo && String(h.evrakNo).trim().toLowerCase() === cleanEvrak)
+      );
+
+      if (orphanSh.length > 0) {
+        const orphanStokIds = new Set<string>();
+        for (const h of orphanSh) {
+          if (h.stokId) orphanStokIds.add(String(h.stokId));
+          const k = h.firebaseKey || h.id;
+          if (k) await deleteData(`StokHareketler/${k}`);
+        }
+
+        const allStoklarRaw = (await readData('Stoklar')) || {};
+        const allStoklar = toKeyListFallback(allStoklarRaw);
+        const remainingShRaw = (await readData('StokHareketler')) || {};
+        const remainingShList = toKeyListFallback(remainingShRaw);
+
+        for (const sid of orphanStokIds) {
+          const stokObj = allStoklar.find((s: any) => String(s.id) === sid || s.firebaseKey === sid);
+          if (!stokObj) continue;
+          const stokTargetKey = stokObj.firebaseKey || sid;
+          const mySh = remainingShList.filter((h: any) => String(h.stokId) === sid);
+          const netMiktar = mySh.reduce((acc: number, h: any) => {
+            const g = parseFloat(h.giren) || 0;
+            const c = parseFloat(h.cikan) || 0;
+            return acc + (g - c);
+          }, 0);
+          await writeData(`Stoklar/${stokTargetKey}`, { ...stokObj, miktar: netMiktar, id: stokObj.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) });
+        }
+      }
+    } catch (e) {
+      console.warn('[transactionService] Orphan stock cleanup error:', e);
+    }
   }
 
   const refId = cariHareket.refId;

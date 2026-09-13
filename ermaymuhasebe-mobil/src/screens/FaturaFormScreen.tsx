@@ -6,6 +6,7 @@ import { generateReportPdf } from '../services/pdfService';
 import { exportToExcel } from '../services/excelService';
 import { generateInt32Id } from '../utils/IdGenerator';
 import { BlurView } from 'expo-blur';
+import { deleteFaturaCascade } from '../services/transactionService';
 
 const BIRIM_LISTESI = ['Adet', 'Kg', 'Mt', 'M2'];
 
@@ -796,30 +797,86 @@ export default function FaturaFormScreen({ route, navigation }: any) {
       if (!oldFatura) return false;
 
       const faturaNo = oldFatura.faturaNo || '';
-      const isSatis = oldFatura.tur === 'Satış';
+      const turLower = (oldFatura.tur || '').toLowerCase();
+      let isSatis = turLower.includes('sat') || turLower.includes('çık') || turLower.includes('cik');
       const isPaid = (oldFatura.odenen || 0) > 0;
       const genelToplam = oldFatura.genelToplam || 0;
 
-      const detayRaw = await readData(`FaturaDetaylar/${faturaId}`) || [];
-      const detaylar = Array.isArray(detayRaw)
+      const toKeyList = (raw: any) => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean);
+        return Object.keys(raw).map((k) => ({ ...raw[k], firebaseKey: k }));
+      };
+
+      let detayRaw = await readData(`FaturaDetaylar/${faturaId}`) || [];
+      let detaylar = Array.isArray(detayRaw)
         ? detayRaw.filter(Boolean)
         : Object.keys(detayRaw).map(key => ({ ...(detayRaw as any)[key], id: parseInt(key) }));
 
+      const shRaw = await readData('StokHareketler') || {};
+      const shList = toKeyList(shRaw);
+      const matchSh = shList.filter((h: any) =>
+        (h.faturaId === faturaId || h.FaturaId === faturaId || String(h.faturaId) === String(faturaId)) ||
+        (faturaNo && h.evrakNo && String(h.evrakNo).trim().toLowerCase() === faturaNo.trim().toLowerCase())
+      );
+
+      if (!detaylar.length && matchSh.length > 0) {
+        detaylar = matchSh.map((m: any) => {
+          const mGiren = parseFloat(m.giren) || 0;
+          const mCikan = parseFloat(m.cikan) || 0;
+          const mMiktar = parseFloat(m.miktar) || 0;
+          if (!isSatis && mCikan > 0 && mGiren === 0) {
+            isSatis = true;
+          }
+          return {
+            stokId: m.stokId,
+            miktar: mMiktar > 0 ? mMiktar : (mCikan > 0 ? mCikan : (mGiren > 0 ? mGiren : 0))
+          };
+        });
+      }
+
+      const affectedStokIds = new Set<string>();
       for (const d of detaylar) {
+        if (d.stokId) affectedStokIds.add(String(d.stokId));
+      }
+      for (const m of matchSh) {
+        if (m.stokId) affectedStokIds.add(String(m.stokId));
+      }
+
+      // Stok hareketlerini sil
+      for (const h of matchSh) {
+        try { await deleteData(`StokHareketler/${h.firebaseKey || h.id}`); } catch (e) { console.error('StokHareket silme hatası:', e); }
+      }
+
+      // Kalan hareketlerden net bakiye teyidi
+      const freshAllStoklarRaw = await readData('Stoklar') || {};
+      const allStoklarList = toKeyList(freshAllStoklarRaw);
+      const remainingShRaw = await readData('StokHareketler') || {};
+      const remainingShList = toKeyList(remainingShRaw);
+
+      for (const sid of affectedStokIds) {
         try {
-          const freshStok = await readData(`Stoklar/${d.stokId}`);
-          const stok = freshStok || stoklar.find(s => s.id === d.stokId);
+          const stok = allStoklarList.find((s: any) => String(s.id) === sid || s.firebaseKey === sid) || stoklar.find(s => String(s.id) === sid);
           if (stok) {
-            const yeniMiktar = isSatis
-              ? (parseFloat(stok.miktar) || 0) + (parseFloat(d.miktar) || 0)
-              : (parseFloat(stok.miktar) || 0) - (parseFloat(d.miktar) || 0);
-            const okStokRevert = await writeData(`Stoklar/${d.stokId}`, { ...stok, miktar: yeniMiktar, id: d.stokId });
-            if (!okStokRevert) {
-              Alert.alert('Uyarı', 'Stok miktarı geri alınamadı. (Bağlantı sorunu — bakiye sıraya alındı.)');
+            const stokTargetKey = stok.firebaseKey || sid;
+            const mySh = remainingShList.filter((h: any) => String(h.stokId) === sid);
+            if (mySh.length > 0) {
+              const netMiktar = mySh.reduce((acc: number, h: any) => {
+                const g = parseFloat(h.giren) || 0;
+                const c = parseFloat(h.cikan) || 0;
+                return acc + (g - c);
+              }, 0);
+              await writeData(`Stoklar/${stokTargetKey}`, { ...stok, miktar: netMiktar, id: stok.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) });
+            } else {
+              const relatedD = detaylar.filter((d: any) => String(d.stokId) === sid);
+              const totalMiktar = relatedD.reduce((acc: number, d: any) => acc + (parseFloat(d.miktar) || 0), 0);
+              const currentMiktar = parseFloat(stok.miktar) || 0;
+              const yeniMiktar = isSatis ? (currentMiktar + totalMiktar) : (currentMiktar - totalMiktar);
+              await writeData(`Stoklar/${stokTargetKey}`, { ...stok, miktar: yeniMiktar, id: stok.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) });
             }
           }
         } catch (e) {
-          console.error(`Stok ${d.stokId} bakiye geri alınamadı:`, e);
+          console.error(`Stok ${sid} bakiye geri alınamadı:`, e);
         }
       }
 
@@ -847,14 +904,6 @@ export default function FaturaFormScreen({ route, navigation }: any) {
         const hEvrak = h.evrakNo || h.EvrakNo || '';
         if (h.faturaId === faturaId || h.FaturaId === faturaId || hEvrak === faturaNo || hEvrak === `KPL-${faturaNo}`) {
           try { await deleteData(`CariHareketler/${h.firebaseKey || h.id}`); } catch (e) { console.error('CariHareket silme hatası:', e); }
-        }
-      }
-
-      const shRaw = await readData('StokHareketler') || {};
-      const shList = Array.isArray(shRaw) ? shRaw.filter(Boolean) : Object.keys(shRaw).map(key => ({ ...(shRaw as any)[key], firebaseKey: key }));
-      for (const h of shList) {
-        if (h.faturaId === faturaId || h.FaturaId === faturaId || (h.evrakNo || h.EvrakNo || '') === faturaNo) {
-          try { await deleteData(`StokHareketler/${h.firebaseKey || h.id}`); } catch (e) { console.error('StokHareket silme hatası:', e); }
         }
       }
 
@@ -922,11 +971,14 @@ export default function FaturaFormScreen({ route, navigation }: any) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await revertFaturaEffects(fatura.id);
-              const okSil = await writeData(`Faturalar/${fatura.id}`, { ...fatura, isDeleted: true });
-              if (!okSil) {
-                Alert.alert('Hata', 'Fatura silinemedi. (Bağlantı sorunu — kayıt eşitlenemedi.)');
-                return;
+              const okCascade = await deleteFaturaCascade(fatura.id || fatura.faturaNo);
+              if (!okCascade) {
+                await revertFaturaEffects(fatura.id);
+                const okSil = await writeData(`Faturalar/${fatura.id}`, { ...fatura, isDeleted: true });
+                if (!okSil) {
+                  Alert.alert('Hata', 'Fatura silinemedi. (Bağlantı sorunu — kayıt eşitlenemedi.)');
+                  return;
+                }
               }
               Alert.alert('Başarılı', 'Fatura ve ilişkili hareketler başarıyla silindi.');
             } catch (err) {
