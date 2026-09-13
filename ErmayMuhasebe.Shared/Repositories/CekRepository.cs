@@ -35,18 +35,28 @@ public class CekRepository : BaseRepository<Cek>, ICekRepository
             await db.UpdateAsync(entity);
         else
             await db.InsertAsync(entity);
+
+        await _syncService.SyncCekAsync(entity);
         return entity.Id;
     }
 
     public override async Task<int> DeleteAsync(Cek entity)
     {
         var db = await GetConnectionAsync();
+        if (entity != null && entity.Id > 0)
+        {
+            await _syncService.DeleteCekAsync(entity.Id);
+        }
         return await db.DeleteAsync(entity);
     }
 
     public override async Task<int> DeleteAsync(int id)
     {
         var db = await GetConnectionAsync();
+        if (id > 0)
+        {
+            await _syncService.DeleteCekAsync(id);
+        }
         return await db.ExecuteAsync("DELETE FROM Cek WHERE Id = ?", id);
     }
 

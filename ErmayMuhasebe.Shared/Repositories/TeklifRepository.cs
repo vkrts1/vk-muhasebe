@@ -40,18 +40,30 @@ public class TeklifRepository : BaseRepository<Teklif>, ITeklifRepository
         {
             await db.InsertAsync(entity);
         }
+
+        await _syncService.SyncTeklifAsync(entity);
         return entity.Id;
     }
 
     public override async Task<int> DeleteAsync(Teklif entity)
     {
         var db = await GetConnectionAsync();
+        if (entity != null && entity.Id > 0)
+        {
+            await _syncService.DeleteTeklifAsync(entity.Id);
+            await _syncService.DeleteTeklifDetaylarAsync(entity.Id);
+        }
         return await db.DeleteAsync(entity);
     }
 
     public override async Task<int> DeleteAsync(int id)
     {
         var db = await GetConnectionAsync();
+        if (id > 0)
+        {
+            await _syncService.DeleteTeklifAsync(id);
+            await _syncService.DeleteTeklifDetaylarAsync(id);
+        }
         return await db.ExecuteAsync("DELETE FROM Teklif WHERE Id = ?", id);
     }
 

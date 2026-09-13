@@ -41,13 +41,18 @@ public class SiparisRepository : BaseRepository<Siparis>, ISiparisRepository
         {
             await db.InsertAsync(entity);
         }
+
+        await _syncService.SyncSiparisAsync(entity);
         return entity.Id;
     }
 
     public override async Task<int> DeleteAsync(Siparis entity)
     {
         entity.IsDeleted = true;
-        return await SaveAsync(entity);
+        int res = await SaveAsync(entity);
+        await _syncService.DeleteSiparisAsync(entity.Id);
+        await _syncService.DeleteSiparisDetaylarAsync(entity.Id);
+        return res;
     }
 
     public override async Task<int> DeleteAsync(int id)

@@ -35,18 +35,28 @@ public class SenetRepository : BaseRepository<Senet>, ISenetRepository
             await db.UpdateAsync(entity);
         else
             await db.InsertAsync(entity);
+
+        await _syncService.SyncSenetAsync(entity);
         return entity.Id;
     }
 
     public override async Task<int> DeleteAsync(Senet entity)
     {
         var db = await GetConnectionAsync();
+        if (entity != null && entity.Id > 0)
+        {
+            await _syncService.DeleteSenetAsync(entity.Id);
+        }
         return await db.DeleteAsync(entity);
     }
 
     public override async Task<int> DeleteAsync(int id)
     {
         var db = await GetConnectionAsync();
+        if (id > 0)
+        {
+            await _syncService.DeleteSenetAsync(id);
+        }
         return await db.ExecuteAsync("DELETE FROM Senet WHERE Id = ?", id);
     }
 

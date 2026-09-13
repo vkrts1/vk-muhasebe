@@ -535,7 +535,7 @@ public partial class MainViewModel : ViewModelBase
                 }
             }
             
-            await System.Threading.Tasks.Task.Delay(5000); // Wait 5 sec for responsive live sync
+            await System.Threading.Tasks.Task.Delay(2000); // Ultra responsive live sync (2 sec)
         }
     }
 

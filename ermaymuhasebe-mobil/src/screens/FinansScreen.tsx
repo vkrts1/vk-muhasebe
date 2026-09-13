@@ -590,7 +590,7 @@ export default function FinansScreen({ route }: any) {
                 ...data[key],
                 firebaseKey: key,
               }));
-          setter(list);
+          setter(list.filter((x: any) => x && x.isDeleted !== true));
         }
       });
     };

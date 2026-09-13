@@ -2540,7 +2540,21 @@ namespace ErmayMuhasebe.Services
                 }
             });
 
-            _ = Task.Run(() => _sync.SyncKrediKartiIslemAsync(item));
+            _ = Task.Run(async () => 
+            {
+                await _sync.SyncKrediKartiIslemAsync(item);
+                var ch = await _db.Table<CariHareket>().FirstOrDefaultAsync(x => x.EvrakNo == $"KK-{item.Id}");
+                if (ch != null) await _sync.SyncCariHareketAsync(ch);
+                var supCh = await _db.Table<CariHareket>().FirstOrDefaultAsync(x => x.EvrakNo == $"KK-SUP-{item.Id}");
+                if (supCh != null) await _sync.SyncCariHareketAsync(supCh);
+                var c = await _db.Table<CariKart>().FirstOrDefaultAsync(x => x.Id == item.MusteriId);
+                if (c != null) await _sync.SyncCariAsync(c);
+                if (item.YonlendirilenCariId.HasValue)
+                {
+                    var supC = await _db.Table<CariKart>().FirstOrDefaultAsync(x => x.Id == item.YonlendirilenCariId.Value);
+                    if (supC != null) await _sync.SyncCariAsync(supC);
+                }
+            });
             return item.Id;
         }
 
@@ -2710,7 +2724,21 @@ namespace ErmayMuhasebe.Services
                 }
             });
 
-            _ = Task.Run(() => _sync.SyncEftIslemAsync(item));
+            _ = Task.Run(async () => 
+            {
+                await _sync.SyncEftIslemAsync(item);
+                var ch = await _db.Table<CariHareket>().FirstOrDefaultAsync(x => x.EvrakNo == $"EFT-{item.Id}");
+                if (ch != null) await _sync.SyncCariHareketAsync(ch);
+                var supCh = await _db.Table<CariHareket>().FirstOrDefaultAsync(x => x.EvrakNo == $"EFT-SUP-{item.Id}");
+                if (supCh != null) await _sync.SyncCariHareketAsync(supCh);
+                var c = await _db.Table<CariKart>().FirstOrDefaultAsync(x => x.Id == item.MusteriId);
+                if (c != null) await _sync.SyncCariAsync(c);
+                if (item.YonlendirilenCariId.HasValue)
+                {
+                    var supC = await _db.Table<CariKart>().FirstOrDefaultAsync(x => x.Id == item.YonlendirilenCariId.Value);
+                    if (supC != null) await _sync.SyncCariAsync(supC);
+                }
+            });
             return item.Id;
         }
 
@@ -2720,12 +2748,16 @@ namespace ErmayMuhasebe.Services
             var item = await _db.Table<EftIslem>().FirstOrDefaultAsync(x => x.Id == id);
             if (item == null) return 0;
 
+            int chIdToDelete = 0;
+            int supChIdToDelete = 0;
+
             await _db.RunInTransactionAsync(tran => 
             {
                 string evrakNo = $"EFT-{id}";
                 var cariHareket = tran.Table<CariHareket>().FirstOrDefault(x => x.EvrakNo == evrakNo);
                 if (cariHareket != null)
                 {
+                     chIdToDelete = cariHareket.Id;
                      var cari = tran.Find<CariKart>(cariHareket.CariId);
                      if (cari != null)
                      {
@@ -2740,6 +2772,7 @@ namespace ErmayMuhasebe.Services
                 var supHareket = tran.Table<CariHareket>().FirstOrDefault(x => x.EvrakNo == supEvrakNo);
                 if (supHareket != null)
                 {
+                    supChIdToDelete = supHareket.Id;
                     var supplier = tran.Find<CariKart>(supHareket.CariId);
                     if (supplier != null)
                     {
@@ -2752,7 +2785,19 @@ namespace ErmayMuhasebe.Services
                 tran.Delete(item);
             });
             
-            _ = Task.Run(() => _sync.DeleteEftIslemAsync(id));
+            _ = Task.Run(async () => 
+            {
+                await _sync.DeleteEftIslemAsync(id);
+                if (chIdToDelete > 0) await _sync.DeleteCariHareketAsync(chIdToDelete);
+                if (supChIdToDelete > 0) await _sync.DeleteCariHareketAsync(supChIdToDelete);
+                var c = await _db.Table<CariKart>().FirstOrDefaultAsync(x => x.Id == item.MusteriId);
+                if (c != null) await _sync.SyncCariAsync(c);
+                if (item.YonlendirilenCariId.HasValue)
+                {
+                    var supC = await _db.Table<CariKart>().FirstOrDefaultAsync(x => x.Id == item.YonlendirilenCariId.Value);
+                    if (supC != null) await _sync.SyncCariAsync(supC);
+                }
+            });
             return 1;
         }
 
@@ -2763,6 +2808,9 @@ namespace ErmayMuhasebe.Services
             var item = await _db.Table<KrediKartiIslem>().FirstOrDefaultAsync(x => x.Id == id);
             if (item == null) return 0;
 
+            int chIdToDelete = 0;
+            int supChIdToDelete = 0;
+
             await _db.RunInTransactionAsync(tran => 
             {
                 // Remove linked CariHareket & Reverse Balance
@@ -2770,6 +2818,7 @@ namespace ErmayMuhasebe.Services
                 var cariHareket = tran.Table<CariHareket>().FirstOrDefault(x => x.EvrakNo == evrakNo);
                 if (cariHareket != null)
                 {
+                     chIdToDelete = cariHareket.Id;
                      var cari = tran.Find<CariKart>(cariHareket.CariId);
                      if (cari != null)
                      {
@@ -2785,6 +2834,7 @@ namespace ErmayMuhasebe.Services
                 var supHareket = tran.Table<CariHareket>().FirstOrDefault(x => x.EvrakNo == supEvrakNo);
                 if (supHareket != null)
                 {
+                    supChIdToDelete = supHareket.Id;
                     var supplier = tran.Find<CariKart>(supHareket.CariId);
                     if (supplier != null)
                     {
@@ -2797,7 +2847,19 @@ namespace ErmayMuhasebe.Services
                 tran.Delete(item);
             });
             
-            _ = Task.Run(() => _sync.DeleteKrediKartiIslemAsync(id));
+            _ = Task.Run(async () => 
+            {
+                await _sync.DeleteKrediKartiIslemAsync(id);
+                if (chIdToDelete > 0) await _sync.DeleteCariHareketAsync(chIdToDelete);
+                if (supChIdToDelete > 0) await _sync.DeleteCariHareketAsync(supChIdToDelete);
+                var c = await _db.Table<CariKart>().FirstOrDefaultAsync(x => x.Id == item.MusteriId);
+                if (c != null) await _sync.SyncCariAsync(c);
+                if (item.YonlendirilenCariId.HasValue)
+                {
+                    var supC = await _db.Table<CariKart>().FirstOrDefaultAsync(x => x.Id == item.YonlendirilenCariId.Value);
+                    if (supC != null) await _sync.SyncCariAsync(supC);
+                }
+            });
             return 1;
         }
 
@@ -5391,7 +5453,11 @@ namespace ErmayMuhasebe.Services
                         else
                         {
                             if (b.IsDeleted) { await _db.DeleteAsync(existing); hasAnyChanges = true; }
-                            else await _db.UpdateAsync(b);
+                            else if (existing.GuncelBakiye != b.GuncelBakiye || existing.BankaAdi != b.BankaAdi || existing.HesapNo != b.HesapNo)
+                            {
+                                await _db.UpdateAsync(b);
+                                hasAnyChanges = true;
+                            }
                         }
                     }
                 }
@@ -5429,7 +5495,11 @@ namespace ErmayMuhasebe.Services
                         else
                         {
                             if (kk.IsDeleted) { await _db.DeleteAsync(existing); hasAnyChanges = true; }
-                            else await _db.UpdateAsync(kk);
+                            else if (existing.Tutar != kk.Tutar || existing.Durum != kk.Durum)
+                            {
+                                await _db.UpdateAsync(kk);
+                                hasAnyChanges = true;
+                            }
                         }
                     }
                 }
@@ -5467,7 +5537,11 @@ namespace ErmayMuhasebe.Services
                         else
                         {
                             if (eft.IsDeleted) { await _db.DeleteAsync(existing); hasAnyChanges = true; }
-                            else await _db.UpdateAsync(eft);
+                            else if (existing.Tutar != eft.Tutar || existing.DekontNo != eft.DekontNo)
+                            {
+                                await _db.UpdateAsync(eft);
+                                hasAnyChanges = true;
+                            }
                         }
                     }
                 }
@@ -5497,7 +5571,11 @@ namespace ErmayMuhasebe.Services
                     if (kh == null) continue;
                     var existing = await _db.Table<KasaHareket>().FirstOrDefaultAsync(x => x.Id == kh.Id);
                     if (existing == null) { await _db.InsertAsync(kh); hasAnyChanges = true; }
-                    else await _db.UpdateAsync(kh);
+                    else if (existing.Giren != kh.Giren || existing.Cikan != kh.Cikan || existing.Tutar != kh.Tutar)
+                    {
+                        await _db.UpdateAsync(kh);
+                        hasAnyChanges = true;
+                    }
                 }
             }
 
@@ -5521,7 +5599,11 @@ namespace ErmayMuhasebe.Services
                     if (bh == null) continue;
                     var existing = await _db.Table<BankaHareket>().FirstOrDefaultAsync(x => x.Id == bh.Id);
                     if (existing == null) { await _db.InsertAsync(bh); hasAnyChanges = true; }
-                    else await _db.UpdateAsync(bh);
+                    else if (existing.Giren != bh.Giren || existing.Cikan != bh.Cikan || existing.Tutar != bh.Tutar)
+                    {
+                        await _db.UpdateAsync(bh);
+                        hasAnyChanges = true;
+                    }
                 }
             }
 
@@ -5545,7 +5627,11 @@ namespace ErmayMuhasebe.Services
                     if (ck == null) continue;
                     var existing = await _db.Table<Cek>().FirstOrDefaultAsync(x => x.Id == ck.Id);
                     if (existing == null) { await _db.InsertAsync(ck); hasAnyChanges = true; }
-                    else await _db.UpdateAsync(ck);
+                    else if (existing.Tutar != ck.Tutar || existing.Durum != ck.Durum)
+                    {
+                        await _db.UpdateAsync(ck);
+                        hasAnyChanges = true;
+                    }
                 }
             }
 
@@ -5569,7 +5655,11 @@ namespace ErmayMuhasebe.Services
                     if (sn == null) continue;
                     var existing = await _db.Table<Senet>().FirstOrDefaultAsync(x => x.Id == sn.Id);
                     if (existing == null) { await _db.InsertAsync(sn); hasAnyChanges = true; }
-                    else await _db.UpdateAsync(sn);
+                    else if (existing.Tutar != sn.Tutar || existing.Durum != sn.Durum)
+                    {
+                        await _db.UpdateAsync(sn);
+                        hasAnyChanges = true;
+                    }
                 }
             }
 
