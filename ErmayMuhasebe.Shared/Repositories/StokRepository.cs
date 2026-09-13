@@ -153,6 +153,28 @@ public class StokRepository : BaseRepository<StokKart>, IStokRepository
         var db = await GetConnectionAsync();
         int result = await db.DeleteAsync(hareket);
         await _syncService.DeleteStokHareketAsync(hareket.Id);
+
+        var currentStok = await GetByIdAsync(hareket.StokId);
+        if (currentStok != null)
+        {
+            var remainingMovements = await GetHareketlerAsync(hareket.StokId);
+            if (!remainingMovements.Any())
+            {
+                currentStok.Miktar = 0;
+                currentStok.OrtalamaAlisFiyati = 0;
+                currentStok.OrtalamaSatisFiyati = 0;
+            }
+            else
+            {
+                double sumGiren = (double)remainingMovements.Sum(h => h.Giren > 0 ? h.Giren : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Giriş", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Alış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Açılış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                double sumCikan = (double)remainingMovements.Sum(h => h.Cikan > 0 ? h.Cikan : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                currentStok.Miktar = sumGiren - sumCikan;
+            }
+            await db.UpdateAsync(currentStok);
+            await _syncService.SyncStokAsync(currentStok);
+        }
+
+        await RecalculateCostsAsync(hareket.StokId);
         return result;
     }
 
@@ -167,14 +189,21 @@ public class StokRepository : BaseRepository<StokKart>, IStokRepository
     public async Task RecalculateCostsAsync(int? stokId = null)
     {
         var db = await GetConnectionAsync();
+        List<StokKart> changedStoks = new();
         await db.RunInTransactionAsync(tran => 
         {
-            _recalculateStockCostInternal(tran, stokId);
+            changedStoks = _recalculateStockCostInternal(tran, stokId);
         });
+
+        foreach (var s in changedStoks)
+        {
+            await _syncService.SyncStokAsync(s);
+        }
     }
 
-    private void _recalculateStockCostInternal(SQLiteConnection tran, int? specificStokId = null)
+    private List<StokKart> _recalculateStockCostInternal(SQLiteConnection tran, int? specificStokId = null)
     {
+        var changedStoks = new List<StokKart>();
         var allStoklar = specificStokId.HasValue 
             ? tran.Table<StokKart>().Where(s => s.Id == specificStokId.Value).ToList()
             : tran.Table<StokKart>().ToList();
@@ -230,7 +259,6 @@ public class StokRepository : BaseRepository<StokKart>, IStokRepository
                     if (qty > 0)
                     {
                         // If current quantity is negative or zero, this purchase starts a new basis for cost
-                        // (standard weighted average cost basis reset)
                         if (currentQuantity <= 0)
                         {
                             currentQuantity = 0;
@@ -240,7 +268,7 @@ public class StokRepository : BaseRepository<StokKart>, IStokRepository
                         currentTotalValue += (qty * price);
                         currentQuantity += qty;
                         
-                        if (currentQuantity > 0) // Avoid division by zero
+                        if (currentQuantity > 0)
                         {
                             averagePrice = currentTotalValue / currentQuantity;
                         }
@@ -252,12 +280,10 @@ public class StokRepository : BaseRepository<StokKart>, IStokRepository
                     
                     if (qty > 0)
                     {
-                        // Standard WAC approach: 100 units @ $10. Sell 10 units. Cost remains $10.
-                        // total value becomes $1000 - (10 * $10) = $900.
                         currentTotalValue -= (qty * averagePrice);
                         currentQuantity -= qty;
 
-                        // Calculate Sales Stats (for curiosity/reports)
+                        // Calculate Sales Stats
                         decimal salePrice = m.Fiyat;
                         totalSalesRevenue += (qty * salePrice);
                         totalSoldQuantity += qty;
@@ -283,24 +309,75 @@ public class StokRepository : BaseRepository<StokKart>, IStokRepository
             }).LastOrDefault();
             if (lastSale != null) lastSalesPrice = lastSale.Fiyat;
 
-            if (stok.OrtalamaAlisFiyati != averagePrice)
+            // If no movements exist, reset quantity and average prices completely
+            if (!movements.Any())
             {
-                 stok.OrtalamaAlisFiyati = averagePrice;
-                 changed = true;
+                if (stok.Miktar != 0)
+                {
+                    stok.Miktar = 0;
+                    changed = true;
+                }
+                if (stok.OrtalamaAlisFiyati != 0)
+                {
+                    stok.OrtalamaAlisFiyati = 0;
+                    changed = true;
+                }
+                if (stok.OrtalamaSatisFiyati != 0)
+                {
+                    stok.OrtalamaSatisFiyati = 0;
+                    changed = true;
+                }
+                if (stok.AlisFiyati != 0)
+                {
+                    stok.AlisFiyati = 0;
+                    changed = true;
+                }
+                if (stok.SatisFiyati != 0)
+                {
+                    stok.SatisFiyati = 0;
+                    changed = true;
+                }
             }
-            if (stok.OrtalamaSatisFiyati != averageSalesPrice)
+            else
             {
-                stok.OrtalamaSatisFiyati = averageSalesPrice;
-                changed = true;
-            }
-            if (lastPurchase != null && stok.AlisFiyati != lastPurchasePrice)
-            {
-                stok.AlisFiyati = lastPurchasePrice;
-                changed = true;
+                double sumGiren = (double)movements.Sum(h => h.Giren > 0 ? h.Giren : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Giriş", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Alış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Açılış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                double sumCikan = (double)movements.Sum(h => h.Cikan > 0 ? h.Cikan : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                double computedMiktar = sumGiren - sumCikan;
+                if (Math.Abs(stok.Miktar - computedMiktar) > 0.0001)
+                {
+                    stok.Miktar = computedMiktar;
+                    changed = true;
+                }
+
+                if (stok.OrtalamaAlisFiyati != averagePrice)
+                {
+                     stok.OrtalamaAlisFiyati = averagePrice;
+                     changed = true;
+                }
+                if (stok.OrtalamaSatisFiyati != averageSalesPrice)
+                {
+                    stok.OrtalamaSatisFiyati = averageSalesPrice;
+                    changed = true;
+                }
+                if (lastPurchase != null && stok.AlisFiyati != lastPurchasePrice)
+                {
+                    stok.AlisFiyati = lastPurchasePrice;
+                    changed = true;
+                }
+                if (lastSale != null && stok.SatisFiyati != lastSalesPrice)
+                {
+                    stok.SatisFiyati = lastSalesPrice;
+                    changed = true;
+                }
             }
 
-            if (changed) tran.Update(stok);
+            if (changed) 
+            {
+                tran.Update(stok);
+                changedStoks.Add(stok);
+            }
         }
+        return changedStoks;
     }
 
     public async Task MergeStokAsync(int kaynakStokId, int hedefStokId)

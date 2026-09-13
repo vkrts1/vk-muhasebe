@@ -378,21 +378,51 @@ export const deleteFaturaCascade = async (faturaIdOrNo: number | string): Promis
           String(h.stokId) === sid &&
           !matchSh.some((m: any) => (m.firebaseKey && h.firebaseKey && m.firebaseKey === h.firebaseKey) || (m.id && h.id && String(m.id) === String(h.id)))
         );
+        let ortAlis = 0;
+        let ortSatis = 0;
+        let netMiktar = 0;
         if (myRemainingSh.length > 0) {
-          const netMiktar = myRemainingSh.reduce((acc: number, h: any) => {
+          let totPurVal = 0, totPurQty = 0;
+          let totSaleVal = 0, totSaleQty = 0;
+          for (const h of myRemainingSh) {
             const g = parseFloat(h.giren) || 0;
             const c = parseFloat(h.cikan) || 0;
-            return acc + (g - c);
-          }, 0);
-          await writeData(`Stoklar/${stokTargetKey}`, { ...stokObj, miktar: netMiktar, id: stokObj.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) });
+            const m = parseFloat(h.miktar) || 0;
+            const f = parseFloat(h.fiyat) || 0;
+            netMiktar += (g - c);
+            const isGiris = g > 0 || (h.islemTuru && (h.islemTuru.includes('Giriş') || h.islemTuru.includes('Alış') || h.islemTuru.includes('Açılış')));
+            if (isGiris) {
+              const q = g > 0 ? g : m;
+              totPurVal += q * f;
+              totPurQty += q;
+            } else {
+              const q = c > 0 ? c : m;
+              totSaleVal += q * f;
+              totSaleQty += q;
+            }
+          }
+          ortAlis = totPurQty > 0 ? totPurVal / totPurQty : 0;
+          ortSatis = totSaleQty > 0 ? totSaleVal / totSaleQty : 0;
         } else {
-          // If no remaining movements, apply the delta reversal
           const relatedD = detaylar.filter((d: any) => String(d.stokId) === sid);
           const totalMiktar = relatedD.reduce((acc: number, d: any) => acc + (parseFloat(d.miktar) || 0), 0);
-          const currentMiktar = parseFloat(stokObj.miktar) || 0;
-          const yeniMiktar = isSatis ? (currentMiktar + totalMiktar) : (currentMiktar - totalMiktar);
-          await writeData(`Stoklar/${stokTargetKey}`, { ...stokObj, miktar: yeniMiktar, id: stokObj.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) });
+          const currentMiktar = parseFloat(stokObj.miktar ?? stokObj.Miktar ?? 0) || 0;
+          netMiktar = isSatis ? (currentMiktar + totalMiktar) : (currentMiktar - totalMiktar);
         }
+        await writeData(`Stoklar/${stokTargetKey}`, { 
+          ...stokObj, 
+          miktar: netMiktar, 
+          Miktar: netMiktar,
+          ortalamaAlisFiyati: Number(ortAlis.toFixed(2)),
+          ortalamaSatisFiyati: Number(ortSatis.toFixed(2)),
+          ortAlisFiyati: Number(ortAlis.toFixed(2)),
+          ortSatisFiyati: Number(ortSatis.toFixed(2)),
+          OrtalamaAlisFiyati: Number(ortAlis.toFixed(2)),
+          OrtalamaSatisFiyati: Number(ortSatis.toFixed(2)),
+          alisFiyati: myRemainingSh.length === 0 ? 0 : stokObj.alisFiyati,
+          satisFiyati: myRemainingSh.length === 0 ? 0 : stokObj.satisFiyati,
+          id: stokObj.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) 
+        });
       } catch (e) {
         console.error(`[transactionService] Stok ${sid} bakiye geri alınamadı:`, e);
       }
@@ -520,12 +550,45 @@ export const deleteFinancialTransaction = async (cariHareket: any): Promise<bool
           if (!stokObj) continue;
           const stokTargetKey = stokObj.firebaseKey || sid;
           const mySh = remainingShList.filter((h: any) => String(h.stokId) === sid);
-          const netMiktar = mySh.reduce((acc: number, h: any) => {
-            const g = parseFloat(h.giren) || 0;
-            const c = parseFloat(h.cikan) || 0;
-            return acc + (g - c);
-          }, 0);
-          await writeData(`Stoklar/${stokTargetKey}`, { ...stokObj, miktar: netMiktar, id: stokObj.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) });
+          let ortAlis = 0;
+          let ortSatis = 0;
+          let netMiktar = 0;
+          if (mySh.length > 0) {
+            let totPurVal = 0, totPurQty = 0;
+            let totSaleVal = 0, totSaleQty = 0;
+            for (const h of mySh) {
+              const g = parseFloat(h.giren) || 0;
+              const c = parseFloat(h.cikan) || 0;
+              const m = parseFloat(h.miktar) || 0;
+              const f = parseFloat(h.fiyat) || 0;
+              netMiktar += (g - c);
+              const isGiris = g > 0 || (h.islemTuru && (h.islemTuru.includes('Giriş') || h.islemTuru.includes('Alış') || h.islemTuru.includes('Açılış')));
+              if (isGiris) {
+                const q = g > 0 ? g : m;
+                totPurVal += q * f;
+                totPurQty += q;
+              } else {
+                const q = c > 0 ? c : m;
+                totSaleVal += q * f;
+                totSaleQty += q;
+              }
+            }
+            ortAlis = totPurQty > 0 ? totPurVal / totPurQty : 0;
+            ortSatis = totSaleQty > 0 ? totSaleVal / totSaleQty : 0;
+          }
+          await writeData(`Stoklar/${stokTargetKey}`, { 
+            ...stokObj, 
+            miktar: netMiktar, 
+            ortalamaAlisFiyati: Number(ortAlis.toFixed(2)),
+            ortalamaSatisFiyati: Number(ortSatis.toFixed(2)),
+            ortAlisFiyati: Number(ortAlis.toFixed(2)),
+            ortSatisFiyati: Number(ortSatis.toFixed(2)),
+            OrtalamaAlisFiyati: Number(ortAlis.toFixed(2)),
+            OrtalamaSatisFiyati: Number(ortSatis.toFixed(2)),
+            alisFiyati: mySh.length === 0 ? 0 : stokObj.alisFiyati,
+            satisFiyati: mySh.length === 0 ? 0 : stokObj.satisFiyati,
+            id: stokObj.id ?? (isNaN(Number(sid)) ? sid : parseInt(sid)) 
+          });
         }
       }
     } catch (e) {

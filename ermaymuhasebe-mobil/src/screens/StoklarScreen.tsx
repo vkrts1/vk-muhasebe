@@ -365,10 +365,15 @@ export default function StoklarScreen() {
   };
 
   // --- RECALCULATE COSTS ---
-  const recalculateCosts = async (stokId: number) => {
+  const recalculateCosts = async (stokId: number, excludeId?: number, excludeKey?: string) => {
     try {
       setStatusMessage('Maliyetler hesaplanıyor...');
-      const har = stokHareketler.filter(h => h.stokId === stokId);
+      const har = stokHareketler.filter(h => 
+        h.stokId === stokId && 
+        !h.isDeleted &&
+        (!excludeId || h.id !== excludeId) &&
+        (!excludeKey || h.firebaseKey !== excludeKey)
+      );
       har.sort((a, b) => new Date(a.tarih || 0).getTime() - new Date(b.tarih || 0).getTime());
 
       let totalGirenMiktar = 0;
@@ -400,6 +405,11 @@ export default function StoklarScreen() {
       if (s && s.firebaseKey) {
         await writeData(`Stoklar/${s.firebaseKey}/ortalamaAlisFiyati`, Number(ortAlis.toFixed(2)));
         await writeData(`Stoklar/${s.firebaseKey}/ortalamaSatisFiyati`, Number(ortSatis.toFixed(2)));
+        if (har.length === 0) {
+          await writeData(`Stoklar/${s.firebaseKey}/miktar`, 0);
+          await writeData(`Stoklar/${s.firebaseKey}/alisFiyati`, 0);
+          await writeData(`Stoklar/${s.firebaseKey}/satisFiyati`, 0);
+        }
       }
       setStatusMessage('Maliyet hesaplama tamamlandı.');
     } catch (e: any) {
@@ -583,11 +593,19 @@ export default function StoklarScreen() {
       await writeData(`Stoklar/${stokKey}/miktar`, yeniMiktar);
 
       const harKey = selectedStokHareket.firebaseKey || selectedStokHareket.id.toString();
+      const harId = selectedStokHareket.id;
       await deleteData(`StokHareketler/${harKey}`);
 
-      await recalculateCosts(selectedStok.id);
-      setSelectedStok({ ...selectedStok, miktar: yeniMiktar });
+      await recalculateCosts(selectedStok.id, harId, harKey);
+      setSelectedStok({ 
+        ...selectedStok, 
+        miktar: yeniMiktar,
+        ortalamaAlisFiyati: 0,
+        ortalamaSatisFiyati: 0
+      });
       setEditAcilisBakiye(yeniMiktar.toString());
+      setEditOrtalamaAlisFiyati('0');
+      setEditOrtalamaSatisFiyati('0');
       setSelectedStokHareket(null);
       setIsConfirmVisible(false);
       setSuccessMessage('İşlem başarıyla silindi ve maliyetler güncellendi.');

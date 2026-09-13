@@ -355,28 +355,47 @@ public class FirebaseCariRepository : BaseFirebaseRepository<CariKart>, ICariRep
                      if (stok == null) continue;
                      
                      var movements = currentMovements.Where(m => m.StokId == sid).OrderBy(m => m.Tarih).ToList();
-                     decimal avg = 0; decimal totalVal = 0; decimal totalQty = 0;
-                     decimal lastP = 0;
-                     foreach(var m in movements)
+                     if (!movements.Any())
                      {
-                         if (m.IslemTuru == "GİRİŞ" || m.IslemTuru == "Alış Faturası")
-                         {
-                             decimal q = m.Giren > 0 ? m.Giren : m.Miktar;
-                             totalVal += (q * m.Fiyat);
-                             totalQty += q;
-                             if (totalQty > 0) avg = totalVal / totalQty;
-                             lastP = m.Fiyat;
-                         }
-                         else 
-                         {
-                             decimal q = m.Cikan > 0 ? m.Cikan : m.Miktar;
-                             totalVal -= (q * avg);
-                             totalQty -= q;
-                             if (totalQty <= 0) { totalQty = 0; totalVal = 0; }
-                         }
+                         stok.Miktar = 0;
+                         stok.OrtalamaAlisFiyati = 0;
+                         stok.OrtalamaSatisFiyati = 0;
+                         stok.AlisFiyati = 0;
+                         stok.SatisFiyati = 0;
                      }
-                     stok.OrtalamaAlisFiyati = avg;
-                     stok.AlisFiyati = lastP;
+                     else
+                     {
+                         decimal avgPur = 0; decimal totalPurVal = 0; decimal totalPurQty = 0;
+                         decimal avgSale = 0; decimal totalSaleVal = 0; decimal totalSaleQty = 0;
+                         decimal lastP = 0; decimal lastS = 0;
+                         foreach(var m in movements)
+                         {
+                              if (m.IslemTuru == "GİRİŞ" || m.IslemTuru == "Alış Faturası" || m.Giren > 0 || (m.IslemTuru != null && (m.IslemTuru.Contains("Giriş", StringComparison.OrdinalIgnoreCase) || m.IslemTuru.Contains("Alış", StringComparison.OrdinalIgnoreCase))))
+                              {
+                                  decimal q = m.Giren > 0 ? m.Giren : m.Miktar;
+                                  totalPurVal += (q * m.Fiyat);
+                                  totalPurQty += q;
+                                  if (totalPurQty > 0) avgPur = totalPurVal / totalPurQty;
+                                  lastP = m.Fiyat;
+                              }
+                              else 
+                              {
+                                  decimal q = m.Cikan > 0 ? m.Cikan : m.Miktar;
+                                  totalPurVal -= (q * avgPur);
+                                  totalPurQty -= q;
+                                  if (totalPurQty <= 0) { totalPurQty = 0; totalPurVal = 0; }
+
+                                  totalSaleVal += (q * m.Fiyat);
+                                  totalSaleQty += q;
+                                  if (totalSaleQty > 0) avgSale = totalSaleVal / totalSaleQty;
+                                  lastS = m.Fiyat;
+                              }
+                         }
+                         stok.OrtalamaAlisFiyati = avgPur;
+                         stok.OrtalamaSatisFiyati = avgSale;
+                         if (lastP > 0) stok.AlisFiyati = lastP;
+                         if (lastS > 0) stok.SatisFiyati = lastS;
+                     }
                      await _firebaseService.SaveAsync("Stoklar", stok, stok.Id);
                  }
             }

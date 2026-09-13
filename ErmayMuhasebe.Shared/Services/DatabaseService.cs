@@ -5221,6 +5221,35 @@ namespace ErmayMuhasebe.Services
                 }
             }
 
+            // 4.1 Re-evaluate Stocks if movements changed or if orphan costs exist
+            try
+            {
+                var allDbStoks = await _db.Table<StokKart>().Where(s => !s.IsDeleted).ToListAsync();
+                var allDbMoves = await _db.Table<StokHareket>().ToListAsync();
+                foreach (var st in allDbStoks)
+                {
+                    var stMoves = allDbMoves.Where(h => h.StokId == st.Id).ToList();
+                    if (!stMoves.Any())
+                    {
+                        if (st.Miktar != 0 || st.OrtalamaAlisFiyati != 0 || st.OrtalamaSatisFiyati != 0 || st.AlisFiyati != 0 || st.SatisFiyati != 0)
+                        {
+                            st.Miktar = 0;
+                            st.OrtalamaAlisFiyati = 0;
+                            st.OrtalamaSatisFiyati = 0;
+                            st.AlisFiyati = 0;
+                            st.SatisFiyati = 0;
+                            await _db.UpdateAsync(st);
+                            try { await _sync.SyncGenericAsync("Stoklar", st, st.Id); } catch { }
+                            hasAnyChanges = true;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DatabaseService] Stock self-healing error: {ex.Message}");
+            }
+
             // 5. Pull Faturalar from Cloud
             var cloudFaturalar = await _sync.PullFaturalarAsync();
             if (cloudFaturalar != null)
@@ -6020,14 +6049,24 @@ namespace ErmayMuhasebe.Services
         public async Task RecalculateAllStockCostsAsync(int? specificStokId = null)
         {
             await EnsureInitializedAsync();
+            List<StokKart> changedStoks = new();
             await _db.RunInTransactionAsync(tran => 
             {
-                _recalculateStockCostInternal(tran, specificStokId);
+                changedStoks = _recalculateStockCostInternal(tran, specificStokId);
             });
+
+            if (IsCloudConnected)
+            {
+                foreach (var s in changedStoks)
+                {
+                    try { await _sync.SyncGenericAsync("Stoklar", s, s.Id); } catch { }
+                }
+            }
         }
 
-        private void _recalculateStockCostInternal(SQLiteConnection tran, int? specificStokId = null)
+        private List<StokKart> _recalculateStockCostInternal(SQLiteConnection tran, int? specificStokId = null)
         {
+                var changedStoks = new List<StokKart>();
                 var allStoklar = specificStokId.HasValue 
                     ? tran.Table<StokKart>().Where(s => s.Id == specificStokId.Value).ToList()
                     : tran.Table<StokKart>().ToList();
@@ -6051,14 +6090,13 @@ namespace ErmayMuhasebe.Services
                     foreach (var m in movements)
                     {
                         // "GİRİŞ" or Purchase Invoice adds to inventory and affects average price
-                        if (m.IslemTuru == "GİRİŞ" || m.IslemTuru == "Alış Faturası") 
+                        if (m.IslemTuru == "GİRİŞ" || m.IslemTuru == "Alış Faturası" || m.Giren > 0 || (m.IslemTuru != null && (m.IslemTuru.Contains("Giriş", StringComparison.OrdinalIgnoreCase) || m.IslemTuru.Contains("Alış", StringComparison.OrdinalIgnoreCase) || m.IslemTuru.Contains("Açılış", StringComparison.OrdinalIgnoreCase)))) 
                         {
                             decimal qty = m.Miktar > 0 ? m.Miktar : (m.Giren > 0 ? m.Giren : 0);
-                            decimal price = m.Fiyat; // Assuming Fiyat is populated correctly
+                            decimal price = m.Fiyat;
 
                             if (qty > 0)
                             {
-                                // If current quantity is negative or zero, this purchase starts a new basis for cost
                                 if (currentQuantity <= 0)
                                 {
                                     currentQuantity = 0;
@@ -6072,16 +6110,13 @@ namespace ErmayMuhasebe.Services
                                     averagePrice = currentTotalValue / currentQuantity;
                             }
                         }
-                        // "ÇIKIŞ" or Sales Invoice removes from inventory but DOES NOT change average price
-                        else if (m.IslemTuru == "ÇIKIŞ" || m.IslemTuru == "Satış Faturası")
+                        else if (m.IslemTuru == "ÇIKIŞ" || m.IslemTuru == "Satış Faturası" || m.Cikan > 0 || (m.IslemTuru != null && (m.IslemTuru.Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || m.IslemTuru.Contains("Satış", StringComparison.OrdinalIgnoreCase))))
                         {
                             decimal qty = m.Miktar > 0 ? m.Miktar : (m.Cikan > 0 ? m.Cikan : 0);
                             
                             if (qty > 0)
                             {
-                                // Inventory Valuation Logic (FIFO/Avg)
-                                decimal valueRemoved = qty * averagePrice;
-                                currentTotalValue -= valueRemoved;
+                                currentTotalValue -= (qty * averagePrice);
                                 currentQuantity -= qty;
                                 
                                 if (currentQuantity <= 0)
@@ -6090,7 +6125,6 @@ namespace ErmayMuhasebe.Services
                                     currentTotalValue = 0;
                                 }
                                 
-                                // Average Sales Price Calculation
                                 decimal salePrice = m.Fiyat;
                                 totalSalesRevenue += (qty * salePrice);
                                 totalSoldQuantity += qty;
@@ -6104,38 +6138,63 @@ namespace ErmayMuhasebe.Services
                     // Update Stock Card
                     bool changed = false;
                     
-                    // Last Purchase/Sale Price (from last movement)
                     decimal lastPurchasePrice = 0;
                     decimal lastSalesPrice = 0;
-                    var lastPurchase = movements.LastOrDefault(x => x.IslemTuru == "GİRİŞ" || x.IslemTuru == "Alış Faturası");
+                    var lastPurchase = movements.LastOrDefault(x => x.Giren > 0 || (x.IslemTuru != null && (x.IslemTuru.Contains("Giriş", StringComparison.OrdinalIgnoreCase) || x.IslemTuru.Contains("Alış", StringComparison.OrdinalIgnoreCase) || x.IslemTuru.Contains("Açılış", StringComparison.OrdinalIgnoreCase))));
                     if (lastPurchase != null) lastPurchasePrice = lastPurchase.Fiyat;
-                    var lastSale = movements.LastOrDefault(x => x.IslemTuru == "ÇIKIŞ" || x.IslemTuru == "Satış Faturası");
+                    var lastSale = movements.LastOrDefault(x => x.Cikan > 0 || (x.IslemTuru != null && (x.IslemTuru.Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || x.IslemTuru.Contains("Satış", StringComparison.OrdinalIgnoreCase))));
                     if (lastSale != null) lastSalesPrice = lastSale.Fiyat;
 
-                    if (stok.OrtalamaAlisFiyati != averagePrice)
+                    if (!movements.Any())
                     {
-                         stok.OrtalamaAlisFiyati = averagePrice;
-                         changed = true;
+                        if (stok.Miktar != 0) { stok.Miktar = 0; changed = true; }
+                        if (stok.OrtalamaAlisFiyati != 0) { stok.OrtalamaAlisFiyati = 0; changed = true; }
+                        if (stok.OrtalamaSatisFiyati != 0) { stok.OrtalamaSatisFiyati = 0; changed = true; }
+                        if (stok.AlisFiyati != 0) { stok.AlisFiyati = 0; changed = true; }
+                        if (stok.SatisFiyati != 0) { stok.SatisFiyati = 0; changed = true; }
                     }
-                    if (stok.OrtalamaSatisFiyati != averageSalesPrice)
+                    else
                     {
-                        stok.OrtalamaSatisFiyati = averageSalesPrice;
-                        changed = true;
-                    }
-                    if (stok.AlisFiyati != lastPurchasePrice)
-                    {
-                        stok.AlisFiyati = lastPurchasePrice;
-                        changed = true;
-                    }
-                    if (stok.SatisFiyati != lastSalesPrice)
-                    {
-                        stok.SatisFiyati = lastSalesPrice;
-                        changed = true;
+                        double sumGiren = (double)movements.Sum(h => h.Giren > 0 ? h.Giren : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Giriş", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Alış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Açılış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                        double sumCikan = (double)movements.Sum(h => h.Cikan > 0 ? h.Cikan : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                        double computedMiktar = sumGiren - sumCikan;
+                        if (Math.Abs(stok.Miktar - computedMiktar) > 0.0001)
+                        {
+                            stok.Miktar = computedMiktar;
+                            changed = true;
+                        }
+
+                        if (stok.OrtalamaAlisFiyati != averagePrice)
+                        {
+                             stok.OrtalamaAlisFiyati = averagePrice;
+                             changed = true;
+                        }
+                        if (stok.OrtalamaSatisFiyati != averageSalesPrice)
+                        {
+                            stok.OrtalamaSatisFiyati = averageSalesPrice;
+                            changed = true;
+                        }
+                        if (lastPurchase != null && stok.AlisFiyati != lastPurchasePrice)
+                        {
+                            stok.AlisFiyati = lastPurchasePrice;
+                            changed = true;
+                        }
+                        if (lastSale != null && stok.SatisFiyati != lastSalesPrice)
+                        {
+                            stok.SatisFiyati = lastSalesPrice;
+                            changed = true;
+                        }
                     }
 
-                    if (changed) tran.Update(stok);
+                    if (changed) 
+                    {
+                        tran.Update(stok);
+                        changedStoks.Add(stok);
+                    }
                 }
+                return changedStoks;
         }
+
         public async Task<List<CityProfitStat>> GetCityProfitStatsAsync()
         {
             await EnsureInitializedAsync();

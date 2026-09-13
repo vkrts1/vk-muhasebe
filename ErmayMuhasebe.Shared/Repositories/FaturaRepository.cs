@@ -208,6 +208,15 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
             }
         });
 
+        foreach (var sId in affectedStokIds)
+        {
+            var updatedStok = await db.Table<StokKart>().FirstOrDefaultAsync(s => s.Id == sId);
+            if (updatedStok != null)
+            {
+                await _syncService.SyncStokAsync(updatedStok);
+            }
+        }
+
         return 1;
     }
 
@@ -672,10 +681,21 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
              return t.Contains("ÇIKIŞ") || t.Contains("CIKIS") || t.Contains("SATIS") || t.Contains("SATIŞ");
         }).LastOrDefault();
 
-        stok.OrtalamaAlisFiyati = averagePrice;
-        stok.OrtalamaSatisFiyati = averageSalesPrice;
-        if (lastPurchase != null) stok.AlisFiyati = lastPurchase.Fiyat;
-        if (lastSale != null) stok.SatisFiyati = lastSale.Fiyat;
+        if (!movements.Any())
+        {
+            stok.Miktar = 0;
+            stok.OrtalamaAlisFiyati = 0;
+            stok.OrtalamaSatisFiyati = 0;
+            stok.AlisFiyati = 0;
+            stok.SatisFiyati = 0;
+        }
+        else
+        {
+            stok.OrtalamaAlisFiyati = averagePrice;
+            stok.OrtalamaSatisFiyati = averageSalesPrice;
+            if (lastPurchase != null) stok.AlisFiyati = lastPurchase.Fiyat;
+            if (lastSale != null) stok.SatisFiyati = lastSale.Fiyat;
+        }
 
         tran.Update(stok);
     }

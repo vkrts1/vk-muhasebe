@@ -271,7 +271,55 @@ public class FirebaseFaturaRepository : BaseFirebaseRepository<Fatura>, IFaturaR
 
             var allStokH = await _firebaseService.GetAllAsync<StokHareket>("StokHareketler");
             var shToDel = allStokH.Where(h => h.FaturaId == entity.Id || h.EvrakNo == entity.FaturaNo).ToList();
+            var affectedStokIds = shToDel.Select(h => h.StokId).Where(id => id > 0).Distinct().ToList();
             foreach (var sh in shToDel) await _firebaseService.DeleteAsync("StokHareketler", sh.Id);
+
+            if (affectedStokIds.Any())
+            {
+                var remainingStokH = allStokH.Where(h => !shToDel.Any(del => del.Id == h.Id)).ToList();
+                allStoklar = await _firebaseService.GetAllAsync<StokKart>("Stoklar");
+                foreach (var sid in affectedStokIds)
+                {
+                    var stok = allStoklar.FirstOrDefault(s => s.Id == sid);
+                    if (stok == null) continue;
+                    var moves = remainingStokH.Where(m => m.StokId == sid).OrderBy(m => m.Tarih).ToList();
+                    if (!moves.Any())
+                    {
+                        stok.Miktar = 0;
+                        stok.OrtalamaAlisFiyati = 0;
+                        stok.OrtalamaSatisFiyati = 0;
+                        stok.AlisFiyati = 0;
+                        stok.SatisFiyati = 0;
+                    }
+                    else
+                    {
+                        decimal sumGiren = moves.Sum(h => h.Giren > 0 ? h.Giren : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Giriş", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Alış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Açılış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                        decimal sumCikan = moves.Sum(h => h.Cikan > 0 ? h.Cikan : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                        stok.Miktar = (double)(sumGiren - sumCikan);
+                        
+                        decimal totPurVal = 0, totPurQty = 0;
+                        decimal totSaleVal = 0, totSaleQty = 0;
+                        foreach (var m in moves)
+                        {
+                            if (m.Giren > 0 || (m.IslemTuru ?? "").Contains("Giriş", StringComparison.OrdinalIgnoreCase) || (m.IslemTuru ?? "").Contains("Alış", StringComparison.OrdinalIgnoreCase) || (m.IslemTuru ?? "").Contains("Açılış", StringComparison.OrdinalIgnoreCase))
+                            {
+                                decimal q = m.Giren > 0 ? m.Giren : m.Miktar;
+                                totPurVal += q * m.Fiyat;
+                                totPurQty += q;
+                            }
+                            else
+                            {
+                                decimal q = m.Cikan > 0 ? m.Cikan : m.Miktar;
+                                totSaleVal += q * m.Fiyat;
+                                totSaleQty += q;
+                            }
+                        }
+                        stok.OrtalamaAlisFiyati = totPurQty > 0 ? totPurVal / totPurQty : 0;
+                        stok.OrtalamaSatisFiyati = totSaleQty > 0 ? totSaleVal / totSaleQty : 0;
+                    }
+                    await _firebaseService.SaveAsync("Stoklar", stok, stok.Id);
+                }
+            }
 
             await _firebaseService.DeleteAsync("FaturaDetaylar", entity.Id);
             return await base.DeleteAsync(entity);

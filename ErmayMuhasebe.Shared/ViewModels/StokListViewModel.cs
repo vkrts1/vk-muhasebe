@@ -277,6 +277,23 @@ public abstract partial class StokListViewModel : ViewModelBase
         try 
         {
             var hareketler = await _uow.Stoklar.GetHareketlerAsync(stokId);
+            if (!hareketler.Any())
+            {
+                if (SelectedStok != null && (SelectedStok.OrtalamaAlisFiyati != 0 || SelectedStok.OrtalamaSatisFiyati != 0 || SelectedStok.Miktar != 0 || SelectedStok.AlisFiyati != 0 || SelectedStok.SatisFiyati != 0))
+                {
+                    SelectedStok.OrtalamaAlisFiyati = 0;
+                    SelectedStok.OrtalamaSatisFiyati = 0;
+                    SelectedStok.Miktar = 0;
+                    SelectedStok.AlisFiyati = 0;
+                    SelectedStok.SatisFiyati = 0;
+                    EditOrtalamaAlisFiyati = 0;
+                    EditOrtalamaSatisFiyati = 0;
+                    EditAlisFiyati = 0;
+                    EditSatisFiyati = 0;
+                    EditAcilisBakiye = 0;
+                    await _uow.Stoklar.SaveAsync(SelectedStok);
+                }
+            }
             var chronological = hareketler.OrderBy(h => h.Tarih).ThenBy(h => h.Id).ToList();
             decimal runningBalance = 0;
             foreach (var h in chronological)
@@ -590,9 +607,20 @@ public abstract partial class StokListViewModel : ViewModelBase
             if (currentStok != null)
             {
                 var remainingMovements = await _uow.Stoklar.GetHareketlerAsync(stokId);
-                double sumGiren = (double)remainingMovements.Sum(h => h.Giren > 0 ? h.Giren : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Giriş", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Alış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Açılış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
-                double sumCikan = (double)remainingMovements.Sum(h => h.Cikan > 0 ? h.Cikan : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
-                currentStok.Miktar = sumGiren - sumCikan;
+                if (!remainingMovements.Any())
+                {
+                    currentStok.Miktar = 0;
+                    currentStok.OrtalamaAlisFiyati = 0;
+                    currentStok.OrtalamaSatisFiyati = 0;
+                    currentStok.AlisFiyati = 0;
+                    currentStok.SatisFiyati = 0;
+                }
+                else
+                {
+                    double sumGiren = (double)remainingMovements.Sum(h => h.Giren > 0 ? h.Giren : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Giriş", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Alış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Açılış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                    double sumCikan = (double)remainingMovements.Sum(h => h.Cikan > 0 ? h.Cikan : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Çıkış", StringComparison.OrdinalIgnoreCase) || (h.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase)) ? h.Miktar : 0));
+                    currentStok.Miktar = sumGiren - sumCikan;
+                }
 
                 await _uow.Stoklar.SaveAsync(currentStok);
             }
@@ -603,6 +631,7 @@ public abstract partial class StokListViewModel : ViewModelBase
             SelectedStokHareket = null;
             await LoadStoklarAsync(stokId);
             await LoadStokHareketleriAsync(stokId);
+            if (SelectedStok != null) FillEditForm(SelectedStok);
             SuccessMessage = "Stok hareketi başarıyla silindi.";
         }
         catch (Exception ex)

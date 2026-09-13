@@ -29,7 +29,7 @@ namespace ErmayMuhasebe.Tests.Integration
 
             var dataProvider = new ErmayMuhasebe.Repositories.DataProviders.SqliteDataProvider(_dbService);
             _uow = dataProvider;
-            _finansService = new FinansService(_dbService, _uow);
+            _finansService = new FinansService(_dbService, _uow, _dbService.SyncService);
         }
 
         [Fact]
