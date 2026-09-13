@@ -404,6 +404,9 @@ public partial class MainViewModel : ViewModelBase
         _liveUpdateTimer.Tick += async (s, e) => await UpdateLiveStatusBarInfo();
         _liveUpdateTimer.Start();
 
+        LiveDateTime = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
+        _ = UpdateExchangeRatesAsync();
+
         var session = _serviceProvider.GetRequiredService<ErmayMuhasebe.Services.SessionService>();
         session.OnTimeout += () => Logout();
 // ... (rest of constructor)
@@ -870,10 +873,7 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
-            if (CurrentSettings.ShowDateTime)
-            {
-                LiveDateTime = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
-            }
+            LiveDateTime = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
 
             if (CurrentSettings.ShowSystemUsage)
             {
@@ -886,16 +886,10 @@ public partial class MainViewModel : ViewModelBase
                 catch { }
             }
 
-            // Update exchange rates every 60 seconds (or if empty)
-            if (CurrentSettings.ShowExchangeRates && (DateTime.Now.Second == 0 || string.IsNullOrEmpty(LiveExchangeRates)))
+            // Update exchange rates every 60 seconds (or if empty / placeholder)
+            if (CurrentSettings.ShowExchangeRates && (DateTime.Now.Second == 0 || string.IsNullOrEmpty(LiveExchangeRates) || LiveExchangeRates.Contains("Yükleniyor")))
             {
-                try
-                {
-                    var usd = await _dovizService.GetLiveRateAsync("USD");
-                    var eur = await _dovizService.GetLiveRateAsync("EUR");
-                    LiveExchangeRates = $"USD: {usd:N2} | EUR: {eur:N2}";
-                }
-                catch { }
+                _ = UpdateExchangeRatesAsync();
             }
 
             // Internet Status Check (every 5 seconds or first tick) without blocking UI timer
@@ -915,6 +909,46 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[MainViewModel] Live Status Update Exception: {ex.Message}");
+        }
+    }
+
+    private bool _isUpdatingRates = false;
+    private async System.Threading.Tasks.Task UpdateExchangeRatesAsync()
+    {
+        if (_isUpdatingRates) return;
+        _isUpdatingRates = true;
+        try
+        {
+            if (string.IsNullOrEmpty(LiveExchangeRates))
+            {
+                LiveExchangeRates = "USD: Yükleniyor...";
+            }
+
+            var usd = await _dovizService.GetLiveRateAsync("USD");
+            var eur = await _dovizService.GetLiveRateAsync("EUR");
+
+            if (usd > 0 && eur > 0)
+            {
+                LiveExchangeRates = $"USD: {usd:N2} ₺ | EUR: {eur:N2} ₺";
+            }
+            else if (usd > 0)
+            {
+                LiveExchangeRates = $"USD: {usd:N2} ₺";
+            }
+            else if (eur > 0)
+            {
+                LiveExchangeRates = $"EUR: {eur:N2} ₺";
+            }
+
+            RefreshStatusBarItems();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainViewModel] Exchange rate update exception: {ex.Message}");
+        }
+        finally
+        {
+            _isUpdatingRates = false;
         }
     }
 

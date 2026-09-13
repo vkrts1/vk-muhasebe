@@ -14,8 +14,8 @@ namespace ErmayMuhasebe.Avalonia.Services
         public bool ShowCopyright { get; set; } = true;
         
         // New Features requested by user
-        public bool ShowExchangeRates { get; set; } = false;
-        public bool ShowDateTime { get; set; } = false;
+        public bool ShowExchangeRates { get; set; } = true;
+        public bool ShowDateTime { get; set; } = true;
         public bool ShowSystemUsage { get; set; } = false;
         public bool ShowSyncStatus { get; set; } = true;
         public bool ShowConnectionStatus { get; set; } = true;

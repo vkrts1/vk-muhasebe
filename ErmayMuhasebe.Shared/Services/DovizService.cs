@@ -57,6 +57,10 @@ namespace ErmayMuhasebe.Services
         {
             try
             {
+                if (!_http.DefaultRequestHeaders.Contains("User-Agent"))
+                {
+                    _http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                }
                 var response = await _http.GetStringAsync("https://www.tcmb.gov.tr/kurlar/today.xml");
                 var doc = XDocument.Parse(response);
 
@@ -91,7 +95,37 @@ namespace ErmayMuhasebe.Services
         public async Task UpdateRatesFromExternalAsync()
         {
             var tryBased = await _externalApi.GetExchangeRatesBackupAsync("TRY");
-            if (tryBased.Count == 0) return;
+            if (tryBased.Count == 0)
+            {
+                try
+                {
+                    var usdBased = await _externalApi.GetExchangeRatesGlobalAsync("USD");
+                    if (usdBased.TryGetValue("TRY", out decimal usdTry) && usdTry > 0)
+                    {
+                        await _dbService.SaveDovizKurAsync(new DovizKur {
+                            Kod = "USD", 
+                            Isim = "ABD DOLARI", 
+                            Alis = usdTry * 0.998m, 
+                            Satis = usdTry, 
+                            Tarih = DateTime.Today
+                        });
+
+                        if (usdBased.TryGetValue("EUR", out decimal usdEur) && usdEur > 0)
+                        {
+                            decimal eurTry = usdTry / usdEur;
+                            await _dbService.SaveDovizKurAsync(new DovizKur {
+                                Kod = "EUR", 
+                                Isim = "EURO", 
+                                Alis = eurTry * 0.998m, 
+                                Satis = eurTry, 
+                                Tarih = DateTime.Today
+                            });
+                        }
+                    }
+                }
+                catch { }
+                return;
+            }
 
             var targetCodes = new Dictionary<string, string> { 
                 { "USD", "ABD DOLARI" }, 
@@ -106,7 +140,7 @@ namespace ErmayMuhasebe.Services
                     decimal tryVal = 1 / rateToTry;
                     await _dbService.SaveDovizKurAsync(new DovizKur {
                         Kod = kvp.Key, 
-                        Isim = kvp.Value,
+                        Isim = kvp.Value, 
                         Alis = tryVal * 0.998m, 
                         Satis = tryVal, 
                         Tarih = DateTime.Today
@@ -183,7 +217,7 @@ namespace ErmayMuhasebe.Services
         private decimal ParseDecimal(string? value)
         {
             if (string.IsNullOrWhiteSpace(value)) return 0;
-            return decimal.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal result) ? result : 0;
+            return decimal.TryParse(value.Trim().Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal result) ? result : 0;
         }
     }
 }
