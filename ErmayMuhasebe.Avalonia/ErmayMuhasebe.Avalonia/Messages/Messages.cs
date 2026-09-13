@@ -9,6 +9,8 @@ public class CekSavedMessage : ValueChangedMessage<Cek>
     public CekSavedMessage(Cek value) : base(value)
     {
     }
+}
+
 public class FirmaProfiliChangedMessage : ValueChangedMessage<FirmaProfili>
 {
     public FirmaProfiliChangedMessage(FirmaProfili value) : base(value)
