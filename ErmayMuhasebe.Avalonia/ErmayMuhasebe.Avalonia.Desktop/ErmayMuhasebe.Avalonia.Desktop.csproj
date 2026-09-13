@@ -7,7 +7,7 @@
     <RollForward>LatestMajor</RollForward>
     <Nullable>enable</Nullable>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\vk_app.ico</ApplicationIcon>
     <AssemblyName>VK</AssemblyName>
     <Product>VK Ön Muhasebe</Product>
     <Title>VK</Title>

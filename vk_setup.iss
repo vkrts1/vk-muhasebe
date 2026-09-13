@@ -17,8 +17,8 @@ DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=Publish_Output\Installer
 OutputBaseFilename=VK_Setup_v1.0.0
-SetupIconFile=ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia.Desktop\Assets\app.ico
-UninstallDisplayIcon={app}\Assets\app.ico
+SetupIconFile=ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia.Desktop\Assets\vk_app.ico
+UninstallDisplayIcon={app}\Assets\vk_app.ico
 UninstallDisplayName={#MyAppName} Programını Kaldır
 Compression=lzma
 SolidCompression=yes
@@ -36,9 +36,9 @@ Name: "cleandatabase"; Description: "Temiz Kurulum: Mevcut yerel veritabanını 
 Source: "Publish_Output\Desktop\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\app.ico"
-Name: "{autoprograms}\{#MyAppName} Kaldır (Uninstall)"; Filename: "{uninstallexe}"; IconFilename: "{app}\Assets\app.ico"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\app.ico"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\vk_app.ico"
+Name: "{autoprograms}\{#MyAppName} Kaldır (Uninstall)"; Filename: "{uninstallexe}"; IconFilename: "{app}\Assets\vk_app.ico"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\vk_app.ico"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
