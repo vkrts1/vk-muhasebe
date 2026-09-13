@@ -878,6 +878,8 @@ export default function FaturalarScreen({ route, navigation }: any) {
         }
       }
 
+      try { await deleteData(`FaturaDetaylar/${faturaId}`); } catch {}
+
       return true;
     } catch (err) {
       console.error('Fatura etkileri geri alınamadı:', err);

@@ -1646,10 +1646,45 @@ public abstract partial class CariListViewModel : ViewModelBase
     public virtual async Task EditTransactionAsync() { await Task.CompletedTask; }
 
     [RelayCommand]
+    private async Task<Fatura?> FindLinkedFaturaAsync(CariHareket hareket)
+    {
+        if (hareket == null) return null;
+
+        if (hareket.FaturaId.HasValue && hareket.FaturaId.Value > 0)
+        {
+            var faturaById = await _uow.Faturalar.GetByIdAsync(hareket.FaturaId.Value);
+            if (faturaById != null) return faturaById;
+        }
+
+        if (!string.IsNullOrWhiteSpace(hareket.EvrakNo))
+        {
+            string cleanNo = hareket.EvrakNo.Trim();
+            if (cleanNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase))
+            {
+                cleanNo = cleanNo.Substring(4).Trim();
+            }
+
+            var faturaByNo = await _uow.Faturalar.GetByNoAsync(cleanNo);
+            if (faturaByNo != null) return faturaByNo;
+        }
+
+        return null;
+    }
+
+    [RelayCommand]
     public void DeleteTransactionConfirm()
     {
         if (SelectedHareket == null) return;
-        ShowConfirm("İşlemi Sil", "Seçili işlemi silmek istediğinize emin misiniz?", DeleteTransactionAsync);
+        bool isFatura = (SelectedHareket.IslemTuru != null && SelectedHareket.IslemTuru.Contains("Fatura")) ||
+                        (SelectedHareket.FaturaId.HasValue && SelectedHareket.FaturaId.Value > 0) ||
+                        (!string.IsNullOrWhiteSpace(SelectedHareket.EvrakNo) && SelectedHareket.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase));
+        
+        string title = isFatura ? "Faturayı ve Hareketi Sil" : "İşlemi Sil";
+        string msg = isFatura
+            ? "Bu işlem bir faturaya aittir. Fatura, faturaya bağlı stok hareketleri ve stok bakiyeleri de geri alınıp silinecektir. Emin misiniz?"
+            : "Seçili işlemi silmek istediğinize emin misiniz?";
+
+        ShowConfirm(title, msg, DeleteTransactionAsync);
     }
 
     public async Task DeleteTransactionAsync()
@@ -1660,14 +1695,14 @@ public abstract partial class CariListViewModel : ViewModelBase
 
         try 
         {
-            if (targetHareket.IslemTuru != null && targetHareket.IslemTuru.Contains("Fatura"))
+            bool isInvoiceMovement = (targetHareket.IslemTuru != null && targetHareket.IslemTuru.Contains("Fatura")) ||
+                                     (targetHareket.FaturaId.HasValue && targetHareket.FaturaId.Value > 0) ||
+                                     (!string.IsNullOrWhiteSpace(targetHareket.EvrakNo) && targetHareket.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase));
+
+            Fatura? fatura = isInvoiceMovement ? await FindLinkedFaturaAsync(targetHareket) : null;
+            if (fatura != null)
             {
-                Fatura? fatura = targetHareket.FaturaId.HasValue ? await _uow.Faturalar.GetByIdAsync(targetHareket.FaturaId.Value) : await _uow.Faturalar.GetByNoAsync(targetHareket.EvrakNo ?? "");
-                if (fatura != null) await _uow.Faturalar.DeleteAsync(fatura);
-                else 
-                {
-                    await _finansService.DeleteTransactionAsync(targetHareket);
-                }
+                await _uow.Faturalar.DeleteAsync(fatura);
             }
             else 
             {
@@ -1695,7 +1730,7 @@ public abstract partial class CariListViewModel : ViewModelBase
         var selected = CariHareketler.Where(x => x.IsSelected).ToList();
         if (!selected.Any()) { WarningMessage = "Herhangi bir işlem seçilmedi!"; return; }
         
-        ShowConfirm("Seçilenleri Sil", $"{selected.Count} adet işlemi toplu silmek istediğinize emin misiniz?", DeleteSelectedTransactionsAsync);
+        ShowConfirm("Seçilenleri Sil", $"{selected.Count} adet işlemi toplu silmek istediğinize emin misiniz? Fatura içeren işlemler faturasıyla ve stoklarıyla birlikte silinecektir.", DeleteSelectedTransactionsAsync);
     }
 
     public async Task DeleteSelectedTransactionsAsync()
@@ -1706,15 +1741,27 @@ public abstract partial class CariListViewModel : ViewModelBase
             if (!selected.Any()) return;
 
             IsLoading = true;
+            var processedFaturaIds = new HashSet<int>();
+
             foreach (var h in selected)
             {
-                if (h.IslemTuru != null && h.IslemTuru.Contains("Fatura"))
+                bool isInvoiceMovement = (h.IslemTuru != null && h.IslemTuru.Contains("Fatura")) ||
+                                         (h.FaturaId.HasValue && h.FaturaId.Value > 0) ||
+                                         (!string.IsNullOrWhiteSpace(h.EvrakNo) && h.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase));
+
+                Fatura? fatura = isInvoiceMovement ? await FindLinkedFaturaAsync(h) : null;
+                if (fatura != null)
                 {
-                    Fatura? fatura = h.FaturaId.HasValue ? await _uow.Faturalar.GetByIdAsync(h.FaturaId.Value) : await _uow.Faturalar.GetByNoAsync(h.EvrakNo ?? "");
-                    if (fatura != null) await _uow.Faturalar.DeleteAsync(fatura);
-                    else await _finansService.DeleteTransactionAsync(h);
+                    if (!processedFaturaIds.Contains(fatura.Id))
+                    {
+                        processedFaturaIds.Add(fatura.Id);
+                        await _uow.Faturalar.DeleteAsync(fatura);
+                    }
                 }
-                else await _finansService.DeleteTransactionAsync(h);
+                else 
+                {
+                    await _finansService.DeleteTransactionAsync(h);
+                }
             }
             
             if (SelectedCari != null)

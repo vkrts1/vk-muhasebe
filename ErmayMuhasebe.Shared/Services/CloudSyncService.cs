@@ -469,28 +469,56 @@ namespace ErmayMuhasebe.Services
             });
         }
         
-        public async Task DeleteStokHareketByFaturaIdAsync(int faturaId)
+        public async Task DeleteStokHareketByFaturaIdAsync(int faturaId, string? evrakNo = null)
         {
             await SafeRun(async () =>
             {
-                var items = await _firebase!.Child(GetYearlyPath("StokHareketler")).OrderBy("FaturaId").EqualTo(faturaId).OnceAsync<StokHareket>();
+                var items = await _firebase!.Child(GetYearlyPath("StokHareketler")).OnceAsync<StokHareket>();
+                string cleanNo = evrakNo?.Trim() ?? "";
+
                 foreach(var item in items)
                 {
-                     if (item != null && !string.IsNullOrEmpty(item.Key))
-                         await _firebase!.Child(GetYearlyPath("StokHareketler")).Child(item.Key).DeleteAsync();
+                     if (item != null && item.Object != null)
+                     {
+                         bool match = false;
+                         if (faturaId > 0 && item.Object.FaturaId == faturaId) match = true;
+                         else if (!string.IsNullOrEmpty(cleanNo) && !string.IsNullOrEmpty(item.Object.EvrakNo) &&
+                                  string.Equals(item.Object.EvrakNo.Trim(), cleanNo, StringComparison.OrdinalIgnoreCase)) match = true;
+
+                         if (match && !string.IsNullOrEmpty(item.Key))
+                             await _firebase!.Child(GetYearlyPath("StokHareketler")).Child(item.Key).DeleteAsync();
+                     }
                 }
             });
         }
 
-        public async Task DeleteCariHareketByFaturaIdAsync(int faturaId)
+        public async Task DeleteCariHareketByFaturaIdAsync(int faturaId, string? evrakNo = null)
         {
             await SafeRun(async () =>
             {
-                var items = await _firebase!.Child(GetYearlyPath("CariHareketler")).OrderBy("FaturaId").EqualTo(faturaId).OnceAsync<CariHareket>();
+                var items = await _firebase!.Child(GetYearlyPath("CariHareketler")).OnceAsync<CariHareket>();
+                string cleanNo = evrakNo?.Trim() ?? "";
+                string kplNo = !string.IsNullOrEmpty(cleanNo) ? "KPL-" + cleanNo : "";
+
                 foreach(var item in items)
                 {
-                     if (item != null && !string.IsNullOrEmpty(item.Key))
-                         await _firebase!.Child(GetYearlyPath("CariHareketler")).Child(item.Key).DeleteAsync();
+                     if (item != null && item.Object != null)
+                     {
+                         bool match = false;
+                         if (faturaId > 0 && item.Object.FaturaId == faturaId) match = true;
+                         else if (!string.IsNullOrEmpty(cleanNo) && !string.IsNullOrEmpty(item.Object.EvrakNo))
+                         {
+                             string itemEvrak = item.Object.EvrakNo.Trim();
+                             if (string.Equals(itemEvrak, cleanNo, StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(itemEvrak, kplNo, StringComparison.OrdinalIgnoreCase))
+                             {
+                                 match = true;
+                             }
+                         }
+
+                         if (match && !string.IsNullOrEmpty(item.Key))
+                             await _firebase!.Child(GetYearlyPath("CariHareketler")).Child(item.Key).DeleteAsync();
+                     }
                 }
             });
         }

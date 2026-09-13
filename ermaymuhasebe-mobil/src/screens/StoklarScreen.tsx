@@ -557,6 +557,17 @@ export default function StoklarScreen() {
       setErrorMessage('Lütfen tablodan silmek istediğiniz hareketi seçin.');
       return;
     }
+
+    const rawFaturaId = selectedStokHareket.faturaId || selectedStokHareket.FaturaId;
+    const isFatura = (selectedStokHareket.islemTuru && selectedStokHareket.islemTuru.includes('Fatura')) ||
+                     (rawFaturaId && Number(rawFaturaId) > 0) ||
+                     (selectedStokHareket.evrakNo && String(selectedStokHareket.evrakNo).startsWith('FAT'));
+
+    if (isFatura) {
+      setErrorMessage(`Bu stok hareketi "${selectedStokHareket.evrakNo || 'Fatura'}" numaralı faturaya aittir. Muhasebe ve cari bütünlüğü için lütfen işlemi Faturalar veya Cari Hareketleri ekranından siliniz.`);
+      return;
+    }
+
     setConfirmTitle('İşlemi Sil');
     setConfirmMessage('Seçili stok hareketini silmek istediğinize emin misiniz? Bakiye geri alınacaktır.');
     setConfirmAction(() => async () => {

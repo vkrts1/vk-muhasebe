@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ErmayMuhasebe.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2b72ac65981f9ef671853cc30a33a655fc2d9fb1")]
 [assembly: System.Reflection.AssemblyProductAttribute("ErmayMuhasebe.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ErmayMuhasebe.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

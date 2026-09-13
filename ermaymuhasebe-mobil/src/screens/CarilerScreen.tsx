@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, SafeAreaView, FlatList, TextInput, ActivityIndi
 import { FlashList } from '@shopify/flash-list';
 import { Search, UserCircle2, Plus, X, Save, Edit3, Trash2, Phone, Mail, MapPin, Coins, ArrowUpRight, ArrowDownRight, FileText, Table, BarChart4 } from 'lucide-react-native';
 import { subscribeToPath, writeData, deleteData, readData, mapAppToDatabase, splitAccounts, mergeKasalar, updateCariBaseInfoInAllYears } from '../services/firebase';
-import { saveFinancialTransaction } from '../services/transactionService';
+import { saveFinancialTransaction, deleteFinancialTransaction } from '../services/transactionService';
 import { generateReportPdf } from '../services/pdfService';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -386,6 +386,12 @@ export default function CarilerScreen({ route, navigation }: any) {
   };
 
   const handleDelete = async (cari: any) => {
+    const hasMovements = cariHareketler.some(h => h.cariId === cari.id && !h.isDeleted && ((h.borc && Number(h.borc) !== 0) || (h.alacak && Number(h.alacak) !== 0)));
+    if (hasMovements) {
+      Alert.alert('Uyarı', 'Hareket görmüş bir cariyi silemezsiniz! Lütfen önce hareketleri silin veya başka bir cariyle birleştirin.');
+      return;
+    }
+
     Alert.alert(
       'Cariyi Sil',
       `"${cari.unvan}" cari kartını silmek istediğinize emin misiniz?`,
@@ -939,146 +945,39 @@ export default function CarilerScreen({ route, navigation }: any) {
         {
 
           text: 'Sil',
-
           style: 'destructive',
-
           onPress: () => {
+            const rawFaturaId = h.faturaId || h.FaturaId;
+            const isFatura = (h.islemTuru && h.islemTuru.includes('Fatura')) ||
+                             (rawFaturaId && Number(rawFaturaId) > 0) ||
+                             (h.evrakNo && (String(h.evrakNo).startsWith('FAT') || String(h.evrakNo).startsWith('KPL-')));
+
+            const confirmTitle = isFatura ? 'Faturayı ve Hareketi Sil' : 'Silme Onayı';
+            const confirmMsg = isFatura
+              ? 'Bu işlem bir faturaya aittir. Fatura, faturaya bağlı stok hareketleri ve stok bakiyeleri de geri alınıp silinecektir. Emin misiniz?'
+              : 'Bu işlemi silmek istediğinize emin misiniz?';
 
             Alert.alert(
-
-              'Silme Onayı',
-
-              'Bu işlemi silmek istediğinize emin misiniz?',
-
+              confirmTitle,
+              confirmMsg,
               [
-
                 { text: 'İptal', style: 'cancel' },
-
                 {
-
                   text: 'Sil',
-
                   style: 'destructive',
-
                   onPress: async () => {
-
-                    const cariRef = cariler.find(c => c.id === selectedCari.id);
-
-                    if (cariRef) {
-
-                      const updatedCari = {
-
-                        ...cariRef,
-
-                        borc: Math.max(0, (cariRef.borc || 0) - (h.borc || 0)),
-
-                        alacak: Math.max(0, (cariRef.alacak || 0) - (h.alacak || 0))
-
-                      };
-
-                      const okCari = await writeData(`Cariler/${selectedCari.id}`, updatedCari);
-
-                      if (!okCari) {
-
-                        Alert.alert('Uyarı', 'Cari hareketi silindi ancak cari bakiye eşitlenemedi. (Bağlantı sorunu — bakiye sıraya alındı.)');
-
-                      }
-
-                      setSelectedCari(updatedCari);
-
-                    }
-
-                    if (h.evrakNo || h.refId || h.id) {
-                      try {
-                        const kHareketler = (await readData('KasaHareketler')) || {};
-                        const kList = Array.isArray(kHareketler)
-                          ? kHareketler.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
-                          : Object.keys(kHareketler).map(key => ({ ...kHareketler[key], firebaseKey: key }));
-
-                        const kasaH = kList.find(kh =>
-                          (h.evrakNo && kh.evrakNo && String(kh.evrakNo) === String(h.evrakNo)) ||
-                          (h.refId && kh.refId && String(kh.refId) === String(h.refId)) ||
-                          (h.evrakNo && String(kh.id) === String(h.evrakNo))
-                        );
-
-                        if (kasaH) {
-                          const kKey = kasaH.firebaseKey || kasaH.id;
-                          if (kKey) await deleteData(`KasaHareketler/${kKey}`);
-                          if (kasaH.id && String(kasaH.id) !== String(kKey)) {
-                            try { await deleteData(`KasaHareketler/${kasaH.id}`); } catch {}
-                          }
-
-                          const kasaId = kasaH.kasaId || kasaH.hesapId;
-                          const kasa = kasalar.find(k => k.id === kasaId);
-                          if (kasa) {
-                            const yeniBakiye = (kasa.bakiye || 0) - (kasaH.giren || 0) + (kasaH.cikan || 0);
-                            const okKasa = await writeData(`Bankalar/${kasa.id}`, { ...kasa, kartTuru: 'Kasa', bakiye: yeniBakiye });
-                            if (!okKasa) {
-                              Alert.alert('Uyarı', 'Kasa bakiyesi güncellenemedi. (Bağlantı sorunu — bakiye sıraya alındı.)');
-                            }
-                          }
-                        }
-
-                        const bHareketler = (await readData('BankaHareketler')) || {};
-                        const bList = Array.isArray(bHareketler)
-                          ? bHareketler.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean)
-                          : Object.keys(bHareketler).map(key => ({ ...bHareketler[key], firebaseKey: key }));
-
-                        const bankaH = bList.find(bh =>
-                          (h.evrakNo && bh.evrakNo && String(bh.evrakNo) === String(h.evrakNo)) ||
-                          (h.refId && bh.refId && String(bh.refId) === String(h.refId)) ||
-                          (h.evrakNo && String(bh.id) === String(h.evrakNo))
-                        );
-
-                        if (bankaH) {
-                          const bKey = bankaH.firebaseKey || bankaH.id;
-                          if (bKey) await deleteData(`BankaHareketler/${bKey}`);
-                          if (bankaH.id && String(bankaH.id) !== String(bKey)) {
-                            try { await deleteData(`BankaHareketler/${bankaH.id}`); } catch {}
-                          }
-
-                          const bankaId = bankaH.bankaId || bankaH.hesapId;
-                          const banka = bankalar.find(b => b.id === bankaId);
-                          if (banka) {
-                            const giren = bankaH.giren || bankaH.borc || 0;
-                            const cikan = bankaH.cikan || bankaH.alacak || 0;
-                            const yeniBakiye = (banka.bakiye || 0) - giren + cikan;
-                            const okBanka = await writeData(`Bankalar/${banka.id}`, { ...banka, bakiye: yeniBakiye });
-                            if (!okBanka) {
-                              Alert.alert('Uyarı', 'Banka bakiyesi güncellenemedi. (Bağlantı sorunu — bakiye sıraya alındı.)');
-                            }
-                          }
-                        }
-                      } catch (err) {
-                        console.error('Kasa/Banka bakiye guncelleme hatasi:', err);
-                      }
-                    }
-
-                    const chKey = h.firebaseKey || h.id;
-                    let success = false;
-                    if (chKey) {
-                      success = await deleteData(`CariHareketler/${chKey}`);
-                    }
-                    if (h.id && String(h.id) !== String(chKey)) {
-                      try { await deleteData(`CariHareketler/${h.id}`); } catch {}
-                    }
-
+                    const success = await deleteFinancialTransaction(h);
                     if (success) {
-                      Alert.alert('Başarılı', 'Cari hareketi başarıyla silindi.');
+                      Alert.alert('Başarılı', isFatura ? 'Fatura ve ilişkili tüm hareketler başarıyla silindi.' : 'Cari hareketi başarıyla silindi.');
+                    } else {
+                      Alert.alert('Hata', 'Silme işlemi gerçekleştirilemedi.');
                     }
-
                   }
-
                 }
-
               ]
-
             );
-
           }
-
         },
-
         { text: 'Kapat', style: 'cancel' }
 
       ]

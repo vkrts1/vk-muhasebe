@@ -68,6 +68,18 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
         // 1. Get Details to reverse stock
         var detaylar = await db.Table<FaturaDetay>().Where(d => d.FaturaId == entity.Id).ToListAsync();
         
+        // Fallback: If no FaturaDetay records, infer from StokHareket
+        if (!detaylar.Any() && !string.IsNullOrWhiteSpace(entity.FaturaNo))
+        {
+            var movements = await db.Table<StokHareket>()
+                .Where(s => s.FaturaId == entity.Id || s.EvrakNo == entity.FaturaNo)
+                .ToListAsync();
+            foreach (var m in movements)
+            {
+                detaylar.Add(new FaturaDetay { FaturaId = entity.Id, StokId = m.StokId, Miktar = (double)m.Miktar });
+            }
+        }
+
         // 2. Reverse Stock Balances
         bool isSatis = (entity.Tur ?? "").Equals("Satış", System.StringComparison.OrdinalIgnoreCase) || 
                        (entity.Tur ?? "").Equals("Satis", System.StringComparison.OrdinalIgnoreCase);
@@ -94,39 +106,54 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
             await _syncService.SyncCariAsync(cari);
         }
 
-        // 4. Delete Movements
-        string islemTuru = isSatis ? "Satış Faturası" : "Alış Faturası";
-        
-        int deletedStokCount = await db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ?", entity.Id);
-        int deletedCariCount = await db.ExecuteAsync("DELETE FROM CariHareket WHERE FaturaId = ?", entity.Id);
+        // 4. Delete Details & Movements
+        string fNo = entity.FaturaNo?.Trim() ?? "";
+        string kplNo = !string.IsNullOrEmpty(fNo) ? $"KPL-{fNo}" : "";
 
-        if (deletedStokCount == 0 && !string.IsNullOrWhiteSpace(entity.FaturaNo))
-        {
-           await db.ExecuteAsync("DELETE FROM StokHareket WHERE EvrakNo = ?", entity.FaturaNo);
-        }
-        if (deletedCariCount == 0 && !string.IsNullOrWhiteSpace(entity.FaturaNo))
-        {
-           await db.ExecuteAsync("DELETE FROM CariHareket WHERE CariId = ? AND EvrakNo = ? AND IslemTuru = ?", entity.CariId, entity.FaturaNo, islemTuru);
-        }
+        await db.ExecuteAsync("DELETE FROM FaturaDetay WHERE FaturaId = ?", entity.Id);
+        await db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ? OR (EvrakNo IS NOT NULL AND EvrakNo != '' AND EvrakNo = ?)", entity.Id, fNo);
+        await db.ExecuteAsync("DELETE FROM CariHareket WHERE FaturaId = ? OR (CariId = ? AND EvrakNo IS NOT NULL AND EvrakNo != '' AND (EvrakNo = ? OR EvrakNo = ?))", entity.Id, entity.CariId, fNo, kplNo);
 
-        // Sync Deletions
-        await _syncService.DeleteStokHareketByFaturaIdAsync(entity.Id);
-        await _syncService.DeleteCariHareketByFaturaIdAsync(entity.Id);
+        // Sync Deletions to Cloud
+        await _syncService.DeleteStokHareketByFaturaIdAsync(entity.Id, entity.FaturaNo);
+        await _syncService.DeleteCariHareketByFaturaIdAsync(entity.Id, entity.FaturaNo);
+        await _syncService.DeleteFaturaDetaylarAsync(entity.Id);
 
         entity.IsDeleted = true;
         await db.UpdateAsync(entity);
         await _syncService.SyncFaturaAsync(entity);
 
-        // 5. Clean up linked financial records
-        var startDay = entity.Tarih.Date;
-        var endDay = startDay.AddDays(1);
-        var fNo = entity.FaturaNo ?? "";
-        
-        var mkasa = await db.Table<KasaHareket>().Where(k => k.Tarih >= startDay && k.Tarih < endDay && (k.EvrakNo == fNo || (k.Aciklama != null && fNo != "" && k.Aciklama.Contains(fNo)))).ToListAsync();
-        foreach(var k in mkasa) await db.DeleteAsync(k);
-        
-        var mbanka = await db.Table<BankaHareket>().Where(b => b.Tarih >= startDay && b.Tarih < endDay && (b.EvrakNo == fNo || (b.Aciklama != null && fNo != "" && b.Aciklama.Contains(fNo)))).ToListAsync();
-        foreach(var b in mbanka) await db.DeleteAsync(b);
+        // 5. Clean up linked financial records (Kasa / Banka)
+        if (!string.IsNullOrEmpty(fNo))
+        {
+            var mkasa = await db.Table<KasaHareket>()
+                .Where(k => k.EvrakNo == fNo || k.EvrakNo == kplNo || (k.Aciklama != null && k.Aciklama.Contains(fNo)))
+                .ToListAsync();
+            foreach(var k in mkasa)
+            {
+                var kasa = await db.Table<BankaKart>().FirstOrDefaultAsync(b => b.Id == k.KasaId);
+                if (kasa != null)
+                {
+                    kasa.GuncelBakiye -= (k.Giren - k.Cikan);
+                    await db.UpdateAsync(kasa);
+                }
+                await db.DeleteAsync(k);
+            }
+            
+            var mbanka = await db.Table<BankaHareket>()
+                .Where(b => b.EvrakNo == fNo || b.EvrakNo == kplNo || (b.Aciklama != null && b.Aciklama.Contains(fNo)))
+                .ToListAsync();
+            foreach(var b in mbanka)
+            {
+                var banka = await db.Table<BankaKart>().FirstOrDefaultAsync(bk => bk.Id == b.BankaId);
+                if (banka != null)
+                {
+                    banka.GuncelBakiye -= (b.Giren - b.Cikan);
+                    await db.UpdateAsync(banka);
+                }
+                await db.DeleteAsync(b);
+            }
+        }
 
         // 6. Recalculate Stock Costs
         await db.RunInTransactionAsync(tran => 

@@ -250,8 +250,207 @@ export const saveFinancialTransaction = async (req: FinancialTransactionRequest)
   }
 };
 
+export const deleteFaturaCascade = async (faturaIdOrNo: number | string): Promise<boolean> => {
+  if (!faturaIdOrNo) return false;
+
+  try {
+    const toKeyList = (raw: any) => {
+      if (!raw) return [];
+      if (Array.isArray(raw)) {
+        return raw.map((item, idx) => item ? ({ ...item, firebaseKey: String(item?.id ?? idx) }) : null).filter(Boolean);
+      }
+      return Object.keys(raw).map((k) => ({ ...raw[k], firebaseKey: k }));
+    };
+
+    // 1. Locate the invoice
+    let oldFatura: any = null;
+    const cleanNo = String(faturaIdOrNo).startsWith('KPL-') ? String(faturaIdOrNo).substring(4).trim() : String(faturaIdOrNo).trim();
+
+    if (typeof faturaIdOrNo === 'number' || (!isNaN(Number(faturaIdOrNo)) && Number(faturaIdOrNo) > 0)) {
+      const numId = Number(faturaIdOrNo);
+      const raw = await readData(`Faturalar/${numId}`);
+      if (raw && (raw.id !== undefined || raw.faturaNo)) {
+        oldFatura = { ...raw, id: raw.id ?? numId };
+      }
+    }
+
+    if (!oldFatura) {
+      const allFaturalarRaw = (await readData('Faturalar')) || {};
+      const allFaturalar = toKeyList(allFaturalarRaw);
+      oldFatura = allFaturalar.find((f: any) =>
+        (f.id !== undefined && String(f.id) === cleanNo) ||
+        (f.faturaNo && String(f.faturaNo).trim().toLowerCase() === cleanNo.toLowerCase())
+      );
+    }
+
+    if (!oldFatura) {
+      console.warn(`[transactionService] Fatura bulunamadı: ${faturaIdOrNo}`);
+      return false;
+    }
+
+    const faturaId = oldFatura.id;
+    const faturaNo = oldFatura.faturaNo || '';
+    const isSatis = oldFatura.tur === 'Satış' || oldFatura.tur === 'Satis';
+    const genelToplam = parseFloat(oldFatura.genelToplam) || 0;
+    const isPaid = (oldFatura.odenen || 0) > 0 || (oldFatura.odemeSekli && oldFatura.odemeSekli !== 'Açık' && oldFatura.odemeSekli !== 'Acik');
+
+    // 2. Revert Stock balances
+    const detayRaw = (await readData(`FaturaDetaylar/${faturaId}`)) || [];
+    let detaylar = Array.isArray(detayRaw)
+      ? detayRaw.filter(Boolean)
+      : Object.keys(detayRaw).map(key => ({ ...(detayRaw as any)[key], id: parseInt(key) || key }));
+
+    if (!detaylar.length && faturaNo) {
+      const shRaw = (await readData('StokHareketler')) || {};
+      const shList = toKeyList(shRaw);
+      const matchSh = shList.filter((h: any) =>
+        (h.faturaId !== undefined && (h.faturaId === faturaId || String(h.faturaId) === String(faturaId))) ||
+        (h.evrakNo && String(h.evrakNo) === faturaNo)
+      );
+      detaylar = matchSh.map((m: any) => ({
+        stokId: m.stokId,
+        miktar: m.miktar || (isSatis ? m.cikan : m.giren) || 0
+      }));
+    }
+
+    for (const d of detaylar) {
+      if (!d.stokId) continue;
+      try {
+        const freshStok = await readData(`Stoklar/${d.stokId}`);
+        if (freshStok) {
+          const miktar = parseFloat(d.miktar) || 0;
+          const currentMiktar = parseFloat(freshStok.miktar) || 0;
+          const yeniMiktar = isSatis ? (currentMiktar + miktar) : (currentMiktar - miktar);
+          await writeData(`Stoklar/${d.stokId}`, { ...freshStok, miktar: yeniMiktar, id: d.stokId });
+        }
+      } catch (e) {
+        console.error(`[transactionService] Stok ${d.stokId} bakiye geri alınamadı:`, e);
+      }
+    }
+
+    // 3. Revert Cari balance
+    if (oldFatura.cariId) {
+      try {
+        const freshCari = await readData(`Cariler/${oldFatura.cariId}`);
+        if (freshCari) {
+          const updatedCari = { ...freshCari };
+          if (isPaid) {
+            updatedCari.borc = Math.max(0, (parseFloat(updatedCari.borc) || 0) - genelToplam);
+            updatedCari.alacak = Math.max(0, (parseFloat(updatedCari.alacak) || 0) - genelToplam);
+          } else if (isSatis) {
+            updatedCari.borc = Math.max(0, (parseFloat(updatedCari.borc) || 0) - genelToplam);
+          } else {
+            updatedCari.alacak = Math.max(0, (parseFloat(updatedCari.alacak) || 0) - genelToplam);
+          }
+          await writeData(`Cariler/${oldFatura.cariId}`, updatedCari);
+        }
+      } catch (e) {
+        console.error(`[transactionService] Cari ${oldFatura.cariId} bakiye geri alınamadı:`, e);
+      }
+    }
+
+    // 4. Delete StokHareketler
+    const shRaw = (await readData('StokHareketler')) || {};
+    const shList = toKeyList(shRaw);
+    for (const h of shList) {
+      const match =
+        (h.faturaId !== undefined && (h.faturaId === faturaId || String(h.faturaId) === String(faturaId))) ||
+        (faturaNo && h.evrakNo && String(h.evrakNo) === faturaNo);
+      if (match) {
+        const k = h.firebaseKey || h.id;
+        if (k) { try { await deleteData(`StokHareketler/${k}`); } catch {} }
+      }
+    }
+
+    // 5. Delete CariHareketler (including KPL- closing movement)
+    const chRaw = (await readData('CariHareketler')) || {};
+    const chList = toKeyList(chRaw);
+    for (const h of chList) {
+      const hEvrak = String(h.evrakNo || h.EvrakNo || '');
+      const match =
+        (h.faturaId !== undefined && (h.faturaId === faturaId || String(h.faturaId) === String(faturaId))) ||
+        (faturaNo && (hEvrak === faturaNo || hEvrak === `KPL-${faturaNo}`));
+      if (match) {
+        const k = h.firebaseKey || h.id;
+        if (k) { try { await deleteData(`CariHareketler/${k}`); } catch {} }
+      }
+    }
+
+    // 6. Delete Kasa / Banka movements if closed
+    const khRaw = (await readData('KasaHareketler')) || {};
+    const khList = toKeyList(khRaw);
+    for (const kh of khList) {
+      const khAcik = kh.aciklama || '';
+      const khEvrak = kh.evrakNo || '';
+      if (faturaNo && (khEvrak === faturaNo || khAcik.includes(faturaNo))) {
+        try {
+          const kasaId = kh.kasaId || kh.hesapId;
+          if (kasaId) {
+            const kRef = await readData(`Bankalar/${kasaId}`);
+            if (kRef) {
+              const giren = kh.tur === 'Giriş' ? (kh.tutar || 0) : (kh.giren || 0);
+              const cikan = kh.tur === 'Çıkış' ? (kh.tutar || 0) : (kh.cikan || 0);
+              const yeniBakiye = (kRef.bakiye || 0) - giren + cikan;
+              await writeData(`Bankalar/${kasaId}`, { ...kRef, kartTuru: 'Kasa', bakiye: yeniBakiye });
+            }
+          }
+          const k = kh.firebaseKey || kh.id;
+          if (k) await deleteData(`KasaHareketler/${k}`);
+        } catch {}
+      }
+    }
+
+    const bhRaw = (await readData('BankaHareketler')) || {};
+    const bhList = toKeyList(bhRaw);
+    for (const bh of bhList) {
+      const bhAcik = bh.aciklama || '';
+      const bhEvrak = bh.evrakNo || '';
+      if (faturaNo && (bhEvrak === faturaNo || bhAcik.includes(faturaNo))) {
+        try {
+          const bankaId = bh.bankaId || bh.hesapId;
+          if (bankaId) {
+            const bRef = await readData(`Bankalar/${bankaId}`);
+            if (bRef) {
+              const giren = bh.giren || bh.borc || 0;
+              const cikan = bh.cikan || bh.alacak || 0;
+              const yeniBakiye = (bRef.bakiye || 0) - giren + cikan;
+              await writeData(`Bankalar/${bankaId}`, { ...bRef, bakiye: yeniBakiye });
+            }
+          }
+          const k = bh.firebaseKey || bh.id;
+          if (k) await deleteData(`BankaHareketler/${k}`);
+        } catch {}
+      }
+    }
+
+    // 7. Delete FaturaDetaylar & mark Fatura isDeleted
+    try { await deleteData(`FaturaDetaylar/${faturaId}`); } catch {}
+    try {
+      await writeData(`Faturalar/${faturaId}`, { ...oldFatura, isDeleted: true });
+    } catch {}
+
+    return true;
+  } catch (err) {
+    console.error('[transactionService] deleteFaturaCascade hatası:', err);
+    return false;
+  }
+};
+
 export const deleteFinancialTransaction = async (cariHareket: any): Promise<boolean> => {
   if (!cariHareket) return false;
+
+  // Check if this cariHareket is linked to an invoice (Fatura)
+  const rawFaturaId = cariHareket.faturaId || cariHareket.FaturaId;
+  const isInvoice = (cariHareket.islemTuru && cariHareket.islemTuru.includes('Fatura')) ||
+                    (rawFaturaId && Number(rawFaturaId) > 0) ||
+                    (cariHareket.evrakNo && (String(cariHareket.evrakNo).startsWith('FAT') || String(cariHareket.evrakNo).startsWith('KPL-')));
+
+  if (isInvoice) {
+    const fId = rawFaturaId || cariHareket.evrakNo;
+    const okCascade = await deleteFaturaCascade(fId);
+    if (okCascade) return true;
+  }
+
   const refId = cariHareket.refId;
   const evrakNo = cariHareket.evrakNo;
   const cariHareketId = cariHareket.id;

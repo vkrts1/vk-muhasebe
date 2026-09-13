@@ -164,4 +164,73 @@ describe('saveFinancialTransaction (firebase REST eşleniği)', () => {
     expect(ok).toBe(true);
     expect(deletedPaths.some((u) => u.includes('CariHareketler'))).toBe(true);
   });
+
+  it('deleteFinancialTransaction bir Fatura hareketi silindiğinde Faturayı, FaturaDetayları ve StokHareketleri cascade siler', async () => {
+    const deletedPaths: string[] = [];
+    const writtenData: Record<string, any> = {};
+
+    (global as any).fetch = jest.fn(async (url: string, init?: any) => {
+      if (init && init.method === 'DELETE') {
+        deletedPaths.push(url);
+      }
+      if (init && init.method === 'PUT') {
+        writtenData[url] = JSON.parse(init.body || '{}');
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => {
+          if (url.includes('Faturalar/88')) {
+            return { id: 88, faturaNo: 'FAT-88', tur: 'Satış', cariId: 10, genelToplam: 1500 };
+          }
+          if (url.includes('FaturaDetaylar/88')) {
+            return [{ id: 1, faturaId: 88, stokId: 44, miktar: 5, birimFiyat: 300 }];
+          }
+          if (url.includes('Stoklar/44')) {
+            return { id: 44, miktar: 15, stokAdi: 'Test Ürün' };
+          }
+          if (url.includes('Cariler/10')) {
+            return { id: 10, unvan: 'Müşteri X', borc: 1500, alacak: 0 };
+          }
+          if (url.includes('StokHareketler')) {
+            return {
+              "SH-1": { id: 501, faturaId: 88, evrakNo: 'FAT-88', stokId: 44, cikan: 5 }
+            };
+          }
+          if (url.includes('CariHareketler')) {
+            return {
+              "CH-1": { id: 601, faturaId: 88, evrakNo: 'FAT-88', cariId: 10, borc: 1500, islemTuru: 'Satış Faturası' }
+            };
+          }
+          return {};
+        },
+      };
+    });
+
+    const ok = await deleteFinancialTransaction({
+      id: 601,
+      faturaId: 88,
+      evrakNo: 'FAT-88',
+      islemTuru: 'Satış Faturası',
+      cariId: 10,
+      borc: 1500
+    });
+
+    expect(ok).toBe(true);
+    const stokWrite = Object.keys(writtenData).find(u => u.includes('Stoklar/44'));
+    expect(stokWrite).toBeDefined();
+    const stokObj = writtenData[stokWrite!];
+    expect(stokObj.Miktar ?? stokObj.miktar).toBe(20);
+
+    // Cari borcu geri alınmış olmalı: 1500 - 1500 = 0
+    const cariWrite = Object.keys(writtenData).find(u => u.includes('Cariler/10'));
+    expect(cariWrite).toBeDefined();
+    const cariObj = writtenData[cariWrite!];
+    expect(cariObj.Borc ?? cariObj.borc).toBe(0);
+
+    // FaturaDetaylar, StokHareketler ve CariHareketler silinmiş olmalı
+    expect(deletedPaths.some(u => u.includes('FaturaDetaylar/88'))).toBe(true);
+    expect(deletedPaths.some(u => u.includes('StokHareketler'))).toBe(true);
+    expect(deletedPaths.some(u => u.includes('CariHareketler'))).toBe(true);
+  });
 });

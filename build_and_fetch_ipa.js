@@ -19,7 +19,7 @@ async function run() {
   console.log('[1/4] Git Add & Commit...');
   try {
     execSync('git add .', { stdio: 'inherit' });
-    execSync('git commit -m "feat: real-time desktop-mobile logo sync and pdf fixes"', { stdio: 'inherit' });
+    execSync('git commit -m "fix: cascade deletion for invoices, stock movements and transactions across desktop & mobile"', { stdio: 'inherit' });
   } catch (e) {
     console.log('[Git Commit Notice] ' + (e.message || 'Already committed'));
   }

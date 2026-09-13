@@ -902,6 +902,8 @@ export default function FaturaFormScreen({ route, navigation }: any) {
         }
       }
 
+      try { await deleteData(`FaturaDetaylar/${faturaId}`); } catch {}
+
       return true;
     } catch (err) {
       console.error('Fatura etkileri geri alınamadı:', err);
