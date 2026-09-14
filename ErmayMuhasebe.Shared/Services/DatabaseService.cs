@@ -55,16 +55,22 @@ namespace ErmayMuhasebe.Services
 
         public SQLiteAsyncConnection GetGlobalConnection()
         {
+            var dbPath = ErmayMuhasebe.Data.Constants.DatabasePath;
+            if (string.IsNullOrEmpty(dbPath))
+            {
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe");
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                dbPath = Path.Combine(dir, "ErmayV4_Stable.db3");
+            }
+
+            if (_db != null && string.Equals(_dbPath, dbPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return _db;
+            }
+
             if (_globalDb == null)
             {
                 var pwd = ErmayMuhasebe.Data.Constants.DatabasePassword;
-                var dbPath = ErmayMuhasebe.Data.Constants.DatabasePath;
-                if (string.IsNullOrEmpty(dbPath))
-                {
-                    string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ErmayMuhasebe");
-                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                    dbPath = Path.Combine(dir, "ErmayV4_Stable.db3");
-                }
                 var options = new SQLiteConnectionString(dbPath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.FullMutex, true, key: pwd);
                 _globalDb = new SQLiteAsyncConnection(options);
             }
@@ -401,6 +407,7 @@ namespace ErmayMuhasebe.Services
                 {
                     await MigrateMissingDataFromGlobalDbAsync();
                     StartCloudListeners();
+                    try { await RecalculateSystemBalancesAsync(); } catch { }
                 }
                 _isInitialized = true;
             }
@@ -1790,6 +1797,40 @@ namespace ErmayMuhasebe.Services
 
             try 
             {
+                // 0. CASCADE DELETE IF LINKED TO AN INVOICE
+                bool isInvoiceMovement = (item.IslemTuru != null && item.IslemTuru.Contains("Fatura")) ||
+                                         (item.FaturaId.HasValue && item.FaturaId.Value > 0) ||
+                                         (!string.IsNullOrEmpty(item.EvrakNo) && (item.EvrakNo.StartsWith("FTR") || item.EvrakNo.StartsWith("KPL-FTR")));
+                if (isInvoiceMovement)
+                {
+                    Fatura? linkedFatura = null;
+                    if (item.FaturaId.HasValue && item.FaturaId.Value > 0)
+                    {
+                        linkedFatura = await _db.Table<Fatura>().FirstOrDefaultAsync(f => f.Id == item.FaturaId.Value);
+                    }
+                    if (linkedFatura == null && !string.IsNullOrEmpty(item.EvrakNo))
+                    {
+                        string fNoClean = item.EvrakNo.Replace("KPL-", "").Trim();
+                        linkedFatura = await _db.Table<Fatura>().FirstOrDefaultAsync(f => f.FaturaNo == fNoClean || f.FaturaNo == item.EvrakNo);
+                    }
+
+                    if (linkedFatura != null)
+                    {
+                        var faturaRepo = new ErmayMuhasebe.Repositories.FaturaRepository(this);
+                        return await faturaRepo.DeleteAsync(linkedFatura);
+                    }
+                    else
+                    {
+                        string fNoClean = (item.EvrakNo ?? "").Replace("KPL-", "").Trim();
+                        var orphanSh = await _db.Table<StokHareket>().Where(s => (item.FaturaId.HasValue && s.FaturaId == item.FaturaId.Value) || (!string.IsNullOrEmpty(fNoClean) && s.EvrakNo == fNoClean)).ToListAsync();
+                        foreach (var sh in orphanSh)
+                        {
+                            await _db.DeleteAsync(sh);
+                            await _sync.DeleteStokHareketAsync(sh.Id);
+                        }
+                    }
+                }
+
                 // 1. REVERSE CARI BALANCE
                 var cari = await GetCariAsync(item.CariId);
                 if (cari != null)
@@ -1896,7 +1937,12 @@ namespace ErmayMuhasebe.Services
         public async Task<int> DeleteCariHareketAsync(int id) 
         {
             await EnsureInitializedAsync();
-            _ = Task.Run(() => _sync.DeleteCariHareketAsync(id));
+            var item = await _db.Table<CariHareket>().FirstOrDefaultAsync(x => x.Id == id);
+            if (item != null)
+            {
+                return await DeleteCariHareketAsync(item);
+            }
+            await _sync.DeleteCariHareketAsync(id);
             return await _db.ExecuteAsync("DELETE FROM CariHareket WHERE Id = ?", id);
         }
 
@@ -1917,13 +1963,66 @@ namespace ErmayMuhasebe.Services
         public async Task<int> DeleteStokHareketAsync(StokHareket item) 
         {
             await EnsureInitializedAsync();
+            if (item == null) return 0;
+            
+            // Cascade delete if linked to an invoice
+            bool isInvoiceMovement = (item.IslemTuru != null && item.IslemTuru.Contains("Fatura")) ||
+                                     (item.FaturaId.HasValue && item.FaturaId.Value > 0) ||
+                                     (!string.IsNullOrEmpty(item.EvrakNo) && (item.EvrakNo.StartsWith("FTR") || item.EvrakNo.StartsWith("FAT")));
+            if (isInvoiceMovement)
+            {
+                Fatura? linkedFatura = null;
+                if (item.FaturaId.HasValue && item.FaturaId.Value > 0)
+                {
+                    linkedFatura = await _db.Table<Fatura>().FirstOrDefaultAsync(f => f.Id == item.FaturaId.Value);
+                }
+                if (linkedFatura == null && !string.IsNullOrEmpty(item.EvrakNo))
+                {
+                    string fNo = item.EvrakNo.Trim();
+                    linkedFatura = await _db.Table<Fatura>().FirstOrDefaultAsync(f => f.FaturaNo == fNo || f.FaturaNo.StartsWith(fNo) || fNo.StartsWith(f.FaturaNo));
+                }
+                if (linkedFatura != null)
+                {
+                    var faturaRepo = new ErmayMuhasebe.Repositories.FaturaRepository(this);
+                    return await faturaRepo.DeleteAsync(linkedFatura);
+                }
+            }
+
             int result = await _db.DeleteAsync(item);
             await _sync.DeleteStokHareketAsync(item.Id);
+
+            // Re-evaluate stock stats
+            var currentStok = await _db.Table<StokKart>().FirstOrDefaultAsync(x => x.Id == item.StokId);
+            if (currentStok != null)
+            {
+                var remaining = await _db.Table<StokHareket>().Where(x => x.StokId == item.StokId).ToListAsync();
+                if (!remaining.Any())
+                {
+                    currentStok.Miktar = 0;
+                    currentStok.OrtalamaAlisFiyati = 0;
+                    currentStok.OrtalamaSatisFiyati = 0;
+                    currentStok.AlisFiyati = 0;
+                    currentStok.SatisFiyati = 0;
+                }
+                else
+                {
+                    double sumGiren = (double)remaining.Sum(h => h.Giren > 0 ? h.Giren : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Giriş") || (h.IslemTuru ?? "").Contains("Alış") || (h.IslemTuru ?? "").Contains("Açılış")) ? h.Miktar : 0));
+                    double sumCikan = (double)remaining.Sum(h => h.Cikan > 0 ? h.Cikan : (h.Miktar > 0 && ((h.IslemTuru ?? "").Contains("Çıkış") || (h.IslemTuru ?? "").Contains("Satış")) ? h.Miktar : 0));
+                    currentStok.Miktar = sumGiren - sumCikan;
+                }
+                await _db.UpdateAsync(currentStok);
+                await _sync.SyncStokAsync(currentStok);
+            }
             return result;
         }
         public async Task<int> DeleteStokHareketAsync(int id) 
         {
             await EnsureInitializedAsync();
+            var item = await _db.Table<StokHareket>().FirstOrDefaultAsync(x => x.Id == id);
+            if (item != null)
+            {
+                return await DeleteStokHareketAsync(item);
+            }
             int result = await _db.ExecuteAsync("DELETE FROM StokHareket WHERE Id = ?", id);
             await _sync.DeleteStokHareketAsync(id);
             return result;
@@ -4135,24 +4234,152 @@ namespace ErmayMuhasebe.Services
         public async Task RecalculateSystemBalancesAsync()
         {
             await EnsureInitializedAsync();
+            List<CariHareket> purgedCariMovements = new();
+            List<StokHareket> purgedStokMovements = new();
+            List<StokKart> changedStocks = new();
+            List<CariKart> changedCaris = new();
             
             await _db.RunInTransactionAsync(tran => 
             {
                 // 0. CLEANUP ORPHANED MOVEMENTS
                 tran.Execute("DELETE FROM StokHareket WHERE StokId NOT IN (SELECT Id FROM StokKart WHERE IsDeleted = 0)");
+                tran.Execute("DELETE FROM CariHareket WHERE CariId NOT IN (SELECT Id FROM CariKart WHERE IsDeleted = 0)");
 
-                // 1. CARI BAKİYELERİ (SQL ile toplu güncelleme - O(N) yerine tek sorgu)
+                // Purge invoice movements where invoice does not exist or is deleted
+                var activeFaturaNos = tran.Table<Fatura>().Where(f => !f.IsDeleted).Select(f => f.FaturaNo).ToHashSet();
+                var activeFaturaIds = tran.Table<Fatura>().Where(f => !f.IsDeleted).Select(f => f.Id).ToHashSet();
+
+                var allCH = tran.Table<CariHareket>().ToList();
+                foreach (var ch in allCH)
+                {
+                    bool isFtr = (ch.IslemTuru != null && ch.IslemTuru.Contains("Fatura")) ||
+                                 (!string.IsNullOrEmpty(ch.EvrakNo) && (ch.EvrakNo.StartsWith("FTR") || ch.EvrakNo.StartsWith("KPL-FTR") || ch.EvrakNo.StartsWith("FAT"))) ||
+                                 (!string.IsNullOrEmpty(ch.Aciklama) && (ch.Aciklama.Contains("FTR-") || ch.Aciklama.Contains("Fatura No"))) ||
+                                 (ch.FaturaId.HasValue && ch.FaturaId.Value > 0);
+                    if (!isFtr) continue;
+
+                    bool exists = false;
+                    if (ch.FaturaId.HasValue && ch.FaturaId.Value > 0 && activeFaturaIds.Contains(ch.FaturaId.Value)) exists = true;
+                    if (!exists && !string.IsNullOrEmpty(ch.EvrakNo))
+                    {
+                        string cleanNo = ch.EvrakNo.Replace("KPL-", "").Trim();
+                        if (activeFaturaNos.Any(no => no.Equals(cleanNo, StringComparison.OrdinalIgnoreCase) || no.StartsWith(cleanNo, StringComparison.OrdinalIgnoreCase) || cleanNo.StartsWith(no, StringComparison.OrdinalIgnoreCase)))
+                            exists = true;
+                    }
+                    if (!exists && !string.IsNullOrEmpty(ch.Aciklama))
+                    {
+                        var match = System.Text.RegularExpressions.Regex.Match(ch.Aciklama, @"(FTR-[\w\d]+|FAT-[\w\d]+|SF-[\w\d\-]+|AF-[\w\d\-]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        if (match.Success && activeFaturaNos.Any(no => no.Equals(match.Groups[1].Value, StringComparison.OrdinalIgnoreCase)))
+                            exists = true;
+                    }
+
+                    if (!exists)
+                    {
+                        tran.Delete(ch);
+                        purgedCariMovements.Add(ch);
+                    }
+                }
+
+                var allSH = tran.Table<StokHareket>().ToList();
+                foreach (var sh in allSH)
+                {
+                    bool isFtr = (sh.IslemTuru != null && (sh.IslemTuru.Contains("Fatura") || sh.IslemTuru.Contains("Satış") || sh.IslemTuru.Contains("Alış"))) ||
+                                 (!string.IsNullOrEmpty(sh.EvrakNo) && (sh.EvrakNo.StartsWith("FTR") || sh.EvrakNo.StartsWith("FAT"))) ||
+                                 (sh.FaturaId.HasValue && sh.FaturaId.Value > 0);
+                    if (!isFtr) continue;
+
+                    bool exists = false;
+                    if (sh.FaturaId.HasValue && sh.FaturaId.Value > 0 && activeFaturaIds.Contains(sh.FaturaId.Value)) exists = true;
+                    if (!exists && !string.IsNullOrEmpty(sh.EvrakNo))
+                    {
+                        string cleanNo = sh.EvrakNo.Trim();
+                        if (activeFaturaNos.Any(no => no.Equals(cleanNo, StringComparison.OrdinalIgnoreCase) || no.StartsWith(cleanNo, StringComparison.OrdinalIgnoreCase) || cleanNo.StartsWith(no, StringComparison.OrdinalIgnoreCase)))
+                            exists = true;
+                    }
+
+                    if (!exists)
+                    {
+                        tran.Delete(sh);
+                        purgedStokMovements.Add(sh);
+                    }
+                }
+
+                // 1. CARI BAKİYELERİ (SQL ile toplu güncelleme)
                 tran.Execute(@"
                     UPDATE CariKart SET 
                         Borc = IFNULL((SELECT SUM(Borc) FROM CariHareket WHERE CariId = CariKart.Id), 0),
                         Alacak = IFNULL((SELECT SUM(Alacak) FROM CariHareket WHERE CariId = CariKart.Id), 0)
                     WHERE IsDeleted = 0");
 
-                // 2. STOK MİKTARLARI
-                tran.Execute(@"
-                    UPDATE StokKart SET 
-                        Miktar = IFNULL((SELECT SUM(Giren - Cikan) FROM StokHareket WHERE StokId = StokKart.Id), 0)
-                    WHERE IsDeleted = 0");
+                changedCaris = tran.Table<CariKart>().Where(x => !x.IsDeleted).ToList();
+
+                // 2. STOK MİKTARLARI VE ORTALAMA FİYATLARI
+                var remainingSH = tran.Table<StokHareket>().ToList();
+                var allStoklar = tran.Table<StokKart>().Where(s => !s.IsDeleted).ToList();
+                foreach (var stk in allStoklar)
+                {
+                    var moves = remainingSH.Where(h => h.StokId == stk.Id).OrderBy(h => h.Tarih).ThenBy(h => h.Id).ToList();
+                    bool stkChanged = false;
+                    if (!moves.Any())
+                    {
+                        if (stk.Miktar != 0 || stk.OrtalamaAlisFiyati != 0 || stk.OrtalamaSatisFiyati != 0 || stk.AlisFiyati != 0 || stk.SatisFiyati != 0)
+                        {
+                            stk.Miktar = 0;
+                            stk.OrtalamaAlisFiyati = 0;
+                            stk.OrtalamaSatisFiyati = 0;
+                            stk.AlisFiyati = 0;
+                            stk.SatisFiyati = 0;
+                            stkChanged = true;
+                        }
+                    }
+                    else
+                    {
+                        decimal currentQuantity = 0;
+                        decimal currentTotalValue = 0;
+                        decimal averagePrice = 0;
+                        decimal totalSoldQuantity = 0;
+                        decimal totalSalesRevenue = 0;
+                        decimal averageSalesPrice = 0;
+
+                        foreach (var m in moves)
+                        {
+                            bool isGiris = (m.Giren > 0) || (m.IslemTuru != null && (m.IslemTuru.Contains("Giriş") || m.IslemTuru.Contains("Alış") || m.IslemTuru.Contains("Açılış")));
+                            bool isCikis = (m.Cikan > 0) || (m.IslemTuru != null && (m.IslemTuru.Contains("Çıkış") || m.IslemTuru.Contains("Satış")));
+                            decimal qty = m.Miktar > 0 ? m.Miktar : (m.Giren > 0 ? m.Giren : (m.Cikan > 0 ? m.Cikan : 0));
+
+                            if (isGiris && qty > 0)
+                            {
+                                if (currentQuantity <= 0) { currentQuantity = 0; currentTotalValue = 0; }
+                                currentTotalValue += (qty * m.Fiyat);
+                                currentQuantity += qty;
+                                if (currentQuantity > 0) averagePrice = currentTotalValue / currentQuantity;
+                            }
+                            else if (isCikis && qty > 0)
+                            {
+                                currentTotalValue -= (qty * averagePrice);
+                                currentQuantity -= qty;
+                                totalSalesRevenue += (qty * m.Fiyat);
+                                totalSoldQuantity += qty;
+                                if (totalSoldQuantity > 0) averageSalesPrice = totalSalesRevenue / totalSoldQuantity;
+                            }
+                        }
+
+                        double finalMiktar = (double)currentQuantity;
+                        if (Math.Abs(stk.Miktar - finalMiktar) > 0.0001 || stk.OrtalamaAlisFiyati != averagePrice || stk.OrtalamaSatisFiyati != averageSalesPrice)
+                        {
+                            stk.Miktar = finalMiktar;
+                            stk.OrtalamaAlisFiyati = averagePrice;
+                            stk.OrtalamaSatisFiyati = averageSalesPrice;
+                            stkChanged = true;
+                        }
+                    }
+
+                    if (stkChanged)
+                    {
+                        tran.Update(stk);
+                        changedStocks.Add(stk);
+                    }
+                }
 
                 // 3. BANKA/KASA BAKİYELERİ
                 var bankalar = tran.Table<BankaKart>().ToList();
@@ -4170,12 +4397,29 @@ namespace ErmayMuhasebe.Services
                 }
 
                 // 4. FATURA KAPATMALARI (FIFO EŞLEŞTİRME)
-                var cariler = tran.Table<CariKart>().Where(x => !x.IsDeleted).ToList();
-                foreach (var c in cariler)
+                foreach (var c in changedCaris)
                 {
                     _matchInvoicePaymentsInternal(tran, c.Id);
                 }
             });
+
+            // Cloud sync cleaned up records
+            foreach (var pch in purgedCariMovements)
+            {
+                await _sync.DeleteCariHareketAsync(pch.Id);
+            }
+            foreach (var psh in purgedStokMovements)
+            {
+                await _sync.DeleteStokHareketAsync(psh.Id);
+            }
+            foreach (var stk in changedStocks)
+            {
+                await _sync.SyncStokAsync(stk);
+            }
+            foreach (var c in changedCaris)
+            {
+                await _sync.SyncCariAsync(c);
+            }
         }
 
         public async Task<string> GetNextFaturaNoAsync(string type = "Satis")
@@ -4553,6 +4797,20 @@ namespace ErmayMuhasebe.Services
 
                 RegisterRealtimeListener<Fatura>("Faturalar", async item => {
                     var existing = await _db.Table<Fatura>().FirstOrDefaultAsync(x => x.Id == item.Id);
+                    if (item.IsDeleted)
+                    {
+                        if (existing != null)
+                        {
+                            await _db.DeleteAsync(existing);
+                            await _db.ExecuteAsync("DELETE FROM FaturaDetay WHERE FaturaId = ?", item.Id);
+                            await _db.ExecuteAsync("DELETE FROM CariHareket WHERE FaturaId = ? OR EvrakNo = ? OR EvrakNo = ?", item.Id, item.FaturaNo, "KPL-" + item.FaturaNo);
+                            await _db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ? OR EvrakNo = ?", item.Id, item.FaturaNo);
+                            _ = Task.Run(async () => await RecalculateSystemBalancesAsync());
+                            NotifyDatabaseChanged();
+                        }
+                        return;
+                    }
+
                     bool changed = false;
                     if (existing == null) 
                     {
@@ -4580,8 +4838,13 @@ namespace ErmayMuhasebe.Services
                         }
                     }
                 }, async id => {
+                    var existing = await _db.Table<Fatura>().FirstOrDefaultAsync(x => x.Id == id);
+                    string fNo = existing?.FaturaNo ?? "";
                     await _db.ExecuteAsync("DELETE FROM Fatura WHERE Id = ?", id);
                     await _db.ExecuteAsync("DELETE FROM FaturaDetay WHERE FaturaId = ?", id);
+                    await _db.ExecuteAsync("DELETE FROM CariHareket WHERE FaturaId = ? OR EvrakNo = ? OR EvrakNo = ?", id, fNo, "KPL-" + fNo);
+                    await _db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ? OR EvrakNo = ?", id, fNo);
+                    _ = Task.Run(async () => await RecalculateSystemBalancesAsync());
                     NotifyDatabaseChanged();
                 });
 
@@ -5263,6 +5526,13 @@ namespace ErmayMuhasebe.Services
                         await _db.DeleteAsync(local);
                         var localDetails = await _db.Table<FaturaDetay>().Where(x => x.FaturaId == local.Id).ToListAsync();
                         foreach (var d in localDetails) await _db.DeleteAsync(d);
+
+                        var orphanCH = await _db.Table<CariHareket>().Where(x => x.FaturaId == local.Id || x.EvrakNo == local.FaturaNo || x.EvrakNo == "KPL-" + local.FaturaNo).ToListAsync();
+                        foreach (var ch in orphanCH) await _db.DeleteAsync(ch);
+
+                        var orphanSH = await _db.Table<StokHareket>().Where(x => x.FaturaId == local.Id || x.EvrakNo == local.FaturaNo).ToListAsync();
+                        foreach (var sh in orphanSH) await _db.DeleteAsync(sh);
+
                         hasAnyChanges = true;
                     }
                 }
@@ -5282,6 +5552,13 @@ namespace ErmayMuhasebe.Services
                             await _db.DeleteAsync(existing);
                             var localDetails = await _db.Table<FaturaDetay>().Where(x => x.FaturaId == f.Id).ToListAsync();
                             foreach (var d in localDetails) await _db.DeleteAsync(d);
+
+                            var orphanCH = await _db.Table<CariHareket>().Where(x => x.FaturaId == f.Id || x.EvrakNo == f.FaturaNo || x.EvrakNo == "KPL-" + f.FaturaNo).ToListAsync();
+                            foreach (var ch in orphanCH) await _db.DeleteAsync(ch);
+
+                            var orphanSH = await _db.Table<StokHareket>().Where(x => x.FaturaId == f.Id || x.EvrakNo == f.FaturaNo).ToListAsync();
+                            foreach (var sh in orphanSH) await _db.DeleteAsync(sh);
+
                             hasAnyChanges = true;
                         }
                         else if (existing.UpdatedAt < f.UpdatedAt || existing.Version < f.Version)
@@ -5901,18 +6178,17 @@ namespace ErmayMuhasebe.Services
                 System.Diagnostics.Debug.WriteLine($"Sync PullFirmaProfili error: {ex.Message}");
             }
 
-            // Trigger database changed event ONLY if actual records changed from cloud
-            if (hasAnyChanges)
+            try
             {
-                try
+                await RecalculateSystemBalancesAsync();
+                if (hasAnyChanges)
                 {
-                    await RecalculateSystemBalancesAsync();
                     OnDatabaseChanged?.Invoke();
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[DatabaseService] Error raising OnDatabaseChanged: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DatabaseService] Error in RecalculateSystemBalancesAsync post-sync: {ex.Message}");
             }
         }
 

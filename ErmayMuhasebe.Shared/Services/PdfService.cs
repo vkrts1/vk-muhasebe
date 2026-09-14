@@ -2289,26 +2289,38 @@ namespace ErmayMuhasebe.Services
                     page.PageColor(QuestPDF.Helpers.Colors.White);
                     page.DefaultTextStyle(x => x.FontSize(8).FontFamily(DefaultFontFamily));
 
-                    page.Header().Row(row => 
+                    page.Header().Column(col =>
                     {
-                        if (ShowLogoRaporlar)
+                        col.Item().Row(row => 
                         {
-                            var logo = LoadLogoBytes();
-                            if (logo != null && logo.Length > 0)
+                            if (ShowLogoRaporlar)
                             {
-                                row.ConstantItem(80).Image(logo).FitArea();
-                                row.ConstantItem(15);
+                                var logo = LoadLogoBytes();
+                                if (logo != null && logo.Length > 0)
+                                {
+                                    row.ConstantItem(85).Image(logo).FitArea();
+                                    row.ConstantItem(15);
+                                }
                             }
-                        }
 
-                        row.RelativeItem().Column(col => 
-                        {
-                            col.Item().Text(title.ToUpper()).FontSize(14).Bold().FontColor("#000000");
-                            if (!string.IsNullOrEmpty(subtitle))
+                            row.RelativeItem().Column(titleCol => 
                             {
-                                col.Item().Text(subtitle).FontSize(9).FontColor("#444444");
-                            }
+                                titleCol.Item().Text(title.ToUpper(new CultureInfo("tr-TR"))).FontSize(16).Bold().FontColor("#1E3A8A");
+                                if (!string.IsNullOrEmpty(subtitle))
+                                {
+                                    titleCol.Item().Text(subtitle).FontSize(9).FontColor("#475569");
+                                }
+                            });
+
+                            row.ConstantItem(160).AlignRight().Column(metaCol =>
+                            {
+                                metaCol.Item().Text($"Tarih: {DateTime.Now:dd.MM.yyyy HH:mm}").FontSize(8).FontColor("#64748B");
+                                metaCol.Item().Text($"Kayıt Sayısı: {rows?.Count ?? 0} Satır").FontSize(8).Bold().FontColor("#1E3A8A");
+                            });
                         });
+
+                        // Kurumsal Vurgu Çizgisi
+                        col.Item().PaddingTop(8).LineHorizontal(1.5f).LineColor("#2563EB");
                     });
 
                     page.Content().PaddingVertical(10).Table(table =>
@@ -2413,13 +2425,17 @@ namespace ErmayMuhasebe.Services
                         }
                     });
 
-                    page.Footer().PaddingTop(5).AlignRight().Text(x =>
+                    page.Footer().PaddingTop(6).BorderTop(0.5f).BorderColor("#CBD5E1").Row(fRow =>
                     {
-                        x.DefaultTextStyle(s => s.FontSize(7));
-                        x.Span("Sayfa ");
-                        x.CurrentPageNumber();
-                        x.Span(" / ");
-                        x.TotalPages();
+                        fRow.RelativeItem().AlignLeft().Text("VK Ön Muhasebe Yönetim Sistemi").FontSize(7).FontColor("#94A3B8");
+                        fRow.RelativeItem().AlignRight().Text(x =>
+                        {
+                            x.DefaultTextStyle(s => s.FontSize(7).FontColor("#94A3B8"));
+                            x.Span("Sayfa ");
+                            x.CurrentPageNumber();
+                            x.Span(" / ");
+                            x.TotalPages();
+                        });
                     });
                 });
             });

@@ -189,35 +189,8 @@ const isLogoEnabledForEndpoint = (endpoint: string, profil: any): boolean => {
   return profil.logoRaporlar ?? profil.LogoRaporlar ?? true;
 };
 
-const loadFaturaTasarimi = async (): Promise<any | null> => {
-  if (cachedTasarim && Date.now() - cachedTasarimAt < TASARIM_CACHE_MS) {
-    return cachedTasarim;
-  }
-  try {
-    let node = await readData('FaturaTasarimi/1');
-    if (!node) {
-      const raw = await readData('FaturaTasarimi');
-      if (raw) node = raw[1] || raw;
-    }
-    if (!node) return null;
-    const tasarim = mapAppToDatabase('FaturaTasarimi', node);
-    cachedTasarim = tasarim;
-    cachedTasarimAt = Date.now();
-    return tasarim;
-  } catch (e) {
-    console.error('FaturaTasarimi okunamadı:', e);
-    return null;
-  }
-};
-
-// PDF payload'ına masaüstüyle aynı parametreleri enjekte eder:
-// - Logo (FirmaProfili.LogoBase64) her PDF'e gider — masaüstü bunu aynı şekilde basar.
-// - Tasarım (FaturaTasarimi) yalnızca fatura/teklif/sipariş endpoint'lerinde uygulanır.
 const enrichWithTasarim = async (endpoint: string, payload: any): Promise<any> => {
-  const [tasarim, profil] = await Promise.all([
-    TASARIM_ENDPOINTS.has(endpoint) ? loadFaturaTasarimi() : Promise.resolve(null),
-    loadFirmaProfili(),
-  ]);
+  const profil = await loadFirmaProfili();
 
   const rawLogo = profil?.logoBase64 || profil?.LogoBase64 || null;
   const cleanLogo = cleanBase64Logo(rawLogo);
@@ -225,9 +198,9 @@ const enrichWithTasarim = async (endpoint: string, payload: any): Promise<any> =
   const shouldShowLogo = Boolean(cleanLogo && isLogoAllowed);
 
   if (Array.isArray(payload)) {
-    return payload.map((item) => injectParams(item, tasarim, cleanLogo, shouldShowLogo));
+    return payload.map((item) => injectParams(item, null, cleanLogo, shouldShowLogo));
   }
-  return injectParams(payload, tasarim, cleanLogo, shouldShowLogo);
+  return injectParams(payload, null, cleanLogo, shouldShowLogo);
 };
 
 const injectParams = (item: any, tasarim: any, logoBase64: string | null, shouldShowLogo: boolean): any => {
@@ -356,19 +329,40 @@ export const generateReportPdf = async (endpoint: string, payload: any, reportNa
       console.warn(`[pdfService] Fetch attempt ${attempt} failed:`, error.message);
       
       if (attempt >= maxRetries) {
-        console.error('PDF generation error after retries:', error);
-        Alert.alert(
-          'Bağlantı Hatası',
-          `PDF Sunucusuna bağlanılamadı. Lütfen sunucunun açık olduğundan emin olun.\n\nBelgeyi düz metin (text) olarak paylaşmak ister misiniz?`,
-          [
-            { text: 'İptal', style: 'cancel' },
-            { text: 'Metin Paylaş', onPress: () => fallbackShareAsText(payload, reportName) }
-          ]
-        );
-        return { success: false };
+        console.warn('PDF sunucusuna erişilemedi, bağımsız yerel PDF motoru devreye giriyor...');
+        try {
+          const { generateLocalPdfAndShare } = require('./localPdfGenerator');
+          let docType: 'fatura' | 'teklif' | 'siparis' | 'rapor' | 'heatmap' = 'rapor';
+          if (endpoint.includes('fatura')) docType = 'fatura';
+          else if (endpoint.includes('teklif')) docType = 'teklif';
+          else if (endpoint.includes('siparis')) docType = 'siparis';
+          else if (reportName.includes('Isı') || reportName.includes('Heatmap')) docType = 'heatmap';
+
+          return await generateLocalPdfAndShare({
+            title: payload?.title || reportName.replace('.pdf', ''),
+            subtitle: payload?.subtitle,
+            headers: payload?.headers,
+            rows: payload?.rows,
+            documentType: docType,
+            faturaData: payload,
+            teklifData: payload,
+            siparisData: payload
+          });
+        } catch (localErr: any) {
+          console.error('Yerel PDF motoru hatası:', localErr);
+          Alert.alert(
+            'Bağlantı Hatası',
+            `PDF Sunucusuna ve yerel motora erişilemedi.\n\nBelgeyi düz metin (text) olarak paylaşmak ister misiniz?`,
+            [
+              { text: 'İptal', style: 'cancel' },
+              { text: 'Metin Paylaş', onPress: () => fallbackShareAsText(payload, reportName) }
+            ]
+          );
+          return { success: false };
+        }
       }
       // Bekleyip tekrar dene (Exponential Backoff)
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      await new Promise(resolve => setTimeout(resolve, 800 * attempt));
     }
   }
 };

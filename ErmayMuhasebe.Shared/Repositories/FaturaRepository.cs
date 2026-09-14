@@ -137,6 +137,18 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
         }
 
         // 5. Delete Details & Movements
+        var relatedSh = await db.Table<StokHareket>().Where(s => s.FaturaId == entity.Id || (!string.IsNullOrEmpty(fNo) && (s.EvrakNo == fNo || s.EvrakNo == kplNo))).ToListAsync();
+        var relatedCh = await db.Table<CariHareket>().Where(c => c.FaturaId == entity.Id || (!string.IsNullOrEmpty(fNo) && (c.EvrakNo == fNo || c.EvrakNo == kplNo))).ToListAsync();
+
+        foreach (var sh in relatedSh)
+        {
+            await _syncService.DeleteStokHareketAsync(sh.Id);
+        }
+        foreach (var ch in relatedCh)
+        {
+            await _syncService.DeleteCariHareketAsync(ch.Id);
+        }
+
         await db.ExecuteAsync("DELETE FROM FaturaDetay WHERE FaturaId = ?", entity.Id);
         await db.ExecuteAsync("DELETE FROM StokHareket WHERE FaturaId = ? OR (EvrakNo IS NOT NULL AND EvrakNo != '' AND (EvrakNo = ? OR EvrakNo = ?))", entity.Id, fNo, kplNo);
         await db.ExecuteAsync("DELETE FROM CariHareket WHERE FaturaId = ? OR (CariId = ? AND EvrakNo IS NOT NULL AND EvrakNo != '' AND (EvrakNo = ? OR EvrakNo = ?))", entity.Id, entity.CariId, fNo, kplNo);
@@ -145,10 +157,9 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
         await _syncService.DeleteStokHareketByFaturaIdAsync(entity.Id, entity.FaturaNo);
         await _syncService.DeleteCariHareketByFaturaIdAsync(entity.Id, entity.FaturaNo);
         await _syncService.DeleteFaturaDetaylarAsync(entity.Id);
+        await _syncService.DeleteFaturaAsync(entity.Id);
 
-        entity.IsDeleted = true;
-        await db.UpdateAsync(entity);
-        await _syncService.SyncFaturaAsync(entity);
+        await db.DeleteAsync(entity);
 
         // 6. Clean up linked financial records (Kasa / Banka)
         if (!string.IsNullOrEmpty(fNo))
@@ -214,6 +225,21 @@ public class FaturaRepository : BaseRepository<Fatura>, IFaturaRepository
             if (updatedStok != null)
             {
                 await _syncService.SyncStokAsync(updatedStok);
+            }
+        }
+
+        // 8. Recalculate and Sync Cari Balance
+        if (entity.CariId > 0)
+        {
+            var cariToRecalc = await db.Table<CariKart>().FirstOrDefaultAsync(c => c.Id == entity.CariId);
+            if (cariToRecalc != null)
+            {
+                var totalBorc = await db.ExecuteScalarAsync<decimal>("SELECT IFNULL(SUM(Borc), 0) FROM CariHareket WHERE CariId = ?", entity.CariId);
+                var totalAlacak = await db.ExecuteScalarAsync<decimal>("SELECT IFNULL(SUM(Alacak), 0) FROM CariHareket WHERE CariId = ?", entity.CariId);
+                cariToRecalc.Borc = totalBorc;
+                cariToRecalc.Alacak = totalAlacak;
+                await db.UpdateAsync(cariToRecalc);
+                await _syncService.SyncCariAsync(cariToRecalc);
             }
         }
 

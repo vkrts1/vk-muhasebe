@@ -599,6 +599,43 @@ public abstract partial class StokListViewModel : ViewModelBase
             IsLoading = true;
             ErrorMessage = null;
 
+            // 0. If linked to an invoice, cascade delete the invoice
+            bool isInvoiceMovement = (hareket.IslemTuru != null && hareket.IslemTuru.Contains("Fatura")) ||
+                                     (hareket.FaturaId.HasValue && hareket.FaturaId.Value > 0) ||
+                                     (!string.IsNullOrEmpty(hareket.EvrakNo) && (hareket.EvrakNo.StartsWith("FTR") || hareket.EvrakNo.StartsWith("FAT")));
+
+            if (isInvoiceMovement)
+            {
+                Fatura? linkedFatura = null;
+                if (hareket.FaturaId.HasValue && hareket.FaturaId.Value > 0)
+                {
+                    linkedFatura = await _uow.Faturalar.GetByIdAsync(hareket.FaturaId.Value);
+                }
+                if (linkedFatura == null && !string.IsNullOrEmpty(hareket.EvrakNo))
+                {
+                    var allFaturalar = await _uow.Faturalar.GetAllAsync();
+                    string eNo = hareket.EvrakNo.Trim();
+                    linkedFatura = allFaturalar.FirstOrDefault(f => f.FaturaNo == eNo || f.FaturaNo.StartsWith(eNo) || eNo.StartsWith(f.FaturaNo));
+                }
+
+                if (linkedFatura != null)
+                {
+                    await _uow.Faturalar.DeleteAsync(linkedFatura);
+                }
+                else
+                {
+                    // Clean up any orphan CariHareket with matching EvrakNo or FaturaId
+                    string eNo = hareket.EvrakNo?.Trim() ?? "";
+                    int? fId = hareket.FaturaId;
+                    var allCH = await _uow.Cariler.GetAllHareketlerAsync();
+                    var orphanCH = allCH.Where(c => (fId.HasValue && fId.Value > 0 && c.FaturaId == fId.Value) || (!string.IsNullOrEmpty(eNo) && (c.EvrakNo == eNo || (c.EvrakNo != null && c.EvrakNo.Replace("KPL-", "") == eNo)))).ToList();
+                    foreach (var ch in orphanCH)
+                    {
+                        await _uow.Cariler.DeleteHareketAsync(ch);
+                    }
+                }
+            }
+
             // 1. Delete the movement
             await _uow.Stoklar.DeleteHareketAsync(hareket);
 
@@ -631,7 +668,12 @@ public abstract partial class StokListViewModel : ViewModelBase
             SelectedStokHareket = null;
             await LoadStoklarAsync(stokId);
             await LoadStokHareketleriAsync(stokId);
-            if (SelectedStok != null) FillEditForm(SelectedStok);
+            currentStok = await _uow.Stoklar.GetByIdAsync(stokId);
+            if (currentStok != null)
+            {
+                SelectedStok = currentStok;
+                FillEditForm(currentStok);
+            }
             SuccessMessage = "Stok hareketi başarıyla silindi.";
         }
         catch (Exception ex)

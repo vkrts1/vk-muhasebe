@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, FlatList, TextInput, ActivityIndicator, TouchableOpacity, Modal, ScrollView, Alert } from 'react-native';
 import { Search, Plus, X, Save, Trash2, Calendar, User, Clock, AlertCircle, LayoutGrid, CheckCircle2 } from 'lucide-react-native';
 import { subscribeToPath, writeData, deleteData } from '../services/firebase';
+import { generateInt32Id } from '../utils/IdGenerator';
 
 export interface Gorev {
   id: number;
@@ -91,7 +92,7 @@ export default function KanbanScreen() {
       return;
     }
 
-    const currentId = gorevler.length > 0 ? Math.max(...gorevler.map(g => g.id || 0)) + 1 : 1;
+    const currentId = generateInt32Id();
     const newGorev: Gorev = {
       id: currentId,
       baslik: baslik.trim(),

@@ -144,7 +144,6 @@ public abstract class HeadlessTestBase : IAsyncLifetime, IDisposable
         services.AddTransient<AVM.BarkodTasarimViewModel>();
         services.AddTransient<AVM.BelgeArsivViewModel>();
         services.AddTransient<SVM.DovizOtomasyonViewModel>();
-        services.AddTransient<AVM.FaturaTasarimViewModel>();
         services.AddTransient<AVM.OptimalFiyatViewModel>();
         services.AddTransient<AVM.UrunBirlestirmeViewModel>();
         services.AddTransient<AVM.CariBirlestirmeViewModel>();

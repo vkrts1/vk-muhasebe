@@ -101,6 +101,51 @@ namespace ErmayMuhasebe.Services
             InitializeFirebase();
         }
 
+        private string? _cachedIdToken;
+        private DateTime _tokenExpiresAt = DateTime.MinValue;
+        private static readonly System.Net.Http.HttpClient _authHttpClient = new System.Net.Http.HttpClient();
+
+        private async Task<string> GetFirebaseAuthTokenAsync()
+        {
+            if (!string.IsNullOrEmpty(_cachedIdToken) && DateTime.UtcNow < _tokenExpiresAt)
+            {
+                return _cachedIdToken;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_config.GoogleApiKey))
+            {
+                try
+                {
+                    var url = $"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={_config.GoogleApiKey}";
+                    var content = new System.Net.Http.StringContent("{\"returnSecureToken\":true}", System.Text.Encoding.UTF8, "application/json");
+                    var res = await _authHttpClient.PostAsync(url, content);
+                    if (res.IsSuccessStatusCode)
+                    {
+                        var respJson = await res.Content.ReadAsStringAsync();
+                        using var doc = JsonDocument.Parse(respJson);
+                        if (doc.RootElement.TryGetProperty("idToken", out var tokenProp))
+                        {
+                            _cachedIdToken = tokenProp.GetString();
+                            int expiresIn = 3600;
+                            if (doc.RootElement.TryGetProperty("expiresIn", out var expProp) && int.TryParse(expProp.GetString(), out var exp))
+                            {
+                                expiresIn = exp;
+                            }
+                            _tokenExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn - 300);
+                            return _cachedIdToken ?? "";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Firebase Auth REST Token Error: {ex.Message}");
+                }
+            }
+
+            // Fallback: Eski secret (varsa)
+            return _config.AuthSecret ?? "";
+        }
+
         private void InitializeFirebase()
         {
             if (string.IsNullOrEmpty(_config.BaseUrl)) 
@@ -112,12 +157,13 @@ namespace ErmayMuhasebe.Services
             try
             {
                 var options = new FirebaseOptions();
-                if (!string.IsNullOrEmpty(_config.AuthSecret))
+                if (!string.IsNullOrEmpty(_config.GoogleApiKey) || !string.IsNullOrEmpty(_config.AuthSecret))
                 {
-                    options.AuthTokenAsyncFactory = () => Task.FromResult(_config.AuthSecret);
+                    options.AuthTokenAsyncFactory = () => GetFirebaseAuthTokenAsync();
                 }
 
                 _firebase = new FirebaseClient(_config.BaseUrl, options);
+                StartRealtimeStreamListener();
             }
             catch(Exception ex)
             {
@@ -1088,6 +1134,99 @@ namespace ErmayMuhasebe.Services
             {
                 System.Diagnostics.Debug.WriteLine($"[CloudSync] PullUsersAsync Error: {ex.Message}");
                 return new List<User>();
+            }
+        }
+
+        // --- REAL-TIME STREAMING (SSE / SERVER-SENT EVENTS) LISTENER ---
+        private System.Threading.CancellationTokenSource? _streamCts;
+        public event Action<string, string>? OnCloudStreamDataReceived;
+
+        public void StartRealtimeStreamListener()
+        {
+            StopRealtimeStreamListener();
+            if (!IsConnected || string.IsNullOrEmpty(_config.BaseUrl)) return;
+
+            _streamCts = new System.Threading.CancellationTokenSource();
+            var token = _streamCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var cleanUrl = _config.BaseUrl.TrimEnd('/');
+                        var authToken = await GetFirebaseAuthTokenAsync();
+                        var year = _yearContext?.CurrentYear ?? DateTime.Now.Year;
+                        var streamUrl = $"{cleanUrl}/companies/default/years/{year}.json";
+                        if (!string.IsNullOrEmpty(authToken))
+                        {
+                            streamUrl += $"?auth={authToken}";
+                        }
+
+                        using var client = new System.Net.Http.HttpClient();
+                        client.Timeout = TimeSpan.FromMinutes(30);
+                        using var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, streamUrl);
+                        req.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
+
+                        using var resp = await client.SendAsync(req, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, token);
+                        if (!resp.IsSuccessStatusCode)
+                        {
+                            await Task.Delay(5000, token);
+                            continue;
+                        }
+
+                        using var stream = await resp.Content.ReadAsStreamAsync(token);
+                        using var reader = new System.IO.StreamReader(stream);
+
+                        string? currentEvent = null;
+                        while (!token.IsCancellationRequested && !reader.EndOfStream)
+                        {
+                            var line = await reader.ReadLineAsync(token);
+                            if (string.IsNullOrWhiteSpace(line))
+                            {
+                                currentEvent = null;
+                                continue;
+                            }
+
+                            if (line.StartsWith("event: "))
+                            {
+                                currentEvent = line.Substring(7).Trim();
+                            }
+                            else if (line.StartsWith("data: "))
+                            {
+                                var dataJson = line.Substring(6).Trim();
+                                if (currentEvent == "put" || currentEvent == "patch")
+                                {
+                                    try
+                                    {
+                                        OnCloudStreamDataReceived?.Invoke(currentEvent, dataJson);
+                                    }
+                                    catch { }
+                                }
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[CloudSync SSE Listener] Error: {ex.Message}");
+                        await Task.Delay(5000, token);
+                    }
+                }
+            }, token);
+        }
+
+        public void StopRealtimeStreamListener()
+        {
+            if (_streamCts != null)
+            {
+                try { _streamCts.Cancel(); } catch { }
+                _streamCts.Dispose();
+                _streamCts = null;
             }
         }
     }

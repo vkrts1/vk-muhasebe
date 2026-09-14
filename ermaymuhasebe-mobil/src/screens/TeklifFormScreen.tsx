@@ -207,7 +207,7 @@ export default function TeklifFormScreen({ route, navigation }: any) {
       return;
     }
 
-    const currentId = editingId || (teklifler.length > 0 ? Math.max(...teklifler.map(t => t.id || 0)) + 1 : 1);
+    const currentId = editingId || generateInt32Id();
     const subtotal = calculateSubtotal();
     const totalKdv = calculateTotalKdv();
     const grandTotal = calculateGrandTotal();

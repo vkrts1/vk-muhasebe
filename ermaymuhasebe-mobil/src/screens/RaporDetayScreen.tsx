@@ -35,7 +35,42 @@ export default function RaporDetayScreen() {
     }
   };
 
-  if (!reportResult) return null;
+  const isHeatmap = reportResult.title?.includes('Isı Haritası') || reportResult.title?.includes('Heatmap');
+  const [selectedDay, setSelectedDay] = React.useState<any | null>(null);
+
+  // Heatmap KPI hesaplamaları
+  const heatmapStats = React.useMemo(() => {
+    if (!isHeatmap || !reportResult.rows) return null;
+    let posCount = 0;
+    let negCount = 0;
+    let totalFlow = 0;
+
+    const days = reportResult.rows.map((r: string[]) => {
+      const dateStr = r[0] || '';
+      const satisStr = r[1] || '0';
+      const alisStr = r[2] || '0';
+      const netStr = r[5] || '0';
+      const isNeg = netStr.includes('-');
+      const netVal = parseFloat(netStr.replace(/[^0-9.-]+/g, '')) * (isNeg ? -1 : 1) || 0;
+
+      if (netVal > 0) posCount++;
+      else if (netVal < 0) negCount++;
+      totalFlow += netVal;
+
+      return {
+        date: dateStr,
+        satis: satisStr,
+        alis: alisStr,
+        kasaIn: r[3] || '0',
+        kasaOut: r[4] || '0',
+        net: netStr,
+        netVal,
+        isNeg
+      };
+    });
+
+    return { days, posCount, negCount, totalFlow };
+  }, [isHeatmap, reportResult]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,6 +83,65 @@ export default function RaporDetayScreen() {
         </View>
 
         <View style={{ flex: 1 }}>
+          {isHeatmap && heatmapStats && (
+            <View style={styles.heatmapContainer}>
+              <View style={styles.kpiRow}>
+                <View style={[styles.kpiCard, { borderColor: '#10B981' }]}>
+                  <Text style={styles.kpiTitle}>Pozitif Günler</Text>
+                  <Text style={[styles.kpiValue, { color: '#10B981' }]}>{heatmapStats.posCount} Gün</Text>
+                </View>
+                <View style={[styles.kpiCard, { borderColor: '#EF4444' }]}>
+                  <Text style={styles.kpiTitle}>Negatif Günler</Text>
+                  <Text style={[styles.kpiValue, { color: '#EF4444' }]}>{heatmapStats.negCount} Gün</Text>
+                </View>
+                <View style={[styles.kpiCard, { borderColor: '#3B82F6' }]}>
+                  <Text style={styles.kpiTitle}>Net Nakit Akışı</Text>
+                  <Text style={[styles.kpiValue, { color: heatmapStats.totalFlow >= 0 ? '#10B981' : '#EF4444' }]}>
+                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(heatmapStats.totalFlow)}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.heatmapSectionTitle}>Son 30 Günlük Yoğunluk Hücreleri</Text>
+              <View style={styles.heatmapGrid}>
+                {heatmapStats.days.map((d: any, idx: number) => {
+                  const isSelected = selectedDay?.date === d.date;
+                  return (
+                    <TouchableOpacity
+                      key={idx}
+                      onPress={() => setSelectedDay(d)}
+                      style={[
+                        styles.heatmapCell,
+                        d.netVal > 0 ? styles.heatmapCellPos : d.netVal < 0 ? styles.heatmapCellNeg : styles.heatmapCellZero,
+                        isSelected && styles.heatmapCellSelected
+                      ]}
+                    >
+                      <Text style={styles.heatmapCellDay}>{d.date.split('.')[0]}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {selectedDay && (
+                <View style={styles.dayDetailCard}>
+                  <Text style={styles.dayDetailDate}>📅 {selectedDay.date} Detayı</Text>
+                  <View style={styles.dayDetailRow}>
+                    <Text style={styles.dayDetailLabel}>Satış: <Text style={styles.dayDetailVal}>{selectedDay.satis}</Text></Text>
+                    <Text style={styles.dayDetailLabel}>Alış: <Text style={styles.dayDetailVal}>{selectedDay.alis}</Text></Text>
+                  </View>
+                  <View style={styles.dayDetailRow}>
+                    <Text style={styles.dayDetailLabel}>Giren Kasa: <Text style={[styles.dayDetailVal, { color: '#10B981' }]}>{selectedDay.kasaIn}</Text></Text>
+                    <Text style={styles.dayDetailLabel}>Çıkan Kasa: <Text style={[styles.dayDetailVal, { color: '#EF4444' }]}>{selectedDay.kasaOut}</Text></Text>
+                  </View>
+                  <View style={[styles.dayDetailRow, { marginTop: 4, borderTopWidth: 1, borderTopColor: '#333', paddingTop: 4 }]}>
+                    <Text style={{ color: '#94A3B8', fontWeight: '700' }}>Net Akış:</Text>
+                    <Text style={{ fontWeight: '800', color: selectedDay.isNeg ? '#EF4444' : '#10B981' }}>{selectedDay.net}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
+
           <View style={styles.tableHeaderRow}>
             {reportResult.headers.map((h: string, i: number) => (
               <Text key={i} style={styles.tableHeaderCell}>{h}</Text>
@@ -151,5 +245,106 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 15,
     fontWeight: '600',
+  },
+  heatmapContainer: {
+    backgroundColor: '#141414',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  kpiRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  kpiCard: {
+    flex: 1,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 8,
+    padding: 8,
+    borderLeftWidth: 3,
+  },
+  kpiTitle: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  kpiValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  heatmapSectionTitle: {
+    color: '#CBD5E1',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  heatmapGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  heatmapCell: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heatmapCellPos: {
+    backgroundColor: '#064E3B',
+    borderWidth: 1,
+    borderColor: '#059669',
+  },
+  heatmapCellNeg: {
+    backgroundColor: '#7F1D1D',
+    borderWidth: 1,
+    borderColor: '#DC2626',
+  },
+  heatmapCellZero: {
+    backgroundColor: '#262626',
+    borderWidth: 1,
+    borderColor: '#404040',
+  },
+  heatmapCellSelected: {
+    borderColor: '#60A5FA',
+    borderWidth: 2,
+  },
+  heatmapCellDay: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  dayDetailCard: {
+    backgroundColor: '#1A2234',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#2563EB',
+    marginTop: 4,
+  },
+  dayDetailDate: {
+    color: '#60A5FA',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  dayDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  dayDetailLabel: {
+    color: '#94A3B8',
+    fontSize: 11,
+  },
+  dayDetailVal: {
+    color: '#F8FAFC',
+    fontWeight: '700',
   }
 });

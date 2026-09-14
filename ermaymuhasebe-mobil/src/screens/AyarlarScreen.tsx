@@ -5,7 +5,6 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '../services/storage';
 import { saveFirebaseConfig, saveActiveYear, getFirebaseConfig, loadConfigFromStorage, goOfflineMode, writeData, subscribeToPath, logoutUser, deleteData, readData, fetchAvailableYears } from '../services/firebase';
 import { getLockSettings, savePin, setLockEnabled, clearLock, setLockTimeout, DEFAULT_LOCK_MINUTES } from '../services/lockService';
-import { getUiScale, saveUiScale, UiScale } from '../services/themeService';
 import { resetPdfServiceCache, cleanBase64Logo } from '../services/pdfService';
 
 export default function AyarlarScreen() {
@@ -46,9 +45,6 @@ export default function AyarlarScreen() {
   const [newPin, setNewPin] = useState('');
   const [lockTimeout, setLockTimeoutState] = useState('30');
 
-  // Görünüm Ölçeği State
-  const [uiScale, setUiScaleState] = useState<UiScale>('orta');
-
   // Kategori Seçim State
   const [currentCategory, setCurrentCategory] = useState<string | null>(null);
 
@@ -74,9 +70,6 @@ export default function AyarlarScreen() {
       setLockEnabledState(lockSettings.enabled);
       setLockHasPin(lockSettings.hasPin);
       setLockTimeoutState(lockSettings.timeoutMinutes.toString());
-
-      // Görünüm ölçeği tercihi
-      setUiScaleState(await getUiScale());
 
       // Firma Profilini Firebase'den çek
       const unsubProfile = subscribeToPath('FirmaProfili/1', (data) => {
@@ -457,12 +450,6 @@ export default function AyarlarScreen() {
     );
   };
 
-  const handleSaveUiScale = async (scale: UiScale) => {
-    await saveUiScale(scale);
-    setUiScaleState(scale);
-    Alert.alert('Başarılı', 'Görünüm ölçeği güncellendi.');
-  };
-
   const handleLogout = async () => {
     Alert.alert(
       'Yapılandırmayı Sıfırla',
@@ -517,7 +504,6 @@ export default function AyarlarScreen() {
     { id: 'profile', title: 'Firma Profili', description: 'Firma ünvanı, iletişim ve logo ayarları.', icon: Building, color: '#8B5CF6' },
     { id: 'security', title: 'Güvenlik ve Kilit', description: 'Oturum kilidi, PIN ve şifre ayarları.', icon: Lock, color: '#EF4444' },
     { id: 'backup', title: 'Yedekleme ve Bakım', description: 'Tüm veritabanını yedekleyin veya geri yükleyin.', icon: Database, color: '#10B981' },
-    { id: 'theme', title: 'Arayüz Ölçekleme', description: 'Ekran yazı boyutu ve arayüz ölçeği.', icon: MonitorSmartphone, color: '#3B82F6' },
     { id: 'cleanup', title: 'Veri Temizlik', description: 'Silinmiş çöp kayıtları ve yerel önbelleği temizleyin.', icon: Trash2, color: '#64748B' }
   ];
 
@@ -850,31 +836,7 @@ export default function AyarlarScreen() {
               </View>
             )}
 
-            {/* 6. Arayüz Ölçekleme */}
-            {currentCategory === 'theme' && (
-              <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <MonitorSmartphone color="#3B82F6" size={22} />
-                  <Text style={styles.cardTitle}>Görünüm Ölçeği</Text>
-                </View>
-                <Text style={[styles.inputLabel, { fontWeight: 'normal', marginBottom: 12 }]}>
-                  Başlık ve metin boyutu ölçeğini cihazınıza göre özelleştirin (Display ölçek paritesi).
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  {(['kucuk', 'orta', 'buyuk'] as UiScale[]).map(scale => (
-                    <TouchableOpacity
-                      key={scale}
-                      style={[styles.btn, { flex: 1, backgroundColor: uiScale === scale ? '#3B82F6' : 'rgba(255,255,255,0.06)' }]}
-                      onPress={() => handleSaveUiScale(scale)}
-                    >
-                      <Text style={[styles.btnText, uiScale !== scale && { color: '#94A3B8' }]}>
-                        {scale === 'kucuk' ? 'Küçük' : scale === 'orta' ? 'Orta' : 'Büyük'}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
+
 
             {/* 7. Veri Temizlik */}
             {currentCategory === 'cleanup' && (

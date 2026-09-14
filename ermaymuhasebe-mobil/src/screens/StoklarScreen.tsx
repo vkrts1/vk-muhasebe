@@ -37,7 +37,10 @@ import {
   MinusSquare,
   CheckSquare,
   Square,
-  Layers
+  Layers,
+  Folder,
+  FolderPlus,
+  CornerDownRight
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { subscribeToPath, writeData, deleteData, readData } from '../services/firebase';
@@ -100,6 +103,8 @@ export default function StoklarScreen() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(new Date().toISOString().split('T')[0]);
   const [isAddGroupVisible, setIsAddGroupVisible] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [selectedParentGroup, setSelectedParentGroup] = useState('');
+  const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const [isGroupSelectVisible, setIsGroupSelectVisible] = useState(false);
   const [isBirimSelectVisible, setIsBirimSelectVisible] = useState(false);
 
@@ -934,22 +939,26 @@ export default function StoklarScreen() {
   const handleSaveNewGroup = async () => {
     if (newGroupName.trim()) {
       const trimmed = newGroupName.trim();
+      const finalGroupName = selectedParentGroup ? `${selectedParentGroup} > ${trimmed}` : trimmed;
       const grpId = generateInt32Id();
       try {
         await writeData(`StokGruplar/${grpId}`, {
           id: grpId,
-          ad: trimmed,
+          ad: finalGroupName,
+          anaGrup: selectedParentGroup || '',
+          altGrup: trimmed,
           updatedAt: new Date().toISOString(),
           isDeleted: false
         });
       } catch (err) {
         console.warn('StokGruplar write error:', err);
       }
-      setStokGruplar(prev => Array.from(new Set([...prev, trimmed])));
-      setEditKategori(trimmed);
+      setStokGruplar(prev => Array.from(new Set([...prev, finalGroupName])));
+      setEditKategori(finalGroupName);
     }
     setIsAddGroupVisible(false);
     setNewGroupName('');
+    setSelectedParentGroup('');
   };
 
   // --- SELECT ALL TOGGLE ---
@@ -1467,13 +1476,45 @@ export default function StoklarScreen() {
       {/* ========================================================================= */}
       {/* MODAL 1: GROUP ADD OVERLAY (Exact Desktop Parity)                         */}
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* MODAL 1: GROUP ADD OVERLAY (Hierarchical Parity)                          */}
+      {/* ========================================================================= */}
       <Modal visible={isAddGroupVisible} transparent={true} animationType="fade">
         <View style={styles.modalOverlayCenter}>
-          <View style={styles.popupCardSmall}>
-            <Text style={styles.popupTitle}>Yeni Grup Ekle</Text>
+          <View style={[styles.popupCardSmall, { maxHeight: 480 }]}>
+            <Text style={styles.popupTitle}>Yeni Hiyerarşik Grup Ekle</Text>
+            
+            {/* Ana Grup Seçimi */}
+            <Text style={{ color: '#94A3B8', fontSize: 11, marginBottom: 4, marginTop: 8 }}>
+              Bağlı Olduğu Ana Grup (Opsiyonel):
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              <TouchableOpacity
+                style={[
+                  { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#262626', marginRight: 8, borderWidth: 1, borderColor: '#404040' },
+                  !selectedParentGroup && { backgroundColor: '#2563EB', borderColor: '#3B82F6' }
+                ]}
+                onPress={() => setSelectedParentGroup('')}
+              >
+                <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>[Ana Grup Yok - Kök Seviye]</Text>
+              </TouchableOpacity>
+              {Array.from(new Set(groupList.map(g => g.split('>')[0].trim()).filter(Boolean))).map((pg, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#262626', marginRight: 8, borderWidth: 1, borderColor: '#404040' },
+                    selectedParentGroup === pg && { backgroundColor: '#2563EB', borderColor: '#3B82F6' }
+                  ]}
+                  onPress={() => setSelectedParentGroup(pg)}
+                >
+                  <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '600' }}>📁 {pg}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
             <TextInput
               style={styles.popupInput}
-              placeholder="Grup Adı"
+              placeholder={selectedParentGroup ? `${selectedParentGroup} için Alt Grup Adı` : "Ana Grup Adı"}
               placeholderTextColor="#888"
               value={newGroupName}
               onChangeText={setNewGroupName}
@@ -1488,7 +1529,11 @@ export default function StoklarScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.popupBtn, { backgroundColor: '#EF4444' }]}
-                onPress={() => setIsAddGroupVisible(false)}
+                onPress={() => {
+                  setIsAddGroupVisible(false);
+                  setSelectedParentGroup('');
+                  setNewGroupName('');
+                }}
               >
                 <Text style={styles.popupBtnText}>İPTAL</Text>
               </TouchableOpacity>
@@ -1498,18 +1543,40 @@ export default function StoklarScreen() {
       </Modal>
 
       {/* ========================================================================= */}
-      {/* MODAL 2: GROUP SELECT PICKER MODAL                                        */}
+      {/* MODAL 2: HIERARCHICAL GROUP SELECT PICKER MODAL                           */}
       {/* ========================================================================= */}
       <Modal visible={isGroupSelectVisible} transparent={true} animationType="fade">
         <View style={styles.modalOverlayCenter}>
-          <View style={[styles.popupCardSmall, { maxHeight: 400 }]}>
+          <View style={[styles.popupCardSmall, { maxHeight: 520, width: '92%' }]}>
             <View style={styles.modalTopHeader}>
-              <Text style={styles.popupTitle}>Grup Seçin</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Folder color="#60A5FA" size={20} />
+                <Text style={styles.popupTitle}>Hiyerarşik Stok Grupları</Text>
+              </View>
               <TouchableOpacity onPress={() => setIsGroupSelectVisible(false)}>
                 <X color="#FFF" size={20} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={{ marginTop: 10 }}>
+
+            {/* Arama ve Yeni Ekleme Çubuğu */}
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, marginBottom: 8 }}>
+              <TextInput
+                style={[styles.popupInput, { flex: 1, marginBottom: 0, paddingVertical: 8, fontSize: 12 }]}
+                placeholder="Grup ara..."
+                placeholderTextColor="#64748B"
+                value={groupSearchQuery}
+                onChangeText={setGroupSearchQuery}
+              />
+              <TouchableOpacity
+                style={{ backgroundColor: '#2563EB', borderRadius: 8, paddingHorizontal: 12, justifyContent: 'center', alignItems: 'center' }}
+                onPress={() => setIsAddGroupVisible(true)}
+              >
+                <FolderPlus color="#FFF" size={18} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ marginTop: 6 }} showsVerticalScrollIndicator={false}>
+              {/* Grup Yok seçeneği */}
               <TouchableOpacity
                 style={[styles.pickerItem, !editKategori && styles.pickerItemSelected]}
                 onPress={() => {
@@ -1517,20 +1584,89 @@ export default function StoklarScreen() {
                   setIsGroupSelectVisible(false);
                 }}
               >
-                <Text style={styles.pickerItemText}>- Grup Yok (Genel) -</Text>
+                <Text style={[styles.pickerItemText, { color: '#94A3B8' }]}>- Grup Yok (Genel Kategori) -</Text>
               </TouchableOpacity>
-              {groupList.map((grp, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={[styles.pickerItem, editKategori === grp && styles.pickerItemSelected]}
-                  onPress={() => {
-                    setEditKategori(grp);
-                    setIsGroupSelectVisible(false);
-                  }}
-                >
-                  <Text style={styles.pickerItemText}>{grp}</Text>
-                </TouchableOpacity>
-              ))}
+
+              {/* Hiyerarşik Ağaç Grupları */}
+              {(() => {
+                const query = groupSearchQuery.toLowerCase();
+                const filtered = groupList.filter(g => g.toLowerCase().includes(query));
+
+                // Ana grup -> alt gruplar haritası
+                const hierarchyMap: Record<string, string[]> = {};
+                filtered.forEach(g => {
+                  const parts = g.split('>').map(p => p.trim());
+                  const root = parts[0] || 'Genel';
+                  if (!hierarchyMap[root]) hierarchyMap[root] = [];
+                  if (parts.length > 1) {
+                    hierarchyMap[root].push(g);
+                  }
+                });
+
+                const rootKeys = Object.keys(hierarchyMap).sort((a, b) => a.localeCompare(b, 'tr-TR'));
+
+                return rootKeys.map((rootKey, rIdx) => {
+                  const subItems = hierarchyMap[rootKey];
+                  const isRootSelected = editKategori === rootKey;
+
+                  return (
+                    <View key={rIdx} style={{ marginBottom: 6, backgroundColor: '#18181B', borderRadius: 8, padding: 4 }}>
+                      {/* Ana Grup Satırı */}
+                      <TouchableOpacity
+                        style={[
+                          styles.pickerItem,
+                          { backgroundColor: 'transparent', borderBottomWidth: subItems.length > 0 ? 1 : 0, borderBottomColor: '#27272A' },
+                          isRootSelected && styles.pickerItemSelected
+                        ]}
+                        onPress={() => {
+                          setEditKategori(rootKey);
+                          setIsGroupSelectVisible(false);
+                        }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                          <Folder color={isRootSelected ? '#60A5FA' : '#93C5FD'} size={16} />
+                          <Text style={[styles.pickerItemText, { fontWeight: '800', color: isRootSelected ? '#60A5FA' : '#FFF' }]}>
+                            {rootKey}
+                          </Text>
+                        </View>
+                        {subItems.length > 0 && (
+                          <View style={{ backgroundColor: '#27272A', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }}>
+                            <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: '700' }}>{subItems.length} Alt Grup</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+
+                      {/* Alt Gruplar */}
+                      {subItems.map((sub, sIdx) => {
+                        const isSubSelected = editKategori === sub;
+                        const subName = sub.split('>').slice(1).join(' > ').trim();
+
+                        return (
+                          <TouchableOpacity
+                            key={sIdx}
+                            style={[
+                              styles.pickerItem,
+                              { paddingLeft: 24, backgroundColor: 'transparent' },
+                              isSubSelected && styles.pickerItemSelected
+                            ]}
+                            onPress={() => {
+                              setEditKategori(sub);
+                              setIsGroupSelectVisible(false);
+                            }}
+                          >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                              <CornerDownRight color={isSubSelected ? '#60A5FA' : '#64748B'} size={14} />
+                              <Text style={[styles.pickerItemText, { fontSize: 13, color: isSubSelected ? '#60A5FA' : '#E2E8F0' }]}>
+                                {subName}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  );
+                });
+              })()}
             </ScrollView>
           </View>
         </View>

@@ -31,7 +31,7 @@ exports.onSecurityRequestCreated = onValueCreated("/security_requests/{requestId
         const chatId = userData.telegram.chat_id;
 
         // Telegram Inline Keyboard Message
-        const messageText = `🔐 <b>Ermay Muhasebe - Güvenlik Onayı</b>\n\n` +
+        const messageText = `🔐 <b>VK Ön Muhasebe - Güvenlik Onayı</b>\n\n` +
             `Hesabınız için şifre değiştirme talebi oluşturuldu.\n\n` +
             `<b>Kullanıcı:</b> ${requestData.uid}\n` +
             `<b>Tarih:</b> ${new Date(requestData.createdAt).toLocaleString("tr-TR")}\n\n` +

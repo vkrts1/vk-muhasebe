@@ -1545,11 +1545,7 @@ export default function FinansScreen({ route }: any) {
 
       // Otomatik Çek Entegrasyonu
       if (odemeYontemi === "Çek" && !isDekont) {
-        const maxCekId = cekler.reduce(
-          (m, c) => Math.max(m, Number(c.id) || 0),
-          0,
-        );
-        const nextCekId = maxCekId + 1;
+        const nextCekId = generateInt32Id();
         const newCek = {
           id: nextCekId,
           cariId: selectedCari.id,

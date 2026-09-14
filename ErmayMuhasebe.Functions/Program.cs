@@ -126,7 +126,7 @@ if (anyFontLoaded)
     Console.WriteLine("[FONT] Varsayılan font: Roboto");
 }
 
-app.MapGet("/", () => "Ermay Muhasebe PDF API V1.2 - Status: OK");
+app.MapGet("/", () => "VK Ön Muhasebe PDF API V1.2 - Status: OK");
 app.MapGet("/health", () => Results.Ok(new { 
     Status = "Healthy", 
     Version = "1.2", 
@@ -137,7 +137,7 @@ app.MapGet("/health", () => Results.Ok(new {
 
 // Print Startup info
 Console.WriteLine("\n" + new string('=', 40));
-Console.WriteLine("ERMAY MUHASEBE PDF API V1.2 CALISIYOR");
+Console.WriteLine("VK ON MUHASEBE PDF API V1.2 CALISIYOR");
 Console.WriteLine("----------------------------------------");
 Console.WriteLine("Tarayici Erisimi: http://localhost:5244");
 Console.WriteLine("Ag Erisimi: http://0.0.0.0:5244");

@@ -123,12 +123,6 @@
                             </Style>
                         </Button.Styles>
                     </Button>
-                    
-                    <TextBlock Text="Yeni yıl devir işlemleri artık Ayarlar menüsü altından yönetilebilir." 
-                               FontSize="13" 
-                               Opacity="0.4" 
-                               HorizontalAlignment="Center"
-                               Foreground="{DynamicResource TextBrush}"/>
                 </StackPanel>
             </StackPanel>
 

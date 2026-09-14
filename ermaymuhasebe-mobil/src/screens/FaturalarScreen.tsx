@@ -550,10 +550,6 @@ export default function FaturalarScreen({ route, navigation }: any) {
       Alert.alert('Hata', 'Fatura kaydedildi ancak detaylar eşitlenemedi. (Bağlantı sorunu — detaylar sıraya alındı.)');
     }
 
-    // 2.5 Save StokHareketler (desktop parity — her kalem için hareket)
-    const shRaw = await readData('StokHareketler') || {};
-    const shList = Array.isArray(shRaw) ? shRaw.filter(Boolean) : Object.keys(shRaw).map(key => ({ ...(shRaw as any)[key], firebaseKey: key }));
-    const shBaseId = shList.length > 0 ? Math.max(...shList.map((h: any) => h.id || 0)) : 0;
     const isSatisFatura = tur === 'Satış';
     for (let idx = 0; idx < items.length; idx++) {
       const item = items[idx];

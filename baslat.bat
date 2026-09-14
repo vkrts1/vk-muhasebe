@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo Ermay Muhasebe (Avalonia Desktop) Baslatiliyor...
+echo VK On Muhasebe (Avalonia Desktop) Baslatiliyor...
 echo ========================================
 echo.
 
@@ -8,12 +8,9 @@ if exist "C:\Program Files\dotnet\dotnet.exe" (
     set "PATH=C:\Program Files\dotnet;%PATH%"
 )
 
-cd ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia
+cd ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia.Desktop
 if %errorlevel% neq 0 (
-    echo HATA: Klasor bulunamadi: ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia
-    echo.
-    pause
-    exit /b
+    cd ErmayMuhasebe.Avalonia\ErmayMuhasebe.Avalonia
 )
 
 echo Derleniyor ve Calistiriliyor...

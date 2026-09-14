@@ -1656,16 +1656,31 @@ public abstract partial class CariListViewModel : ViewModelBase
             if (faturaById != null) return faturaById;
         }
 
-        if (!string.IsNullOrWhiteSpace(hareket.EvrakNo))
+        string cleanNo = (hareket.EvrakNo ?? "").Trim();
+        if (cleanNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase))
         {
-            string cleanNo = hareket.EvrakNo.Trim();
-            if (cleanNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase))
-            {
-                cleanNo = cleanNo.Substring(4).Trim();
-            }
+            cleanNo = cleanNo.Substring(4).Trim();
+        }
 
-            var faturaByNo = await _uow.Faturalar.GetByNoAsync(cleanNo);
-            if (faturaByNo != null) return faturaByNo;
+        // Extract from Aciklama if EvrakNo was truncated or empty
+        string extractedNo = "";
+        if (!string.IsNullOrWhiteSpace(hareket.Aciklama))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(hareket.Aciklama, @"(FTR-[\w\d]+|FAT-[\w\d]+|SF-[\w\d\-]+|AF-[\w\d\-]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                extractedNo = match.Groups[1].Value.Trim();
+            }
+        }
+
+        if (!string.IsNullOrEmpty(cleanNo) || !string.IsNullOrEmpty(extractedNo))
+        {
+            var allFaturalar = await _uow.Faturalar.GetAllAsync();
+            var fatura = allFaturalar.FirstOrDefault(f => 
+                (!string.IsNullOrEmpty(cleanNo) && (f.FaturaNo.Equals(cleanNo, StringComparison.OrdinalIgnoreCase) || f.FaturaNo.StartsWith(cleanNo, StringComparison.OrdinalIgnoreCase) || cleanNo.StartsWith(f.FaturaNo, StringComparison.OrdinalIgnoreCase))) ||
+                (!string.IsNullOrEmpty(extractedNo) && (f.FaturaNo.Equals(extractedNo, StringComparison.OrdinalIgnoreCase) || f.FaturaNo.StartsWith(extractedNo, StringComparison.OrdinalIgnoreCase)))
+            );
+            if (fatura != null) return fatura;
         }
 
         return null;
@@ -1677,7 +1692,8 @@ public abstract partial class CariListViewModel : ViewModelBase
         if (SelectedHareket == null) return;
         bool isFatura = (SelectedHareket.IslemTuru != null && SelectedHareket.IslemTuru.Contains("Fatura")) ||
                         (SelectedHareket.FaturaId.HasValue && SelectedHareket.FaturaId.Value > 0) ||
-                        (!string.IsNullOrWhiteSpace(SelectedHareket.EvrakNo) && SelectedHareket.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase));
+                        (!string.IsNullOrWhiteSpace(SelectedHareket.EvrakNo) && (SelectedHareket.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase) || SelectedHareket.EvrakNo.StartsWith("FTR", StringComparison.OrdinalIgnoreCase) || SelectedHareket.EvrakNo.StartsWith("FAT", StringComparison.OrdinalIgnoreCase))) ||
+                        (!string.IsNullOrWhiteSpace(SelectedHareket.Aciklama) && (SelectedHareket.Aciklama.Contains("FTR-") || SelectedHareket.Aciklama.Contains("Fatura No")));
         
         string title = isFatura ? "Faturayı ve Hareketi Sil" : "İşlemi Sil";
         string msg = isFatura
@@ -1697,7 +1713,8 @@ public abstract partial class CariListViewModel : ViewModelBase
         {
             bool isInvoiceMovement = (targetHareket.IslemTuru != null && targetHareket.IslemTuru.Contains("Fatura")) ||
                                      (targetHareket.FaturaId.HasValue && targetHareket.FaturaId.Value > 0) ||
-                                     (!string.IsNullOrWhiteSpace(targetHareket.EvrakNo) && targetHareket.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase));
+                                     (!string.IsNullOrWhiteSpace(targetHareket.EvrakNo) && (targetHareket.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase) || targetHareket.EvrakNo.StartsWith("FTR", StringComparison.OrdinalIgnoreCase) || targetHareket.EvrakNo.StartsWith("FAT", StringComparison.OrdinalIgnoreCase))) ||
+                                     (!string.IsNullOrWhiteSpace(targetHareket.Aciklama) && (targetHareket.Aciklama.Contains("FTR-") || targetHareket.Aciklama.Contains("Fatura No")));
 
             Fatura? fatura = isInvoiceMovement ? await FindLinkedFaturaAsync(targetHareket) : null;
             if (fatura != null)
@@ -1736,33 +1753,32 @@ public abstract partial class CariListViewModel : ViewModelBase
             if (fNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase)) fNo = fNo.Substring(4).Trim();
             int? fId = hareket.FaturaId;
 
+            string extractedNo = "";
+            if (!string.IsNullOrWhiteSpace(hareket.Aciklama))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(hareket.Aciklama, @"(FTR-[\w\d]+|FAT-[\w\d]+|SF-[\w\d\-]+|AF-[\w\d\-]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (match.Success) extractedNo = match.Groups[1].Value.Trim();
+            }
+
             var allHareketler = await _uow.Stoklar.GetAllHareketlerAsync();
             var orphanStokMoves = allHareketler.Where(s => 
                 (fId.HasValue && fId.Value > 0 && s.FaturaId == fId.Value) || 
-                (!string.IsNullOrEmpty(fNo) && !string.IsNullOrEmpty(s.EvrakNo) && s.EvrakNo.Trim().Equals(fNo, StringComparison.OrdinalIgnoreCase))
+                (!string.IsNullOrEmpty(fNo) && !string.IsNullOrEmpty(s.EvrakNo) && (s.EvrakNo.Trim().Equals(fNo, StringComparison.OrdinalIgnoreCase) || s.EvrakNo.Trim().StartsWith(fNo, StringComparison.OrdinalIgnoreCase) || fNo.StartsWith(s.EvrakNo.Trim(), StringComparison.OrdinalIgnoreCase))) ||
+                (!string.IsNullOrEmpty(extractedNo) && !string.IsNullOrEmpty(s.EvrakNo) && (s.EvrakNo.Trim().Equals(extractedNo, StringComparison.OrdinalIgnoreCase) || s.EvrakNo.Trim().StartsWith(extractedNo, StringComparison.OrdinalIgnoreCase)))
             ).ToList();
 
-            if (!orphanStokMoves.Any()) return;
-
-            bool isSatis = (hareket.IslemTuru ?? "").Contains("Satış", StringComparison.OrdinalIgnoreCase) || hareket.Borc > 0;
-            var affectedStokIds = orphanStokMoves.Select(s => s.StokId).Distinct().ToList();
-
-            foreach (var m in orphanStokMoves)
+            if (orphanStokMoves.Any())
             {
-                var stk = await _uow.Stoklar.GetByIdAsync(m.StokId);
-                if (stk != null)
+                var affectedStokIds = orphanStokMoves.Select(s => s.StokId).Distinct().ToList();
+                foreach (var m in orphanStokMoves)
                 {
-                    double qty = m.Miktar > 0 ? (double)m.Miktar : (double)(m.Giren > 0 ? m.Giren : (m.Cikan > 0 ? m.Cikan : 0));
-                    if (isSatis) stk.Miktar += qty;
-                    else stk.Miktar -= qty;
-                    await _uow.Stoklar.SaveAsync(stk);
+                    await _uow.Stoklar.DeleteHareketAsync(m);
                 }
-                await _uow.Stoklar.DeleteHareketAsync(m);
-            }
 
-            foreach (var sId in affectedStokIds)
-            {
-                await _uow.Stoklar.RecalculateCostsAsync(sId);
+                foreach (var sId in affectedStokIds)
+                {
+                    await _uow.Stoklar.RecalculateCostsAsync(sId);
+                }
             }
         }
         catch (Exception ex)
@@ -1794,7 +1810,8 @@ public abstract partial class CariListViewModel : ViewModelBase
             {
                 bool isInvoiceMovement = (h.IslemTuru != null && h.IslemTuru.Contains("Fatura")) ||
                                          (h.FaturaId.HasValue && h.FaturaId.Value > 0) ||
-                                         (!string.IsNullOrWhiteSpace(h.EvrakNo) && h.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase));
+                                         (!string.IsNullOrWhiteSpace(h.EvrakNo) && (h.EvrakNo.StartsWith("KPL-", StringComparison.OrdinalIgnoreCase) || h.EvrakNo.StartsWith("FTR", StringComparison.OrdinalIgnoreCase) || h.EvrakNo.StartsWith("FAT", StringComparison.OrdinalIgnoreCase))) ||
+                                         (!string.IsNullOrWhiteSpace(h.Aciklama) && (h.Aciklama.Contains("FTR-") || h.Aciklama.Contains("Fatura No")));
 
                 Fatura? fatura = isInvoiceMovement ? await FindLinkedFaturaAsync(h) : null;
                 if (fatura != null)
@@ -1827,7 +1844,7 @@ public abstract partial class CariListViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Silme hatası: {ex.Message}";
+            ErrorMessage = $"Toplu silme hatası: {ex.Message}";
         }
         finally
         {

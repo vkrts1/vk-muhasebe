@@ -122,7 +122,6 @@ public partial class App : Application, IRecipient<ShowCariDetailMessage>, IReci
         services.AddTransient<AVM.BarkodTasarimViewModel>();
         services.AddTransient<AVM.BelgeArsivViewModel>();
         services.AddTransient<SVM.DovizOtomasyonViewModel>();
-        services.AddTransient<AVM.FaturaTasarimViewModel>();
         services.AddTransient<AVM.OptimalFiyatViewModel>();
         services.AddTransient<AVM.UrunBirlestirmeViewModel>();
         services.AddTransient<AVM.CariBirlestirmeViewModel>();

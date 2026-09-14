@@ -484,10 +484,63 @@ export const mapPathToDatabase = (path: string): string => {
   return `companies/${tenant}/years/${year}/${mappedPath}`;
 };
 
+let tokenExpiresAt: number = 0;
+let isTokenRefreshing = false;
+
+export const refreshFirebaseAuthToken = async (): Promise<string | null> => {
+  if (isTokenRefreshing) return cachedIdToken;
+  const ext = getExtendedConfig();
+  const apiKey = ext?.googleApiKey;
+  if (!apiKey) return cachedIdToken;
+
+  isTokenRefreshing = true;
+  try {
+    // Identity Toolkit REST API - Anonymous sign-up / token generation
+    const response = await fetchWithTimeout(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returnSecureToken: true }),
+      },
+      8000
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.idToken) {
+        cachedIdToken = data.idToken;
+        const expiresInSec = parseInt(data.expiresIn || '3600', 10);
+        tokenExpiresAt = Date.now() + (expiresInSec - 300) * 1000;
+        await saveIdToken(data.idToken);
+        console.log('[Firebase Auth] Yeni ID Token başarıyla alındı (Web API Key).');
+        return data.idToken;
+      }
+    }
+  } catch (err) {
+    console.warn('[Firebase Auth] Token alma hatası:', err);
+  } finally {
+    isTokenRefreshing = false;
+  }
+  return cachedIdToken;
+};
+
 export const getAuthParam = (config: FirebaseConfig | null): string => {
   if (!config) return '';
+  // Token tabanlı doğrulama önceliklidir (Google Cloud Web API Key standardı)
+  if (cachedIdToken) {
+    // Süresi dolmak üzereyse arka planda yenile
+    if (tokenExpiresAt > 0 && Date.now() > tokenExpiresAt) {
+      refreshFirebaseAuthToken().catch(() => {});
+    }
+    return `auth=${cachedIdToken}`;
+  }
+  // Eğer Web API Key varsa hemen token almayı tetikle
+  if (cachedExtendedConfig?.googleApiKey && !isTokenRefreshing) {
+    refreshFirebaseAuthToken().catch(() => {});
+  }
+  // Geriye dönük uyumluluk fallback: Secret
   if (config.secret) return `auth=${config.secret}`;
-  if (cachedIdToken) return `auth=${cachedIdToken}`;
   return '';
 };
 

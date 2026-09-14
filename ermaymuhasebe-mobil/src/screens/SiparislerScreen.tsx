@@ -234,7 +234,7 @@ export default function SiparislerScreen({ route, navigation }: any) {
       return;
     }
 
-    const currentId = editingId || (siparisler.length > 0 ? Math.max(...siparisler.map(s => s.id || 0)) + 1 : 1);
+    const currentId = editingId || generateInt32Id();
     const subtotal = calculateSubtotal();
     const totalKdv = calculateTotalKdv();
     const grandTotal = calculateGrandTotal();

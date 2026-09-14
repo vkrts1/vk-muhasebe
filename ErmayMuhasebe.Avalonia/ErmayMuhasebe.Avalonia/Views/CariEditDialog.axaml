@@ -10,7 +10,7 @@
 
     <Grid Background="#AA000000">
         <Border Background="#080A0C" 
-                Width="1100" MaxHeight="640" 
+                Width="1100" MaxHeight="720" 
                 VerticalAlignment="Center" HorizontalAlignment="Center" 
                 CornerRadius="16" Padding="0"
                 BorderBrush="#33FFFFFF" BorderThickness="1"
